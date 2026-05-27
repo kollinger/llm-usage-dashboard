@@ -42,7 +42,7 @@ jobs:
 
       - run: npm run check
 
-      - run: npm run ${{ matrix.script }}
+      - run: npm run ${{ matrix.script }} -- --publish never
 
       - uses: actions/upload-artifact@v4
         with:
