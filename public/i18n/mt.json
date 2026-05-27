@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limiti u tokens"
+  },
+  "actions": {
+    "refresh": "Aġġorna",
+    "settings": "Settings",
+    "close": "Agħlaq",
+    "save": "Issejvja"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Password",
+    "signIn": "Idħol",
+    "loginFailed": "Il-login falla"
+  },
+  "filter": {
+    "showAll": "Uri kollox",
+    "showActive": "Attivi biss",
+    "hideInactive": "Aħbi fornituri inattivi",
+    "showInactiveCount": "Uri {count} fornituri inattivi",
+    "allVisible": "Il-fornituri kollha huma viżibbli"
+  },
+  "summary": {
+    "ariaLabel": "Ħarsa ġenerali",
+    "fiveHourOpen": "5h disponibbli",
+    "weeklyOpen": "Ġimgħa disponibbli",
+    "tokensToday": "Tokens illoggjati llum",
+    "tokensTotal": "Tokens illoggjati b’kollox"
+  },
+  "chart": {
+    "eyebrow": "Logs lokali",
+    "heading": "Storja tat-tokens mil-logs",
+    "sourceTotalsAria": "Użu totali skont il-fornitur",
+    "legendAria": "Leġġenda",
+    "sourceTotalTitle": "Użu totali",
+    "svgAria": "Storja tat-tokens"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Ipproċessar tat-tokens illoggjat"
+  },
+  "pricing": {
+    "eyebrow": "Spejjeż API",
+    "heading": "Kemm kienu jiswew it-tokens tiegħek permezz tal-API",
+    "meta": "EUR permezz tal-ECB {fxDate} · prezzijiet {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Taħlita benchmark {scoreDate}: {score}/100",
+    "chinaBadge": "Ċina",
+    "regions": {
+      "apiDiscount": "Skont API"
+    },
+    "columns": {
+      "model": "Mudell",
+      "score": "Score",
+      "region": "Reġjun",
+      "input": "Input",
+      "cache": "Cache",
+      "output": "Output",
+      "today": "Illum",
+      "total": "Total",
+      "source": "Sors"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokali"
+    },
+    "anthropic": {
+      "kicker": "Użu API"
+    },
+    "openai": {
+      "kicker": "API u krediti"
+    },
+    "gemini": {
+      "kicker": "Gemini lokali"
+    },
+    "ollama": {
+      "kicker": "Ollama lokali"
+    },
+    "local": {
+      "name": "Lokali"
+    },
+    "gridAria": "Fornituri",
+    "messages": {
+      "sparkTokens24h": "Spark tokens 24h",
+      "logTokens24h": "Log tokens 24h",
+      "manualCredits": "Krediti mdaħħla",
+      "missingBackendKey": "Backend key nieqsa",
+      "sevenDays": "7 ijiem",
+      "noCodexSparkEvents": "Ma nstabux avvenimenti Codex 5.3 Spark.",
+      "noGeminiLogs": "Ma nstabux Gemini usage logs lokali.",
+      "ollamaLogTokens": "Tokens Ollama lokali mil-logs",
+      "noOllamaLogs": "Ma nstabux logs Ollama lokali."
+    },
+    "emptyState": {
+      "eyebrow": "Fornitur",
+      "heading": "Ebda użu attiv",
+      "status": "Vojt",
+      "message": "Bħalissa l-ebda fornitur m’għandu tokens illoggjati jew data tal-limiti.",
+      "visible": "Viżibbli",
+      "hidden": "Moħbi",
+      "all": "Kollha"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manwali",
+    "empty": "Vojt",
+    "not_configured": "Setup",
+    "error": "Żball"
+  },
+  "labels": {
+    "today": "Illum",
+    "fiveHourUsed": "5h użati",
+    "weekUsed": "Ġimgħa użata",
+    "since": "Minn",
+    "updated": "Aġġornat",
+    "plan": "Pjan",
+    "fiveHourTokens": "5h tokens",
+    "total": "Total",
+    "cost": "Spiża",
+    "tokens7d": "Tokens 7 ijiem",
+    "cost7d": "Spiża 7 ijiem",
+    "limits": "Limiti"
+  },
+  "credits": {
+    "title": "Krediti",
+    "monthlySpend": "Krediti tal-użu",
+    "monthlyLimit": "Limit fix-xahar",
+    "currentCredit": "Kreditu attwali",
+    "autoTopUp": "Top-up awtomatiku",
+    "default": "Krediti",
+    "on": "Mixgħul",
+    "off": "Mitfi"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Ġimgħa",
+    "currentSession": "Sessjoni attwali",
+    "allModels": "Il-mudelli kollha",
+    "claudeDesign": "Claude Design",
+    "default": "Limit",
+    "resetPrefix": "Reset {time}",
+    "usedValue": "{percent}% użat",
+    "freeLabel": "{label} disponibbli",
+    "limitGroups": "{count} gruppi ta’ limiti",
+    "noModelLimits": "Ebda limiti tal-mudelli"
+  },
+  "tokens": {
+    "input": "Input",
+    "cacheCreation": "Ħolqien tal-cache",
+    "cachedInput": "Input fil-cache",
+    "output": "Output",
+    "reasoningOutput": "Output reasoning",
+    "total": "Total"
+  },
+  "format": {
+    "billion": "biljun",
+    "million": "miljun",
+    "thousand": "elf",
+    "lessThanSharePercent": "<0.1%",
+    "lessThanCent": "< 0.01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} qari / {write} kitba",
+    "cacheSameAsInput": "bħall-input"
+  },
+  "settings": {
+    "heading": "Settings",
+    "language": {
+      "label": "Lingwa"
+    },
+    "fields": {
+      "plan": "Pjan",
+      "currentSessionUsed": "Sessjoni attwali użata (%)",
+      "currentSessionReset": "Reset tas-sessjoni attwali",
+      "allModelsUsed": "Il-mudelli kollha użati (%)",
+      "allModelsReset": "Reset tal-mudelli kollha",
+      "claudeDesignUsed": "Claude Design użat (%)",
+      "claudeDesignReset": "Reset ta’ Claude Design",
+      "showCredits": "Uri krediti",
+      "creditsSpent": "Krediti minfuqa (EUR)",
+      "monthlyLimit": "Limit fix-xahar (EUR)",
+      "currentCredit": "Kreditu attwali (EUR)",
+      "creditReset": "Reset tal-kreditu",
+      "autoTopUp": "Top-up awtomatiku",
+      "windowUsed": "Tieqa użata (%)",
+      "windowReset": "Reset tat-tieqa",
+      "weekUsed": "Ġimgħa użata (%)",
+      "weekReset": "Reset tal-ġimgħa"
+    }
+  },
+  "errors": {
+    "loadUsage": "Żball"
+  }
+}

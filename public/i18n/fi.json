@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Rajat ja tokenit"
+  },
+  "actions": {
+    "refresh": "Päivitä",
+    "settings": "Asetukset",
+    "close": "Sulje",
+    "save": "Tallenna"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Salasana",
+    "signIn": "Kirjaudu sisään",
+    "loginFailed": "Kirjautuminen epäonnistui"
+  },
+  "filter": {
+    "showAll": "Näytä kaikki",
+    "showActive": "Vain aktiiviset",
+    "hideInactive": "Piilota passiiviset palveluntarjoajat",
+    "showInactiveCount": "Näytä {count} passiivista palveluntarjoajaa",
+    "allVisible": "Kaikki palveluntarjoajat ovat näkyvissä"
+  },
+  "summary": {
+    "ariaLabel": "Yleiskatsaus",
+    "fiveHourOpen": "5h käytettävissä",
+    "weeklyOpen": "Viikko käytettävissä",
+    "tokensToday": "Tänään lokitetut tokenit",
+    "tokensTotal": "Lokitetut tokenit yhteensä"
+  },
+  "chart": {
+    "eyebrow": "Paikalliset lokit",
+    "heading": "Tokenhistoria lokeista",
+    "sourceTotalsAria": "Kokonaiskäyttö palveluntarjoittain",
+    "legendAria": "Selite",
+    "sourceTotalTitle": "Kokonaiskäyttö",
+    "svgAria": "Tokenhistoria"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Lokitettu tokenkäsittely"
+  },
+  "pricing": {
+    "eyebrow": "API-kustannukset",
+    "heading": "Mitä tokenisi olisivat maksaneet API:n kautta",
+    "meta": "EUR ECB:n kautta {fxDate} · hinnat {pricingDate} · pisteet {scoreDate}",
+    "qualityScoreTitle": "Benchmark-yhdistelmä {scoreDate}: {score}/100",
+    "chinaBadge": "Kiina",
+    "regions": {
+      "apiDiscount": "API-alennus"
+    },
+    "columns": {
+      "model": "Malli",
+      "score": "Pisteet",
+      "region": "Alue",
+      "input": "Syöte",
+      "cache": "Välimuisti",
+      "output": "Tuloste",
+      "today": "Tänään",
+      "total": "Yhteensä",
+      "source": "Lähde"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude paikallisesti"
+    },
+    "anthropic": {
+      "kicker": "API-käyttö"
+    },
+    "openai": {
+      "kicker": "API ja krediitit"
+    },
+    "gemini": {
+      "kicker": "Gemini paikallisesti"
+    },
+    "ollama": {
+      "kicker": "Ollama paikallisesti"
+    },
+    "local": {
+      "name": "Paikallinen"
+    },
+    "gridAria": "Palveluntarjoajat",
+    "messages": {
+      "sparkTokens24h": "Spark-tokenit 24h",
+      "logTokens24h": "Lokitokenit 24h",
+      "manualCredits": "Krediitit syötetty",
+      "missingBackendKey": "Backend-avain puuttuu",
+      "sevenDays": "7 päivää",
+      "noCodexSparkEvents": "Codex 5.3 Spark -tapahtumia ei löytynyt.",
+      "noGeminiLogs": "Paikallisia Gemini-käyttölokeja ei löytynyt.",
+      "ollamaLogTokens": "Paikalliset Ollama-tokenit lokeista",
+      "noOllamaLogs": "Paikallisia Ollama-lokeja ei löytynyt."
+    },
+    "emptyState": {
+      "eyebrow": "Palveluntarjoaja",
+      "heading": "Ei aktiivista käyttöä",
+      "status": "Tyhjä",
+      "message": "Yhdelläkään palveluntarjoajalla ei tällä hetkellä ole lokitettuja tokeneita tai rajatietoja.",
+      "visible": "Näkyvissä",
+      "hidden": "Piilotettu",
+      "all": "Kaikki"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manuaalinen",
+    "empty": "Tyhjä",
+    "not_configured": "Asetus",
+    "error": "Virhe"
+  },
+  "labels": {
+    "today": "Tänään",
+    "fiveHourUsed": "5h käytetty",
+    "weekUsed": "Viikko käytetty",
+    "since": "Alkaen",
+    "updated": "Päivitetty",
+    "plan": "Tilaukset",
+    "fiveHourTokens": "5h tokenit",
+    "total": "Yhteensä",
+    "cost": "Kustannus",
+    "tokens7d": "Tokenit 7 päivää",
+    "cost7d": "Kustannus 7 päivää",
+    "limits": "Rajat"
+  },
+  "credits": {
+    "title": "Krediitit",
+    "monthlySpend": "Käyttökrediitit",
+    "monthlyLimit": "Kuukausiraja",
+    "currentCredit": "Nykyinen krediitti",
+    "autoTopUp": "Automaattinen lisäys",
+    "default": "Krediitit",
+    "on": "Päällä",
+    "off": "Pois"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Viikko",
+    "currentSession": "Nykyinen istunto",
+    "allModels": "Kaikki mallit",
+    "claudeDesign": "Claude Design",
+    "default": "Raja",
+    "resetPrefix": "Nollaus {time}",
+    "usedValue": "{percent}% käytetty",
+    "freeLabel": "{label} käytettävissä",
+    "limitGroups": "{count} rajaryhmää",
+    "noModelLimits": "Ei mallirajoja"
+  },
+  "tokens": {
+    "input": "Syöte",
+    "cacheCreation": "Välimuistin luonti",
+    "cachedInput": "Välimuistissa oleva syöte",
+    "output": "Tuloste",
+    "reasoningOutput": "Reasoning-tuloste",
+    "total": "Yhteensä"
+  },
+  "format": {
+    "billion": "mrd",
+    "million": "milj.",
+    "thousand": "tuh.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} luku / {write} kirjoitus",
+    "cacheSameAsInput": "kuten syöte"
+  },
+  "settings": {
+    "heading": "Asetukset",
+    "language": {
+      "label": "Kieli"
+    },
+    "fields": {
+      "plan": "Tilaukset",
+      "currentSessionUsed": "Nykyinen istunto käytetty (%)",
+      "currentSessionReset": "Nykyisen istunnon nollaus",
+      "allModelsUsed": "Kaikki mallit käytetty (%)",
+      "allModelsReset": "Kaikkien mallien nollaus",
+      "claudeDesignUsed": "Claude Design käytetty (%)",
+      "claudeDesignReset": "Claude Designin nollaus",
+      "showCredits": "Näytä krediitit",
+      "creditsSpent": "Käytetyt krediitit (EUR)",
+      "monthlyLimit": "Kuukausiraja (EUR)",
+      "currentCredit": "Nykyinen krediitti (EUR)",
+      "creditReset": "Krediitin nollaus",
+      "autoTopUp": "Automaattinen lisäys",
+      "windowUsed": "Ikkuna käytetty (%)",
+      "windowReset": "Ikkunan nollaus",
+      "weekUsed": "Viikko käytetty (%)",
+      "weekReset": "Viikon nollaus"
+    }
+  },
+  "errors": {
+    "loadUsage": "Virhe"
+  }
+}

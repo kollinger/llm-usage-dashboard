@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limieten en tokens"
+  },
+  "actions": {
+    "refresh": "Vernieuwen",
+    "settings": "Instellingen",
+    "close": "Sluiten",
+    "save": "Opslaan"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Wachtwoord",
+    "signIn": "Inloggen",
+    "loginFailed": "Inloggen mislukt"
+  },
+  "filter": {
+    "showAll": "Alles tonen",
+    "showActive": "Alleen actief",
+    "hideInactive": "Inactieve providers verbergen",
+    "showInactiveCount": "Toon {count} inactieve providers",
+    "allVisible": "Alle providers zijn zichtbaar"
+  },
+  "summary": {
+    "ariaLabel": "Overzicht",
+    "fiveHourOpen": "5h beschikbaar",
+    "weeklyOpen": "Week beschikbaar",
+    "tokensToday": "Vandaag gelogde tokens",
+    "tokensTotal": "Totaal gelogde tokens"
+  },
+  "chart": {
+    "eyebrow": "Lokale logs",
+    "heading": "Tokengeschiedenis uit logs",
+    "sourceTotalsAria": "Totaal gebruik per provider",
+    "legendAria": "Legenda",
+    "sourceTotalTitle": "Totaal gebruik",
+    "svgAria": "Tokengeschiedenis"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Gelogde tokenverwerking"
+  },
+  "pricing": {
+    "eyebrow": "API-kosten",
+    "heading": "Wat je tokens via de API zouden hebben gekost",
+    "meta": "EUR via ECB {fxDate} · prijzen {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmarkmix {scoreDate}: {score}/100",
+    "chinaBadge": "China",
+    "regions": {
+      "apiDiscount": "API-korting"
+    },
+    "columns": {
+      "model": "Model",
+      "score": "Score",
+      "region": "Regio",
+      "input": "Invoer",
+      "cache": "Cache",
+      "output": "Uitvoer",
+      "today": "Vandaag",
+      "total": "Totaal",
+      "source": "Bron"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokaal"
+    },
+    "anthropic": {
+      "kicker": "API-gebruik"
+    },
+    "openai": {
+      "kicker": "API en credits"
+    },
+    "gemini": {
+      "kicker": "Gemini lokaal"
+    },
+    "ollama": {
+      "kicker": "Ollama lokaal"
+    },
+    "local": {
+      "name": "Lokaal"
+    },
+    "gridAria": "Providers",
+    "messages": {
+      "sparkTokens24h": "Spark-tokens 24h",
+      "logTokens24h": "Logtokens 24h",
+      "manualCredits": "Credits ingevoerd",
+      "missingBackendKey": "Backend-sleutel ontbreekt",
+      "sevenDays": "7 dagen",
+      "noCodexSparkEvents": "Geen Codex 5.3 Spark-events gevonden.",
+      "noGeminiLogs": "Geen lokale Gemini-gebruikslogs gevonden.",
+      "ollamaLogTokens": "Lokale Ollama-tokens uit logs",
+      "noOllamaLogs": "Geen lokale Ollama-logs gevonden."
+    },
+    "emptyState": {
+      "eyebrow": "Provider",
+      "heading": "Geen actief gebruik",
+      "status": "Leeg",
+      "message": "Geen enkele provider heeft momenteel gelogde tokens of limietgegevens.",
+      "visible": "Zichtbaar",
+      "hidden": "Verborgen",
+      "all": "Alles"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Handmatig",
+    "empty": "Leeg",
+    "not_configured": "Setup",
+    "error": "Fout"
+  },
+  "labels": {
+    "today": "Vandaag",
+    "fiveHourUsed": "5h gebruikt",
+    "weekUsed": "Week gebruikt",
+    "since": "Sinds",
+    "updated": "Bijgewerkt",
+    "plan": "Plan",
+    "fiveHourTokens": "5h tokens",
+    "total": "Totaal",
+    "cost": "Kosten",
+    "tokens7d": "Tokens 7 dagen",
+    "cost7d": "Kosten 7 dagen",
+    "limits": "Limieten"
+  },
+  "credits": {
+    "title": "Credits",
+    "monthlySpend": "Gebruikcredits",
+    "monthlyLimit": "Maandlimiet",
+    "currentCredit": "Huidig credit",
+    "autoTopUp": "Automatisch opwaarderen",
+    "default": "Credits",
+    "on": "Aan",
+    "off": "Uit"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Week",
+    "currentSession": "Huidige sessie",
+    "allModels": "Alle modellen",
+    "claudeDesign": "Claude Design",
+    "default": "Limiet",
+    "resetPrefix": "Reset {time}",
+    "usedValue": "{percent}% gebruikt",
+    "freeLabel": "{label} beschikbaar",
+    "limitGroups": "{count} limietgroepen",
+    "noModelLimits": "Geen modellimieten"
+  },
+  "tokens": {
+    "input": "Invoer",
+    "cacheCreation": "Cache aanmaken",
+    "cachedInput": "Gecachte invoer",
+    "output": "Uitvoer",
+    "reasoningOutput": "Reasoning-uitvoer",
+    "total": "Totaal"
+  },
+  "format": {
+    "billion": "mld",
+    "million": "mln",
+    "thousand": "k",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} lezen / {write} schrijven",
+    "cacheSameAsInput": "zoals invoer"
+  },
+  "settings": {
+    "heading": "Instellingen",
+    "language": {
+      "label": "Taal"
+    },
+    "fields": {
+      "plan": "Plan",
+      "currentSessionUsed": "Huidige sessie gebruikt (%)",
+      "currentSessionReset": "Huidige sessie resetten",
+      "allModelsUsed": "Alle modellen gebruikt (%)",
+      "allModelsReset": "Alle modellen resetten",
+      "claudeDesignUsed": "Claude Design gebruikt (%)",
+      "claudeDesignReset": "Claude Design resetten",
+      "showCredits": "Credits tonen",
+      "creditsSpent": "Uitgegeven credits (EUR)",
+      "monthlyLimit": "Maandlimiet (EUR)",
+      "currentCredit": "Huidig credit (EUR)",
+      "creditReset": "Credit resetten",
+      "autoTopUp": "Automatisch opwaarderen",
+      "windowUsed": "Venster gebruikt (%)",
+      "windowReset": "Venster resetten",
+      "weekUsed": "Week gebruikt (%)",
+      "weekReset": "Week resetten"
+    }
+  },
+  "errors": {
+    "loadUsage": "Fout"
+  }
+}

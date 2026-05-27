@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Korlátok és tokenek"
+  },
+  "actions": {
+    "refresh": "Frissítés",
+    "settings": "Beállítások",
+    "close": "Bezárás",
+    "save": "Mentés"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Jelszó",
+    "signIn": "Bejelentkezés",
+    "loginFailed": "Sikertelen bejelentkezés"
+  },
+  "filter": {
+    "showAll": "Összes megjelenítése",
+    "showActive": "Csak aktívak",
+    "hideInactive": "Inaktív szolgáltatók elrejtése",
+    "showInactiveCount": "{count} inaktív szolgáltató megjelenítése",
+    "allVisible": "Minden szolgáltató látható"
+  },
+  "summary": {
+    "ariaLabel": "Áttekintés",
+    "fiveHourOpen": "5h elérhető",
+    "weeklyOpen": "Hét elérhető",
+    "tokensToday": "Ma naplózott tokenek",
+    "tokensTotal": "Összes naplózott token"
+  },
+  "chart": {
+    "eyebrow": "Helyi naplók",
+    "heading": "Tokenelőzmények naplókból",
+    "sourceTotalsAria": "Teljes használat szolgáltató szerint",
+    "legendAria": "Jelmagyarázat",
+    "sourceTotalTitle": "Teljes használat",
+    "svgAria": "Tokenelőzmények"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Naplózott tokenfeldolgozás"
+  },
+  "pricing": {
+    "eyebrow": "API-költségek",
+    "heading": "Ennyibe kerültek volna a tokenjeid API-n keresztül",
+    "meta": "EUR ECB alapján {fxDate} · árak {pricingDate} · pontszám {scoreDate}",
+    "qualityScoreTitle": "Benchmark-mix {scoreDate}: {score}/100",
+    "chinaBadge": "Kína",
+    "regions": {
+      "apiDiscount": "API-kedvezmény"
+    },
+    "columns": {
+      "model": "Modell",
+      "score": "Pontszám",
+      "region": "Régió",
+      "input": "Bemenet",
+      "cache": "Gyorsítótár",
+      "output": "Kimenet",
+      "today": "Ma",
+      "total": "Összesen",
+      "source": "Forrás"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude helyben"
+    },
+    "anthropic": {
+      "kicker": "API-használat"
+    },
+    "openai": {
+      "kicker": "API és kreditek"
+    },
+    "gemini": {
+      "kicker": "Gemini helyben"
+    },
+    "ollama": {
+      "kicker": "Ollama helyben"
+    },
+    "local": {
+      "name": "Helyi"
+    },
+    "gridAria": "Szolgáltatók",
+    "messages": {
+      "sparkTokens24h": "Spark tokenek 24h",
+      "logTokens24h": "Napló tokenek 24h",
+      "manualCredits": "Kreditek megadva",
+      "missingBackendKey": "Hiányzik a backend kulcs",
+      "sevenDays": "7 nap",
+      "noCodexSparkEvents": "Nem találhatók Codex 5.3 Spark események.",
+      "noGeminiLogs": "Nem találhatók helyi Gemini használati naplók.",
+      "ollamaLogTokens": "Helyi Ollama tokenek naplókból",
+      "noOllamaLogs": "Nem találhatók helyi Ollama naplók."
+    },
+    "emptyState": {
+      "eyebrow": "Szolgáltató",
+      "heading": "Nincs aktív használat",
+      "status": "Üres",
+      "message": "Jelenleg egyik szolgáltatónál sincs naplózott token vagy korlátadat.",
+      "visible": "Látható",
+      "hidden": "Rejtett",
+      "all": "Összes"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Kézi",
+    "empty": "Üres",
+    "not_configured": "Beállítás",
+    "error": "Hiba"
+  },
+  "labels": {
+    "today": "Ma",
+    "fiveHourUsed": "5h felhasználva",
+    "weekUsed": "Hét felhasználva",
+    "since": "Ettől",
+    "updated": "Frissítve",
+    "plan": "Csomag",
+    "fiveHourTokens": "5h tokenek",
+    "total": "Összesen",
+    "cost": "Költség",
+    "tokens7d": "Tokenek 7 nap",
+    "cost7d": "Költség 7 nap",
+    "limits": "Korlátok"
+  },
+  "credits": {
+    "title": "Kreditek",
+    "monthlySpend": "Használati kreditek",
+    "monthlyLimit": "Havi korlát",
+    "currentCredit": "Aktuális kredit",
+    "autoTopUp": "Automatikus feltöltés",
+    "default": "Kreditek",
+    "on": "Be",
+    "off": "Ki"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Hét",
+    "currentSession": "Aktuális munkamenet",
+    "allModels": "Minden modell",
+    "claudeDesign": "Claude Design",
+    "default": "Korlát",
+    "resetPrefix": "Visszaállítás {time}",
+    "usedValue": "{percent}% felhasználva",
+    "freeLabel": "{label} elérhető",
+    "limitGroups": "{count} korlátcsoport",
+    "noModelLimits": "Nincsenek modellkorlátok"
+  },
+  "tokens": {
+    "input": "Bemenet",
+    "cacheCreation": "Gyorsítótár létrehozása",
+    "cachedInput": "Gyorsítótárazott bemenet",
+    "output": "Kimenet",
+    "reasoningOutput": "Reasoning kimenet",
+    "total": "Összesen"
+  },
+  "format": {
+    "billion": "mrd",
+    "million": "M",
+    "thousand": "ezer",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} olvasás / {write} írás",
+    "cacheSameAsInput": "mint a bemenet"
+  },
+  "settings": {
+    "heading": "Beállítások",
+    "language": {
+      "label": "Nyelv"
+    },
+    "fields": {
+      "plan": "Csomag",
+      "currentSessionUsed": "Aktuális munkamenet felhasználva (%)",
+      "currentSessionReset": "Aktuális munkamenet visszaállítása",
+      "allModelsUsed": "Minden modell felhasználva (%)",
+      "allModelsReset": "Minden modell visszaállítása",
+      "claudeDesignUsed": "Claude Design felhasználva (%)",
+      "claudeDesignReset": "Claude Design visszaállítása",
+      "showCredits": "Kreditek megjelenítése",
+      "creditsSpent": "Elköltött kreditek (EUR)",
+      "monthlyLimit": "Havi korlát (EUR)",
+      "currentCredit": "Aktuális kredit (EUR)",
+      "creditReset": "Kredit visszaállítása",
+      "autoTopUp": "Automatikus feltöltés",
+      "windowUsed": "Ablak felhasználva (%)",
+      "windowReset": "Ablak visszaállítása",
+      "weekUsed": "Hét felhasználva (%)",
+      "weekReset": "Heti visszaállítás"
+    }
+  },
+  "errors": {
+    "loadUsage": "Hiba"
+  }
+}

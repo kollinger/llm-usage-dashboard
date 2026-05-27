@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Piirangud ja tokenid"
+  },
+  "actions": {
+    "refresh": "Värskenda",
+    "settings": "Seaded",
+    "close": "Sulge",
+    "save": "Salvesta"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Parool",
+    "signIn": "Logi sisse",
+    "loginFailed": "Sisselogimine nurjus"
+  },
+  "filter": {
+    "showAll": "Kuva kõik",
+    "showActive": "Ainult aktiivsed",
+    "hideInactive": "Peida mitteaktiivsed pakkujad",
+    "showInactiveCount": "Kuva {count} mitteaktiivset pakkujat",
+    "allVisible": "Kõik pakkujad on nähtavad"
+  },
+  "summary": {
+    "ariaLabel": "Ülevaade",
+    "fiveHourOpen": "5h saadaval",
+    "weeklyOpen": "Nädal saadaval",
+    "tokensToday": "Täna logitud tokenid",
+    "tokensTotal": "Logitud tokeneid kokku"
+  },
+  "chart": {
+    "eyebrow": "Kohalikud logid",
+    "heading": "Tokenite ajalugu logidest",
+    "sourceTotalsAria": "Kogukasutus pakkuja järgi",
+    "legendAria": "Legend",
+    "sourceTotalTitle": "Kogukasutus",
+    "svgAria": "Tokenite ajalugu"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Logitud tokenitöötlus"
+  },
+  "pricing": {
+    "eyebrow": "API kulud",
+    "heading": "Mida sinu tokenid API kaudu maksaksid",
+    "meta": "EUR ECB kaudu {fxDate} · hinnad {pricingDate} · skoor {scoreDate}",
+    "qualityScoreTitle": "Benchmarkide segu {scoreDate}: {score}/100",
+    "chinaBadge": "Hiina",
+    "regions": {
+      "apiDiscount": "API allahindlus"
+    },
+    "columns": {
+      "model": "Mudel",
+      "score": "Skoor",
+      "region": "Piirkond",
+      "input": "Sisend",
+      "cache": "Vahemälu",
+      "output": "Väljund",
+      "today": "Täna",
+      "total": "Kokku",
+      "source": "Allikas"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude kohalik"
+    },
+    "anthropic": {
+      "kicker": "API kasutus"
+    },
+    "openai": {
+      "kicker": "API ja krediidid"
+    },
+    "gemini": {
+      "kicker": "Gemini kohalik"
+    },
+    "ollama": {
+      "kicker": "Ollama kohalik"
+    },
+    "local": {
+      "name": "Kohalik"
+    },
+    "gridAria": "Pakkujad",
+    "messages": {
+      "sparkTokens24h": "Spark tokenid 24h",
+      "logTokens24h": "Logi tokenid 24h",
+      "manualCredits": "Krediidid sisestatud",
+      "missingBackendKey": "Backend-võti puudub",
+      "sevenDays": "7 päeva",
+      "noCodexSparkEvents": "Codex 5.3 Spark sündmusi ei leitud.",
+      "noGeminiLogs": "Kohalikke Gemini kasutusloge ei leitud.",
+      "ollamaLogTokens": "Kohalikud Ollama tokenid logidest",
+      "noOllamaLogs": "Kohalikke Ollama logisid ei leitud."
+    },
+    "emptyState": {
+      "eyebrow": "Pakkuja",
+      "heading": "Aktiivset kasutust pole",
+      "status": "Tühi",
+      "message": "Ühelgi pakkujal pole praegu logitud tokeneid ega piiranguandmeid.",
+      "visible": "Nähtav",
+      "hidden": "Peidetud",
+      "all": "Kõik"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Käsitsi",
+    "empty": "Tühi",
+    "not_configured": "Seadistus",
+    "error": "Viga"
+  },
+  "labels": {
+    "today": "Täna",
+    "fiveHourUsed": "5h kasutatud",
+    "weekUsed": "Nädal kasutatud",
+    "since": "Alates",
+    "updated": "Uuendatud",
+    "plan": "Plaan",
+    "fiveHourTokens": "5h tokenid",
+    "total": "Kokku",
+    "cost": "Kulu",
+    "tokens7d": "Tokenid 7 päeva",
+    "cost7d": "Kulu 7 päeva",
+    "limits": "Piirangud"
+  },
+  "credits": {
+    "title": "Krediidid",
+    "monthlySpend": "Kasutuskrediidid",
+    "monthlyLimit": "Kuulimiit",
+    "currentCredit": "Praegune krediit",
+    "autoTopUp": "Automaatne laadimine",
+    "default": "Krediidid",
+    "on": "Sees",
+    "off": "Väljas"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Nädal",
+    "currentSession": "Praegune seanss",
+    "allModels": "Kõik mudelid",
+    "claudeDesign": "Claude Design",
+    "default": "Piirang",
+    "resetPrefix": "Lähtestus {time}",
+    "usedValue": "{percent}% kasutatud",
+    "freeLabel": "{label} saadaval",
+    "limitGroups": "{count} piirangugruppi",
+    "noModelLimits": "Mudeli piiranguid pole"
+  },
+  "tokens": {
+    "input": "Sisend",
+    "cacheCreation": "Vahemälu loomine",
+    "cachedInput": "Vahemällu salvestatud sisend",
+    "output": "Väljund",
+    "reasoningOutput": "Reasoning-väljund",
+    "total": "Kokku"
+  },
+  "format": {
+    "billion": "mld",
+    "million": "mln",
+    "thousand": "tuh",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} lugemine / {write} kirjutamine",
+    "cacheSameAsInput": "nagu sisend"
+  },
+  "settings": {
+    "heading": "Seaded",
+    "language": {
+      "label": "Keel"
+    },
+    "fields": {
+      "plan": "Plaan",
+      "currentSessionUsed": "Praegune seanss kasutatud (%)",
+      "currentSessionReset": "Praeguse seansi lähtestus",
+      "allModelsUsed": "Kõik mudelid kasutatud (%)",
+      "allModelsReset": "Kõigi mudelite lähtestus",
+      "claudeDesignUsed": "Claude Design kasutatud (%)",
+      "claudeDesignReset": "Claude Design lähtestus",
+      "showCredits": "Kuva krediidid",
+      "creditsSpent": "Kulutatud krediidid (EUR)",
+      "monthlyLimit": "Kuulimiit (EUR)",
+      "currentCredit": "Praegune krediit (EUR)",
+      "creditReset": "Krediidi lähtestus",
+      "autoTopUp": "Automaatne laadimine",
+      "windowUsed": "Aken kasutatud (%)",
+      "windowReset": "Akna lähtestus",
+      "weekUsed": "Nädal kasutatud (%)",
+      "weekReset": "Nädala lähtestus"
+    }
+  },
+  "errors": {
+    "loadUsage": "Viga"
+  }
+}

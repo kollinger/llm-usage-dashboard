@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Grænser og tokens"
+  },
+  "actions": {
+    "refresh": "Opdater",
+    "settings": "Indstillinger",
+    "close": "Luk",
+    "save": "Gem"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Adgangskode",
+    "signIn": "Log ind",
+    "loginFailed": "Login mislykkedes"
+  },
+  "filter": {
+    "showAll": "Vis alle",
+    "showActive": "Kun aktive",
+    "hideInactive": "Skjul inaktive udbydere",
+    "showInactiveCount": "Vis {count} inaktive udbydere",
+    "allVisible": "Alle udbydere er synlige"
+  },
+  "summary": {
+    "ariaLabel": "Oversigt",
+    "fiveHourOpen": "5h tilgængelig",
+    "weeklyOpen": "Uge tilgængelig",
+    "tokensToday": "Loggede tokens i dag",
+    "tokensTotal": "Loggede tokens i alt"
+  },
+  "chart": {
+    "eyebrow": "Lokale logs",
+    "heading": "Tokenhistorik fra logs",
+    "sourceTotalsAria": "Samlet forbrug efter udbyder",
+    "legendAria": "Forklaring",
+    "sourceTotalTitle": "Samlet forbrug",
+    "svgAria": "Tokenhistorik"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Logget tokenbehandling"
+  },
+  "pricing": {
+    "eyebrow": "API-omkostninger",
+    "heading": "Hvad dine tokens ville have kostet via API",
+    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmarkmix {scoreDate}: {score}/100",
+    "chinaBadge": "Kina",
+    "regions": {
+      "apiDiscount": "API-rabat"
+    },
+    "columns": {
+      "model": "Model",
+      "score": "Score",
+      "region": "Region",
+      "input": "Input",
+      "cache": "Cache",
+      "output": "Output",
+      "today": "I dag",
+      "total": "I alt",
+      "source": "Kilde"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokalt"
+    },
+    "anthropic": {
+      "kicker": "API-forbrug"
+    },
+    "openai": {
+      "kicker": "API og kreditter"
+    },
+    "gemini": {
+      "kicker": "Gemini lokalt"
+    },
+    "ollama": {
+      "kicker": "Ollama lokalt"
+    },
+    "local": {
+      "name": "Lokalt"
+    },
+    "gridAria": "Udbydere",
+    "messages": {
+      "sparkTokens24h": "Spark-tokens 24h",
+      "logTokens24h": "Logtokens 24h",
+      "manualCredits": "Kreditter indtastet",
+      "missingBackendKey": "Backendnøgle mangler",
+      "sevenDays": "7 dage",
+      "noCodexSparkEvents": "Ingen Codex 5.3 Spark-hændelser fundet.",
+      "noGeminiLogs": "Ingen lokale Gemini usage-logs fundet.",
+      "ollamaLogTokens": "Lokale Ollama-tokens fra logs",
+      "noOllamaLogs": "Ingen lokale Ollama-logs fundet."
+    },
+    "emptyState": {
+      "eyebrow": "Udbyder",
+      "heading": "Ingen aktiv brug",
+      "status": "Tom",
+      "message": "Alle udbydere har aktuelt ingen loggede tokens eller limitdata.",
+      "visible": "Synlige",
+      "hidden": "Skjulte",
+      "all": "Alle"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manuel",
+    "empty": "Tom",
+    "not_configured": "Opsætning",
+    "error": "Fejl"
+  },
+  "labels": {
+    "today": "I dag",
+    "fiveHourUsed": "5h brugt",
+    "weekUsed": "Uge brugt",
+    "since": "Siden",
+    "updated": "Opdateret",
+    "plan": "Plan",
+    "fiveHourTokens": "5h tokens",
+    "total": "I alt",
+    "cost": "Omkostning",
+    "tokens7d": "Tokens 7 dage",
+    "cost7d": "Omkostning 7 dage",
+    "limits": "Grænser"
+  },
+  "credits": {
+    "title": "Kreditter",
+    "monthlySpend": "Forbrugskreditter",
+    "monthlyLimit": "Månedlig grænse",
+    "currentCredit": "Aktuel kredit",
+    "autoTopUp": "Automatisk optankning",
+    "default": "Kreditter",
+    "on": "Til",
+    "off": "Fra"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Uge",
+    "currentSession": "Aktuel session",
+    "allModels": "Alle modeller",
+    "claudeDesign": "Claude Design",
+    "default": "Grænse",
+    "resetPrefix": "Nulstilling {time}",
+    "usedValue": "{percent}% brugt",
+    "freeLabel": "{label} tilgængelig",
+    "limitGroups": "{count} grænsegrupper",
+    "noModelLimits": "Ingen modelgrænser"
+  },
+  "tokens": {
+    "input": "Input",
+    "cacheCreation": "Cacheoprettelse",
+    "cachedInput": "Cachet input",
+    "output": "Output",
+    "reasoningOutput": "Reasoning-output",
+    "total": "I alt"
+  },
+  "format": {
+    "billion": "mia.",
+    "million": "mio.",
+    "thousand": "tus.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} læs / {write} skriv",
+    "cacheSameAsInput": "som input"
+  },
+  "settings": {
+    "heading": "Indstillinger",
+    "language": {
+      "label": "Sprog"
+    },
+    "fields": {
+      "plan": "Plan",
+      "currentSessionUsed": "Aktuel session brugt (%)",
+      "currentSessionReset": "Nulstil aktuel session",
+      "allModelsUsed": "Alle modeller brugt (%)",
+      "allModelsReset": "Nulstil alle modeller",
+      "claudeDesignUsed": "Claude Design brugt (%)",
+      "claudeDesignReset": "Nulstil Claude Design",
+      "showCredits": "Vis kreditter",
+      "creditsSpent": "Brugte kreditter (EUR)",
+      "monthlyLimit": "Månedlig grænse (EUR)",
+      "currentCredit": "Aktuel kredit (EUR)",
+      "creditReset": "Kreditnulstilling",
+      "autoTopUp": "Automatisk optankning",
+      "windowUsed": "Vindue brugt (%)",
+      "windowReset": "Vinduesnulstilling",
+      "weekUsed": "Uge brugt (%)",
+      "weekReset": "Ugenulstilling"
+    }
+  },
+  "errors": {
+    "loadUsage": "Fejl"
+  }
+}

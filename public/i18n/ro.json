@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limite și tokeni"
+  },
+  "actions": {
+    "refresh": "Reîmprospătează",
+    "settings": "Setări",
+    "close": "Închide",
+    "save": "Salvează"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Parolă",
+    "signIn": "Autentificare",
+    "loginFailed": "Autentificarea a eșuat"
+  },
+  "filter": {
+    "showAll": "Afișează tot",
+    "showActive": "Doar active",
+    "hideInactive": "Ascunde furnizorii inactivi",
+    "showInactiveCount": "Afișează {count} furnizori inactivi",
+    "allVisible": "Toți furnizorii sunt vizibili"
+  },
+  "summary": {
+    "ariaLabel": "Prezentare generală",
+    "fiveHourOpen": "5h disponibile",
+    "weeklyOpen": "Săptămână disponibilă",
+    "tokensToday": "Tokeni înregistrați azi",
+    "tokensTotal": "Total tokeni înregistrați"
+  },
+  "chart": {
+    "eyebrow": "Jurnale locale",
+    "heading": "Istoricul tokenilor din jurnale",
+    "sourceTotalsAria": "Utilizare totală pe furnizor",
+    "legendAria": "Legendă",
+    "sourceTotalTitle": "Utilizare totală",
+    "svgAria": "Istoricul tokenilor"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Procesare tokeni înregistrată"
+  },
+  "pricing": {
+    "eyebrow": "Costuri API",
+    "heading": "Cât ar fi costat tokenii tăi prin API",
+    "meta": "EUR prin BCE {fxDate} · prețuri {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Mix benchmark {scoreDate}: {score}/100",
+    "chinaBadge": "China",
+    "regions": {
+      "apiDiscount": "Reducere API"
+    },
+    "columns": {
+      "model": "Model",
+      "score": "Score",
+      "region": "Regiune",
+      "input": "Intrare",
+      "cache": "Cache",
+      "output": "Ieșire",
+      "today": "Azi",
+      "total": "Total",
+      "source": "Sursă"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude local"
+    },
+    "anthropic": {
+      "kicker": "Utilizare API"
+    },
+    "openai": {
+      "kicker": "API și credite"
+    },
+    "gemini": {
+      "kicker": "Gemini local"
+    },
+    "ollama": {
+      "kicker": "Ollama local"
+    },
+    "local": {
+      "name": "Local"
+    },
+    "gridAria": "Furnizori",
+    "messages": {
+      "sparkTokens24h": "Tokeni Spark 24h",
+      "logTokens24h": "Tokeni din jurnale 24h",
+      "manualCredits": "Credite introduse",
+      "missingBackendKey": "Lipsește cheia backend",
+      "sevenDays": "7 zile",
+      "noCodexSparkEvents": "Nu s-au găsit evenimente Codex 5.3 Spark.",
+      "noGeminiLogs": "Nu s-au găsit jurnale locale de utilizare Gemini.",
+      "ollamaLogTokens": "Tokeni Ollama locali din jurnale",
+      "noOllamaLogs": "Nu s-au găsit jurnale Ollama locale."
+    },
+    "emptyState": {
+      "eyebrow": "Furnizor",
+      "heading": "Nicio utilizare activă",
+      "status": "Gol",
+      "message": "Momentan niciun furnizor nu are tokeni înregistrați sau date despre limite.",
+      "visible": "Vizibil",
+      "hidden": "Ascuns",
+      "all": "Toate"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manual",
+    "empty": "Gol",
+    "not_configured": "Configurare",
+    "error": "Eroare"
+  },
+  "labels": {
+    "today": "Azi",
+    "fiveHourUsed": "5h utilizate",
+    "weekUsed": "Săptămână utilizată",
+    "since": "Din",
+    "updated": "Actualizat",
+    "plan": "Plan",
+    "fiveHourTokens": "Tokeni 5h",
+    "total": "Total",
+    "cost": "Cost",
+    "tokens7d": "Tokeni 7 zile",
+    "cost7d": "Cost 7 zile",
+    "limits": "Limite"
+  },
+  "credits": {
+    "title": "Credite",
+    "monthlySpend": "Credite de utilizare",
+    "monthlyLimit": "Limită lunară",
+    "currentCredit": "Credit curent",
+    "autoTopUp": "Reîncărcare automată",
+    "default": "Credite",
+    "on": "Pornit",
+    "off": "Oprit"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Săptămână",
+    "currentSession": "Sesiune curentă",
+    "allModels": "Toate modelele",
+    "claudeDesign": "Claude Design",
+    "default": "Limită",
+    "resetPrefix": "Resetare {time}",
+    "usedValue": "{percent}% utilizat",
+    "freeLabel": "{label} disponibil",
+    "limitGroups": "{count} grupuri de limite",
+    "noModelLimits": "Fără limite de model"
+  },
+  "tokens": {
+    "input": "Intrare",
+    "cacheCreation": "Creare cache",
+    "cachedInput": "Intrare cache-uită",
+    "output": "Ieșire",
+    "reasoningOutput": "Ieșire reasoning",
+    "total": "Total"
+  },
+  "format": {
+    "billion": "mld.",
+    "million": "mil.",
+    "thousand": "mii",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} citire / {write} scriere",
+    "cacheSameAsInput": "ca intrarea"
+  },
+  "settings": {
+    "heading": "Setări",
+    "language": {
+      "label": "Limbă"
+    },
+    "fields": {
+      "plan": "Plan",
+      "currentSessionUsed": "Sesiune curentă utilizată (%)",
+      "currentSessionReset": "Resetare sesiune curentă",
+      "allModelsUsed": "Toate modelele utilizate (%)",
+      "allModelsReset": "Resetare toate modelele",
+      "claudeDesignUsed": "Claude Design utilizat (%)",
+      "claudeDesignReset": "Resetare Claude Design",
+      "showCredits": "Afișează creditele",
+      "creditsSpent": "Credite cheltuite (EUR)",
+      "monthlyLimit": "Limită lunară (EUR)",
+      "currentCredit": "Credit curent (EUR)",
+      "creditReset": "Resetare credit",
+      "autoTopUp": "Reîncărcare automată",
+      "windowUsed": "Fereastră utilizată (%)",
+      "windowReset": "Resetare fereastră",
+      "weekUsed": "Săptămână utilizată (%)",
+      "weekReset": "Resetare săptămânală"
+    }
+  },
+  "errors": {
+    "loadUsage": "Eroare"
+  }
+}

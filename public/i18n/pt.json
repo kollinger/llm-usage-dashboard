@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limites e tokens"
+  },
+  "actions": {
+    "refresh": "Atualizar",
+    "settings": "Definições",
+    "close": "Fechar",
+    "save": "Guardar"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Palavra-passe",
+    "signIn": "Iniciar sessão",
+    "loginFailed": "Falha no início de sessão"
+  },
+  "filter": {
+    "showAll": "Mostrar tudo",
+    "showActive": "Só ativos",
+    "hideInactive": "Ocultar fornecedores inativos",
+    "showInactiveCount": "Mostrar {count} fornecedores inativos",
+    "allVisible": "Todos os fornecedores estão visíveis"
+  },
+  "summary": {
+    "ariaLabel": "Visão geral",
+    "fiveHourOpen": "5h disponíveis",
+    "weeklyOpen": "Semana disponível",
+    "tokensToday": "Tokens registados hoje",
+    "tokensTotal": "Tokens registados no total"
+  },
+  "chart": {
+    "eyebrow": "Registos locais",
+    "heading": "Histórico de tokens dos registos",
+    "sourceTotalsAria": "Utilização total por fornecedor",
+    "legendAria": "Legenda",
+    "sourceTotalTitle": "Utilização total",
+    "svgAria": "Histórico de tokens"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Processamento de tokens registado"
+  },
+  "pricing": {
+    "eyebrow": "Custos de API",
+    "heading": "Quanto os teus tokens teriam custado via API",
+    "meta": "EUR via BCE {fxDate} · preços {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Mistura de benchmarks {scoreDate}: {score}/100",
+    "chinaBadge": "China",
+    "regions": {
+      "apiDiscount": "Desconto API"
+    },
+    "columns": {
+      "model": "Modelo",
+      "score": "Score",
+      "region": "Região",
+      "input": "Entrada",
+      "cache": "Cache",
+      "output": "Saída",
+      "today": "Hoje",
+      "total": "Total",
+      "source": "Fonte"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude local"
+    },
+    "anthropic": {
+      "kicker": "Utilização API"
+    },
+    "openai": {
+      "kicker": "API e créditos"
+    },
+    "gemini": {
+      "kicker": "Gemini local"
+    },
+    "ollama": {
+      "kicker": "Ollama local"
+    },
+    "local": {
+      "name": "Local"
+    },
+    "gridAria": "Fornecedores",
+    "messages": {
+      "sparkTokens24h": "Tokens Spark 24h",
+      "logTokens24h": "Tokens de registos 24h",
+      "manualCredits": "Créditos introduzidos",
+      "missingBackendKey": "Falta a chave backend",
+      "sevenDays": "7 dias",
+      "noCodexSparkEvents": "Não foram encontrados eventos Codex 5.3 Spark.",
+      "noGeminiLogs": "Não foram encontrados registos locais de utilização Gemini.",
+      "ollamaLogTokens": "Tokens Ollama locais dos registos",
+      "noOllamaLogs": "Não foram encontrados registos Ollama locais."
+    },
+    "emptyState": {
+      "eyebrow": "Fornecedor",
+      "heading": "Sem utilização ativa",
+      "status": "Vazio",
+      "message": "Atualmente nenhum fornecedor tem tokens registados ou dados de limites.",
+      "visible": "Visível",
+      "hidden": "Oculto",
+      "all": "Todos"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manual",
+    "empty": "Vazio",
+    "not_configured": "Configuração",
+    "error": "Erro"
+  },
+  "labels": {
+    "today": "Hoje",
+    "fiveHourUsed": "5h usadas",
+    "weekUsed": "Semana usada",
+    "since": "Desde",
+    "updated": "Atualizado",
+    "plan": "Plano",
+    "fiveHourTokens": "Tokens 5h",
+    "total": "Total",
+    "cost": "Custo",
+    "tokens7d": "Tokens 7 dias",
+    "cost7d": "Custo 7 dias",
+    "limits": "Limites"
+  },
+  "credits": {
+    "title": "Créditos",
+    "monthlySpend": "Créditos de utilização",
+    "monthlyLimit": "Limite mensal",
+    "currentCredit": "Crédito atual",
+    "autoTopUp": "Carregamento automático",
+    "default": "Créditos",
+    "on": "Ligado",
+    "off": "Desligado"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Semana",
+    "currentSession": "Sessão atual",
+    "allModels": "Todos os modelos",
+    "claudeDesign": "Claude Design",
+    "default": "Limite",
+    "resetPrefix": "Reposição {time}",
+    "usedValue": "{percent}% usado",
+    "freeLabel": "{label} disponível",
+    "limitGroups": "{count} grupos de limites",
+    "noModelLimits": "Sem limites de modelos"
+  },
+  "tokens": {
+    "input": "Entrada",
+    "cacheCreation": "Criação de cache",
+    "cachedInput": "Entrada em cache",
+    "output": "Saída",
+    "reasoningOutput": "Saída de raciocínio",
+    "total": "Total"
+  },
+  "format": {
+    "billion": "mil M",
+    "million": "M",
+    "thousand": "mil",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} leitura / {write} escrita",
+    "cacheSameAsInput": "como entrada"
+  },
+  "settings": {
+    "heading": "Definições",
+    "language": {
+      "label": "Idioma"
+    },
+    "fields": {
+      "plan": "Plano",
+      "currentSessionUsed": "Sessão atual usada (%)",
+      "currentSessionReset": "Reposição da sessão atual",
+      "allModelsUsed": "Todos os modelos usados (%)",
+      "allModelsReset": "Reposição de todos os modelos",
+      "claudeDesignUsed": "Claude Design usado (%)",
+      "claudeDesignReset": "Reposição do Claude Design",
+      "showCredits": "Mostrar créditos",
+      "creditsSpent": "Créditos gastos (EUR)",
+      "monthlyLimit": "Limite mensal (EUR)",
+      "currentCredit": "Crédito atual (EUR)",
+      "creditReset": "Reposição de crédito",
+      "autoTopUp": "Carregamento automático",
+      "windowUsed": "Janela usada (%)",
+      "windowReset": "Reposição da janela",
+      "weekUsed": "Semana usada (%)",
+      "weekReset": "Reposição semanal"
+    }
+  },
+  "errors": {
+    "loadUsage": "Erro"
+  }
+}

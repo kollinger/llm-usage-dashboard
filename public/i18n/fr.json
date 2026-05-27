@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limites et jetons"
+  },
+  "actions": {
+    "refresh": "Actualiser",
+    "settings": "Paramètres",
+    "close": "Fermer",
+    "save": "Enregistrer"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "loginFailed": "Échec de la connexion"
+  },
+  "filter": {
+    "showAll": "Tout afficher",
+    "showActive": "Actifs seulement",
+    "hideInactive": "Masquer les fournisseurs inactifs",
+    "showInactiveCount": "Afficher {count} fournisseurs inactifs",
+    "allVisible": "Tous les fournisseurs sont visibles"
+  },
+  "summary": {
+    "ariaLabel": "Vue d’ensemble",
+    "fiveHourOpen": "5h disponibles",
+    "weeklyOpen": "Semaine disponible",
+    "tokensToday": "Jetons enregistrés aujourd’hui",
+    "tokensTotal": "Total des jetons enregistrés"
+  },
+  "chart": {
+    "eyebrow": "Journaux locaux",
+    "heading": "Historique des jetons depuis les journaux",
+    "sourceTotalsAria": "Utilisation totale par fournisseur",
+    "legendAria": "Légende",
+    "sourceTotalTitle": "Utilisation totale",
+    "svgAria": "Historique des jetons"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Traitement des jetons enregistré"
+  },
+  "pricing": {
+    "eyebrow": "Coûts API",
+    "heading": "Ce que tes jetons auraient coûté via l’API",
+    "meta": "EUR via BCE {fxDate} · prix {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Mix de benchmarks {scoreDate}: {score}/100",
+    "chinaBadge": "Chine",
+    "regions": {
+      "apiDiscount": "Remise API"
+    },
+    "columns": {
+      "model": "Modèle",
+      "score": "Score",
+      "region": "Région",
+      "input": "Entrée",
+      "cache": "Cache",
+      "output": "Sortie",
+      "today": "Aujourd’hui",
+      "total": "Total",
+      "source": "Source"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude local"
+    },
+    "anthropic": {
+      "kicker": "Utilisation API"
+    },
+    "openai": {
+      "kicker": "API et crédits"
+    },
+    "gemini": {
+      "kicker": "Gemini local"
+    },
+    "ollama": {
+      "kicker": "Ollama local"
+    },
+    "local": {
+      "name": "Local"
+    },
+    "gridAria": "Fournisseurs",
+    "messages": {
+      "sparkTokens24h": "Jetons Spark 24h",
+      "logTokens24h": "Jetons de journaux 24h",
+      "manualCredits": "Crédits saisis",
+      "missingBackendKey": "Clé backend manquante",
+      "sevenDays": "7 jours",
+      "noCodexSparkEvents": "Aucun événement Codex 5.3 Spark trouvé.",
+      "noGeminiLogs": "Aucun journal local d’utilisation Gemini trouvé.",
+      "ollamaLogTokens": "Jetons Ollama locaux depuis les journaux",
+      "noOllamaLogs": "Aucun journal Ollama local trouvé."
+    },
+    "emptyState": {
+      "eyebrow": "Fournisseur",
+      "heading": "Aucune utilisation active",
+      "status": "Vide",
+      "message": "Aucun fournisseur n’a actuellement de jetons enregistrés ni de données de limite.",
+      "visible": "Visible",
+      "hidden": "Masqué",
+      "all": "Tous"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manuel",
+    "empty": "Vide",
+    "not_configured": "Configuration",
+    "error": "Erreur"
+  },
+  "labels": {
+    "today": "Aujourd’hui",
+    "fiveHourUsed": "5h utilisées",
+    "weekUsed": "Semaine utilisée",
+    "since": "Depuis",
+    "updated": "Mis à jour",
+    "plan": "Forfait",
+    "fiveHourTokens": "Jetons 5h",
+    "total": "Total",
+    "cost": "Coût",
+    "tokens7d": "Jetons 7 jours",
+    "cost7d": "Coût 7 jours",
+    "limits": "Limites"
+  },
+  "credits": {
+    "title": "Crédits",
+    "monthlySpend": "Crédits d’utilisation",
+    "monthlyLimit": "Limite mensuelle",
+    "currentCredit": "Crédit actuel",
+    "autoTopUp": "Recharge automatique",
+    "default": "Crédits",
+    "on": "Activé",
+    "off": "Désactivé"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Semaine",
+    "currentSession": "Session actuelle",
+    "allModels": "Tous les modèles",
+    "claudeDesign": "Claude Design",
+    "default": "Limite",
+    "resetPrefix": "Réinitialisation {time}",
+    "usedValue": "{percent}% utilisé",
+    "freeLabel": "{label} disponible",
+    "limitGroups": "{count} groupes de limites",
+    "noModelLimits": "Aucune limite de modèle"
+  },
+  "tokens": {
+    "input": "Entrée",
+    "cacheCreation": "Création de cache",
+    "cachedInput": "Entrée en cache",
+    "output": "Sortie",
+    "reasoningOutput": "Sortie de raisonnement",
+    "total": "Total"
+  },
+  "format": {
+    "billion": "Md",
+    "million": "M",
+    "thousand": "k",
+    "lessThanSharePercent": "<0,1 %",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} lecture / {write} écriture",
+    "cacheSameAsInput": "comme l’entrée"
+  },
+  "settings": {
+    "heading": "Paramètres",
+    "language": {
+      "label": "Langue"
+    },
+    "fields": {
+      "plan": "Forfait",
+      "currentSessionUsed": "Session actuelle utilisée (%)",
+      "currentSessionReset": "Réinitialisation de la session actuelle",
+      "allModelsUsed": "Tous les modèles utilisés (%)",
+      "allModelsReset": "Réinitialisation de tous les modèles",
+      "claudeDesignUsed": "Claude Design utilisé (%)",
+      "claudeDesignReset": "Réinitialisation de Claude Design",
+      "showCredits": "Afficher les crédits",
+      "creditsSpent": "Crédits dépensés (EUR)",
+      "monthlyLimit": "Limite mensuelle (EUR)",
+      "currentCredit": "Crédit actuel (EUR)",
+      "creditReset": "Réinitialisation du crédit",
+      "autoTopUp": "Recharge automatique",
+      "windowUsed": "Fenêtre utilisée (%)",
+      "windowReset": "Réinitialisation de la fenêtre",
+      "weekUsed": "Semaine utilisée (%)",
+      "weekReset": "Réinitialisation hebdomadaire"
+    }
+  },
+  "errors": {
+    "loadUsage": "Erreur"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Omejitve in tokeni"
+  },
+  "actions": {
+    "refresh": "Osveži",
+    "settings": "Nastavitve",
+    "close": "Zapri",
+    "save": "Shrani"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Geslo",
+    "signIn": "Prijava",
+    "loginFailed": "Prijava ni uspela"
+  },
+  "filter": {
+    "showAll": "Prikaži vse",
+    "showActive": "Samo aktivni",
+    "hideInactive": "Skrij neaktivne ponudnike",
+    "showInactiveCount": "Prikaži {count} neaktivnih ponudnikov",
+    "allVisible": "Vsi ponudniki so vidni"
+  },
+  "summary": {
+    "ariaLabel": "Pregled",
+    "fiveHourOpen": "5h na voljo",
+    "weeklyOpen": "Teden na voljo",
+    "tokensToday": "Danes zabeleženi tokeni",
+    "tokensTotal": "Skupaj zabeleženi tokeni"
+  },
+  "chart": {
+    "eyebrow": "Lokalni dnevniki",
+    "heading": "Zgodovina tokenov iz dnevnikov",
+    "sourceTotalsAria": "Skupna uporaba po ponudniku",
+    "legendAria": "Legenda",
+    "sourceTotalTitle": "Skupna uporaba",
+    "svgAria": "Zgodovina tokenov"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Zabeležena obdelava tokenov"
+  },
+  "pricing": {
+    "eyebrow": "Stroški API",
+    "heading": "Koliko bi tvoji tokeni stali prek API-ja",
+    "meta": "EUR prek ECB {fxDate} · cene {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmark mešanica {scoreDate}: {score}/100",
+    "chinaBadge": "Kitajska",
+    "regions": {
+      "apiDiscount": "API popust"
+    },
+    "columns": {
+      "model": "Model",
+      "score": "Score",
+      "region": "Regija",
+      "input": "Vhod",
+      "cache": "Predpomnilnik",
+      "output": "Izhod",
+      "today": "Danes",
+      "total": "Skupaj",
+      "source": "Vir"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokalno"
+    },
+    "anthropic": {
+      "kicker": "Uporaba API"
+    },
+    "openai": {
+      "kicker": "API in krediti"
+    },
+    "gemini": {
+      "kicker": "Gemini lokalno"
+    },
+    "ollama": {
+      "kicker": "Ollama lokalno"
+    },
+    "local": {
+      "name": "Lokalno"
+    },
+    "gridAria": "Ponudniki",
+    "messages": {
+      "sparkTokens24h": "Spark tokeni 24h",
+      "logTokens24h": "Dnevniški tokeni 24h",
+      "manualCredits": "Krediti vneseni",
+      "missingBackendKey": "Manjka backend ključ",
+      "sevenDays": "7 dni",
+      "noCodexSparkEvents": "Dogodkov Codex 5.3 Spark ni bilo mogoče najti.",
+      "noGeminiLogs": "Lokalnih dnevnikov uporabe Gemini ni bilo mogoče najti.",
+      "ollamaLogTokens": "Lokalni Ollama tokeni iz dnevnikov",
+      "noOllamaLogs": "Lokalnih dnevnikov Ollama ni bilo mogoče najti."
+    },
+    "emptyState": {
+      "eyebrow": "Ponudnik",
+      "heading": "Ni aktivne uporabe",
+      "status": "Prazno",
+      "message": "Trenutno noben ponudnik nima zabeleženih tokenov ali podatkov o omejitvah.",
+      "visible": "Vidno",
+      "hidden": "Skrito",
+      "all": "Vse"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Ročno",
+    "empty": "Prazno",
+    "not_configured": "Nastavitev",
+    "error": "Napaka"
+  },
+  "labels": {
+    "today": "Danes",
+    "fiveHourUsed": "5h uporabljeno",
+    "weekUsed": "Teden uporabljen",
+    "since": "Od",
+    "updated": "Posodobljeno",
+    "plan": "Paket",
+    "fiveHourTokens": "5h tokeni",
+    "total": "Skupaj",
+    "cost": "Strošek",
+    "tokens7d": "Tokeni 7 dni",
+    "cost7d": "Strošek 7 dni",
+    "limits": "Omejitve"
+  },
+  "credits": {
+    "title": "Krediti",
+    "monthlySpend": "Krediti uporabe",
+    "monthlyLimit": "Mesečna omejitev",
+    "currentCredit": "Trenutni kredit",
+    "autoTopUp": "Samodejno polnjenje",
+    "default": "Krediti",
+    "on": "Vklopljeno",
+    "off": "Izklopljeno"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Teden",
+    "currentSession": "Trenutna seja",
+    "allModels": "Vsi modeli",
+    "claudeDesign": "Claude Design",
+    "default": "Omejitev",
+    "resetPrefix": "Ponastavitev {time}",
+    "usedValue": "{percent}% uporabljeno",
+    "freeLabel": "{label} na voljo",
+    "limitGroups": "{count} skupin omejitev",
+    "noModelLimits": "Ni omejitev modelov"
+  },
+  "tokens": {
+    "input": "Vhod",
+    "cacheCreation": "Ustvarjanje predpomnilnika",
+    "cachedInput": "Predpomnjen vhod",
+    "output": "Izhod",
+    "reasoningOutput": "Reasoning izhod",
+    "total": "Skupaj"
+  },
+  "format": {
+    "billion": "mrd.",
+    "million": "mio.",
+    "thousand": "tis.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} branje / {write} pisanje",
+    "cacheSameAsInput": "kot vhod"
+  },
+  "settings": {
+    "heading": "Nastavitve",
+    "language": {
+      "label": "Jezik"
+    },
+    "fields": {
+      "plan": "Paket",
+      "currentSessionUsed": "Trenutna seja uporabljena (%)",
+      "currentSessionReset": "Ponastavitev trenutne seje",
+      "allModelsUsed": "Vsi modeli uporabljeni (%)",
+      "allModelsReset": "Ponastavitev vseh modelov",
+      "claudeDesignUsed": "Claude Design uporabljen (%)",
+      "claudeDesignReset": "Ponastavitev Claude Design",
+      "showCredits": "Prikaži kredite",
+      "creditsSpent": "Porabljeni krediti (EUR)",
+      "monthlyLimit": "Mesečna omejitev (EUR)",
+      "currentCredit": "Trenutni kredit (EUR)",
+      "creditReset": "Ponastavitev kredita",
+      "autoTopUp": "Samodejno polnjenje",
+      "windowUsed": "Okno uporabljeno (%)",
+      "windowReset": "Ponastavitev okna",
+      "weekUsed": "Teden uporabljen (%)",
+      "weekReset": "Tedenska ponastavitev"
+    }
+  },
+  "errors": {
+    "loadUsage": "Napaka"
+  }
+}

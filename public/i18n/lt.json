@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limitai ir žetonai"
+  },
+  "actions": {
+    "refresh": "Atnaujinti",
+    "settings": "Nustatymai",
+    "close": "Uždaryti",
+    "save": "Išsaugoti"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Slaptažodis",
+    "signIn": "Prisijungti",
+    "loginFailed": "Prisijungti nepavyko"
+  },
+  "filter": {
+    "showAll": "Rodyti viską",
+    "showActive": "Tik aktyvūs",
+    "hideInactive": "Slėpti neaktyvius teikėjus",
+    "showInactiveCount": "Rodyti {count} neaktyvių teikėjų",
+    "allVisible": "Visi teikėjai matomi"
+  },
+  "summary": {
+    "ariaLabel": "Apžvalga",
+    "fiveHourOpen": "5h pasiekiama",
+    "weeklyOpen": "Savaitė pasiekiama",
+    "tokensToday": "Šiandien įrašyti žetonai",
+    "tokensTotal": "Iš viso įrašyti žetonai"
+  },
+  "chart": {
+    "eyebrow": "Vietiniai žurnalai",
+    "heading": "Žetonų istorija iš žurnalų",
+    "sourceTotalsAria": "Bendras naudojimas pagal teikėją",
+    "legendAria": "Legenda",
+    "sourceTotalTitle": "Bendras naudojimas",
+    "svgAria": "Žetonų istorija"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Įrašytas žetonų apdorojimas"
+  },
+  "pricing": {
+    "eyebrow": "API sąnaudos",
+    "heading": "Kiek tavo žetonai būtų kainavę per API",
+    "meta": "EUR per ECB {fxDate} · kainos {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmark mišinys {scoreDate}: {score}/100",
+    "chinaBadge": "Kinija",
+    "regions": {
+      "apiDiscount": "API nuolaida"
+    },
+    "columns": {
+      "model": "Modelis",
+      "score": "Score",
+      "region": "Regionas",
+      "input": "Įvestis",
+      "cache": "Talpykla",
+      "output": "Išvestis",
+      "today": "Šiandien",
+      "total": "Iš viso",
+      "source": "Šaltinis"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude vietoje"
+    },
+    "anthropic": {
+      "kicker": "API naudojimas"
+    },
+    "openai": {
+      "kicker": "API ir kreditai"
+    },
+    "gemini": {
+      "kicker": "Gemini vietoje"
+    },
+    "ollama": {
+      "kicker": "Ollama vietoje"
+    },
+    "local": {
+      "name": "Vietinis"
+    },
+    "gridAria": "Teikėjai",
+    "messages": {
+      "sparkTokens24h": "Spark žetonai 24h",
+      "logTokens24h": "Žurnalo žetonai 24h",
+      "manualCredits": "Kreditai įvesti",
+      "missingBackendKey": "Trūksta backend rakto",
+      "sevenDays": "7 dienos",
+      "noCodexSparkEvents": "Codex 5.3 Spark įvykių nerasta.",
+      "noGeminiLogs": "Vietinių Gemini naudojimo žurnalų nerasta.",
+      "ollamaLogTokens": "Vietiniai Ollama žetonai iš žurnalų",
+      "noOllamaLogs": "Vietinių Ollama žurnalų nerasta."
+    },
+    "emptyState": {
+      "eyebrow": "Teikėjas",
+      "heading": "Nėra aktyvaus naudojimo",
+      "status": "Tuščia",
+      "message": "Šiuo metu nė vienas teikėjas neturi įrašytų žetonų ar limitų duomenų.",
+      "visible": "Matoma",
+      "hidden": "Paslėpta",
+      "all": "Visi"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Rankinis",
+    "empty": "Tuščia",
+    "not_configured": "Sąranka",
+    "error": "Klaida"
+  },
+  "labels": {
+    "today": "Šiandien",
+    "fiveHourUsed": "5h panaudota",
+    "weekUsed": "Savaitė panaudota",
+    "since": "Nuo",
+    "updated": "Atnaujinta",
+    "plan": "Planas",
+    "fiveHourTokens": "5h žetonai",
+    "total": "Iš viso",
+    "cost": "Kaina",
+    "tokens7d": "Žetonai 7 dienos",
+    "cost7d": "Kaina 7 dienos",
+    "limits": "Limitai"
+  },
+  "credits": {
+    "title": "Kreditai",
+    "monthlySpend": "Naudojimo kreditai",
+    "monthlyLimit": "Mėnesio limitas",
+    "currentCredit": "Dabartinis kreditas",
+    "autoTopUp": "Automatinis papildymas",
+    "default": "Kreditai",
+    "on": "Įjungta",
+    "off": "Išjungta"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Savaitė",
+    "currentSession": "Dabartinė sesija",
+    "allModels": "Visi modeliai",
+    "claudeDesign": "Claude Design",
+    "default": "Limitas",
+    "resetPrefix": "Atstatymas {time}",
+    "usedValue": "{percent}% panaudota",
+    "freeLabel": "{label} pasiekiama",
+    "limitGroups": "{count} limitų grupės",
+    "noModelLimits": "Modelių limitų nėra"
+  },
+  "tokens": {
+    "input": "Įvestis",
+    "cacheCreation": "Talpyklos kūrimas",
+    "cachedInput": "Talpykloje esanti įvestis",
+    "output": "Išvestis",
+    "reasoningOutput": "Reasoning išvestis",
+    "total": "Iš viso"
+  },
+  "format": {
+    "billion": "mlrd.",
+    "million": "mln.",
+    "thousand": "tūkst.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} skaitymas / {write} rašymas",
+    "cacheSameAsInput": "kaip įvestis"
+  },
+  "settings": {
+    "heading": "Nustatymai",
+    "language": {
+      "label": "Kalba"
+    },
+    "fields": {
+      "plan": "Planas",
+      "currentSessionUsed": "Dabartinė sesija panaudota (%)",
+      "currentSessionReset": "Dabartinės sesijos atstatymas",
+      "allModelsUsed": "Visi modeliai panaudoti (%)",
+      "allModelsReset": "Visų modelių atstatymas",
+      "claudeDesignUsed": "Claude Design panaudota (%)",
+      "claudeDesignReset": "Claude Design atstatymas",
+      "showCredits": "Rodyti kreditus",
+      "creditsSpent": "Išleisti kreditai (EUR)",
+      "monthlyLimit": "Mėnesio limitas (EUR)",
+      "currentCredit": "Dabartinis kreditas (EUR)",
+      "creditReset": "Kredito atstatymas",
+      "autoTopUp": "Automatinis papildymas",
+      "windowUsed": "Langas panaudotas (%)",
+      "windowReset": "Lango atstatymas",
+      "weekUsed": "Savaitė panaudota (%)",
+      "weekReset": "Savaitės atstatymas"
+    }
+  },
+  "errors": {
+    "loadUsage": "Klaida"
+  }
+}

@@ -31,6 +31,9 @@ Instructions for agents working on this repository.
 - Run the desktop app in development with `npm run electron`.
 - Use existing vanilla JS/CSS patterns unless there is a clear reason to add tooling.
 - Keep frontend changes responsive and verify visually when practical.
+- Keep user-facing frontend text in `public/i18n/*.json`; do not add new hard-coded UI copy unless it is data/provider content that should not be translated.
+- When changing localized UI text, update every supported language file in `public/i18n/` and keep interpolation placeholders identical across languages.
+- For localization changes, run `npm run check`, verify translation key/placeholder consistency, and visually spot-check long translations and Arabic RTL when practical.
 
 ## Verification
 

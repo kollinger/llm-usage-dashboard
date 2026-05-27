@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LLM Usage</title>
+    <title data-i18n="app.title">LLM Usage</title>
     <link rel="stylesheet" href="/styles.css" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script src="/app.js" defer></script>
@@ -12,62 +12,62 @@
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">LLM Usage</p>
-          <h1>Limits & Tokens</h1>
+          <p class="eyebrow" data-i18n="app.eyebrow">LLM Usage</p>
+          <h1 data-i18n="app.heading">Limits & Tokens</h1>
         </div>
         <div class="top-actions">
-          <button class="icon-button" id="refreshBtn" aria-label="Aktualisieren" title="Aktualisieren">
+          <button class="icon-button" id="refreshBtn" aria-label="Aktualisieren" title="Aktualisieren" data-i18n-aria-label="actions.refresh" data-i18n-title="actions.refresh">
             <i data-lucide="refresh-cw"></i>
           </button>
-          <button class="icon-button" id="settingsBtn" aria-label="Quoten bearbeiten" title="Quoten bearbeiten">
+          <button class="icon-button" id="settingsBtn" aria-label="Einstellungen" title="Einstellungen" data-i18n-aria-label="actions.settings" data-i18n-title="actions.settings">
             <i data-lucide="sliders-horizontal"></i>
           </button>
-          <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false">
+          <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false" data-i18n="filter.showAll">
             Alle anzeigen
           </button>
-          <button class="text-button" id="loginBtn">Login</button>
-          <button class="text-button ghost" id="logoutBtn" hidden>Logout</button>
+          <button class="text-button" id="loginBtn" data-i18n="auth.login">Login</button>
+          <button class="text-button ghost" id="logoutBtn" hidden data-i18n="auth.logout">Logout</button>
         </div>
       </header>
 
-      <section class="summary-strip" aria-label="Uebersicht">
+      <section class="summary-strip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel">
         <div class="metric-tile">
-          <span>5h frei</span>
+          <span data-i18n="summary.fiveHourOpen">5h frei</span>
           <strong id="fiveHourOpen">--</strong>
         </div>
         <div class="metric-tile">
-          <span>Woche frei</span>
+          <span data-i18n="summary.weeklyOpen">Woche frei</span>
           <strong id="weeklyOpen">--</strong>
         </div>
         <div class="metric-tile">
-          <span>Geloggte Tokens heute</span>
+          <span data-i18n="summary.tokensToday">Geloggte Tokens heute</span>
           <strong id="tokensToday">--</strong>
         </div>
         <div class="metric-tile">
-          <span>Geloggte Tokens gesamt</span>
+          <span data-i18n="summary.tokensTotal">Geloggte Tokens gesamt</span>
           <strong id="tokensTotal">--</strong>
         </div>
       </section>
 
-      <section class="provider-grid" id="providerGrid" aria-label="Provider"></section>
+      <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
 
       <section class="usage-layout">
         <div class="panel chart-panel">
           <div class="panel-heading chart-heading">
             <div>
-              <p class="eyebrow">Lokale Logs</p>
-              <h2>Token-Verlauf aus Logs</h2>
+              <p class="eyebrow" data-i18n="chart.eyebrow">Lokale Logs</p>
+              <h2 data-i18n="chart.heading">Token-Verlauf aus Logs</h2>
             </div>
-            <div id="sourceTotals" class="source-bars" aria-label="Gesamtverbrauch nach Anbieter"></div>
+            <div id="sourceTotals" class="source-bars" aria-label="Gesamtverbrauch nach Anbieter" data-i18n-aria-label="chart.sourceTotalsAria"></div>
           </div>
           <div id="chart" class="chart"></div>
-          <div id="chartLegend" class="chart-legend" aria-label="Legende"></div>
+          <div id="chartLegend" class="chart-legend" aria-label="Legende" data-i18n-aria-label="chart.legendAria"></div>
         </div>
 
         <div class="panel split-panel">
           <div>
-            <p class="eyebrow">Token Mix</p>
-            <h2>Geloggte Verarbeitung</h2>
+            <p class="eyebrow" data-i18n="tokenMix.eyebrow">Token Mix</p>
+            <h2 data-i18n="tokenMix.heading">Geloggte Token-Verarbeitung</h2>
           </div>
           <dl class="token-list" id="tokenList"></dl>
         </div>
@@ -76,8 +76,8 @@
       <section class="panel price-panel">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">API-Kosten</p>
-            <h2>Was deine Tokens über die API gekostet hätten</h2>
+            <p class="eyebrow" data-i18n="pricing.eyebrow">API-Kosten</p>
+            <h2 data-i18n="pricing.heading">Was deine Tokens über die API gekostet hätten</h2>
           </div>
           <span id="pricingMeta" class="soft-label">--</span>
         </div>
@@ -85,15 +85,15 @@
           <table class="price-table">
             <thead>
               <tr>
-                <th><button class="sort-button" type="button" data-price-sort="model">Modell</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="score">Score</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="region">Region</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="input">Input</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="cache">Cache</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="output">Output</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="today">Heute</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="total">Gesamt</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="source">Quelle</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="model" data-i18n="pricing.columns.model">Modell</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="score" data-i18n="pricing.columns.score">Score</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="region" data-i18n="pricing.columns.region">Region</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="input" data-i18n="pricing.columns.input">Input</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="cache" data-i18n="pricing.columns.cache">Cache</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="output" data-i18n="pricing.columns.output">Output</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="today" data-i18n="pricing.columns.today">Heute</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="total" data-i18n="pricing.columns.total">Gesamt</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="source" data-i18n="pricing.columns.source">Quelle</button></th>
               </tr>
             </thead>
             <tbody id="priceRows"></tbody>
@@ -105,18 +105,18 @@
     <dialog id="loginDialog" class="modal">
       <form method="dialog" class="modal-body" id="loginForm">
         <div class="modal-heading">
-          <h2>Login</h2>
-          <button class="icon-button" value="cancel" aria-label="Schliessen" title="Schliessen">
+          <h2 data-i18n="auth.login">Login</h2>
+          <button class="icon-button" value="cancel" aria-label="Schließen" title="Schließen" data-i18n-aria-label="actions.close" data-i18n-title="actions.close">
             <i data-lucide="x"></i>
           </button>
         </div>
         <label class="field">
-          <span>Passwort</span>
+          <span data-i18n="auth.password">Passwort</span>
           <input type="password" id="passwordInput" autocomplete="current-password" />
         </label>
         <div class="modal-actions">
           <a class="text-button ghost" href="/auth/oidc/start" id="oidcLink">SSO</a>
-          <button class="text-button" type="submit">Einloggen</button>
+          <button class="text-button" type="submit" data-i18n="auth.signIn">Einloggen</button>
         </div>
         <p class="form-error" id="loginError"></p>
       </form>
@@ -125,120 +125,126 @@
     <dialog id="settingsDialog" class="modal wide-modal">
       <form method="dialog" class="modal-body" id="settingsForm">
         <div class="modal-heading">
-          <h2>Quoten</h2>
-          <button class="icon-button" type="button" id="settingsCloseBtn" aria-label="Schliessen" title="Schliessen">
+          <h2 data-i18n="settings.heading">Einstellungen</h2>
+          <button class="icon-button" type="button" id="settingsCloseBtn" aria-label="Schließen" title="Schließen" data-i18n-aria-label="actions.close" data-i18n-title="actions.close">
             <i data-lucide="x"></i>
           </button>
+        </div>
+        <div class="settings-preferences">
+          <label class="field language-field">
+            <span data-i18n="settings.language.label">Sprache</span>
+            <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>
+          </label>
         </div>
         <div class="settings-grid">
           <fieldset>
             <legend>Claude</legend>
             <label class="field">
-              <span>Plan</span>
+              <span data-i18n="settings.fields.plan">Plan</span>
               <input type="text" name="claude.planType" placeholder="Pro" />
             </label>
             <label class="field">
-              <span>Aktuelle Sitzung genutzt (%)</span>
+              <span data-i18n="settings.fields.currentSessionUsed">Aktuelle Sitzung genutzt (%)</span>
               <input type="number" min="0" max="100" step="1" name="claude.currentSession.usedPercent" />
             </label>
             <label class="field">
-              <span>Aktuelle Sitzung Reset</span>
+              <span data-i18n="settings.fields.currentSessionReset">Reset aktuelle Sitzung</span>
               <input type="datetime-local" name="claude.currentSession.resetsAt" />
             </label>
             <label class="field">
-              <span>Alle Modelle genutzt (%)</span>
+              <span data-i18n="settings.fields.allModelsUsed">Alle Modelle genutzt (%)</span>
               <input type="number" min="0" max="100" step="1" name="claude.allModels.usedPercent" />
             </label>
             <label class="field">
-              <span>Alle Modelle Reset</span>
+              <span data-i18n="settings.fields.allModelsReset">Reset alle Modelle</span>
               <input type="datetime-local" name="claude.allModels.resetsAt" />
             </label>
             <label class="field">
-              <span>Claude Design genutzt (%)</span>
+              <span data-i18n="settings.fields.claudeDesignUsed">Claude Design genutzt (%)</span>
               <input type="number" min="0" max="100" step="1" name="claude.claudeDesign.usedPercent" />
             </label>
             <label class="field">
-              <span>Claude Design Reset</span>
+              <span data-i18n="settings.fields.claudeDesignReset">Reset Claude Design</span>
               <input type="datetime-local" name="claude.claudeDesign.resetsAt" />
             </label>
             <label class="field check-field">
-              <span>Guthaben anzeigen</span>
+              <span data-i18n="settings.fields.showCredits">Guthaben anzeigen</span>
               <input type="checkbox" name="claude.credits.enabled" />
             </label>
             <label class="field">
-              <span>Guthaben verbraucht (EUR)</span>
+              <span data-i18n="settings.fields.creditsSpent">Verbrauchtes Guthaben (EUR)</span>
               <input type="number" min="0" step="0.01" name="claude.credits.spentAmount" />
             </label>
             <label class="field">
-              <span>Monatslimit (EUR)</span>
+              <span data-i18n="settings.fields.monthlyLimit">Monatslimit (EUR)</span>
               <input type="number" min="0" step="0.01" name="claude.credits.monthlyLimitAmount" />
             </label>
             <label class="field">
-              <span>Aktuelles Guthaben (EUR)</span>
+              <span data-i18n="settings.fields.currentCredit">Aktuelles Guthaben (EUR)</span>
               <input type="number" min="0" step="0.01" name="claude.credits.currentCreditAmount" />
             </label>
             <label class="field">
-              <span>Guthaben Reset</span>
+              <span data-i18n="settings.fields.creditReset">Guthaben-Reset</span>
               <input type="datetime-local" name="claude.credits.resetsAt" />
             </label>
             <label class="field check-field">
-              <span>Automatisch aufladen</span>
+              <span data-i18n="settings.fields.autoTopUp">Automatisch aufladen</span>
               <input type="checkbox" name="claude.credits.autoTopUp" />
             </label>
           </fieldset>
           <fieldset>
             <legend>Gemini</legend>
             <label class="field">
-              <span>Fenster genutzt (%)</span>
+              <span data-i18n="settings.fields.windowUsed">Fenster genutzt (%)</span>
               <input type="number" min="0" max="100" step="1" name="gemini.fiveHour.usedPercent" />
             </label>
             <label class="field">
-              <span>Fenster Reset</span>
+              <span data-i18n="settings.fields.windowReset">Fenster-Reset</span>
               <input type="datetime-local" name="gemini.fiveHour.resetsAt" />
             </label>
             <label class="field">
-              <span>Woche genutzt (%)</span>
+              <span data-i18n="settings.fields.weekUsed">Woche genutzt (%)</span>
               <input type="number" min="0" max="100" step="1" name="gemini.weekly.usedPercent" />
             </label>
             <label class="field">
-              <span>Woche Reset</span>
+              <span data-i18n="settings.fields.weekReset">Wochen-Reset</span>
               <input type="datetime-local" name="gemini.weekly.resetsAt" />
             </label>
           </fieldset>
           <fieldset>
             <legend>GPT / OpenAI</legend>
             <label class="field">
-              <span>Plan</span>
+              <span data-i18n="settings.fields.plan">Plan</span>
               <input type="text" name="openai.planType" placeholder="Pro" />
             </label>
             <label class="field check-field">
-              <span>Guthaben anzeigen</span>
+              <span data-i18n="settings.fields.showCredits">Guthaben anzeigen</span>
               <input type="checkbox" name="openai.credits.enabled" />
             </label>
             <label class="field">
-              <span>Guthaben verbraucht (EUR)</span>
+              <span data-i18n="settings.fields.creditsSpent">Verbrauchtes Guthaben (EUR)</span>
               <input type="number" min="0" step="0.01" name="openai.credits.spentAmount" />
             </label>
             <label class="field">
-              <span>Monatslimit (EUR)</span>
+              <span data-i18n="settings.fields.monthlyLimit">Monatslimit (EUR)</span>
               <input type="number" min="0" step="0.01" name="openai.credits.monthlyLimitAmount" />
             </label>
             <label class="field">
-              <span>Aktuelles Guthaben (EUR)</span>
+              <span data-i18n="settings.fields.currentCredit">Aktuelles Guthaben (EUR)</span>
               <input type="number" min="0" step="0.01" name="openai.credits.currentCreditAmount" />
             </label>
             <label class="field">
-              <span>Guthaben Reset</span>
+              <span data-i18n="settings.fields.creditReset">Guthaben-Reset</span>
               <input type="datetime-local" name="openai.credits.resetsAt" />
             </label>
             <label class="field check-field">
-              <span>Automatisch aufladen</span>
+              <span data-i18n="settings.fields.autoTopUp">Automatisch aufladen</span>
               <input type="checkbox" name="openai.credits.autoTopUp" />
             </label>
           </fieldset>
         </div>
         <div class="modal-actions">
-          <button class="text-button" type="submit">Speichern</button>
+          <button class="text-button" type="submit" data-i18n="actions.save">Speichern</button>
         </div>
       </form>
     </dialog>

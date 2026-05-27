@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "限制与令牌"
+  },
+  "actions": {
+    "refresh": "刷新",
+    "settings": "设置",
+    "close": "关闭",
+    "save": "保存"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "密码",
+    "signIn": "登录",
+    "loginFailed": "登录失败"
+  },
+  "filter": {
+    "showAll": "显示全部",
+    "showActive": "仅显示活跃项",
+    "hideInactive": "隐藏非活跃提供商",
+    "showInactiveCount": "显示 {count} 个非活跃提供商",
+    "allVisible": "所有提供商均可见"
+  },
+  "summary": {
+    "ariaLabel": "概览",
+    "fiveHourOpen": "5h 可用",
+    "weeklyOpen": "本周可用",
+    "tokensToday": "今日记录的令牌",
+    "tokensTotal": "记录的令牌总数"
+  },
+  "chart": {
+    "eyebrow": "本地日志",
+    "heading": "来自日志的令牌历史",
+    "sourceTotalsAria": "按提供商统计的总用量",
+    "legendAria": "图例",
+    "sourceTotalTitle": "总用量",
+    "svgAria": "令牌历史"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "已记录的令牌处理"
+  },
+  "pricing": {
+    "eyebrow": "API 成本",
+    "heading": "你的令牌通过 API 会产生的费用",
+    "meta": "EUR via ECB {fxDate} · 价格 {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "基准组合 {scoreDate}: {score}/100",
+    "chinaBadge": "中国",
+    "regions": {
+      "apiDiscount": "API 折扣"
+    },
+    "columns": {
+      "model": "模型",
+      "score": "Score",
+      "region": "区域",
+      "input": "输入",
+      "cache": "缓存",
+      "output": "输出",
+      "today": "今天",
+      "total": "总计",
+      "source": "来源"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "本地 Claude"
+    },
+    "anthropic": {
+      "kicker": "API 用量"
+    },
+    "openai": {
+      "kicker": "API 和额度"
+    },
+    "gemini": {
+      "kicker": "本地 Gemini"
+    },
+    "ollama": {
+      "kicker": "本地 Ollama"
+    },
+    "local": {
+      "name": "本地"
+    },
+    "gridAria": "提供商",
+    "messages": {
+      "sparkTokens24h": "Spark 令牌 24h",
+      "logTokens24h": "日志令牌 24h",
+      "manualCredits": "已输入额度",
+      "missingBackendKey": "缺少 backend key",
+      "sevenDays": "7 天",
+      "noCodexSparkEvents": "未找到 Codex 5.3 Spark 事件。",
+      "noGeminiLogs": "未找到本地 Gemini 使用日志。",
+      "ollamaLogTokens": "来自日志的本地 Ollama 令牌",
+      "noOllamaLogs": "未找到本地 Ollama 日志。"
+    },
+    "emptyState": {
+      "eyebrow": "提供商",
+      "heading": "无活跃使用",
+      "status": "空",
+      "message": "当前所有提供商都没有记录的令牌或限制数据。",
+      "visible": "可见",
+      "hidden": "隐藏",
+      "all": "全部"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "手动",
+    "empty": "空",
+    "not_configured": "设置",
+    "error": "错误"
+  },
+  "labels": {
+    "today": "今天",
+    "fiveHourUsed": "5h 已用",
+    "weekUsed": "本周已用",
+    "since": "自",
+    "updated": "已更新",
+    "plan": "计划",
+    "fiveHourTokens": "5h 令牌",
+    "total": "总计",
+    "cost": "成本",
+    "tokens7d": "7 天令牌",
+    "cost7d": "7 天成本",
+    "limits": "限制"
+  },
+  "credits": {
+    "title": "额度",
+    "monthlySpend": "使用额度",
+    "monthlyLimit": "月度限制",
+    "currentCredit": "当前额度",
+    "autoTopUp": "自动充值",
+    "default": "额度",
+    "on": "开",
+    "off": "关"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "周",
+    "currentSession": "当前会话",
+    "allModels": "所有模型",
+    "claudeDesign": "Claude Design",
+    "default": "限制",
+    "resetPrefix": "重置 {time}",
+    "usedValue": "已用 {percent}%",
+    "freeLabel": "{label} 可用",
+    "limitGroups": "{count} 个限制组",
+    "noModelLimits": "无模型限制"
+  },
+  "tokens": {
+    "input": "输入",
+    "cacheCreation": "创建缓存",
+    "cachedInput": "缓存输入",
+    "output": "输出",
+    "reasoningOutput": "推理输出",
+    "total": "总计"
+  },
+  "format": {
+    "billion": "十亿",
+    "million": "百万",
+    "thousand": "千",
+    "lessThanSharePercent": "<0.1%",
+    "lessThanCent": "< EUR 0.01",
+    "usdPerMillion": "${value}/M",
+    "cacheReadWrite": "{read} 读取 / {write} 写入",
+    "cacheSameAsInput": "同输入"
+  },
+  "settings": {
+    "heading": "设置",
+    "language": {
+      "label": "语言"
+    },
+    "fields": {
+      "plan": "计划",
+      "currentSessionUsed": "当前会话已用 (%)",
+      "currentSessionReset": "重置当前会话",
+      "allModelsUsed": "所有模型已用 (%)",
+      "allModelsReset": "重置所有模型",
+      "claudeDesignUsed": "Claude Design 已用 (%)",
+      "claudeDesignReset": "重置 Claude Design",
+      "showCredits": "显示额度",
+      "creditsSpent": "已花费额度 (EUR)",
+      "monthlyLimit": "月度限制 (EUR)",
+      "currentCredit": "当前额度 (EUR)",
+      "creditReset": "重置额度",
+      "autoTopUp": "自动充值",
+      "windowUsed": "窗口已用 (%)",
+      "windowReset": "重置窗口",
+      "weekUsed": "本周已用 (%)",
+      "weekReset": "重置本周"
+    }
+  },
+  "errors": {
+    "loadUsage": "错误"
+  }
+}

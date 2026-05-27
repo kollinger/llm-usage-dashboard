@@ -5,7 +5,10 @@ const state = {
   refreshIndicator: false,
   showAllProviders: false,
   chartRendered: false,
-  pricingSort: null
+  pricingSort: null,
+  language: "en",
+  translations: {},
+  fallbackTranslations: {}
 };
 
 const els = {
@@ -23,6 +26,7 @@ const els = {
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
   settingsForm: document.getElementById("settingsForm"),
+  languageSelect: document.getElementById("languageSelect"),
   fiveHourOpen: document.getElementById("fiveHourOpen"),
   weeklyOpen: document.getElementById("weeklyOpen"),
   tokensToday: document.getElementById("tokensToday"),
@@ -37,13 +41,13 @@ const els = {
 };
 
 const providerMeta = {
-  codex: { name: "Codex", kicker: "Codex", accent: "#23745c" },
-  codexSpark: { name: "Codex 5.3 Spark", kicker: "Codex Spark", accent: "#5b6ee1" },
-  claudeCode: { name: "Claude Code", kicker: "Claude lokal", accent: "#d55e00" },
-  anthropic: { name: "Anthropic API", kicker: "API Usage", accent: "#8d5d3b" },
-  openai: { name: "OpenAI / GPT", kicker: "API & Guthaben", accent: "#2e6ea6" },
-  gemini: { name: "Gemini", kicker: "Gemini lokal", accent: "#b94e5c" },
-  ollama: { name: "Ollama", kicker: "Ollama lokal", accent: "#4f6d2f" }
+  codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: "#23745c" },
+  codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: "#5b6ee1" },
+  claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: "#d55e00" },
+  anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
+  openai: { name: "OpenAI / GPT", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
+  gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: "#b94e5c" },
+  ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
 
 const USD_PER_EUR = 1.1595;
@@ -51,7 +55,42 @@ const FX_DATE = "2026-05-22";
 const PRICING_DATE = "2026-05-27";
 const SCORE_DATE = "2026-05-23";
 const MILLION = 1_000_000;
+const LANGUAGE_OPTIONS = [
+  { code: "bg", label: "Български", locale: "bg-BG" },
+  { code: "cs", label: "Čeština", locale: "cs-CZ" },
+  { code: "da", label: "Dansk", locale: "da-DK" },
+  { code: "de", label: "Deutsch", locale: "de-DE" },
+  { code: "el", label: "Ελληνικά", locale: "el-GR" },
+  { code: "en", label: "English", locale: "en-US" },
+  { code: "es", label: "Español", locale: "es-ES" },
+  { code: "et", label: "Eesti", locale: "et-EE" },
+  { code: "fi", label: "Suomi", locale: "fi-FI" },
+  { code: "fr", label: "Français", locale: "fr-FR" },
+  { code: "ga", label: "Gaeilge", locale: "ga-IE" },
+  { code: "hr", label: "Hrvatski", locale: "hr-HR" },
+  { code: "hu", label: "Magyar", locale: "hu-HU" },
+  { code: "it", label: "Italiano", locale: "it-IT" },
+  { code: "lt", label: "Lietuvių", locale: "lt-LT" },
+  { code: "lv", label: "Latviešu", locale: "lv-LV" },
+  { code: "mt", label: "Malti", locale: "mt-MT" },
+  { code: "nl", label: "Nederlands", locale: "nl-NL" },
+  { code: "pl", label: "Polski", locale: "pl-PL" },
+  { code: "pt", label: "Português", locale: "pt-PT" },
+  { code: "ro", label: "Română", locale: "ro-RO" },
+  { code: "sk", label: "Slovenčina", locale: "sk-SK" },
+  { code: "sl", label: "Slovenščina", locale: "sl-SI" },
+  { code: "sv", label: "Svenska", locale: "sv-SE" },
+  { code: "ar", label: "العربية", locale: "ar-SA", dir: "rtl" },
+  { code: "ru", label: "Русский", locale: "ru-RU" },
+  { code: "zh", label: "中文（简体）", locale: "zh-CN" }
+];
+const SUPPORTED_LANGUAGES = LANGUAGE_OPTIONS.map((language) => language.code);
+const LANGUAGE_META = Object.fromEntries(LANGUAGE_OPTIONS.map((language) => [language.code, language]));
+const DEFAULT_LANGUAGE = "en";
+const FALLBACK_LANGUAGE = "de";
+const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
+const translationCache = new Map();
 const chartSourceOrder = ["codex", "codexSpark", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
@@ -193,6 +232,7 @@ const pricingModels = [
     provider: "DeepSeek",
     model: "DeepSeek V4 Pro",
     region: "API Rabatt",
+    regionKey: "pricing.regions.apiDiscount",
     inputUsd: 0.435,
     cachedInputUsd: 0.003625,
     outputUsd: 0.87,
@@ -294,6 +334,7 @@ const modelQualityScores = {
 init();
 
 async function init() {
+  await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
   bindEvents();
   await loadAuth();
@@ -308,11 +349,123 @@ function bindEvents() {
   els.settingsBtn.addEventListener("click", openSettings);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
+  els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
   });
   els.loginForm.addEventListener("submit", login);
   els.settingsForm.addEventListener("submit", saveSettings);
+}
+
+async function setLanguage(language) {
+  await loadLanguage(language);
+}
+
+async function loadLanguage(language, { persist = true, rerender = true } = {}) {
+  const normalized = normalizeLanguage(language) || DEFAULT_LANGUAGE;
+  const fallback = await fetchTranslations(FALLBACK_LANGUAGE);
+  let translations = fallback;
+  let nextLanguage = normalized;
+  if (normalized !== FALLBACK_LANGUAGE) {
+    try {
+      translations = await fetchTranslations(normalized);
+    } catch {
+      nextLanguage = FALLBACK_LANGUAGE;
+    }
+  }
+
+  state.language = nextLanguage;
+  state.translations = translations;
+  state.fallbackTranslations = fallback;
+
+  if (persist) {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    } catch {
+      // Keep the selected language for this session if storage is unavailable.
+    }
+  }
+
+  applyStaticTranslations();
+  if (rerender) rerenderLanguageSensitiveViews();
+}
+
+async function fetchTranslations(language) {
+  if (translationCache.has(language)) return translationCache.get(language);
+  const response = await fetch(`/i18n/${language}.json`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Could not load ${language} translations`);
+  const translations = await response.json();
+  translationCache.set(language, translations);
+  return translations;
+}
+
+function detectInitialLanguage() {
+  try {
+    const stored = normalizeLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY));
+    if (stored) return stored;
+  } catch {
+    // Fall back to the browser language below.
+  }
+
+  const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const language of languages) {
+    const normalized = normalizeLanguage(language);
+    if (normalized) return normalized;
+  }
+  return DEFAULT_LANGUAGE;
+}
+
+function normalizeLanguage(language) {
+  const base = String(language || "").trim().toLowerCase().split("-")[0];
+  return SUPPORTED_LANGUAGES.includes(base) ? base : null;
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = state.language;
+  document.documentElement.dir = LANGUAGE_META[state.language]?.dir || "ltr";
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n, {}, element.textContent);
+  });
+  const translatedAttributes = [
+    ["data-i18n-aria-label", "aria-label"],
+    ["data-i18n-title", "title"],
+    ["data-i18n-placeholder", "placeholder"]
+  ];
+  for (const [dataAttribute, attribute] of translatedAttributes) {
+    document.querySelectorAll(`[${dataAttribute}]`).forEach((element) => {
+      element.setAttribute(attribute, t(element.getAttribute(dataAttribute), {}, element.getAttribute(attribute) || ""));
+    });
+  }
+  renderLanguageOptions();
+}
+
+function renderLanguageOptions() {
+  if (!els.languageSelect) return;
+  els.languageSelect.innerHTML = LANGUAGE_OPTIONS.map((language) => {
+    return `<option value="${escapeHtml(language.code)}">${escapeHtml(language.label)}</option>`;
+  }).join("");
+  els.languageSelect.value = state.language;
+}
+
+function rerenderLanguageSensitiveViews() {
+  renderAuth();
+  if (state.usage) {
+    render();
+  } else if (state.auth && !state.auth.authenticated) {
+    renderLocked();
+  } else {
+    updateProviderFilterControl([], []);
+  }
+  refreshIcons();
+}
+
+function t(key, values = {}, fallback = key) {
+  const template = getPath(state.translations, key) ?? getPath(state.fallbackTranslations, key) ?? fallback;
+  return interpolate(String(template), values);
+}
+
+function interpolate(template, values) {
+  return template.replaceAll(/\{(\w+)\}/g, (_match, name) => values[name] ?? "");
 }
 
 function sortPricing(key) {
@@ -371,7 +524,7 @@ async function login(event) {
     await loadAuth();
     await loadUsage();
   } catch {
-    els.loginError.textContent = "Login fehlgeschlagen";
+    els.loginError.textContent = t("auth.loginFailed");
   }
 }
 
@@ -403,7 +556,7 @@ async function loadUsage({ showIndicator = false } = {}) {
       renderLocked();
       return;
     }
-    els.providerGrid.innerHTML = `<article class="provider-card"><h2>Fehler</h2><p>${escapeHtml(error.message)}</p></article>`;
+    els.providerGrid.innerHTML = `<article class="provider-card"><h2>${escapeHtml(t("errors.loadUsage"))}</h2><p>${escapeHtml(error.message)}</p></article>`;
   } finally {
     setUsageLoading(false);
   }
@@ -470,7 +623,7 @@ function renderSourceTotalBars(local) {
   const total = sources.reduce((sum, source) => sum + source.totalTokens, 0);
   return `
     <div class="source-bars-title">
-      <span>Gesamtverbrauch</span>
+      <span>${escapeHtml(t("chart.sourceTotalTitle"))}</span>
       <strong>${formatTokens(total)}</strong>
     </div>
     ${sources
@@ -523,7 +676,7 @@ function normalizeCodexProvider(codex) {
   return {
     id: "codex",
     name: meta.name,
-    kicker: meta.kicker,
+    kicker: providerKicker("codex"),
     accent: meta.accent,
     status: codex?.status || "empty",
     fiveHour: codex?.limits?.fiveHour || null,
@@ -531,16 +684,16 @@ function normalizeCodexProvider(codex) {
     limitRows,
     creditRows: [],
     planType: codex?.latest?.planType || codex?.planType || null,
-    primaryLabel: "5h",
-    secondaryLabel: "Woche",
+    primaryLabel: t("limits.fiveHour"),
+    secondaryLabel: t("limits.weekly"),
     todayTokens: last24hTokens,
     allTimeTokens,
     foot: [
-      ["Heute", formatTokens(last24hTokens)],
-      ["5h genutzt", formatPercent(codex?.limits?.fiveHour?.usedPercent)],
-      ["Woche genutzt", formatPercent(codex?.limits?.weekly?.usedPercent)],
-      ["Seit", formatDate(codex?.first?.timestamp)],
-      ["Stand", formatTime(limitUpdatedAt)]
+      [t("labels.today"), formatTokens(last24hTokens)],
+      [t("labels.fiveHourUsed"), formatPercent(codex?.limits?.fiveHour?.usedPercent)],
+      [t("labels.weekUsed"), formatPercent(codex?.limits?.weekly?.usedPercent)],
+      [t("labels.since"), formatDate(codex?.first?.timestamp)],
+      [t("labels.updated"), formatTime(limitUpdatedAt)]
     ]
   };
 }
@@ -555,7 +708,7 @@ function normalizeCodexSparkProvider(spark) {
   return {
     id: "codexSpark",
     name: meta.name,
-    kicker: meta.kicker,
+    kicker: providerKicker("codexSpark"),
     accent: meta.accent,
     status: spark?.status || "empty",
     fiveHour: spark?.limits?.fiveHour || null,
@@ -563,18 +716,18 @@ function normalizeCodexSparkProvider(spark) {
     limitRows,
     creditRows: [],
     planType: spark?.planType || null,
-    primaryLabel: "5h",
-    secondaryLabel: "Woche",
+    primaryLabel: t("limits.fiveHour"),
+    secondaryLabel: t("limits.weekly"),
     todayTokens: spark?.totals?.last24h?.totalTokens,
     allTimeTokens: spark?.totals?.allTime?.totalTokens,
     apiTokens: spark?.totals?.last24h?.totalTokens,
-    message: spark?.message || "Spark-Tokens 24h",
+    message: localizeProviderMessage(spark?.message, "providers.messages.sparkTokens24h"),
     foot: [
-      ["Heute", formatTokens(spark?.totals?.last24h?.totalTokens)],
-      ["5h genutzt", formatPercent(spark?.limits?.fiveHour?.usedPercent)],
-      ["Woche genutzt", formatPercent(spark?.limits?.weekly?.usedPercent)],
-      ["Seit", formatDate(spark?.first?.timestamp)],
-      ["Stand", formatTime(spark?.latest?.timestamp)]
+      [t("labels.today"), formatTokens(spark?.totals?.last24h?.totalTokens)],
+      [t("labels.fiveHourUsed"), formatPercent(spark?.limits?.fiveHour?.usedPercent)],
+      [t("labels.weekUsed"), formatPercent(spark?.limits?.weekly?.usedPercent)],
+      [t("labels.since"), formatDate(spark?.first?.timestamp)],
+      [t("labels.updated"), formatTime(spark?.latest?.timestamp)]
     ]
   };
 }
@@ -586,17 +739,17 @@ function normalizeLocalProvider(id, provider) {
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const planType = provider?.planType || provider?.plan || null;
   const foot = [
-    ["5h Tokens", formatTokens(provider?.totals?.last5h?.totalTokens)],
-    ["Heute", formatTokens(provider?.totals?.last24h?.totalTokens)],
-    ["Gesamt", formatTokens(provider?.totals?.allTime?.totalTokens)],
-    ["Seit", formatDate(provider?.first?.timestamp)],
-    ["Stand", formatTime(provider?.latest?.timestamp)]
+    [t("labels.fiveHourTokens"), formatTokens(provider?.totals?.last5h?.totalTokens)],
+    [t("labels.today"), formatTokens(provider?.totals?.last24h?.totalTokens)],
+    [t("labels.total"), formatTokens(provider?.totals?.allTime?.totalTokens)],
+    [t("labels.since"), formatDate(provider?.first?.timestamp)],
+    [t("labels.updated"), formatTime(provider?.latest?.timestamp)]
   ];
-  if (planType) foot.splice(3, 0, ["Plan", planType]);
+  if (planType) foot.splice(3, 0, [t("labels.plan"), planType]);
   return {
     id,
     name: meta.name,
-    kicker: meta.kicker,
+    kicker: providerKicker(id),
     accent: meta.accent,
     status: provider?.status || "empty",
     fiveHour: hasLimits ? provider?.limits?.fiveHour || null : null,
@@ -604,12 +757,12 @@ function normalizeLocalProvider(id, provider) {
     limitRows,
     creditRows,
     planType,
-    primaryLabel: "5h",
-    secondaryLabel: "Woche",
+    primaryLabel: t("limits.fiveHour"),
+    secondaryLabel: t("limits.weekly"),
     todayTokens: provider?.totals?.last24h?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
-    message: provider?.message || "Log-Tokens 24h",
+    message: localizeProviderMessage(provider?.message, "providers.messages.logTokens24h"),
     foot
   };
 }
@@ -638,7 +791,7 @@ function buildCreditRowsFromCredits(credits) {
   return [
     {
       key: "monthlySpend",
-      label: "Nutzungsguthaben",
+      label: t("credits.monthlySpend"),
       amount: spentAmount,
       currency,
       percent,
@@ -646,12 +799,12 @@ function buildCreditRowsFromCredits(credits) {
       resetLabel: credits.resetLabel
     },
     monthlyLimitAmount > 0
-      ? { key: "monthlyLimit", label: "Monatliches Limit", amount: monthlyLimitAmount, currency }
+      ? { key: "monthlyLimit", label: t("credits.monthlyLimit"), amount: monthlyLimitAmount, currency }
       : null,
     credits.enabled || currentCreditAmount > 0
-      ? { key: "currentCredit", label: "Aktuelles Guthaben", amount: currentCreditAmount, currency }
+      ? { key: "currentCredit", label: t("credits.currentCredit"), amount: currentCreditAmount, currency }
       : null,
-    { key: "autoTopUp", label: "Automatisch aufladen", valueLabel: credits.autoTopUp ? "An" : "Aus" }
+    { key: "autoTopUp", label: t("credits.autoTopUp"), valueLabel: credits.autoTopUp ? t("credits.on") : t("credits.off") }
   ].filter(Boolean);
 }
 
@@ -661,11 +814,11 @@ function normalizeCreditRow(row) {
   const percent = Number(row.percent);
   return {
     key: row.key || row.label || "credit",
-    label: row.label || row.key || "Guthaben",
+    label: creditLabel(row),
     amount: Number.isFinite(amount) ? amount : null,
     currency: row.currency || "EUR",
     percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : null,
-    valueLabel: row.valueLabel || null,
+    valueLabel: creditValueLabel(row),
     resetsAt: row.resetsAt || null,
     resetLabel: row.resetLabel || null
   };
@@ -677,8 +830,8 @@ function normalizeLimitRows(limits) {
     return limits.rows.map(normalizeLimitRow).filter(Boolean);
   }
   return [
-    normalizeLimitRow(limits.fiveHour ? { key: "fiveHour", label: "5h", ...limits.fiveHour } : null),
-    normalizeLimitRow(limits.weekly ? { key: "weekly", label: "Woche", ...limits.weekly } : null)
+    normalizeLimitRow(limits.fiveHour ? { key: "fiveHour", label: t("limits.fiveHour"), ...limits.fiveHour } : null),
+    normalizeLimitRow(limits.weekly ? { key: "weekly", label: t("limits.weekly"), ...limits.weekly } : null)
   ].filter(Boolean);
 }
 
@@ -689,7 +842,7 @@ function normalizeLimitRow(row) {
   const usedPercent = hasUsedPercent ? Math.max(0, Math.min(100, Number(row.usedPercent))) : null;
   return {
     key: row.key || row.label || "limit",
-    label: row.label || row.limitLabel || row.key || "Limit",
+    label: limitLabel(row),
     usedPercent,
     remainingPercent:
       usedPercent === null
@@ -704,7 +857,47 @@ function normalizeLimitRow(row) {
 }
 
 function sourceLabel(id) {
-  return providerMeta[id]?.name || id;
+  return providerMeta[id]?.name || (id === "local" ? t("providers.local.name") : id);
+}
+
+function providerKicker(id) {
+  const meta = providerMeta[id];
+  return meta ? t(meta.kickerKey, {}, meta.name) : id;
+}
+
+function localizeProviderMessage(message, fallbackKey) {
+  const knownMessages = {
+    "Keine Codex 5.3 Spark Events gefunden.": "providers.messages.noCodexSparkEvents",
+    "Keine lokalen Gemini Usage-Logs gefunden.": "providers.messages.noGeminiLogs",
+    "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
+    "Keine lokalen Ollama-Logs gefunden.": "providers.messages.noOllamaLogs"
+  };
+  if (!message) return t(fallbackKey);
+  return knownMessages[message] ? t(knownMessages[message]) : message;
+}
+
+function creditLabel(row) {
+  const key = row.key ? `credits.${row.key}` : "";
+  return key ? t(key, {}, row.label || row.key) : row.label || t("credits.default");
+}
+
+function creditValueLabel(row) {
+  if (row.key !== "autoTopUp") return row.valueLabel || null;
+  const value = String(row.valueLabel || "").trim().toLowerCase();
+  if (["an", "on", "true", "1"].includes(value)) return t("credits.on");
+  if (["aus", "off", "false", "0"].includes(value)) return t("credits.off");
+  return row.valueLabel || null;
+}
+
+function limitLabel(row) {
+  const key = row.key ? `limits.${row.key}` : "";
+  if (key) return t(key, {}, row.label || row.limitLabel || row.key);
+  return row.label || row.limitLabel || t("limits.default");
+}
+
+function limitSummaryLabel(limits) {
+  const rows = Array.isArray(limits?.rows) ? limits.rows : [];
+  return rows.length ? t("limits.limitGroups", { count: rows.length }) : t("limits.noModelLimits");
 }
 
 function normalizeApiProvider(id, provider) {
@@ -715,15 +908,15 @@ function normalizeApiProvider(id, provider) {
   const limitRows = normalizeLimitRows(provider?.limits);
   const planType = provider?.planType || provider?.plan || null;
   const foot = [
-    ["Tokens 7d", formatTokens(totalTokens)],
-    ["Kosten 7d", formatMoney(costs?.total, costs?.currency)]
+    [t("labels.tokens7d"), formatTokens(totalTokens)],
+    [t("labels.cost7d"), formatMoney(costs?.total, costs?.currency)]
   ];
-  if (provider?.limits?.summaryLabel) foot.push(["Limits", provider.limits.summaryLabel]);
-  if (planType) foot.push(["Plan", planType]);
+  if (provider?.limits?.summaryLabel) foot.push([t("labels.limits"), limitSummaryLabel(provider.limits)]);
+  if (planType) foot.push([t("labels.plan"), planType]);
   return {
     id,
     name: meta.name,
-    kicker: meta.kicker,
+    kicker: providerKicker(id),
     accent: meta.accent,
     status: provider?.status || "not_configured",
     fiveHour: null,
@@ -732,16 +925,16 @@ function normalizeApiProvider(id, provider) {
     creditRows,
     planType,
     primaryLabel: "7d",
-    secondaryLabel: "Kosten",
+    secondaryLabel: t("labels.cost"),
     apiTokens: totalTokens,
     allTimeTokens: totalTokens,
     cost: costs?.total,
     currency: costs?.currency,
     message:
       provider?.status === "manual"
-        ? "Guthaben erfasst"
+        ? t("providers.messages.manualCredits")
         : provider?.status === "not_configured"
-          ? "Backend-Key fehlt"
+          ? t("providers.messages.missingBackendKey")
           : provider?.error || "",
     foot
   };
@@ -764,13 +957,13 @@ function providerHasUsage(provider) {
 
 function updateProviderFilterControl(providers, visibleProviders) {
   const hiddenCount = Math.max(providers.length - visibleProviders.length, 0);
-  els.providerFilterBtn.textContent = state.showAllProviders ? "Nur aktive" : "Alle anzeigen";
+  els.providerFilterBtn.textContent = state.showAllProviders ? t("filter.showActive") : t("filter.showAll");
   els.providerFilterBtn.disabled = !providers.length;
   els.providerFilterBtn.title = state.showAllProviders
-    ? "Inaktive Anbieter ausblenden"
+    ? t("filter.hideInactive")
     : hiddenCount
-      ? `${hiddenCount} inaktive Anbieter anzeigen`
-      : "Alle Anbieter sind sichtbar";
+      ? t("filter.showInactiveCount", { count: hiddenCount })
+      : t("filter.allVisible");
   els.providerFilterBtn.setAttribute("aria-pressed", String(state.showAllProviders));
 }
 
@@ -779,15 +972,15 @@ function renderNoActiveProviders() {
     <article class="provider-card provider-empty-state">
       <div class="provider-head">
         <div>
-          <p class="eyebrow">Provider</p>
-          <h2 class="provider-name">Keine aktive Nutzung</h2>
+          <p class="eyebrow">${escapeHtml(t("providers.emptyState.eyebrow"))}</p>
+          <h2 class="provider-name">${escapeHtml(t("providers.emptyState.heading"))}</h2>
         </div>
-        <span class="status-pill status-empty">Leer</span>
+        <span class="status-pill status-empty">${escapeHtml(t("providers.emptyState.status"))}</span>
       </div>
-      <p class="empty-message">Alle Anbieter sind aktuell ohne geloggte Tokens oder Limitdaten.</p>
+      <p class="empty-message">${escapeHtml(t("providers.emptyState.message"))}</p>
       <div class="provider-foot">
-        <div class="mini-stat"><span>Sichtbar</span><strong>0</strong></div>
-        <div class="mini-stat"><span>Ausgeblendet</span><strong>Alle</strong></div>
+        <div class="mini-stat"><span>${escapeHtml(t("providers.emptyState.visible"))}</span><strong>0</strong></div>
+        <div class="mini-stat"><span>${escapeHtml(t("providers.emptyState.hidden"))}</span><strong>${escapeHtml(t("providers.emptyState.all"))}</strong></div>
       </div>
     </article>
   `;
@@ -805,7 +998,7 @@ function renderProvider(provider) {
         <div class="ring" style="--percent: ${Math.min(100, Number(provider.apiTokens || 0) ? 72 : 0)}; --accent: ${provider.accent}">
           <strong>${formatTokens(provider.apiTokens)}</strong>
         </div>
-        <span class="ring-label">${escapeHtml(provider.message || "7 Tage")}</span>
+        <span class="ring-label">${escapeHtml(provider.message || t("providers.messages.sevenDays"))}</span>
       </div>`;
 
   return `
@@ -836,7 +1029,7 @@ function renderProvider(provider) {
 function renderCreditRows(provider) {
   return `
     <div class="credit-rows">
-      <div class="credit-rows-title">Guthaben</div>
+      <div class="credit-rows-title">${escapeHtml(t("credits.title"))}</div>
       ${provider.creditRows.map((row) => renderCreditRow(row, provider.accent)).join("")}
     </div>
   `;
@@ -846,7 +1039,7 @@ function renderCreditRow(row, accent) {
   const value =
     row.valueLabel ||
     (row.amount === null || row.amount === undefined ? "--" : formatMoney(row.amount, row.currency || "EUR"));
-  const detail = row.resetLabel || (row.resetsAt ? `Reset ${formatDateTime(row.resetsAt)}` : "");
+  const detail = row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
   const bar =
     row.percent === null || row.percent === undefined
       ? ""
@@ -880,8 +1073,8 @@ function renderLimitBars(provider) {
 function renderLimitBar(row, accent) {
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
-  const detail = row.resetLabel || (row.resetsAt ? `Reset ${formatDateTime(row.resetsAt)}` : "");
-  const value = row.valueLabel || `${used}% genutzt`;
+  const detail = row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
+  const value = row.valueLabel || t("limits.usedValue", { percent: used });
   return `
     <div class="limit-bar">
       <div class="limit-bar-top">
@@ -924,7 +1117,7 @@ function renderRing(limit, label, accent) {
       <div class="ring" style="--percent: ${remaining}; --accent: ${accent}">
         <strong>${remaining}%</strong>
       </div>
-      <span class="ring-label">${escapeHtml(label)} frei</span>
+      <span class="ring-label">${escapeHtml(t("limits.freeLabel", { label }))}</span>
     </div>
   `;
 }
@@ -940,12 +1133,12 @@ function renderSummary(providers, codex) {
 
 function renderTokenList(totals) {
   const rows = [
-    ["Input", totals?.inputTokens],
-    ["Cache Creation", totals?.cacheCreationInputTokens],
-    ["Cached Input", totals?.cachedInputTokens],
-    ["Output", totals?.outputTokens],
-    ["Reasoning Output", totals?.reasoningOutputTokens],
-    ["Total", totals?.totalTokens]
+    [t("tokens.input"), totals?.inputTokens],
+    [t("tokens.cacheCreation"), totals?.cacheCreationInputTokens],
+    [t("tokens.cachedInput"), totals?.cachedInputTokens],
+    [t("tokens.output"), totals?.outputTokens],
+    [t("tokens.reasoningOutput"), totals?.reasoningOutputTokens],
+    [t("tokens.total"), totals?.totalTokens]
   ];
   els.tokenList.innerHTML = rows
     .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${formatTokens(value)}</dd></div>`)
@@ -970,11 +1163,11 @@ function renderPricing(local) {
             <div class="model-cell">
               <strong>${escapeHtml(price.model)}</strong>
               <span>${escapeHtml(price.provider)}</span>
-              ${price.china ? '<em class="china-badge">China</em>' : ""}
+              ${price.china ? `<em class="china-badge">${escapeHtml(t("pricing.chinaBadge"))}</em>` : ""}
             </div>
           </td>
           <td class="score-cell">${renderQualityScore(price)}</td>
-          <td>${escapeHtml(price.region)}</td>
+          <td>${escapeHtml(priceRegion(price))}</td>
           <td class="numeric">${formatUsdPerM(price.inputUsd)}</td>
           <td class="numeric">${formatCacheRate(price)}</td>
           <td class="numeric">${formatUsdPerM(price.outputUsd)}</td>
@@ -986,7 +1179,11 @@ function renderPricing(local) {
     })
     .join("");
 
-  els.pricingMeta.textContent = `EUR via ECB ${FX_DATE} · Preise ${PRICING_DATE} · Score ${SCORE_DATE}`;
+  els.pricingMeta.textContent = t("pricing.meta", {
+    fxDate: FX_DATE,
+    pricingDate: PRICING_DATE,
+    scoreDate: SCORE_DATE
+  });
 }
 
 function sortPricingRows(rows) {
@@ -1008,7 +1205,7 @@ function pricingSortValue(row, key) {
     {
       model: `${price.provider} ${price.model}`,
       score: modelQualityScores[price.model] || 0,
-      region: price.region,
+      region: priceRegion(price),
       input: price.inputUsd,
       cache: price.cachedInputUsd ?? price.cacheWriteUsd ?? price.inputUsd,
       output: price.outputUsd,
@@ -1019,16 +1216,24 @@ function pricingSortValue(row, key) {
   );
 }
 
+function priceRegion(price) {
+  return price.regionKey ? t(price.regionKey, {}, price.region) : price.region;
+}
+
 function compareSortValues(left, right) {
   const leftNumber = Number(left);
   const rightNumber = Number(right);
   if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
     return leftNumber - rightNumber;
   }
-  return String(left ?? "").localeCompare(String(right ?? ""), "de-DE", {
+  return String(left ?? "").localeCompare(String(right ?? ""), currentLocale(), {
     numeric: true,
     sensitivity: "base"
   });
+}
+
+function currentLocale() {
+  return LANGUAGE_META[state.language]?.locale || "en-US";
 }
 
 function updatePricingSortButtons() {
@@ -1044,7 +1249,7 @@ function renderQualityScore(price) {
   const score = modelQualityScores[price.model];
   if (!score) return "--";
   return `
-    <div class="score-meter" title="Benchmark-Mix ${SCORE_DATE}: ${score}/100">
+    <div class="score-meter" title="${escapeHtml(t("pricing.qualityScoreTitle", { scoreDate: SCORE_DATE, score }))}">
       <span class="score-track"><span class="score-fill" style="width: ${score}%"></span></span>
       <strong>${score}</strong>
     </div>
@@ -1178,7 +1383,7 @@ function renderChart(daily) {
     .join("");
   els.chart.innerHTML = `
     <div class="chart-canvas" style="width: ${width}px">
-    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Token Verlauf" style="width: ${width}px">
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.svgAria"))}" style="width: ${width}px">
       <line x1="${pad}" y1="${axisY}" x2="${width - pad}" y2="${axisY}" stroke="#dfe5dd"></line>
       <text x="${pad}" y="18" class="axis-label">${formatTokens(max)}</text>
       ${bars}
@@ -1302,7 +1507,7 @@ function chartSourceColor(id) {
 function formatChartDate(value) {
   const date = parseDateOnly(value);
   if (!date) return value;
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit"
   }).format(date);
@@ -1311,7 +1516,7 @@ function formatChartDate(value) {
 function formatFullDate(value) {
   const date = parseDateOnly(value);
   if (!date) return value;
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
@@ -1436,8 +1641,8 @@ function formatPercent(value) {
 function formatSharePercent(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "--";
-  if (num > 0 && num < 0.1) return "<0,1%";
-  return `${new Intl.NumberFormat("de-DE", {
+  if (num > 0 && num < 0.1) return t("format.lessThanSharePercent");
+  return `${new Intl.NumberFormat(currentLocale(), {
     maximumFractionDigits: num < 10 ? 1 : 0
   }).format(num)}%`;
 }
@@ -1445,47 +1650,48 @@ function formatSharePercent(value) {
 function formatTokens(value) {
   const num = Number(value || 0);
   if (!num) return "0";
-  if (num >= 1_000_000_000) return `${formatCompact(num / 1_000_000_000)} Mrd`;
-  if (num >= 1_000_000) return `${formatCompact(num / 1_000_000)} Mio`;
-  if (num >= 1_000) return `${formatCompact(num / 1_000)} Tsd`;
+  if (num >= 1_000_000_000) return `${formatCompact(num / 1_000_000_000)} ${t("format.billion")}`;
+  if (num >= 1_000_000) return `${formatCompact(num / 1_000_000)} ${t("format.million")}`;
+  if (num >= 1_000) return `${formatCompact(num / 1_000)} ${t("format.thousand")}`;
   return formatNumber(num);
 }
 
 function formatCompact(value) {
-  return new Intl.NumberFormat("de-DE", {
+  return new Intl.NumberFormat(currentLocale(), {
     maximumFractionDigits: value >= 10 ? 0 : 1
   }).format(value);
 }
 
 function formatNumber(value) {
-  return new Intl.NumberFormat("de-DE").format(Number(value || 0));
+  return new Intl.NumberFormat(currentLocale()).format(Number(value || 0));
 }
 
 function formatUsdPerM(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "--";
   const maxDigits = num < 0.01 ? 6 : num < 1 ? 3 : 2;
-  return `${new Intl.NumberFormat("de-DE", {
+  const formatted = new Intl.NumberFormat(currentLocale(), {
     minimumFractionDigits: num < 1 ? 2 : 0,
     maximumFractionDigits: maxDigits
-  }).format(num)} $/M`;
+  }).format(num);
+  return t("format.usdPerMillion", { value: formatted });
 }
 
 function formatCacheRate(price) {
   const read = price.cachedInputUsd;
   const write = price.cacheWriteUsd;
   if (read !== undefined && write !== undefined) {
-    return `${formatUsdPerM(read)} read / ${formatUsdPerM(write)} write`;
+    return t("format.cacheReadWrite", { read: formatUsdPerM(read), write: formatUsdPerM(write) });
   }
   if (read !== undefined) return formatUsdPerM(read);
-  return "wie Input";
+  return t("format.cacheSameAsInput");
 }
 
 function formatEuro(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "--";
-  if (num > 0 && num < 0.01) return "< 0,01 EUR";
-  return new Intl.NumberFormat("de-DE", {
+  if (num > 0 && num < 0.01) return t("format.lessThanCent");
+  return new Intl.NumberFormat(currentLocale(), {
     style: "currency",
     currency: "EUR"
   }).format(num);
@@ -1493,7 +1699,7 @@ function formatEuro(value) {
 
 function formatMoney(value, currency = "usd") {
   if (value === undefined || value === null) return "--";
-  return new Intl.NumberFormat("de-DE", {
+  return new Intl.NumberFormat(currentLocale(), {
     style: "currency",
     currency: String(currency || "usd").toUpperCase()
   }).format(Number(value || 0));
@@ -1503,7 +1709,7 @@ function shortReset(value) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--";
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -1515,7 +1721,7 @@ function formatTime(value) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--";
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit"
@@ -1526,7 +1732,7 @@ function formatDate(value) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--";
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
@@ -1537,7 +1743,7 @@ function formatDateTime(value) {
   if (!value) return "--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--";
-  return new Intl.DateTimeFormat("de-DE", {
+  return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -1548,11 +1754,11 @@ function formatDateTime(value) {
 function statusText(status) {
   return (
     {
-      live: "Live",
-      manual: "Manuell",
-      empty: "Leer",
-      not_configured: "Setup",
-      error: "Fehler"
+      live: t("status.live"),
+      manual: t("status.manual"),
+      empty: t("status.empty"),
+      not_configured: t("status.not_configured"),
+      error: t("status.error")
     }[status] || status
   );
 }

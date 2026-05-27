@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Teorainneacha agus tokens"
+  },
+  "actions": {
+    "refresh": "Athnuaigh",
+    "settings": "Socruithe",
+    "close": "Dún",
+    "save": "Sábháil"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Pasfhocal",
+    "signIn": "Sínigh isteach",
+    "loginFailed": "Theip ar logáil isteach"
+  },
+  "filter": {
+    "showAll": "Taispeáin gach rud",
+    "showActive": "Gníomhach amháin",
+    "hideInactive": "Folaigh soláthraithe neamhghníomhacha",
+    "showInactiveCount": "Taispeáin {count} soláthraí neamhghníomhacha",
+    "allVisible": "Tá gach soláthraí le feiceáil"
+  },
+  "summary": {
+    "ariaLabel": "Forbhreathnú",
+    "fiveHourOpen": "5h ar fáil",
+    "weeklyOpen": "Seachtain ar fáil",
+    "tokensToday": "Tokens logáilte inniu",
+    "tokensTotal": "Iomlán tokens logáilte"
+  },
+  "chart": {
+    "eyebrow": "Logaí áitiúla",
+    "heading": "Stair tokens ó logaí",
+    "sourceTotalsAria": "Úsáid iomlán de réir soláthraí",
+    "legendAria": "Eochair",
+    "sourceTotalTitle": "Úsáid iomlán",
+    "svgAria": "Stair tokens"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Próiseáil tokens logáilte"
+  },
+  "pricing": {
+    "eyebrow": "Costais API",
+    "heading": "Cad a chosnódh do tokens tríd an API",
+    "meta": "EUR trí ECB {fxDate} · praghsanna {pricingDate} · scór {scoreDate}",
+    "qualityScoreTitle": "Meascán tagarmharcanna {scoreDate}: {score}/100",
+    "chinaBadge": "An tSín",
+    "regions": {
+      "apiDiscount": "Lascaine API"
+    },
+    "columns": {
+      "model": "Samhail",
+      "score": "Scór",
+      "region": "Réigiún",
+      "input": "Ionchur",
+      "cache": "Taisce",
+      "output": "Aschur",
+      "today": "Inniu",
+      "total": "Iomlán",
+      "source": "Foinse"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude áitiúil"
+    },
+    "anthropic": {
+      "kicker": "Úsáid API"
+    },
+    "openai": {
+      "kicker": "API agus creidmheasanna"
+    },
+    "gemini": {
+      "kicker": "Gemini áitiúil"
+    },
+    "ollama": {
+      "kicker": "Ollama áitiúil"
+    },
+    "local": {
+      "name": "Áitiúil"
+    },
+    "gridAria": "Soláthraithe",
+    "messages": {
+      "sparkTokens24h": "Spark tokens 24h",
+      "logTokens24h": "Tokens loga 24h",
+      "manualCredits": "Creidmheasanna curtha isteach",
+      "missingBackendKey": "Eochair backend ar iarraidh",
+      "sevenDays": "7 lá",
+      "noCodexSparkEvents": "Níor aimsíodh aon imeachtaí Codex 5.3 Spark.",
+      "noGeminiLogs": "Níor aimsíodh aon logaí úsáide Gemini áitiúla.",
+      "ollamaLogTokens": "Tokens Ollama áitiúla ó logaí",
+      "noOllamaLogs": "Níor aimsíodh aon logaí Ollama áitiúla."
+    },
+    "emptyState": {
+      "eyebrow": "Soláthraí",
+      "heading": "Gan úsáid ghníomhach",
+      "status": "Folamh",
+      "message": "Níl tokens logáilte ná sonraí teorann ag aon soláthraí faoi láthair.",
+      "visible": "Infheicthe",
+      "hidden": "Folaithe",
+      "all": "Uile"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Láimhe",
+    "empty": "Folamh",
+    "not_configured": "Socrú",
+    "error": "Earráid"
+  },
+  "labels": {
+    "today": "Inniu",
+    "fiveHourUsed": "5h úsáidte",
+    "weekUsed": "Seachtain úsáidte",
+    "since": "Ó",
+    "updated": "Nuashonraithe",
+    "plan": "Plean",
+    "fiveHourTokens": "Tokens 5h",
+    "total": "Iomlán",
+    "cost": "Costas",
+    "tokens7d": "Tokens 7 lá",
+    "cost7d": "Costas 7 lá",
+    "limits": "Teorainneacha"
+  },
+  "credits": {
+    "title": "Creidmheasanna",
+    "monthlySpend": "Creidmheasanna úsáide",
+    "monthlyLimit": "Teorainn mhíosúil",
+    "currentCredit": "Creidmheas reatha",
+    "autoTopUp": "Breisiú uathoibríoch",
+    "default": "Creidmheasanna",
+    "on": "Ar siúl",
+    "off": "As"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Seachtain",
+    "currentSession": "Seisiún reatha",
+    "allModels": "Gach samhail",
+    "claudeDesign": "Claude Design",
+    "default": "Teorainn",
+    "resetPrefix": "Athshocrú {time}",
+    "usedValue": "{percent}% úsáidte",
+    "freeLabel": "{label} ar fáil",
+    "limitGroups": "{count} grúpa teorainneacha",
+    "noModelLimits": "Gan teorainneacha samhlacha"
+  },
+  "tokens": {
+    "input": "Ionchur",
+    "cacheCreation": "Cruthú taisce",
+    "cachedInput": "Ionchur taiscithe",
+    "output": "Aschur",
+    "reasoningOutput": "Aschur réasúnaithe",
+    "total": "Iomlán"
+  },
+  "format": {
+    "billion": "bn",
+    "million": "m",
+    "thousand": "k",
+    "lessThanSharePercent": "<0.1%",
+    "lessThanCent": "< 0.01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} léamh / {write} scríobh",
+    "cacheSameAsInput": "cosúil leis an ionchur"
+  },
+  "settings": {
+    "heading": "Socruithe",
+    "language": {
+      "label": "Teanga"
+    },
+    "fields": {
+      "plan": "Plean",
+      "currentSessionUsed": "Seisiún reatha úsáidte (%)",
+      "currentSessionReset": "Athshocrú an tseisiúin reatha",
+      "allModelsUsed": "Gach samhail úsáidte (%)",
+      "allModelsReset": "Athshocrú gach samhail",
+      "claudeDesignUsed": "Claude Design úsáidte (%)",
+      "claudeDesignReset": "Athshocrú Claude Design",
+      "showCredits": "Taispeáin creidmheasanna",
+      "creditsSpent": "Creidmheasanna caite (EUR)",
+      "monthlyLimit": "Teorainn mhíosúil (EUR)",
+      "currentCredit": "Creidmheas reatha (EUR)",
+      "creditReset": "Athshocrú creidmheasa",
+      "autoTopUp": "Breisiú uathoibríoch",
+      "windowUsed": "Fuinneog úsáidte (%)",
+      "windowReset": "Athshocrú fuinneoige",
+      "weekUsed": "Seachtain úsáidte (%)",
+      "weekReset": "Athshocrú seachtaine"
+    }
+  },
+  "errors": {
+    "loadUsage": "Earráid"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Gränser och tokens"
+  },
+  "actions": {
+    "refresh": "Uppdatera",
+    "settings": "Inställningar",
+    "close": "Stäng",
+    "save": "Spara"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Lösenord",
+    "signIn": "Logga in",
+    "loginFailed": "Inloggning misslyckades"
+  },
+  "filter": {
+    "showAll": "Visa alla",
+    "showActive": "Endast aktiva",
+    "hideInactive": "Dölj inaktiva leverantörer",
+    "showInactiveCount": "Visa {count} inaktiva leverantörer",
+    "allVisible": "Alla leverantörer är synliga"
+  },
+  "summary": {
+    "ariaLabel": "Översikt",
+    "fiveHourOpen": "5h tillgängligt",
+    "weeklyOpen": "Vecka tillgänglig",
+    "tokensToday": "Loggade tokens idag",
+    "tokensTotal": "Totalt loggade tokens"
+  },
+  "chart": {
+    "eyebrow": "Lokala loggar",
+    "heading": "Tokenhistorik från loggar",
+    "sourceTotalsAria": "Total användning per leverantör",
+    "legendAria": "Förklaring",
+    "sourceTotalTitle": "Total användning",
+    "svgAria": "Tokenhistorik"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Loggad tokenbearbetning"
+  },
+  "pricing": {
+    "eyebrow": "API-kostnader",
+    "heading": "Vad dina tokens skulle ha kostat via API",
+    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmarkmix {scoreDate}: {score}/100",
+    "chinaBadge": "Kina",
+    "regions": {
+      "apiDiscount": "API-rabatt"
+    },
+    "columns": {
+      "model": "Modell",
+      "score": "Score",
+      "region": "Region",
+      "input": "Indata",
+      "cache": "Cache",
+      "output": "Utdata",
+      "today": "Idag",
+      "total": "Totalt",
+      "source": "Källa"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokalt"
+    },
+    "anthropic": {
+      "kicker": "API-användning"
+    },
+    "openai": {
+      "kicker": "API och krediter"
+    },
+    "gemini": {
+      "kicker": "Gemini lokalt"
+    },
+    "ollama": {
+      "kicker": "Ollama lokalt"
+    },
+    "local": {
+      "name": "Lokalt"
+    },
+    "gridAria": "Leverantörer",
+    "messages": {
+      "sparkTokens24h": "Spark-tokens 24h",
+      "logTokens24h": "Loggtokens 24h",
+      "manualCredits": "Krediter angivna",
+      "missingBackendKey": "Backend-nyckel saknas",
+      "sevenDays": "7 dagar",
+      "noCodexSparkEvents": "Inga Codex 5.3 Spark-händelser hittades.",
+      "noGeminiLogs": "Inga lokala Gemini-användningsloggar hittades.",
+      "ollamaLogTokens": "Lokala Ollama-tokens från loggar",
+      "noOllamaLogs": "Inga lokala Ollama-loggar hittades."
+    },
+    "emptyState": {
+      "eyebrow": "Leverantör",
+      "heading": "Ingen aktiv användning",
+      "status": "Tom",
+      "message": "Ingen leverantör har för närvarande loggade tokens eller gränsdata.",
+      "visible": "Synlig",
+      "hidden": "Dold",
+      "all": "Alla"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manuell",
+    "empty": "Tom",
+    "not_configured": "Konfiguration",
+    "error": "Fel"
+  },
+  "labels": {
+    "today": "Idag",
+    "fiveHourUsed": "5h använt",
+    "weekUsed": "Vecka använd",
+    "since": "Sedan",
+    "updated": "Uppdaterad",
+    "plan": "Plan",
+    "fiveHourTokens": "5h tokens",
+    "total": "Totalt",
+    "cost": "Kostnad",
+    "tokens7d": "Tokens 7 dagar",
+    "cost7d": "Kostnad 7 dagar",
+    "limits": "Gränser"
+  },
+  "credits": {
+    "title": "Krediter",
+    "monthlySpend": "Användningskrediter",
+    "monthlyLimit": "Månadsgräns",
+    "currentCredit": "Aktuell kredit",
+    "autoTopUp": "Automatisk påfyllning",
+    "default": "Krediter",
+    "on": "På",
+    "off": "Av"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Vecka",
+    "currentSession": "Aktuell session",
+    "allModels": "Alla modeller",
+    "claudeDesign": "Claude Design",
+    "default": "Gräns",
+    "resetPrefix": "Återställning {time}",
+    "usedValue": "{percent}% använt",
+    "freeLabel": "{label} tillgängligt",
+    "limitGroups": "{count} gränsgrupper",
+    "noModelLimits": "Inga modellgränser"
+  },
+  "tokens": {
+    "input": "Indata",
+    "cacheCreation": "Skapa cache",
+    "cachedInput": "Cachad indata",
+    "output": "Utdata",
+    "reasoningOutput": "Reasoning-utdata",
+    "total": "Totalt"
+  },
+  "format": {
+    "billion": "mdr",
+    "million": "mn",
+    "thousand": "tn",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} läs / {write} skriv",
+    "cacheSameAsInput": "som indata"
+  },
+  "settings": {
+    "heading": "Inställningar",
+    "language": {
+      "label": "Språk"
+    },
+    "fields": {
+      "plan": "Plan",
+      "currentSessionUsed": "Aktuell session använd (%)",
+      "currentSessionReset": "Återställ aktuell session",
+      "allModelsUsed": "Alla modeller använda (%)",
+      "allModelsReset": "Återställ alla modeller",
+      "claudeDesignUsed": "Claude Design använt (%)",
+      "claudeDesignReset": "Återställ Claude Design",
+      "showCredits": "Visa krediter",
+      "creditsSpent": "Spenderade krediter (EUR)",
+      "monthlyLimit": "Månadsgräns (EUR)",
+      "currentCredit": "Aktuell kredit (EUR)",
+      "creditReset": "Återställ kredit",
+      "autoTopUp": "Automatisk påfyllning",
+      "windowUsed": "Fönster använt (%)",
+      "windowReset": "Återställ fönster",
+      "weekUsed": "Vecka använd (%)",
+      "weekReset": "Återställ vecka"
+    }
+  },
+  "errors": {
+    "loadUsage": "Fel"
+  }
+}

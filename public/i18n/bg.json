@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Лимити и токени"
+  },
+  "actions": {
+    "refresh": "Обновяване",
+    "settings": "Настройки",
+    "close": "Затваряне",
+    "save": "Запазване"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Парола",
+    "signIn": "Вход",
+    "loginFailed": "Неуспешен вход"
+  },
+  "filter": {
+    "showAll": "Покажи всички",
+    "showActive": "Само активни",
+    "hideInactive": "Скрий неактивните доставчици",
+    "showInactiveCount": "Покажи {count} неактивни доставчици",
+    "allVisible": "Всички доставчици са видими"
+  },
+  "summary": {
+    "ariaLabel": "Общ преглед",
+    "fiveHourOpen": "5h налични",
+    "weeklyOpen": "Седмица налична",
+    "tokensToday": "Записани токени днес",
+    "tokensTotal": "Общо записани токени"
+  },
+  "chart": {
+    "eyebrow": "Локални логове",
+    "heading": "История на токените от логове",
+    "sourceTotalsAria": "Общо използване по доставчик",
+    "legendAria": "Легенда",
+    "sourceTotalTitle": "Общо използване",
+    "svgAria": "История на токените"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Записана обработка на токени"
+  },
+  "pricing": {
+    "eyebrow": "API разходи",
+    "heading": "Колко биха стрували токените ти през API",
+    "meta": "EUR чрез ECB {fxDate} · цени {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Бенчмарк микс {scoreDate}: {score}/100",
+    "chinaBadge": "Китай",
+    "regions": {
+      "apiDiscount": "API отстъпка"
+    },
+    "columns": {
+      "model": "Модел",
+      "score": "Score",
+      "region": "Регион",
+      "input": "Вход",
+      "cache": "Кеш",
+      "output": "Изход",
+      "today": "Днес",
+      "total": "Общо",
+      "source": "Източник"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude локално"
+    },
+    "anthropic": {
+      "kicker": "API използване"
+    },
+    "openai": {
+      "kicker": "API и кредити"
+    },
+    "gemini": {
+      "kicker": "Gemini локално"
+    },
+    "ollama": {
+      "kicker": "Ollama локално"
+    },
+    "local": {
+      "name": "Локално"
+    },
+    "gridAria": "Доставчици",
+    "messages": {
+      "sparkTokens24h": "Spark токени 24h",
+      "logTokens24h": "Лог токени 24h",
+      "manualCredits": "Въведени кредити",
+      "missingBackendKey": "Липсва backend ключ",
+      "sevenDays": "7 дни",
+      "noCodexSparkEvents": "Няма намерени Codex 5.3 Spark събития.",
+      "noGeminiLogs": "Няма намерени локални Gemini usage логове.",
+      "ollamaLogTokens": "Локални Ollama токени от логове",
+      "noOllamaLogs": "Няма намерени локални Ollama логове."
+    },
+    "emptyState": {
+      "eyebrow": "Доставчик",
+      "heading": "Няма активна употреба",
+      "status": "Празно",
+      "message": "В момента всички доставчици нямат записани токени или данни за лимити.",
+      "visible": "Видими",
+      "hidden": "Скрити",
+      "all": "Всички"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Ръчно",
+    "empty": "Празно",
+    "not_configured": "Настройка",
+    "error": "Грешка"
+  },
+  "labels": {
+    "today": "Днес",
+    "fiveHourUsed": "5h използвани",
+    "weekUsed": "Седмица използвана",
+    "since": "От",
+    "updated": "Обновено",
+    "plan": "План",
+    "fiveHourTokens": "5h токени",
+    "total": "Общо",
+    "cost": "Разход",
+    "tokens7d": "Токени 7 дни",
+    "cost7d": "Разход 7 дни",
+    "limits": "Лимити"
+  },
+  "credits": {
+    "title": "Кредити",
+    "monthlySpend": "Кредити за употреба",
+    "monthlyLimit": "Месечен лимит",
+    "currentCredit": "Текущ кредит",
+    "autoTopUp": "Автоматично зареждане",
+    "default": "Кредити",
+    "on": "Вкл.",
+    "off": "Изкл."
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Седмица",
+    "currentSession": "Текуща сесия",
+    "allModels": "Всички модели",
+    "claudeDesign": "Claude Design",
+    "default": "Лимит",
+    "resetPrefix": "Нулиране {time}",
+    "usedValue": "{percent}% използвани",
+    "freeLabel": "{label} налични",
+    "limitGroups": "{count} групи лимити",
+    "noModelLimits": "Няма лимити за модели"
+  },
+  "tokens": {
+    "input": "Вход",
+    "cacheCreation": "Създаване на кеш",
+    "cachedInput": "Кеширан вход",
+    "output": "Изход",
+    "reasoningOutput": "Reasoning изход",
+    "total": "Общо"
+  },
+  "format": {
+    "billion": "млрд.",
+    "million": "млн.",
+    "thousand": "хил.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} четене / {write} запис",
+    "cacheSameAsInput": "като входа"
+  },
+  "settings": {
+    "heading": "Настройки",
+    "language": {
+      "label": "Език"
+    },
+    "fields": {
+      "plan": "План",
+      "currentSessionUsed": "Текуща сесия използвана (%)",
+      "currentSessionReset": "Нулиране на текуща сесия",
+      "allModelsUsed": "Всички модели използвани (%)",
+      "allModelsReset": "Нулиране на всички модели",
+      "claudeDesignUsed": "Claude Design използван (%)",
+      "claudeDesignReset": "Нулиране на Claude Design",
+      "showCredits": "Показвай кредити",
+      "creditsSpent": "Изразходвани кредити (EUR)",
+      "monthlyLimit": "Месечен лимит (EUR)",
+      "currentCredit": "Текущ кредит (EUR)",
+      "creditReset": "Нулиране на кредити",
+      "autoTopUp": "Автоматично зареждане",
+      "windowUsed": "Прозорец използван (%)",
+      "windowReset": "Нулиране на прозореца",
+      "weekUsed": "Седмица използвана (%)",
+      "weekReset": "Нулиране на седмицата"
+    }
+  },
+  "errors": {
+    "loadUsage": "Грешка"
+  }
+}

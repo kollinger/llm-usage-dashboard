@@ -31,6 +31,7 @@ body {
 
 button,
 input,
+select,
 a {
   font: inherit;
 }
@@ -811,7 +812,8 @@ legend {
   font-weight: 800;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -819,6 +821,14 @@ input {
   padding: 8px 10px;
   color: var(--ink);
   background: #fff;
+}
+
+.settings-preferences {
+  margin-bottom: 14px;
+}
+
+.language-field {
+  max-width: 280px;
 }
 
 .check-field {

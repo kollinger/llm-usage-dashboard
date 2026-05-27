@@ -17,6 +17,7 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 - Manual quota and credit tracking for Claude, Gemini, and GPT/OpenAI where providers do not expose stable local APIs.
 - Optional OpenAI and Anthropic admin API usage/cost aggregation when admin keys are provided.
 - Token history chart with per-provider color stacking, source totals, and API price comparison estimates for local/non-API usage.
+- Multilingual UI with system-language detection and a settings language selector.
 - Optional password login and OIDC/SSO.
 - Electron builds for macOS and Linux AppImage.
 
@@ -146,6 +147,14 @@ OIDC_SCOPE=openid profile email
 ```
 
 Never commit `.env` files with real secrets.
+
+## Localization
+
+The frontend is localized through JSON files in `public/i18n/`. The language selector is generated from `LANGUAGE_OPTIONS` in `public/app.js`, and every supported language file must keep the same translation keys.
+
+Supported languages: Bulgarian (`bg`), Czech (`cs`), Danish (`da`), German (`de`), Greek (`el`), English (`en`), Spanish (`es`), Estonian (`et`), Finnish (`fi`), French (`fr`), Irish (`ga`), Croatian (`hr`), Hungarian (`hu`), Italian (`it`), Lithuanian (`lt`), Latvian (`lv`), Maltese (`mt`), Dutch (`nl`), Polish (`pl`), Portuguese (`pt`), Romanian (`ro`), Slovak (`sk`), Slovenian (`sl`), Swedish (`sv`), Arabic (`ar`), Russian (`ru`), and Simplified Chinese (`zh`).
+
+When adding or changing user-facing UI text, update every file in `public/i18n/`, keep interpolation placeholders like `{count}` identical across languages, and visually spot-check long translations and Arabic RTL layout when practical.
 
 ## Data Sources
 
@@ -289,6 +298,7 @@ server.js                         Express API and usage parsers
 public/index.html                 App shell
 public/app.js                     Frontend state, charts, rendering
 public/styles.css                 Dashboard styling
+public/i18n/*.json                Localized frontend strings
 electron/main.js                  Electron wrapper around the local server
 scripts/claude-statusline-capture.js
 Dockerfile

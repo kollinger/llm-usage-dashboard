@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limity a tokeny"
+  },
+  "actions": {
+    "refresh": "Obnovit",
+    "settings": "Nastavení",
+    "close": "Zavřít",
+    "save": "Uložit"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Heslo",
+    "signIn": "Přihlásit se",
+    "loginFailed": "Přihlášení selhalo"
+  },
+  "filter": {
+    "showAll": "Zobrazit vše",
+    "showActive": "Jen aktivní",
+    "hideInactive": "Skrýt neaktivní poskytovatele",
+    "showInactiveCount": "Zobrazit {count} neaktivních poskytovatelů",
+    "allVisible": "Všichni poskytovatelé jsou viditelní"
+  },
+  "summary": {
+    "ariaLabel": "Přehled",
+    "fiveHourOpen": "5h k dispozici",
+    "weeklyOpen": "Týden k dispozici",
+    "tokensToday": "Dnes zalogované tokeny",
+    "tokensTotal": "Celkem zalogované tokeny"
+  },
+  "chart": {
+    "eyebrow": "Lokální logy",
+    "heading": "Historie tokenů z logů",
+    "sourceTotalsAria": "Celkové využití podle poskytovatele",
+    "legendAria": "Legenda",
+    "sourceTotalTitle": "Celkové využití",
+    "svgAria": "Historie tokenů"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Zalogované zpracování tokenů"
+  },
+  "pricing": {
+    "eyebrow": "Náklady API",
+    "heading": "Kolik by tvoje tokeny stály přes API",
+    "meta": "EUR přes ECB {fxDate} · ceny {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmark mix {scoreDate}: {score}/100",
+    "chinaBadge": "Čína",
+    "regions": {
+      "apiDiscount": "API sleva"
+    },
+    "columns": {
+      "model": "Model",
+      "score": "Skóre",
+      "region": "Region",
+      "input": "Vstup",
+      "cache": "Cache",
+      "output": "Výstup",
+      "today": "Dnes",
+      "total": "Celkem",
+      "source": "Zdroj"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokálně"
+    },
+    "anthropic": {
+      "kicker": "Využití API"
+    },
+    "openai": {
+      "kicker": "API a kredity"
+    },
+    "gemini": {
+      "kicker": "Gemini lokálně"
+    },
+    "ollama": {
+      "kicker": "Ollama lokálně"
+    },
+    "local": {
+      "name": "Lokálně"
+    },
+    "gridAria": "Poskytovatelé",
+    "messages": {
+      "sparkTokens24h": "Spark tokeny 24h",
+      "logTokens24h": "Log tokeny 24h",
+      "manualCredits": "Kredity zadány",
+      "missingBackendKey": "Chybí backend klíč",
+      "sevenDays": "7 dní",
+      "noCodexSparkEvents": "Nenalezeny žádné události Codex 5.3 Spark.",
+      "noGeminiLogs": "Nenalezeny žádné lokální Gemini usage logy.",
+      "ollamaLogTokens": "Lokální Ollama tokeny z logů",
+      "noOllamaLogs": "Nenalezeny žádné lokální Ollama logy."
+    },
+    "emptyState": {
+      "eyebrow": "Poskytovatel",
+      "heading": "Žádné aktivní využití",
+      "status": "Prázdné",
+      "message": "Žádný poskytovatel aktuálně nemá zalogované tokeny ani data limitů.",
+      "visible": "Viditelné",
+      "hidden": "Skryté",
+      "all": "Vše"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Ručně",
+    "empty": "Prázdné",
+    "not_configured": "Nastavení",
+    "error": "Chyba"
+  },
+  "labels": {
+    "today": "Dnes",
+    "fiveHourUsed": "5h využito",
+    "weekUsed": "Týden využit",
+    "since": "Od",
+    "updated": "Aktualizováno",
+    "plan": "Plán",
+    "fiveHourTokens": "5h tokeny",
+    "total": "Celkem",
+    "cost": "Náklad",
+    "tokens7d": "Tokeny 7 dní",
+    "cost7d": "Náklad 7 dní",
+    "limits": "Limity"
+  },
+  "credits": {
+    "title": "Kredity",
+    "monthlySpend": "Kredity využití",
+    "monthlyLimit": "Měsíční limit",
+    "currentCredit": "Aktuální kredit",
+    "autoTopUp": "Automatické dobíjení",
+    "default": "Kredity",
+    "on": "Zap.",
+    "off": "Vyp."
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Týden",
+    "currentSession": "Aktuální relace",
+    "allModels": "Všechny modely",
+    "claudeDesign": "Claude Design",
+    "default": "Limit",
+    "resetPrefix": "Reset {time}",
+    "usedValue": "{percent}% využito",
+    "freeLabel": "{label} k dispozici",
+    "limitGroups": "{count} skupin limitů",
+    "noModelLimits": "Žádné modelové limity"
+  },
+  "tokens": {
+    "input": "Vstup",
+    "cacheCreation": "Vytvoření cache",
+    "cachedInput": "Cachovaný vstup",
+    "output": "Výstup",
+    "reasoningOutput": "Výstup reasoning",
+    "total": "Celkem"
+  },
+  "format": {
+    "billion": "mld.",
+    "million": "mil.",
+    "thousand": "tis.",
+    "lessThanSharePercent": "<0,1 %",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} čtení / {write} zápis",
+    "cacheSameAsInput": "jako vstup"
+  },
+  "settings": {
+    "heading": "Nastavení",
+    "language": {
+      "label": "Jazyk"
+    },
+    "fields": {
+      "plan": "Plán",
+      "currentSessionUsed": "Aktuální relace využita (%)",
+      "currentSessionReset": "Reset aktuální relace",
+      "allModelsUsed": "Všechny modely využity (%)",
+      "allModelsReset": "Reset všech modelů",
+      "claudeDesignUsed": "Claude Design využit (%)",
+      "claudeDesignReset": "Reset Claude Design",
+      "showCredits": "Zobrazit kredity",
+      "creditsSpent": "Utracené kredity (EUR)",
+      "monthlyLimit": "Měsíční limit (EUR)",
+      "currentCredit": "Aktuální kredit (EUR)",
+      "creditReset": "Reset kreditu",
+      "autoTopUp": "Automatické dobíjení",
+      "windowUsed": "Okno využito (%)",
+      "windowReset": "Reset okna",
+      "weekUsed": "Týden využit (%)",
+      "weekReset": "Reset týdne"
+    }
+  },
+  "errors": {
+    "loadUsage": "Chyba"
+  }
+}

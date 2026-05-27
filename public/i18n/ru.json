@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Лимиты и токены"
+  },
+  "actions": {
+    "refresh": "Обновить",
+    "settings": "Настройки",
+    "close": "Закрыть",
+    "save": "Сохранить"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "loginFailed": "Не удалось войти"
+  },
+  "filter": {
+    "showAll": "Показать все",
+    "showActive": "Только активные",
+    "hideInactive": "Скрыть неактивных провайдеров",
+    "showInactiveCount": "Показать {count} неактивных провайдеров",
+    "allVisible": "Все провайдеры видимы"
+  },
+  "summary": {
+    "ariaLabel": "Обзор",
+    "fiveHourOpen": "5h доступно",
+    "weeklyOpen": "Неделя доступна",
+    "tokensToday": "Токены, записанные сегодня",
+    "tokensTotal": "Всего записанных токенов"
+  },
+  "chart": {
+    "eyebrow": "Локальные логи",
+    "heading": "История токенов из логов",
+    "sourceTotalsAria": "Общее использование по провайдерам",
+    "legendAria": "Легенда",
+    "sourceTotalTitle": "Общее использование",
+    "svgAria": "История токенов"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Записанная обработка токенов"
+  },
+  "pricing": {
+    "eyebrow": "Стоимость API",
+    "heading": "Сколько стоили бы твои токены через API",
+    "meta": "EUR через ECB {fxDate} · цены {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Смесь бенчмарков {scoreDate}: {score}/100",
+    "chinaBadge": "Китай",
+    "regions": {
+      "apiDiscount": "Скидка API"
+    },
+    "columns": {
+      "model": "Модель",
+      "score": "Score",
+      "region": "Регион",
+      "input": "Ввод",
+      "cache": "Кэш",
+      "output": "Вывод",
+      "today": "Сегодня",
+      "total": "Итого",
+      "source": "Источник"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude локально"
+    },
+    "anthropic": {
+      "kicker": "Использование API"
+    },
+    "openai": {
+      "kicker": "API и кредиты"
+    },
+    "gemini": {
+      "kicker": "Gemini локально"
+    },
+    "ollama": {
+      "kicker": "Ollama локально"
+    },
+    "local": {
+      "name": "Локально"
+    },
+    "gridAria": "Провайдеры",
+    "messages": {
+      "sparkTokens24h": "Spark-токены 24h",
+      "logTokens24h": "Токены логов 24h",
+      "manualCredits": "Кредиты введены",
+      "missingBackendKey": "Отсутствует backend-ключ",
+      "sevenDays": "7 дней",
+      "noCodexSparkEvents": "События Codex 5.3 Spark не найдены.",
+      "noGeminiLogs": "Локальные логи использования Gemini не найдены.",
+      "ollamaLogTokens": "Локальные токены Ollama из логов",
+      "noOllamaLogs": "Локальные логи Ollama не найдены."
+    },
+    "emptyState": {
+      "eyebrow": "Провайдер",
+      "heading": "Нет активного использования",
+      "status": "Пусто",
+      "message": "Сейчас ни у одного провайдера нет записанных токенов или данных лимитов.",
+      "visible": "Видимые",
+      "hidden": "Скрытые",
+      "all": "Все"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Вручную",
+    "empty": "Пусто",
+    "not_configured": "Настройка",
+    "error": "Ошибка"
+  },
+  "labels": {
+    "today": "Сегодня",
+    "fiveHourUsed": "5h использовано",
+    "weekUsed": "Неделя использована",
+    "since": "С",
+    "updated": "Обновлено",
+    "plan": "План",
+    "fiveHourTokens": "Токены 5h",
+    "total": "Итого",
+    "cost": "Стоимость",
+    "tokens7d": "Токены 7 дней",
+    "cost7d": "Стоимость 7 дней",
+    "limits": "Лимиты"
+  },
+  "credits": {
+    "title": "Кредиты",
+    "monthlySpend": "Кредиты использования",
+    "monthlyLimit": "Месячный лимит",
+    "currentCredit": "Текущий кредит",
+    "autoTopUp": "Автопополнение",
+    "default": "Кредиты",
+    "on": "Вкл.",
+    "off": "Выкл."
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Неделя",
+    "currentSession": "Текущая сессия",
+    "allModels": "Все модели",
+    "claudeDesign": "Claude Design",
+    "default": "Лимит",
+    "resetPrefix": "Сброс {time}",
+    "usedValue": "{percent}% использовано",
+    "freeLabel": "{label} доступно",
+    "limitGroups": "{count} групп лимитов",
+    "noModelLimits": "Нет лимитов моделей"
+  },
+  "tokens": {
+    "input": "Ввод",
+    "cacheCreation": "Создание кэша",
+    "cachedInput": "Кэшированный ввод",
+    "output": "Вывод",
+    "reasoningOutput": "Вывод reasoning",
+    "total": "Итого"
+  },
+  "format": {
+    "billion": "млрд",
+    "million": "млн",
+    "thousand": "тыс.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} чтение / {write} запись",
+    "cacheSameAsInput": "как ввод"
+  },
+  "settings": {
+    "heading": "Настройки",
+    "language": {
+      "label": "Язык"
+    },
+    "fields": {
+      "plan": "План",
+      "currentSessionUsed": "Текущая сессия использована (%)",
+      "currentSessionReset": "Сброс текущей сессии",
+      "allModelsUsed": "Все модели использованы (%)",
+      "allModelsReset": "Сброс всех моделей",
+      "claudeDesignUsed": "Claude Design использован (%)",
+      "claudeDesignReset": "Сброс Claude Design",
+      "showCredits": "Показать кредиты",
+      "creditsSpent": "Потраченные кредиты (EUR)",
+      "monthlyLimit": "Месячный лимит (EUR)",
+      "currentCredit": "Текущий кредит (EUR)",
+      "creditReset": "Сброс кредита",
+      "autoTopUp": "Автопополнение",
+      "windowUsed": "Окно использовано (%)",
+      "windowReset": "Сброс окна",
+      "weekUsed": "Неделя использована (%)",
+      "weekReset": "Сброс недели"
+    }
+  },
+  "errors": {
+    "loadUsage": "Ошибка"
+  }
+}

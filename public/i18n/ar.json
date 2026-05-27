@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "الحدود والتوكنات"
+  },
+  "actions": {
+    "refresh": "تحديث",
+    "settings": "الإعدادات",
+    "close": "إغلاق",
+    "save": "حفظ"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "loginFailed": "فشل تسجيل الدخول"
+  },
+  "filter": {
+    "showAll": "إظهار الكل",
+    "showActive": "النشطة فقط",
+    "hideInactive": "إخفاء المزوّدين غير النشطين",
+    "showInactiveCount": "إظهار {count} مزوّدين غير نشطين",
+    "allVisible": "كل المزوّدين ظاهرون"
+  },
+  "summary": {
+    "ariaLabel": "نظرة عامة",
+    "fiveHourOpen": "5h متاحة",
+    "weeklyOpen": "الأسبوع متاح",
+    "tokensToday": "التوكنات المسجلة اليوم",
+    "tokensTotal": "إجمالي التوكنات المسجلة"
+  },
+  "chart": {
+    "eyebrow": "السجلات المحلية",
+    "heading": "سجل التوكنات من السجلات",
+    "sourceTotalsAria": "إجمالي الاستخدام حسب المزوّد",
+    "legendAria": "وسيلة الإيضاح",
+    "sourceTotalTitle": "إجمالي الاستخدام",
+    "svgAria": "سجل التوكنات"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "معالجة التوكنات المسجلة"
+  },
+  "pricing": {
+    "eyebrow": "تكاليف API",
+    "heading": "ما كانت ستكلفه توكناتك عبر API",
+    "meta": "EUR عبر ECB {fxDate} · الأسعار {pricingDate} · الدرجة {scoreDate}",
+    "qualityScoreTitle": "مزيج المعايير {scoreDate}: {score}/100",
+    "chinaBadge": "الصين",
+    "regions": {
+      "apiDiscount": "خصم API"
+    },
+    "columns": {
+      "model": "النموذج",
+      "score": "الدرجة",
+      "region": "المنطقة",
+      "input": "الإدخال",
+      "cache": "الكاش",
+      "output": "الإخراج",
+      "today": "اليوم",
+      "total": "الإجمالي",
+      "source": "المصدر"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude محلي"
+    },
+    "anthropic": {
+      "kicker": "استخدام API"
+    },
+    "openai": {
+      "kicker": "API والرصيد"
+    },
+    "gemini": {
+      "kicker": "Gemini محلي"
+    },
+    "ollama": {
+      "kicker": "Ollama محلي"
+    },
+    "local": {
+      "name": "محلي"
+    },
+    "gridAria": "المزوّدون",
+    "messages": {
+      "sparkTokens24h": "توكنات Spark خلال 24h",
+      "logTokens24h": "توكنات السجل خلال 24h",
+      "manualCredits": "تم إدخال الرصيد",
+      "missingBackendKey": "مفتاح backend مفقود",
+      "sevenDays": "7 أيام",
+      "noCodexSparkEvents": "لم يتم العثور على أحداث Codex 5.3 Spark.",
+      "noGeminiLogs": "لم يتم العثور على سجلات استخدام Gemini محلية.",
+      "ollamaLogTokens": "توكنات Ollama المحلية من السجلات",
+      "noOllamaLogs": "لم يتم العثور على سجلات Ollama محلية."
+    },
+    "emptyState": {
+      "eyebrow": "المزوّد",
+      "heading": "لا يوجد استخدام نشط",
+      "status": "فارغ",
+      "message": "لا يوجد لدى أي مزوّد حالياً توكنات مسجلة أو بيانات حدود.",
+      "visible": "ظاهر",
+      "hidden": "مخفي",
+      "all": "الكل"
+    }
+  },
+  "status": {
+    "live": "مباشر",
+    "manual": "يدوي",
+    "empty": "فارغ",
+    "not_configured": "الإعداد",
+    "error": "خطأ"
+  },
+  "labels": {
+    "today": "اليوم",
+    "fiveHourUsed": "5h مستخدمة",
+    "weekUsed": "الأسبوع مستخدم",
+    "since": "منذ",
+    "updated": "محدّث",
+    "plan": "الخطة",
+    "fiveHourTokens": "توكنات 5h",
+    "total": "الإجمالي",
+    "cost": "التكلفة",
+    "tokens7d": "توكنات 7 أيام",
+    "cost7d": "تكلفة 7 أيام",
+    "limits": "الحدود"
+  },
+  "credits": {
+    "title": "الرصيد",
+    "monthlySpend": "رصيد الاستخدام",
+    "monthlyLimit": "الحد الشهري",
+    "currentCredit": "الرصيد الحالي",
+    "autoTopUp": "شحن تلقائي",
+    "default": "الرصيد",
+    "on": "تشغيل",
+    "off": "إيقاف"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "الأسبوع",
+    "currentSession": "الجلسة الحالية",
+    "allModels": "كل النماذج",
+    "claudeDesign": "Claude Design",
+    "default": "الحد",
+    "resetPrefix": "إعادة ضبط {time}",
+    "usedValue": "{percent}% مستخدم",
+    "freeLabel": "{label} متاح",
+    "limitGroups": "{count} مجموعات حدود",
+    "noModelLimits": "لا توجد حدود للنماذج"
+  },
+  "tokens": {
+    "input": "الإدخال",
+    "cacheCreation": "إنشاء الكاش",
+    "cachedInput": "إدخال مخزّن في الكاش",
+    "output": "الإخراج",
+    "reasoningOutput": "إخراج التفكير",
+    "total": "الإجمالي"
+  },
+  "format": {
+    "billion": "مليار",
+    "million": "مليون",
+    "thousand": "ألف",
+    "lessThanSharePercent": "<0.1%",
+    "lessThanCent": "< 0.01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} قراءة / {write} كتابة",
+    "cacheSameAsInput": "مثل الإدخال"
+  },
+  "settings": {
+    "heading": "الإعدادات",
+    "language": {
+      "label": "اللغة"
+    },
+    "fields": {
+      "plan": "الخطة",
+      "currentSessionUsed": "الجلسة الحالية مستخدمة (%)",
+      "currentSessionReset": "إعادة ضبط الجلسة الحالية",
+      "allModelsUsed": "كل النماذج مستخدمة (%)",
+      "allModelsReset": "إعادة ضبط كل النماذج",
+      "claudeDesignUsed": "Claude Design مستخدم (%)",
+      "claudeDesignReset": "إعادة ضبط Claude Design",
+      "showCredits": "إظهار الرصيد",
+      "creditsSpent": "الرصيد المصروف (EUR)",
+      "monthlyLimit": "الحد الشهري (EUR)",
+      "currentCredit": "الرصيد الحالي (EUR)",
+      "creditReset": "إعادة ضبط الرصيد",
+      "autoTopUp": "شحن تلقائي",
+      "windowUsed": "النافذة مستخدمة (%)",
+      "windowReset": "إعادة ضبط النافذة",
+      "weekUsed": "الأسبوع مستخدم (%)",
+      "weekReset": "إعادة ضبط الأسبوع"
+    }
+  },
+  "errors": {
+    "loadUsage": "خطأ"
+  }
+}

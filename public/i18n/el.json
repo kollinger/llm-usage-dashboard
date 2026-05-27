@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Όρια και tokens"
+  },
+  "actions": {
+    "refresh": "Ανανέωση",
+    "settings": "Ρυθμίσεις",
+    "close": "Κλείσιμο",
+    "save": "Αποθήκευση"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Κωδικός πρόσβασης",
+    "signIn": "Σύνδεση",
+    "loginFailed": "Η σύνδεση απέτυχε"
+  },
+  "filter": {
+    "showAll": "Εμφάνιση όλων",
+    "showActive": "Μόνο ενεργά",
+    "hideInactive": "Απόκρυψη ανενεργών παρόχων",
+    "showInactiveCount": "Εμφάνιση {count} ανενεργών παρόχων",
+    "allVisible": "Όλοι οι πάροχοι είναι ορατοί"
+  },
+  "summary": {
+    "ariaLabel": "Επισκόπηση",
+    "fiveHourOpen": "5h διαθέσιμο",
+    "weeklyOpen": "Εβδομάδα διαθέσιμη",
+    "tokensToday": "Καταγεγραμμένα tokens σήμερα",
+    "tokensTotal": "Σύνολο καταγεγραμμένων tokens"
+  },
+  "chart": {
+    "eyebrow": "Τοπικά logs",
+    "heading": "Ιστορικό tokens από logs",
+    "sourceTotalsAria": "Συνολική χρήση ανά πάροχο",
+    "legendAria": "Υπόμνημα",
+    "sourceTotalTitle": "Συνολική χρήση",
+    "svgAria": "Ιστορικό tokens"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Καταγεγραμμένη επεξεργασία tokens"
+  },
+  "pricing": {
+    "eyebrow": "Κόστη API",
+    "heading": "Τι θα κόστιζαν τα tokens σου μέσω API",
+    "meta": "EUR μέσω ECB {fxDate} · τιμές {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Μείγμα benchmark {scoreDate}: {score}/100",
+    "chinaBadge": "Κίνα",
+    "regions": {
+      "apiDiscount": "Έκπτωση API"
+    },
+    "columns": {
+      "model": "Μοντέλο",
+      "score": "Score",
+      "region": "Περιοχή",
+      "input": "Είσοδος",
+      "cache": "Cache",
+      "output": "Έξοδος",
+      "today": "Σήμερα",
+      "total": "Σύνολο",
+      "source": "Πηγή"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude τοπικά"
+    },
+    "anthropic": {
+      "kicker": "Χρήση API"
+    },
+    "openai": {
+      "kicker": "API και πιστώσεις"
+    },
+    "gemini": {
+      "kicker": "Gemini τοπικά"
+    },
+    "ollama": {
+      "kicker": "Ollama τοπικά"
+    },
+    "local": {
+      "name": "Τοπικά"
+    },
+    "gridAria": "Πάροχοι",
+    "messages": {
+      "sparkTokens24h": "Spark tokens 24h",
+      "logTokens24h": "Log tokens 24h",
+      "manualCredits": "Οι πιστώσεις καταχωρίστηκαν",
+      "missingBackendKey": "Λείπει backend key",
+      "sevenDays": "7 ημέρες",
+      "noCodexSparkEvents": "Δεν βρέθηκαν συμβάντα Codex 5.3 Spark.",
+      "noGeminiLogs": "Δεν βρέθηκαν τοπικά Gemini usage logs.",
+      "ollamaLogTokens": "Τοπικά Ollama tokens από logs",
+      "noOllamaLogs": "Δεν βρέθηκαν τοπικά Ollama logs."
+    },
+    "emptyState": {
+      "eyebrow": "Πάροχος",
+      "heading": "Καμία ενεργή χρήση",
+      "status": "Κενό",
+      "message": "Κανένας πάροχος δεν έχει αυτή τη στιγμή καταγεγραμμένα tokens ή δεδομένα ορίων.",
+      "visible": "Ορατά",
+      "hidden": "Κρυφά",
+      "all": "Όλα"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Χειροκίνητα",
+    "empty": "Κενό",
+    "not_configured": "Ρύθμιση",
+    "error": "Σφάλμα"
+  },
+  "labels": {
+    "today": "Σήμερα",
+    "fiveHourUsed": "5h χρησιμοποιήθηκαν",
+    "weekUsed": "Εβδομάδα χρησιμοποιήθηκε",
+    "since": "Από",
+    "updated": "Ενημερώθηκε",
+    "plan": "Πλάνο",
+    "fiveHourTokens": "5h tokens",
+    "total": "Σύνολο",
+    "cost": "Κόστος",
+    "tokens7d": "Tokens 7 ημέρες",
+    "cost7d": "Κόστος 7 ημέρες",
+    "limits": "Όρια"
+  },
+  "credits": {
+    "title": "Πιστώσεις",
+    "monthlySpend": "Πιστώσεις χρήσης",
+    "monthlyLimit": "Μηνιαίο όριο",
+    "currentCredit": "Τρέχουσα πίστωση",
+    "autoTopUp": "Αυτόματη ανανέωση",
+    "default": "Πιστώσεις",
+    "on": "Ενεργό",
+    "off": "Ανενεργό"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Εβδομάδα",
+    "currentSession": "Τρέχουσα συνεδρία",
+    "allModels": "Όλα τα μοντέλα",
+    "claudeDesign": "Claude Design",
+    "default": "Όριο",
+    "resetPrefix": "Reset {time}",
+    "usedValue": "{percent}% χρησιμοποιήθηκε",
+    "freeLabel": "{label} διαθέσιμο",
+    "limitGroups": "{count} ομάδες ορίων",
+    "noModelLimits": "Δεν υπάρχουν όρια μοντέλων"
+  },
+  "tokens": {
+    "input": "Είσοδος",
+    "cacheCreation": "Δημιουργία cache",
+    "cachedInput": "Cached είσοδος",
+    "output": "Έξοδος",
+    "reasoningOutput": "Έξοδος reasoning",
+    "total": "Σύνολο"
+  },
+  "format": {
+    "billion": "δισ.",
+    "million": "εκατ.",
+    "thousand": "χιλ.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} ανάγνωση / {write} εγγραφή",
+    "cacheSameAsInput": "όπως η είσοδος"
+  },
+  "settings": {
+    "heading": "Ρυθμίσεις",
+    "language": {
+      "label": "Γλώσσα"
+    },
+    "fields": {
+      "plan": "Πλάνο",
+      "currentSessionUsed": "Τρέχουσα συνεδρία χρησιμοποιήθηκε (%)",
+      "currentSessionReset": "Reset τρέχουσας συνεδρίας",
+      "allModelsUsed": "Όλα τα μοντέλα χρησιμοποιήθηκαν (%)",
+      "allModelsReset": "Reset όλων των μοντέλων",
+      "claudeDesignUsed": "Claude Design χρησιμοποιήθηκε (%)",
+      "claudeDesignReset": "Reset Claude Design",
+      "showCredits": "Εμφάνιση πιστώσεων",
+      "creditsSpent": "Πιστώσεις που δαπανήθηκαν (EUR)",
+      "monthlyLimit": "Μηνιαίο όριο (EUR)",
+      "currentCredit": "Τρέχουσα πίστωση (EUR)",
+      "creditReset": "Reset πιστώσεων",
+      "autoTopUp": "Αυτόματη ανανέωση",
+      "windowUsed": "Παράθυρο χρησιμοποιήθηκε (%)",
+      "windowReset": "Reset παραθύρου",
+      "weekUsed": "Εβδομάδα χρησιμοποιήθηκε (%)",
+      "weekReset": "Reset εβδομάδας"
+    }
+  },
+  "errors": {
+    "loadUsage": "Σφάλμα"
+  }
+}

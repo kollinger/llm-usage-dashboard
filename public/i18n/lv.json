@@ -1,0 +1,204 @@
+{
+  "app": {
+    "title": "LLM Usage",
+    "eyebrow": "LLM Usage",
+    "heading": "Limiti un tokeni"
+  },
+  "actions": {
+    "refresh": "Atsvaidzināt",
+    "settings": "Iestatījumi",
+    "close": "Aizvērt",
+    "save": "Saglabāt"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "password": "Parole",
+    "signIn": "Pieteikties",
+    "loginFailed": "Pieteikšanās neizdevās"
+  },
+  "filter": {
+    "showAll": "Rādīt visu",
+    "showActive": "Tikai aktīvie",
+    "hideInactive": "Paslēpt neaktīvos pakalpojumu sniedzējus",
+    "showInactiveCount": "Rādīt {count} neaktīvus pakalpojumu sniedzējus",
+    "allVisible": "Visi pakalpojumu sniedzēji ir redzami"
+  },
+  "summary": {
+    "ariaLabel": "Pārskats",
+    "fiveHourOpen": "5h pieejams",
+    "weeklyOpen": "Nedēļa pieejama",
+    "tokensToday": "Šodien reģistrētie tokeni",
+    "tokensTotal": "Kopā reģistrētie tokeni"
+  },
+  "chart": {
+    "eyebrow": "Lokālie žurnāli",
+    "heading": "Tokenu vēsture no žurnāliem",
+    "sourceTotalsAria": "Kopējais lietojums pēc sniedzēja",
+    "legendAria": "Leģenda",
+    "sourceTotalTitle": "Kopējais lietojums",
+    "svgAria": "Tokenu vēsture"
+  },
+  "tokenMix": {
+    "eyebrow": "Token Mix",
+    "heading": "Reģistrētā tokenu apstrāde"
+  },
+  "pricing": {
+    "eyebrow": "API izmaksas",
+    "heading": "Cik tavi tokeni maksātu caur API",
+    "meta": "EUR caur ECB {fxDate} · cenas {pricingDate} · score {scoreDate}",
+    "qualityScoreTitle": "Benchmark kopums {scoreDate}: {score}/100",
+    "chinaBadge": "Ķīna",
+    "regions": {
+      "apiDiscount": "API atlaide"
+    },
+    "columns": {
+      "model": "Modelis",
+      "score": "Score",
+      "region": "Reģions",
+      "input": "Ievade",
+      "cache": "Kešatmiņa",
+      "output": "Izvade",
+      "today": "Šodien",
+      "total": "Kopā",
+      "source": "Avots"
+    }
+  },
+  "providers": {
+    "codex": {
+      "kicker": "Codex"
+    },
+    "codexSpark": {
+      "kicker": "Codex Spark"
+    },
+    "claudeCode": {
+      "kicker": "Claude lokāli"
+    },
+    "anthropic": {
+      "kicker": "API lietojums"
+    },
+    "openai": {
+      "kicker": "API un kredīti"
+    },
+    "gemini": {
+      "kicker": "Gemini lokāli"
+    },
+    "ollama": {
+      "kicker": "Ollama lokāli"
+    },
+    "local": {
+      "name": "Lokāli"
+    },
+    "gridAria": "Sniedzēji",
+    "messages": {
+      "sparkTokens24h": "Spark tokeni 24h",
+      "logTokens24h": "Žurnāla tokeni 24h",
+      "manualCredits": "Kredīti ievadīti",
+      "missingBackendKey": "Trūkst backend atslēgas",
+      "sevenDays": "7 dienas",
+      "noCodexSparkEvents": "Codex 5.3 Spark notikumi nav atrasti.",
+      "noGeminiLogs": "Lokāli Gemini usage žurnāli nav atrasti.",
+      "ollamaLogTokens": "Lokāli Ollama tokeni no žurnāliem",
+      "noOllamaLogs": "Lokāli Ollama žurnāli nav atrasti."
+    },
+    "emptyState": {
+      "eyebrow": "Sniedzējs",
+      "heading": "Nav aktīva lietojuma",
+      "status": "Tukšs",
+      "message": "Nevienam sniedzējam pašlaik nav reģistrētu tokenu vai limitu datu.",
+      "visible": "Redzams",
+      "hidden": "Paslēpts",
+      "all": "Visi"
+    }
+  },
+  "status": {
+    "live": "Live",
+    "manual": "Manuāli",
+    "empty": "Tukšs",
+    "not_configured": "Iestatīšana",
+    "error": "Kļūda"
+  },
+  "labels": {
+    "today": "Šodien",
+    "fiveHourUsed": "5h izmantots",
+    "weekUsed": "Nedēļa izmantota",
+    "since": "Kopš",
+    "updated": "Atjaunināts",
+    "plan": "Plāns",
+    "fiveHourTokens": "5h tokeni",
+    "total": "Kopā",
+    "cost": "Izmaksas",
+    "tokens7d": "Tokeni 7 dienas",
+    "cost7d": "Izmaksas 7 dienas",
+    "limits": "Limiti"
+  },
+  "credits": {
+    "title": "Kredīti",
+    "monthlySpend": "Lietojuma kredīti",
+    "monthlyLimit": "Mēneša limits",
+    "currentCredit": "Pašreizējais kredīts",
+    "autoTopUp": "Automātiska papildināšana",
+    "default": "Kredīti",
+    "on": "Ieslēgts",
+    "off": "Izslēgts"
+  },
+  "limits": {
+    "fiveHour": "5h",
+    "weekly": "Nedēļa",
+    "currentSession": "Pašreizējā sesija",
+    "allModels": "Visi modeļi",
+    "claudeDesign": "Claude Design",
+    "default": "Limits",
+    "resetPrefix": "Atiestatīšana {time}",
+    "usedValue": "{percent}% izmantots",
+    "freeLabel": "{label} pieejams",
+    "limitGroups": "{count} limitu grupas",
+    "noModelLimits": "Nav modeļu limitu"
+  },
+  "tokens": {
+    "input": "Ievade",
+    "cacheCreation": "Kešatmiņas izveide",
+    "cachedInput": "Kešota ievade",
+    "output": "Izvade",
+    "reasoningOutput": "Reasoning izvade",
+    "total": "Kopā"
+  },
+  "format": {
+    "billion": "mljrd.",
+    "million": "milj.",
+    "thousand": "tūkst.",
+    "lessThanSharePercent": "<0,1%",
+    "lessThanCent": "< 0,01 EUR",
+    "usdPerMillion": "{value} $/M",
+    "cacheReadWrite": "{read} lasīšana / {write} rakstīšana",
+    "cacheSameAsInput": "kā ievade"
+  },
+  "settings": {
+    "heading": "Iestatījumi",
+    "language": {
+      "label": "Valoda"
+    },
+    "fields": {
+      "plan": "Plāns",
+      "currentSessionUsed": "Pašreizējā sesija izmantota (%)",
+      "currentSessionReset": "Pašreizējās sesijas atiestatīšana",
+      "allModelsUsed": "Visi modeļi izmantoti (%)",
+      "allModelsReset": "Visu modeļu atiestatīšana",
+      "claudeDesignUsed": "Claude Design izmantots (%)",
+      "claudeDesignReset": "Claude Design atiestatīšana",
+      "showCredits": "Rādīt kredītus",
+      "creditsSpent": "Iztērētie kredīti (EUR)",
+      "monthlyLimit": "Mēneša limits (EUR)",
+      "currentCredit": "Pašreizējais kredīts (EUR)",
+      "creditReset": "Kredīta atiestatīšana",
+      "autoTopUp": "Automātiska papildināšana",
+      "windowUsed": "Logs izmantots (%)",
+      "windowReset": "Loga atiestatīšana",
+      "weekUsed": "Nedēļa izmantota (%)",
+      "weekReset": "Nedēļas atiestatīšana"
+    }
+  },
+  "errors": {
+    "loadUsage": "Kļūda"
+  }
+}
