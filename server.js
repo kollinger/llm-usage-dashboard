@@ -1,0 +1,1838 @@
+"use strict";
+
+const fs = require("node:fs");
+const fsp = require("node:fs/promises");
+const path = require("node:path");
+const os = require("node:os");
+const readline = require("node:readline");
+const crypto = require("node:crypto");
+const express = require("express");
+const session = require("express-session");
+
+const PORT = Number(process.env.PORT || 4177);
+const ROOT = __dirname;
+const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
+const MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
+const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
+const CODEX_HOME = expandHome(process.env.CODEX_HOME || path.join(os.homedir(), ".codex"));
+const CLAUDE_HOME = expandHome(process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude"));
+const GEMINI_HOME = expandHome(process.env.GEMINI_HOME || path.join(os.homedir(), ".gemini"));
+const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
+const OLLAMA_PROXY_PORT = Number(process.env.OLLAMA_PROXY_PORT || 11435);
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
+const PASSWORD = process.env.DASHBOARD_PASSWORD || "";
+const DAILY_HISTORY_DAYS = Number(process.env.DAILY_HISTORY_DAYS || 180);
+
+const app = express();
+
+app.use(express.json({ limit: "200kb" }));
+app.use(
+  session({
+    name: "llm_usage.sid",
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 12
+    }
+  })
+);
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/") || req.path.endsWith(".js") || req.path.endsWith(".html")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+  next();
+});
+
+app.use(express.static(path.join(ROOT, "public")));
+
+function expandHome(value) {
+  if (!value) return value;
+  if (value === "~") return os.homedir();
+  if (value.startsWith("~/")) return path.join(os.homedir(), value.slice(2));
+  return value;
+}
+
+function isProtected() {
+  return Boolean(PASSWORD || hasOidcConfig());
+}
+
+function isAuthed(req) {
+  return !isProtected() || Boolean(req.session.user);
+}
+
+function authMiddleware(req, res, next) {
+  if (isAuthed(req)) return next();
+  return res.status(401).json({ error: "auth_required" });
+}
+
+function hasOidcConfig() {
+  return Boolean(
+    process.env.OIDC_ISSUER_URL &&
+      process.env.OIDC_CLIENT_ID &&
+      process.env.OIDC_CLIENT_SECRET &&
+      process.env.OIDC_REDIRECT_URI
+  );
+}
+
+app.get("/api/auth/me", (req, res) => {
+  res.json({
+    authenticated: isAuthed(req),
+    protected: isProtected(),
+    methods: {
+      password: Boolean(PASSWORD),
+      oidc: hasOidcConfig()
+    },
+    user: req.session.user || (isProtected() ? null : { name: "Local" })
+  });
+});
+
+app.post("/api/auth/login", (req, res) => {
+  if (!PASSWORD) return res.status(400).json({ error: "password_login_disabled" });
+  if (req.body?.password !== PASSWORD) return res.status(401).json({ error: "invalid_password" });
+  req.session.user = { name: "Local user", method: "password" };
+  res.json({ ok: true, user: req.session.user });
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.json({ ok: true });
+  });
+});
+
+app.get("/auth/oidc/start", async (req, res) => {
+  if (!hasOidcConfig()) return res.status(400).send("OIDC is not configured.");
+  try {
+    const { Issuer, generators } = require("openid-client");
+    const issuer = await Issuer.discover(process.env.OIDC_ISSUER_URL);
+    const client = new issuer.Client({
+      client_id: process.env.OIDC_CLIENT_ID,
+      client_secret: process.env.OIDC_CLIENT_SECRET,
+      redirect_uris: [process.env.OIDC_REDIRECT_URI],
+      response_types: ["code"]
+    });
+    const codeVerifier = generators.codeVerifier();
+    const codeChallenge = generators.codeChallenge(codeVerifier);
+    const state = generators.state();
+    req.session.oidc = { codeVerifier, state };
+    const url = client.authorizationUrl({
+      scope: process.env.OIDC_SCOPE || "openid profile email",
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      state
+    });
+    res.redirect(url);
+  } catch (error) {
+    res.status(500).send(`OIDC start failed: ${error.message}`);
+  }
+});
+
+app.get("/auth/oidc/callback", async (req, res) => {
+  if (!hasOidcConfig()) return res.status(400).send("OIDC is not configured.");
+  try {
+    const { Issuer } = require("openid-client");
+    const issuer = await Issuer.discover(process.env.OIDC_ISSUER_URL);
+    const client = new issuer.Client({
+      client_id: process.env.OIDC_CLIENT_ID,
+      client_secret: process.env.OIDC_CLIENT_SECRET,
+      redirect_uris: [process.env.OIDC_REDIRECT_URI],
+      response_types: ["code"]
+    });
+    const params = client.callbackParams(req);
+    const checks = {
+      code_verifier: req.session.oidc?.codeVerifier,
+      state: req.session.oidc?.state
+    };
+    const tokenSet = await client.callback(process.env.OIDC_REDIRECT_URI, params, checks);
+    let profile = {};
+    if (tokenSet.access_token) {
+      profile = await client.userinfo(tokenSet.access_token);
+    }
+    req.session.user = {
+      name: profile.name || profile.email || profile.sub || "SSO user",
+      email: profile.email || null,
+      method: "oidc"
+    };
+    delete req.session.oidc;
+    res.redirect("/");
+  } catch (error) {
+    res.status(500).send(`OIDC callback failed: ${error.message}`);
+  }
+});
+
+app.get("/api/usage", authMiddleware, async (_req, res) => {
+  const [manual, codex, claudeCode, geminiLocal, ollama, openai, anthropic] = await Promise.all([
+    readManualLimits(),
+    readCodexUsage().catch((error) => providerError("codex", error)),
+    readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
+    readGeminiUsage().catch((error) => providerError("gemini", error)),
+    readOllamaUsage().catch((error) => providerError("ollama", error)),
+    readOpenAiUsage().catch((error) => providerError("openai", error)),
+    readAnthropicUsage().catch((error) => providerError("anthropic", error))
+  ]);
+
+  const now = new Date().toISOString();
+  res.json({
+    generatedAt: now,
+    codex,
+    claudeCode: mergeManualLimits(claudeCode, manual.claude),
+    gemini: mergeManualLimits(geminiLocal, manual.gemini),
+    ollama,
+    local: buildLocalAggregate([codex, claudeCode, geminiLocal, ollama]),
+    openai: mergeManualLimits(openai, manual.openai),
+    anthropic,
+    manual
+  });
+});
+
+app.get("/api/manual-limits", authMiddleware, async (_req, res) => {
+  res.json(await readManualLimits());
+});
+
+app.post("/api/manual-limits", authMiddleware, async (req, res) => {
+  const current = await readManualLimits();
+  const next = sanitizeManualLimits({ ...current, ...req.body });
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(MANUAL_LIMITS_FILE, `${JSON.stringify(next, null, 2)}\n`);
+  res.json(next);
+});
+
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(ROOT, "public", "index.html"));
+});
+
+function providerError(id, error) {
+  return {
+    id,
+    status: "error",
+    error: error.message,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function readManualLimits() {
+  try {
+    const text = await fsp.readFile(MANUAL_LIMITS_FILE, "utf8");
+    return sanitizeManualLimits(JSON.parse(text));
+  } catch {
+    return sanitizeManualLimits({});
+  }
+}
+
+function sanitizeManualLimits(raw) {
+  const emptyWindow = (label) => ({ usedPercent: 0, limitLabel: label, resetsAt: null });
+  const clamp = (value) => Math.max(0, Math.min(100, Number(value) || 0));
+  const sanitizeProvider = (id, fallbackLabel) => {
+    const provider = raw[id] || {};
+    const five = provider.fiveHour || {};
+    const week = provider.weekly || {};
+    return {
+      label: String(provider.label || fallbackLabel),
+      fiveHour: {
+        ...emptyWindow("5h limit"),
+        ...five,
+        usedPercent: clamp(five.usedPercent),
+        resetsAt: normalizeOptionalDate(five.resetsAt)
+      },
+      weekly: {
+        ...emptyWindow("Weekly limit"),
+        ...week,
+        usedPercent: clamp(week.usedPercent),
+        resetsAt: normalizeOptionalDate(week.resetsAt)
+      },
+      planType: String(provider.planType || provider.plan || "").trim(),
+      credits: sanitizeUsageCredits(provider.credits || provider.usageCredits || provider.guthaben)
+    };
+  };
+  const claude = sanitizeProvider("claude", "Claude / Anthropic");
+  const claudeRaw = raw.claude || {};
+  claude.planType = String(claudeRaw.planType || claudeRaw.plan || "").trim();
+  claude.currentSession = sanitizeManualWindow(claudeRaw.currentSession || claudeRaw.fiveHour, "Aktuelle Sitzung", 300);
+  claude.allModels = sanitizeManualWindow(claudeRaw.allModels || claudeRaw.weekly, "Alle Modelle", 10080);
+  claude.claudeDesign = sanitizeManualWindow(claudeRaw.claudeDesign, "Claude Design", 10080);
+  return {
+    claude,
+    gemini: sanitizeProvider("gemini", "Gemini"),
+    openai: sanitizeProvider("openai", "OpenAI / GPT")
+  };
+}
+
+function sanitizeManualWindow(window, label, minutes) {
+  const usedPercent = Math.max(0, Math.min(100, Number(window?.usedPercent) || 0));
+  return {
+    usedPercent,
+    limitLabel: String(window?.limitLabel || label),
+    resetsAt: normalizeOptionalDate(window?.resetsAt),
+    windowMinutes: Number(window?.windowMinutes || minutes)
+  };
+}
+
+function sanitizeUsageCredits(raw) {
+  const credits = raw || {};
+  return {
+    enabled: parseBoolean(credits.enabled ?? credits.usageCreditsEnabled),
+    spentAmount: positiveAmount(credits.spentAmount ?? credits.spent ?? credits.usedAmount ?? credits.amountSpent),
+    monthlyLimitAmount: positiveAmount(
+      credits.monthlyLimitAmount ?? credits.monthlyLimit ?? credits.limitAmount ?? credits.spendingLimit
+    ),
+    currentCreditAmount: positiveAmount(
+      credits.currentCreditAmount ?? credits.currentCredit ?? credits.balance ?? credits.remainingCredit
+    ),
+    currency: normalizeCurrency(credits.currency || "EUR"),
+    autoTopUp: parseBoolean(credits.autoTopUp ?? credits.autoTopUpEnabled),
+    resetsAt: normalizeOptionalDate(credits.resetsAt ?? credits.resetAt),
+    resetLabel: String(credits.resetLabel || "").trim()
+  };
+}
+
+function parseBoolean(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return ["1", "true", "yes", "on", "an"].includes(value.trim().toLowerCase());
+  return Boolean(value);
+}
+
+function positiveAmount(value) {
+  if (value === undefined || value === null || value === "") return 0;
+  const normalized = typeof value === "string" ? value.replace(",", ".").replace(/[^\d.-]/g, "") : value;
+  const number = Number(normalized);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function normalizeCurrency(value) {
+  const currency = String(value || "EUR").trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(currency) ? currency : "EUR";
+}
+
+function hasUsageCredits(credits) {
+  return Boolean(
+    credits &&
+      (credits.enabled ||
+        credits.spentAmount > 0 ||
+        credits.monthlyLimitAmount > 0 ||
+        credits.currentCreditAmount > 0 ||
+        credits.autoTopUp ||
+        credits.resetsAt ||
+        credits.resetLabel)
+  );
+}
+
+function normalizeOptionalDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function buildManualProvider(id, config) {
+  const fiveHour = makeLimitWindow(config.currentSession || config.fiveHour, 300);
+  const weekly = makeLimitWindow(config.allModels || config.weekly, 10080);
+  const limits = {
+    fiveHour,
+    weekly
+  };
+  if (id === "claudeCode") {
+    limits.currentSession = relabelLimitWindow(fiveHour, "Aktuelle Sitzung");
+    limits.allModels = relabelLimitWindow(weekly, "Alle Modelle");
+    limits.claudeDesign = makeLimitWindow(config.claudeDesign, 10080);
+    limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
+  }
+  return {
+    id,
+    status: "manual",
+    updatedAt: new Date().toISOString(),
+    label: config.label,
+    planType: config.planType || null,
+    limits,
+    credits: hasUsageCredits(config.credits) ? config.credits : null,
+    creditRows: buildCreditRows(config.credits)
+  };
+}
+
+function mergeManualLimits(provider, config) {
+  if (!provider || provider.status === "error") return provider;
+  const manual = buildManualProvider(provider.id, config);
+  const hasManualLimits = hasLimitValues(manual.limits);
+  const hasManualCredits = hasUsageCredits(manual.credits);
+  const hasManualValue = Boolean(manual.planType) || hasManualLimits || hasManualCredits;
+  if (!hasManualValue) return provider;
+  const limits = hasManualLimits ? mergeLimitObjects(provider.limits, manual.limits) : provider.limits;
+  const credits = mergeCreditObjects(provider.credits, manual.credits);
+  return {
+    ...provider,
+    status:
+      (provider.status === "empty" || provider.status === "not_configured") && hasManualValue ? "manual" : provider.status,
+    planType: provider.planType || manual.planType || null,
+    limits,
+    credits,
+    creditRows: buildCreditRows(credits),
+    limitSource: provider.limitSource || "manual"
+  };
+}
+
+function hasLimitValues(limits) {
+  return Object.values(limits || {})
+    .filter((value) => value && !Array.isArray(value))
+    .some((limit) => limit.usedPercent > 0 || Boolean(limit.resetsAt || limit.resetLabel));
+}
+
+function mergeCreditObjects(primary, fallback) {
+  if (!primary && !fallback) return null;
+  const merged = {
+    ...(fallback || {}),
+    ...(primary || {})
+  };
+  return hasUsageCredits(merged) ? merged : null;
+}
+
+function buildCreditRows(credits) {
+  if (!hasUsageCredits(credits)) return [];
+  const currency = normalizeCurrency(credits.currency);
+  const rows = [];
+  if (credits.spentAmount > 0 || credits.monthlyLimitAmount > 0 || credits.resetsAt || credits.resetLabel) {
+    const percent = credits.monthlyLimitAmount > 0 ? (credits.spentAmount / credits.monthlyLimitAmount) * 100 : null;
+    rows.push({
+      key: "monthlySpend",
+      label: "Nutzungsguthaben",
+      amount: credits.spentAmount,
+      currency,
+      percent: percent === null ? null : Math.max(0, Math.min(100, percent)),
+      resetsAt: credits.resetsAt || null,
+      resetLabel: credits.resetLabel || null
+    });
+  }
+  if (credits.monthlyLimitAmount > 0) {
+    rows.push({
+      key: "monthlyLimit",
+      label: "Monatliches Limit",
+      amount: credits.monthlyLimitAmount,
+      currency
+    });
+  }
+  if (credits.currentCreditAmount > 0 || credits.enabled) {
+    rows.push({
+      key: "currentCredit",
+      label: "Aktuelles Guthaben",
+      amount: credits.currentCreditAmount,
+      currency
+    });
+  }
+  rows.push({
+    key: "autoTopUp",
+    label: "Automatisch aufladen",
+    valueLabel: credits.autoTopUp ? "An" : "Aus"
+  });
+  return rows;
+}
+
+function makeLimitWindow(window, minutes) {
+  const usedPercent = Math.max(0, Math.min(100, Number(window?.usedPercent) || 0));
+  return {
+    label: window?.limitLabel || `${minutes}m limit`,
+    usedPercent,
+    remainingPercent: 100 - usedPercent,
+    windowMinutes: minutes,
+    resetsAt: window?.resetsAt || null
+  };
+}
+
+function mergeLimitObjects(primary, fallback) {
+  if (!primary) return fallback;
+  const limits = {
+    ...fallback,
+    ...primary,
+    fiveHour: primary.fiveHour || fallback?.fiveHour || null,
+    weekly: primary.weekly || fallback?.weekly || null,
+    currentSession: primary.currentSession || fallback?.currentSession || primary.fiveHour || fallback?.fiveHour || null,
+    allModels: primary.allModels || fallback?.allModels || primary.weekly || fallback?.weekly || null,
+    claudeDesign: primary.claudeDesign || fallback?.claudeDesign || null
+  };
+  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
+  return limits;
+}
+
+function relabelLimitWindow(window, label) {
+  return window ? { ...window, label } : null;
+}
+
+function buildLimitRows(limits, keys) {
+  return keys
+    .map((key) => {
+      const limit = limits?.[key];
+      return limit ? { key, ...limit } : null;
+    })
+    .filter(Boolean);
+}
+
+async function readCodexUsage() {
+  const roots = [
+    path.join(CODEX_HOME, "sessions"),
+    path.join(CODEX_HOME, "archived_sessions")
+  ];
+  const files = [];
+  for (const root of roots) {
+    files.push(...(await listJsonlFiles(root)));
+  }
+
+  const aggregates = createUsageTotals();
+  const last5h = createUsageTotals();
+  const last24h = createUsageTotals();
+  const last7d = createUsageTotals();
+  const dailyMap = new Map();
+  const sparkUsage = createUsageAccumulator();
+  const sparkRateLimitEvents = [];
+  let sparkFirstEvent = null;
+  let sparkLatestEvent = null;
+  const now = Date.now();
+  let firstEvent = null;
+  let latestEvent = null;
+  let eventCount = 0;
+  let sessionsWithEvents = 0;
+  const rateLimitEvents = [];
+
+  for (const file of files) {
+    let fileEvents = 0;
+    let currentModel = null;
+    await readJsonl(file, (event) => {
+      if (event?.type === "turn_context" && event.payload?.model) {
+        currentModel = event.payload.model;
+      }
+      if (event?.type === "session_meta" && event.payload?.model) {
+        currentModel = event.payload.model;
+      }
+      if (event?.type !== "event_msg" || event?.payload?.type !== "token_count") return;
+      const timestampMs = Date.parse(event.timestamp);
+      if (Number.isNaN(timestampMs)) return;
+      const usage = event.payload.info?.last_token_usage || {};
+      if (event.payload.rate_limits) {
+        const rateLimitEvent = {
+          timestamp: event.timestamp,
+          rateLimits: event.payload.rate_limits,
+          file
+        };
+        if (isCodexSparkRateLimit(event.payload.rate_limits)) {
+          sparkRateLimitEvents.push(rateLimitEvent);
+        } else {
+          rateLimitEvents.push(rateLimitEvent);
+        }
+      }
+      addUsage(aggregates, usage);
+      if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
+      if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(last24h, usage);
+      if (now - timestampMs <= 7 * 24 * 60 * 60 * 1000) addUsage(last7d, usage);
+      if (isCodexSparkModel(currentModel) || isCodexSparkRateLimit(event.payload.rate_limits)) {
+        addUsageEvent(sparkUsage, timestampMs, usage);
+        if (!sparkFirstEvent || timestampMs < Date.parse(sparkFirstEvent.timestamp)) {
+          sparkFirstEvent = {
+            timestamp: event.timestamp,
+            model: currentModel || event.payload.rate_limits?.limit_name || "gpt-5.3-codex-spark",
+            file
+          };
+        }
+        if (!sparkLatestEvent || timestampMs > Date.parse(sparkLatestEvent.timestamp)) {
+          sparkLatestEvent = {
+            timestamp: event.timestamp,
+            model: currentModel || event.payload.rate_limits?.limit_name || "gpt-5.3-codex-spark",
+            info: event.payload.info || {},
+            rateLimits: event.payload.rate_limits || null,
+            file
+          };
+        }
+      }
+
+      const day = new Date(timestampMs).toISOString().slice(0, 10);
+      if (!dailyMap.has(day)) dailyMap.set(day, createUsageTotals());
+      addUsage(dailyMap.get(day), usage);
+
+      eventCount += 1;
+      fileEvents += 1;
+      if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) {
+        firstEvent = {
+          timestamp: event.timestamp,
+          file
+        };
+      }
+      if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) {
+        latestEvent = {
+          timestamp: event.timestamp,
+          info: event.payload.info || {},
+          rateLimits: event.payload.rate_limits || null,
+          file
+        };
+      }
+    });
+    if (fileEvents) sessionsWithEvents += 1;
+  }
+
+  const daily = buildDaily(dailyMap);
+
+  return {
+    id: "codex",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    source: {
+      codexHome: CODEX_HOME,
+      filesScanned: files.length,
+      sessionsWithEvents,
+      eventCount
+    },
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          modelContextWindow: latestEvent.info.model_context_window || null,
+          last: normalizeUsage(latestEvent.info.last_token_usage || {}),
+          sessionTotal: normalizeUsage(latestEvent.info.total_token_usage || {}),
+          planType: latestEvent.rateLimits?.plan_type || null,
+          file: latestEvent.file
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          file: firstEvent.file
+        }
+      : null,
+    totals: {
+      allTime: aggregates,
+      last5h,
+      last24h,
+      last7d
+    },
+    limits: codexRateLimitsFromEvents(rateLimitEvents, latestEvent?.rateLimits),
+    spark: buildCodexSparkUsage(sparkLatestEvent, sparkFirstEvent, sparkUsage, sparkRateLimitEvents),
+    daily
+  };
+}
+
+function isCodexSparkRateLimit(rateLimits) {
+  if (!rateLimits) return false;
+  return /spark|bengalfox|research/i.test(`${rateLimits.limit_id || ""} ${rateLimits.limit_name || ""}`);
+}
+
+function isCodexSparkModel(model) {
+  return /spark|bengalfox|research/i.test(String(model || ""));
+}
+
+function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents) {
+  const limits = codexSparkRateLimitsFromEvents(
+    rateLimitEvents,
+    latestEvent?.rateLimits,
+    Boolean(latestEvent)
+  );
+  return {
+    id: "codexSpark",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    message: latestEvent ? null : "Keine Codex 5.3 Spark Events gefunden.",
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          model: latestEvent.model,
+          last: normalizeUsage(latestEvent.info.last_token_usage || {}),
+          sessionTotal: normalizeUsage(latestEvent.info.total_token_usage || {}),
+          planType: latestEvent.rateLimits?.plan_type || null,
+          file: latestEvent.file
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          model: firstEvent.model,
+          file: firstEvent.file
+        }
+      : null,
+    totals: finalizeUsageAccumulator(usage),
+    limits,
+    daily: buildDaily(usage.dailyMap)
+  };
+}
+
+async function readClaudeCodeUsage() {
+  const files = await listJsonlFiles(path.join(CLAUDE_HOME, "projects"));
+  const seen = new Set();
+  const usage = createUsageAccumulator();
+  const modelMap = new Map();
+  let firstEvent = null;
+  let latestEvent = null;
+  let responseCount = 0;
+  let sessionsWithEvents = 0;
+
+  for (const file of files) {
+    let fileEvents = 0;
+    await readJsonl(file, (event) => {
+      if (event?.type !== "assistant" || !event?.message?.usage) return;
+      const timestampMs = Date.parse(event.timestamp);
+      if (Number.isNaN(timestampMs)) return;
+      const usageKey = event.requestId || event.message?.id || `${file}:${event.uuid || event.timestamp}`;
+      if (seen.has(usageKey)) return;
+      seen.add(usageKey);
+
+      const normalized = normalizeClaudeUsage(event.message.usage);
+      addUsageEvent(usage, timestampMs, normalized);
+
+      const model = event.message.model || "unknown";
+      if (!modelMap.has(model)) modelMap.set(model, createUsageTotals());
+      addUsage(modelMap.get(model), normalized);
+
+      responseCount += 1;
+      fileEvents += 1;
+      if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) {
+        firstEvent = {
+          timestamp: event.timestamp,
+          model,
+          file
+        };
+      }
+      if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) {
+        latestEvent = {
+          timestamp: event.timestamp,
+          model,
+          usage: normalized,
+          file
+        };
+      }
+    });
+    if (fileEvents) sessionsWithEvents += 1;
+  }
+
+  const statusline = await readClaudeStatusline();
+  return {
+    id: "claudeCode",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    source: {
+      claudeHome: CLAUDE_HOME,
+      filesScanned: files.length,
+      sessionsWithEvents,
+      eventCount: responseCount
+    },
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          model: latestEvent.model,
+          last: latestEvent.usage
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          model: firstEvent.model,
+          file: firstEvent.file
+        }
+      : null,
+    totals: finalizeUsageAccumulator(usage),
+    limits: statusline?.limits || null,
+    planType: statusline?.planType || null,
+    credits: statusline?.credits || null,
+    creditRows: buildCreditRows(statusline?.credits),
+    limitSource: statusline?.limits ? "claude_statusline" : null,
+    byModel: Array.from(modelMap.entries())
+      .map(([model, modelUsage]) => ({ model, ...modelUsage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8),
+    daily: buildDaily(usage.dailyMap)
+  };
+}
+
+async function readGeminiUsage() {
+  const candidates = await listGeminiUsageFiles(GEMINI_HOME);
+  const usage = createUsageAccumulator();
+  const modelMap = new Map();
+  let firstEvent = null;
+  let latestEvent = null;
+  let eventCount = 0;
+  let filesWithEvents = 0;
+
+  for (const file of candidates) {
+    let fileEvents = 0;
+    await readUsageObjects(file, (event) => {
+      const usageMetadata = findGeminiUsageMetadata(event);
+      if (!usageMetadata) return;
+      const timestampMs = findTimestampMs(event) || (safeStatMtime(file) ?? Date.now());
+      const normalized = normalizeGeminiUsage(usageMetadata);
+      if (!normalized.total_tokens) return;
+      addUsageEvent(usage, timestampMs, normalized);
+
+      const model = findModelName(event) || "gemini";
+      if (!modelMap.has(model)) modelMap.set(model, createUsageTotals());
+      addUsage(modelMap.get(model), normalized);
+
+      eventCount += 1;
+      fileEvents += 1;
+      if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) {
+        firstEvent = {
+          timestamp: new Date(timestampMs).toISOString(),
+          model,
+          file
+        };
+      }
+      if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) {
+        latestEvent = {
+          timestamp: new Date(timestampMs).toISOString(),
+          model,
+          usage: normalizeUsage(normalized),
+          file
+        };
+      }
+    });
+    if (fileEvents) filesWithEvents += 1;
+  }
+
+  return {
+    id: "gemini",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    message: latestEvent ? null : "Keine lokalen Gemini Usage-Logs gefunden.",
+    source: {
+      geminiHome: GEMINI_HOME,
+      filesScanned: candidates.length,
+      filesWithEvents,
+      eventCount
+    },
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          model: latestEvent.model,
+          last: latestEvent.usage
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          model: firstEvent.model,
+          file: firstEvent.file
+        }
+      : null,
+    totals: finalizeUsageAccumulator(usage),
+    limits: null,
+    byModel: Array.from(modelMap.entries())
+      .map(([model, modelUsage]) => ({ model, ...modelUsage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8),
+    daily: buildDaily(usage.dailyMap)
+  };
+}
+
+async function readOllamaUsage() {
+  const usage = createUsageAccumulator();
+  const modelMap = new Map();
+  let firstEvent = null;
+  let latestEvent = null;
+  let eventCount = 0;
+
+  try {
+    await readJsonl(OLLAMA_USAGE_FILE, (event) => {
+      const timestampMs = Date.parse(event.timestamp);
+      if (Number.isNaN(timestampMs)) return;
+      const normalized = normalizeUsage(event.usage || {});
+      if (!normalized.totalTokens) return;
+      addUsageEvent(usage, timestampMs, event.usage);
+
+      const model = event.model || "ollama";
+      if (!modelMap.has(model)) modelMap.set(model, createUsageTotals());
+      addUsage(modelMap.get(model), event.usage);
+
+      eventCount += 1;
+      if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) {
+        firstEvent = {
+          timestamp: event.timestamp,
+          model,
+          endpoint: event.endpoint
+        };
+      }
+      if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) {
+        latestEvent = {
+          timestamp: event.timestamp,
+          model,
+          endpoint: event.endpoint,
+          usage: normalized
+        };
+      }
+    });
+  } catch {
+    // Missing log file just means the proxy has not recorded requests yet.
+  }
+
+  return {
+    id: "ollama",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    message: latestEvent
+      ? "Lokale Ollama-Tokens aus Logs"
+      : "Keine lokalen Ollama-Logs gefunden.",
+    source: {
+      usageFile: OLLAMA_USAGE_FILE,
+      proxyPort: OLLAMA_PROXY_PORT,
+      target: OLLAMA_HOST,
+      eventCount
+    },
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          model: latestEvent.model,
+          endpoint: latestEvent.endpoint,
+          last: latestEvent.usage
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          model: firstEvent.model,
+          endpoint: firstEvent.endpoint
+        }
+      : null,
+    totals: finalizeUsageAccumulator(usage),
+    limits: null,
+    byModel: Array.from(modelMap.entries())
+      .map(([model, modelUsage]) => ({ model, ...modelUsage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8),
+    daily: buildDaily(usage.dailyMap)
+  };
+}
+
+function buildLocalAggregate(providers) {
+  const usage = createUsageAccumulator();
+  const sources = [];
+  const dailySourceMap = new Map();
+  for (const provider of providers) {
+    if (!provider?.totals) continue;
+    const sparkDailyMap =
+      provider.id === "codex"
+        ? new Map((provider.spark?.daily || []).map((row) => [row.date, row]))
+        : null;
+    addUsage(usage.allTime, provider.totals.allTime || {});
+    addUsage(usage.last5h, provider.totals.last5h || {});
+    addUsage(usage.last24h, provider.totals.last24h || {});
+    addUsage(usage.last7d, provider.totals.last7d || {});
+    for (const row of provider.daily || []) {
+      if (!usage.dailyMap.has(row.date)) usage.dailyMap.set(row.date, createUsageTotals());
+      addUsage(usage.dailyMap.get(row.date), row);
+      if (!dailySourceMap.has(row.date)) dailySourceMap.set(row.date, new Map());
+      const sourceMap = dailySourceMap.get(row.date);
+      for (const sourceRow of buildProviderDailySources(provider, row, sparkDailyMap)) {
+        if (!sourceMap.has(sourceRow.id)) sourceMap.set(sourceRow.id, createUsageTotals());
+        addUsage(sourceMap.get(sourceRow.id), sourceRow);
+      }
+    }
+    sources.push(...buildProviderSourceSummaries(provider));
+  }
+  return {
+    id: "local",
+    status: sources.some((source) => source.totalTokens > 0) ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    totals: finalizeUsageAccumulator(usage),
+    daily: buildDaily(usage.dailyMap).map((row) => ({
+      ...row,
+      sources: buildDailySources(dailySourceMap.get(row.date))
+    })),
+    sources
+  };
+}
+
+function buildDailySources(sourceMap) {
+  if (!sourceMap) return [];
+  return Array.from(sourceMap.entries())
+    .map(([id, totals]) => ({ id, ...totals }))
+    .filter((source) => source.totalTokens > 0);
+}
+
+function buildProviderDailySources(provider, row, sparkDailyMap) {
+  if (provider.id !== "codex" || !sparkDailyMap?.size) return [{ id: provider.id, ...row }];
+  const sparkRow = sparkDailyMap.get(row.date);
+  if (!sparkRow?.totalTokens) return [{ id: provider.id, ...row }];
+  const codexRow = subtractUsageTotals(row, sparkRow);
+  return [
+    codexRow.totalTokens > 0 ? { id: "codex", ...codexRow } : null,
+    { id: "codexSpark", ...sparkRow }
+  ].filter(Boolean);
+}
+
+function buildProviderSourceSummaries(provider) {
+  if (provider.id !== "codex" || !provider.spark?.totals) {
+    return [sourceSummary(provider.id, provider.status, provider.totals)];
+  }
+  return [
+    sourceSummary("codex", provider.status, subtractUsageWindows(provider.totals, provider.spark.totals)),
+    sourceSummary("codexSpark", provider.spark.status, provider.spark.totals)
+  ];
+}
+
+function sourceSummary(id, status, totals) {
+  return {
+    id,
+    status,
+    totalTokens: totals.allTime?.totalTokens || 0,
+    last24hTokens: totals.last24h?.totalTokens || 0,
+    totals
+  };
+}
+
+function subtractUsageWindows(totals, subset) {
+  return {
+    allTime: subtractUsageTotals(totals.allTime, subset.allTime),
+    last5h: subtractUsageTotals(totals.last5h, subset.last5h),
+    last24h: subtractUsageTotals(totals.last24h, subset.last24h),
+    last7d: subtractUsageTotals(totals.last7d, subset.last7d)
+  };
+}
+
+function subtractUsageTotals(total, subset) {
+  const result = createUsageTotals();
+  for (const key of Object.keys(result)) {
+    result[key] = Math.max(0, Number(total?.[key] || 0) - Number(subset?.[key] || 0));
+  }
+  return result;
+}
+
+async function listJsonlFiles(root) {
+  const result = [];
+  async function walk(dir) {
+    let entries;
+    try {
+      entries = await fsp.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await walk(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+          result.push(fullPath);
+        }
+      })
+    );
+  }
+  await walk(root);
+  return result;
+}
+
+async function listFiles(root, predicate) {
+  const result = [];
+  async function walk(dir) {
+    let entries;
+    try {
+      entries = await fsp.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await walk(fullPath);
+        } else if (entry.isFile() && predicate(fullPath)) {
+          result.push(fullPath);
+        }
+      })
+    );
+  }
+  await walk(root);
+  return result;
+}
+
+async function readJsonl(file, onObject) {
+  const stream = fs.createReadStream(file, { encoding: "utf8" });
+  const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+  for await (const line of rl) {
+    if (!line.trim()) continue;
+    try {
+      onObject(JSON.parse(line));
+    } catch {
+      // Corrupt or partial JSONL lines can happen during active writes.
+    }
+  }
+}
+
+async function readUsageObjects(file, onObject) {
+  if (file.endsWith(".jsonl") || file.endsWith(".log")) {
+    await readJsonl(file, onObject);
+    return;
+  }
+  try {
+    const parsed = JSON.parse(await fsp.readFile(file, "utf8"));
+    visitJson(parsed, onObject);
+  } catch {
+    // Ignore non-JSON files and partially written logs.
+  }
+}
+
+function visitJson(value, onObject) {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    for (const item of value) visitJson(item, onObject);
+    return;
+  }
+  onObject(value);
+  for (const child of Object.values(value)) {
+    if (child && typeof child === "object") visitJson(child, onObject);
+  }
+}
+
+function createUsageAccumulator() {
+  return {
+    allTime: createUsageTotals(),
+    last5h: createUsageTotals(),
+    last24h: createUsageTotals(),
+    last7d: createUsageTotals(),
+    dailyMap: new Map()
+  };
+}
+
+function addUsageEvent(accumulator, timestampMs, usage) {
+  const now = Date.now();
+  addUsage(accumulator.allTime, usage);
+  if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(accumulator.last5h, usage);
+  if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(accumulator.last24h, usage);
+  if (now - timestampMs <= 7 * 24 * 60 * 60 * 1000) addUsage(accumulator.last7d, usage);
+  const day = new Date(timestampMs).toISOString().slice(0, 10);
+  if (!accumulator.dailyMap.has(day)) accumulator.dailyMap.set(day, createUsageTotals());
+  addUsage(accumulator.dailyMap.get(day), usage);
+}
+
+function finalizeUsageAccumulator(accumulator) {
+  return {
+    allTime: accumulator.allTime,
+    last5h: accumulator.last5h,
+    last24h: accumulator.last24h,
+    last7d: accumulator.last7d
+  };
+}
+
+function buildDaily(dailyMap) {
+  return Array.from(dailyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-DAILY_HISTORY_DAYS)
+    .map(([date, usage]) => ({ date, ...usage }));
+}
+
+function createUsageTotals() {
+  return {
+    inputTokens: 0,
+    cacheCreationInputTokens: 0,
+    cachedInputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+    totalTokens: 0
+  };
+}
+
+function normalizeUsage(usage) {
+  const totals = createUsageTotals();
+  addUsage(totals, usage);
+  return totals;
+}
+
+function addUsage(target, usage) {
+  const input = Number(usage.input_tokens ?? usage.inputTokens ?? 0);
+  const cacheCreation = Number(usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? 0);
+  const cached = Number(
+    usage.cached_input_tokens ?? usage.cache_read_input_tokens ?? usage.cachedInputTokens ?? 0
+  );
+  const output = Number(usage.output_tokens ?? usage.outputTokens ?? 0);
+  const reasoning = Number(
+    usage.reasoning_output_tokens ?? usage.thoughts_token_count ?? usage.reasoningOutputTokens ?? 0
+  );
+  const explicitTotal = usage.total_tokens ?? usage.totalTokens;
+  const total = Number(explicitTotal ?? input + cacheCreation + cached + output + reasoning);
+  target.inputTokens += input;
+  target.cacheCreationInputTokens += cacheCreation;
+  target.cachedInputTokens += cached;
+  target.outputTokens += output;
+  target.reasoningOutputTokens += reasoning;
+  target.totalTokens += total;
+}
+
+function normalizeClaudeUsage(usage) {
+  const input = Number(usage.input_tokens || 0);
+  const cacheCreation = Number(usage.cache_creation_input_tokens || 0);
+  const cached = Number(usage.cache_read_input_tokens || 0);
+  const output = Number(usage.output_tokens || 0);
+  return {
+    input_tokens: input,
+    cache_creation_input_tokens: cacheCreation,
+    cached_input_tokens: cached,
+    output_tokens: output,
+    total_tokens: input + cacheCreation + cached + output
+  };
+}
+
+async function readClaudeStatusline() {
+  const statusFile = path.join(CLAUDE_HOME, "usage-dashboard-statusline.json");
+  try {
+    const raw = JSON.parse(await fsp.readFile(statusFile, "utf8"));
+    return extractClaudeStatusline(raw);
+  } catch {
+    return null;
+  }
+}
+
+function extractClaudeStatusline(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const rateLimits = raw.rate_limits || raw.rateLimits || raw;
+  const limits = extractClaudeRateLimits(rateLimits);
+  const planType = extractClaudePlanType(raw) || extractClaudePlanType(rateLimits);
+  const credits = extractUsageCredits(raw) || extractUsageCredits(rateLimits);
+  return limits || planType || credits ? { limits, planType, credits } : null;
+}
+
+function extractUsageCredits(source) {
+  if (!source || typeof source !== "object") return null;
+  const candidates = [
+    source.usage_credits,
+    source.usageCredits,
+    source.guthaben,
+    source.credits,
+    source.credit,
+    source.billing?.usage_credits,
+    source.billing?.usageCredits,
+    source.billing?.credits,
+    source.account?.usage_credits,
+    source.account?.usageCredits,
+    source.account?.credits
+  ];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const credits = sanitizeUsageCredits(candidate);
+    if (hasUsageCredits(credits)) return credits;
+  }
+  return null;
+}
+
+function extractClaudePlanType(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const value =
+    raw.plan_type ??
+    raw.planType ??
+    raw.plan ??
+    raw.subscription_plan ??
+    raw.subscriptionPlan ??
+    raw.account?.plan ??
+    raw.user?.plan ??
+    raw.organization?.plan;
+  return value ? String(value).trim() : null;
+}
+
+function extractClaudeRateLimits(rateLimits) {
+  if (!rateLimits || typeof rateLimits !== "object") return null;
+  const weeklyRoot = rateLimits.weekly || rateLimits.weekly_limits || rateLimits.weeklyLimits || {};
+  const currentSession = claudeLimitWindow(
+    findClaudeLimit(rateLimits, ["current_session", "currentSession", "session", "five_hour", "fiveHour", "primary", "5h"]),
+    "Aktuelle Sitzung",
+    300
+  );
+  const allModels = claudeLimitWindow(
+    findClaudeLimit(weeklyRoot, ["all_models", "allModels", "all", "models"]) ||
+      findClaudeLimit(rateLimits, ["all_models", "allModels", "secondary", "seven_day", "sevenDay", "7d"]),
+    "Alle Modelle",
+    10080
+  );
+  const claudeDesign = claudeLimitWindow(
+    findClaudeLimit(weeklyRoot, ["claude_design", "claudeDesign", "design"]) ||
+      findClaudeLimit(rateLimits, ["claude_design", "claudeDesign", "design"]),
+    "Claude Design",
+    10080
+  );
+  const fiveHour = currentSession;
+  const weekly = allModels || claudeLimitWindow(findClaudeLimit(rateLimits, ["weekly"]), "Woche", 10080);
+  const limits = {
+    fiveHour,
+    weekly,
+    currentSession,
+    allModels,
+    claudeDesign
+  };
+  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
+  if (!fiveHour && !weekly && !claudeDesign) return null;
+  return limits;
+}
+
+function findClaudeLimit(source, keys) {
+  if (!source || typeof source !== "object") return null;
+  for (const key of keys) {
+    if (source[key]) return source[key];
+  }
+  const entries = Array.isArray(source)
+    ? source.map((value, index) => [String(index), value])
+    : Object.entries(source);
+  for (const [, value] of entries) {
+    if (!value || typeof value !== "object") continue;
+    const name = String(
+      value.key || value.name || value.label || value.limit_name || value.limitName || value.type || ""
+    ).toLowerCase();
+    if (keys.some((key) => name.includes(String(key).replaceAll("_", " ").toLowerCase()))) return value;
+  }
+  return null;
+}
+
+function claudeLimitWindow(window, label, minutes) {
+  if (!window || typeof window !== "object") return null;
+  const remainingPercentRaw =
+    window.remaining_percentage ??
+    window.remainingPercent ??
+    window.remaining_percent ??
+    window.percent_remaining ??
+    null;
+  const usedPercent =
+    window.used_percentage ??
+    window.usedPercent ??
+    window.used_percent ??
+    window.percent_used ??
+    window.usage_percentage ??
+    window.usagePercent ??
+    (remainingPercentRaw === null ? null : 100 - Number(remainingPercentRaw));
+  if (usedPercent === null || Number.isNaN(Number(usedPercent))) return null;
+  const resetsAt = window.resets_at || window.resetsAt || window.reset_at || window.resetAt || null;
+  const resetLabel =
+    window.reset_label ||
+    window.resetLabel ||
+    window.resets_in ||
+    window.resetsIn ||
+    window.reset_in ||
+    window.resetIn ||
+    null;
+  const safeUsedPercent = Math.max(0, Math.min(100, Number(usedPercent)));
+  return {
+    label: String(window.label || window.name || window.limit_name || window.limitName || label),
+    usedPercent: safeUsedPercent,
+    remainingPercent: Math.max(0, 100 - safeUsedPercent),
+    windowMinutes: Number(window.window_minutes || window.windowMinutes || minutes),
+    resetsAt: normalizeOptionalDate(resetsAt),
+    resetLabel: resetLabel ? String(resetLabel) : null
+  };
+}
+
+async function listGeminiUsageFiles(root) {
+  const skipParts = [`${path.sep}config${path.sep}plugins${path.sep}`];
+  const allowedNames = new Set(["telemetry.log", "usage.json", "usage.jsonl"]);
+  return listFiles(root, (file) => {
+    if (skipParts.some((part) => file.includes(part))) return false;
+    const base = path.basename(file);
+    if (allowedNames.has(base)) return true;
+    if (file.includes(`${path.sep}tmp${path.sep}`) && /\.(json|jsonl|log)$/.test(file)) return true;
+    if (file.includes(`${path.sep}chats${path.sep}`) && /\.(json|jsonl)$/.test(file)) return true;
+    if (file.includes(`${path.sep}telemetry${path.sep}`) && /\.(json|jsonl|log)$/.test(file)) return true;
+    return false;
+  });
+}
+
+function findGeminiUsageMetadata(event) {
+  const wrapper = findFirstObject(event, (object) => {
+    const hasCamel =
+      object.promptTokenCount !== undefined ||
+      object.candidatesTokenCount !== undefined ||
+      object.totalTokenCount !== undefined ||
+      object.thoughtsTokenCount !== undefined;
+    const hasSnake =
+      object.prompt_token_count !== undefined ||
+      object.candidates_token_count !== undefined ||
+      object.total_token_count !== undefined ||
+      object.thoughts_token_count !== undefined;
+    return hasCamel || hasSnake || object.usageMetadata !== undefined || object.usage_metadata !== undefined;
+  });
+  return wrapper?.usageMetadata || wrapper?.usage_metadata || findFirstObject(event, (object) => {
+    return (
+      object.promptTokenCount !== undefined ||
+      object.candidatesTokenCount !== undefined ||
+      object.totalTokenCount !== undefined ||
+      object.prompt_token_count !== undefined ||
+      object.candidates_token_count !== undefined ||
+      object.total_token_count !== undefined
+    );
+  });
+}
+
+function normalizeGeminiUsage(usage) {
+  const input = Number(usage.promptTokenCount ?? usage.prompt_token_count ?? 0);
+  const cached = Number(usage.cachedContentTokenCount ?? usage.cached_content_token_count ?? 0);
+  const output = Number(usage.candidatesTokenCount ?? usage.candidates_token_count ?? 0);
+  const thoughts = Number(usage.thoughtsTokenCount ?? usage.thoughts_token_count ?? 0);
+  return {
+    input_tokens: input,
+    cached_input_tokens: cached,
+    output_tokens: output,
+    reasoning_output_tokens: thoughts,
+    total_tokens: Number(usage.totalTokenCount ?? usage.total_token_count ?? input + cached + output + thoughts)
+  };
+}
+
+function findTimestampMs(event) {
+  const candidate =
+    event.timestamp || event.createdAt || event.created_at || event.startTime || event.start_time || event.time;
+  const parsed = candidate ? Date.parse(candidate) : NaN;
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function findModelName(event) {
+  return findFirstValue(event, ["model", "modelName", "model_name"]);
+}
+
+function findFirstObject(value, predicate) {
+  if (!value || typeof value !== "object") return null;
+  if (!Array.isArray(value) && predicate(value)) return value;
+  const children = Array.isArray(value) ? value : Object.values(value);
+  for (const child of children) {
+    const found = findFirstObject(child, predicate);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findFirstValue(value, keys) {
+  if (!value || typeof value !== "object") return null;
+  if (!Array.isArray(value)) {
+    for (const key of keys) {
+      if (typeof value[key] === "string") return value[key];
+    }
+  }
+  const children = Array.isArray(value) ? value : Object.values(value);
+  for (const child of children) {
+    const found = findFirstValue(child, keys);
+    if (found) return found;
+  }
+  return null;
+}
+
+function safeStatMtime(file) {
+  try {
+    return fs.statSync(file).mtimeMs;
+  } catch {
+    return null;
+  }
+}
+
+function codexRateLimits(rateLimits) {
+  if (!rateLimits) {
+    return {
+      fiveHour: null,
+      weekly: null
+    };
+  }
+  return {
+    fiveHour: codexWindow(rateLimits.primary, "5h Codex limit"),
+    weekly: codexWindow(rateLimits.secondary, "Weekly Codex limit")
+  };
+}
+
+function codexRateLimitsFromEvents(events, fallbackRateLimits) {
+  if (!events.length) return codexRateLimits(fallbackRateLimits);
+  return {
+    fiveHour: codexWindowFromEvents(events, "primary", "5h Codex limit"),
+    weekly: codexWindowFromEvents(events, "secondary", "Weekly Codex limit")
+  };
+}
+
+function codexSparkRateLimitsFromEvents(events, fallbackRateLimits, hasSparkUsage) {
+  const limits = codexRateLimitsFromEvents(events, fallbackRateLimits);
+  const hasAnyLimit = Boolean(limits.fiveHour || limits.weekly);
+  return {
+    fiveHour: relabelCodexWindow(
+      limits.fiveHour || (hasAnyLimit || hasSparkUsage ? emptyCodexWindow("5h Codex 5.3 Spark limit", 300) : null),
+      "5h Codex 5.3 Spark limit"
+    ),
+    weekly: relabelCodexWindow(limits.weekly, "Weekly Codex 5.3 Spark limit")
+  };
+}
+
+function relabelCodexWindow(window, label) {
+  return window ? { ...window, label } : null;
+}
+
+function emptyCodexWindow(label, minutes) {
+  return {
+    label,
+    usedPercent: 0,
+    remainingPercent: 100,
+    windowMinutes: minutes,
+    resetsAt: null
+  };
+}
+
+function codexWindowFromEvents(events, key, label) {
+  const nowSeconds = Date.now() / 1000;
+  const candidates = events
+    .map((event) => ({
+      timestamp: event.timestamp,
+      window: event.rateLimits?.[key],
+      file: event.file
+    }))
+    .filter(({ window }) => {
+      if (!window) return false;
+      if (window.resets_at && Number(window.resets_at) < nowSeconds) return false;
+      return Number.isFinite(Number(window.used_percent));
+    });
+
+  if (!candidates.length) return null;
+
+  // Prefer the newest reset window first. Older active sessions can keep
+  // emitting stale quota windows after a plan change or quota recalculation.
+  const best = candidates.reduce((selected, candidate) => {
+    const candidateReset = Number(candidate.window.resets_at || 0);
+    const selectedReset = Number(selected.window.resets_at || 0);
+    if (candidateReset !== selectedReset) return candidateReset > selectedReset ? candidate : selected;
+
+    const candidateTime = Date.parse(candidate.timestamp);
+    const selectedTime = Date.parse(selected.timestamp);
+    if (candidateTime !== selectedTime) return candidateTime > selectedTime ? candidate : selected;
+
+    const candidateUsed = Number(candidate.window.used_percent || 0);
+    const selectedUsed = Number(selected.window.used_percent || 0);
+    return candidateUsed > selectedUsed ? candidate : selected;
+  });
+
+  return codexWindow(best.window, label);
+}
+
+function codexWindow(window, label) {
+  if (!window) return null;
+  const usedPercent = Number(window.used_percent || 0);
+  return {
+    label,
+    usedPercent,
+    remainingPercent: Math.max(0, 100 - usedPercent),
+    windowMinutes: Number(window.window_minutes || 0),
+    resetsAt: window.resets_at ? new Date(Number(window.resets_at) * 1000).toISOString() : null
+  };
+}
+
+async function readOpenAiUsage() {
+  const key = process.env.OPENAI_ADMIN_KEY;
+  if (!key) {
+    return {
+      id: "openai",
+      status: "not_configured",
+      updatedAt: new Date().toISOString(),
+      message: "Set OPENAI_ADMIN_KEY for organization usage and costs."
+    };
+  }
+
+  const end = Math.floor(Date.now() / 1000);
+  const start = end - 7 * 24 * 60 * 60;
+  const headers = { Authorization: `Bearer ${key}` };
+  const usageUrl = new URL("https://api.openai.com/v1/organization/usage/completions");
+  usageUrl.searchParams.set("start_time", String(start));
+  usageUrl.searchParams.set("end_time", String(end));
+  usageUrl.searchParams.set("bucket_width", "1d");
+  usageUrl.searchParams.append("group_by[]", "model");
+
+  const costsUrl = new URL("https://api.openai.com/v1/organization/costs");
+  costsUrl.searchParams.set("start_time", String(start));
+  costsUrl.searchParams.set("end_time", String(end));
+  costsUrl.searchParams.set("bucket_width", "1d");
+
+  const [usage, costs] = await Promise.all([
+    fetchJson(usageUrl, { headers }),
+    fetchJson(costsUrl, { headers })
+  ]);
+
+  return {
+    id: "openai",
+    status: "live",
+    updatedAt: new Date().toISOString(),
+    usage: summarizeOpenAiUsage(usage),
+    costs: summarizeOpenAiCosts(costs)
+  };
+}
+
+function summarizeOpenAiUsage(payload) {
+  const totals = createUsageTotals();
+  const models = new Map();
+  for (const result of flattenResults(payload)) {
+    const usage = {
+      input_tokens: result.input_tokens,
+      cached_input_tokens: result.input_cached_tokens,
+      output_tokens: result.output_tokens,
+      total_tokens: Number(result.input_tokens || 0) + Number(result.output_tokens || 0)
+    };
+    addUsage(totals, usage);
+    const model = result.model || "unknown";
+    if (!models.has(model)) models.set(model, createUsageTotals());
+    addUsage(models.get(model), usage);
+  }
+  return {
+    totals,
+    byModel: Array.from(models.entries())
+      .map(([model, usage]) => ({ model, ...usage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8)
+  };
+}
+
+function summarizeOpenAiCosts(payload) {
+  let total = 0;
+  let currency = "usd";
+  for (const result of flattenResults(payload)) {
+    total += Number(result.amount?.value || 0);
+    currency = result.amount?.currency || currency;
+  }
+  return { total, currency };
+}
+
+async function readAnthropicUsage() {
+  const key = process.env.ANTHROPIC_ADMIN_KEY;
+  if (!key) {
+    return {
+      id: "anthropic",
+      status: "not_configured",
+      updatedAt: new Date().toISOString(),
+      message: "Set ANTHROPIC_ADMIN_KEY for organization usage and costs."
+    };
+  }
+
+  const ending = new Date();
+  const starting = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const headers = {
+    "x-api-key": key,
+    "anthropic-version": "2023-06-01",
+    "user-agent": "llm-usage-dashboard/0.1.0"
+  };
+
+  const usageUrl = new URL("https://api.anthropic.com/v1/organizations/usage_report/messages");
+  usageUrl.searchParams.set("starting_at", starting.toISOString());
+  usageUrl.searchParams.set("ending_at", ending.toISOString());
+  usageUrl.searchParams.set("bucket_width", "1d");
+  usageUrl.searchParams.append("group_by[]", "model");
+
+  const costUrl = new URL("https://api.anthropic.com/v1/organizations/cost_report");
+  costUrl.searchParams.set("starting_at", starting.toISOString());
+  costUrl.searchParams.set("ending_at", ending.toISOString());
+  costUrl.searchParams.append("group_by[]", "description");
+
+  const [usage, costs] = await Promise.all([
+    fetchJson(usageUrl, { headers }),
+    fetchJson(costUrl, { headers })
+  ]);
+
+  return {
+    id: "anthropic",
+    status: "live",
+    updatedAt: new Date().toISOString(),
+    usage: summarizeAnthropicUsage(usage),
+    costs: summarizeAnthropicCosts(costs)
+  };
+}
+
+function summarizeAnthropicUsage(payload) {
+  const totals = createUsageTotals();
+  const models = new Map();
+  for (const result of flattenResults(payload)) {
+    const usage = {
+      input_tokens:
+        Number(result.uncached_input_tokens || result.input_tokens || 0) +
+        Number(result.cache_creation_input_tokens || 0),
+      cached_input_tokens: result.cache_read_input_tokens || result.cached_input_tokens || 0,
+      output_tokens: result.output_tokens || 0,
+      total_tokens:
+        Number(result.uncached_input_tokens || result.input_tokens || 0) +
+        Number(result.cache_creation_input_tokens || 0) +
+        Number(result.cache_read_input_tokens || result.cached_input_tokens || 0) +
+        Number(result.output_tokens || 0)
+    };
+    addUsage(totals, usage);
+    const model = result.model || result.group?.model || result.description?.model || "unknown";
+    if (!models.has(model)) models.set(model, createUsageTotals());
+    addUsage(models.get(model), usage);
+  }
+  return {
+    totals,
+    byModel: Array.from(models.entries())
+      .map(([model, usage]) => ({ model, ...usage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8)
+  };
+}
+
+function summarizeAnthropicCosts(payload) {
+  let total = 0;
+  for (const result of flattenResults(payload)) {
+    total += Number(result.amount || result.cost || result.cost_usd || result.total_cost || 0);
+  }
+  return { total, currency: "usd" };
+}
+
+function flattenResults(payload) {
+  const results = [];
+  const buckets = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.buckets) ? payload.buckets : [];
+  for (const bucket of buckets) {
+    if (Array.isArray(bucket.results)) results.push(...bucket.results);
+    else results.push(bucket);
+  }
+  if (Array.isArray(payload?.results)) results.push(...payload.results);
+  return results;
+}
+
+async function fetchJson(url, options) {
+  const response = await fetch(url, options);
+  const text = await response.text();
+  let json;
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch {
+    json = { raw: text };
+  }
+  if (!response.ok) {
+    const message = json.error?.message || json.message || response.statusText;
+    throw new Error(`${response.status} ${message}`);
+  }
+  return json;
+}
+
+function startOllamaProxy() {
+  const proxy = express();
+  proxy.use(express.json({ limit: "50mb", type: "*/*" }));
+  proxy.all("*", proxyOllamaRequest);
+  const server = proxy.listen(OLLAMA_PROXY_PORT, () => {
+    console.log(`Ollama usage proxy listening on http://localhost:${OLLAMA_PROXY_PORT} -> ${OLLAMA_HOST}`);
+  });
+  server.on("error", (error) => {
+    console.error(`Ollama usage proxy failed on port ${OLLAMA_PROXY_PORT}: ${error.message}`);
+  });
+  return server;
+}
+
+async function proxyOllamaRequest(req, res) {
+  const targetUrl = new URL(req.originalUrl, OLLAMA_HOST);
+  const headers = copyProxyHeaders(req.headers);
+  const body = hasRequestBody(req.method) ? JSON.stringify(req.body || {}) : undefined;
+
+  try {
+    const upstream = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body
+    });
+    res.status(upstream.status);
+    copyResponseHeaders(upstream.headers, res);
+
+    const chunks = [];
+    if (upstream.body) {
+      for await (const chunk of upstream.body) {
+        const buffer = Buffer.from(chunk);
+        chunks.push(buffer);
+        res.write(buffer);
+      }
+    }
+    res.end();
+
+    const text = Buffer.concat(chunks).toString("utf8");
+    const usageEvent = extractOllamaUsage(text, req.body || {}, req.originalUrl);
+    if (usageEvent) await appendOllamaUsageLog(usageEvent);
+  } catch (error) {
+    res.status(502).json({
+      error: "ollama_proxy_error",
+      message: error.message,
+      target: OLLAMA_HOST
+    });
+  }
+}
+
+function hasRequestBody(method) {
+  return !["GET", "HEAD"].includes(String(method || "").toUpperCase());
+}
+
+function copyProxyHeaders(source) {
+  const headers = {};
+  for (const [key, value] of Object.entries(source)) {
+    const lower = key.toLowerCase();
+    if (["host", "content-length", "connection", "accept-encoding"].includes(lower)) continue;
+    headers[key] = value;
+  }
+  headers["content-type"] = "application/json";
+  return headers;
+}
+
+function copyResponseHeaders(source, res) {
+  for (const [key, value] of source.entries()) {
+    const lower = key.toLowerCase();
+    if (["content-length", "transfer-encoding", "content-encoding", "connection"].includes(lower)) continue;
+    res.setHeader(key, value);
+  }
+}
+
+function extractOllamaUsage(text, requestBody, endpoint) {
+  const objects = parseJsonObjects(text);
+  const usageObject = [...objects].reverse().find((object) => {
+    return (
+      object?.prompt_eval_count !== undefined ||
+      object?.eval_count !== undefined ||
+      object?.usage?.prompt_tokens !== undefined ||
+      object?.usage?.completion_tokens !== undefined
+    );
+  });
+  if (!usageObject) return null;
+
+  const openAiUsage = usageObject.usage || {};
+  const input = Number(usageObject.prompt_eval_count ?? openAiUsage.prompt_tokens ?? 0);
+  const output = Number(usageObject.eval_count ?? openAiUsage.completion_tokens ?? 0);
+  const total = Number(usageObject.total_tokens ?? openAiUsage.total_tokens ?? input + output);
+  if (!total) return null;
+
+  return {
+    timestamp: new Date().toISOString(),
+    provider: "ollama",
+    endpoint,
+    model: usageObject.model || requestBody.model || "ollama",
+    usage: {
+      input_tokens: input,
+      output_tokens: output,
+      total_tokens: total
+    },
+    durations: {
+      total_duration: usageObject.total_duration ?? null,
+      load_duration: usageObject.load_duration ?? null,
+      prompt_eval_duration: usageObject.prompt_eval_duration ?? null,
+      eval_duration: usageObject.eval_duration ?? null
+    }
+  };
+}
+
+function parseJsonObjects(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    return trimmed
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .flatMap((line) => {
+        const sseLine = line.startsWith("data:") ? line.slice(5).trim() : line;
+        if (!sseLine || sseLine === "[DONE]") return [];
+        try {
+          return [JSON.parse(sseLine)];
+        } catch {
+          return [];
+        }
+      });
+  }
+}
+
+async function appendOllamaUsageLog(event) {
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.appendFile(OLLAMA_USAGE_FILE, `${JSON.stringify(event)}\n`);
+}
+
+function startDashboard(options = {}) {
+  const port = Number(options.port ?? PORT);
+  const dashboardServer = app.listen(port, () => {
+    const address = dashboardServer.address();
+    const actualPort = typeof address === "object" && address ? address.port : port;
+    console.log(`LLM usage dashboard listening on http://localhost:${actualPort}`);
+  });
+  const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy();
+  return { dashboardServer, ollamaProxyServer };
+}
+
+if (require.main === module) {
+  startDashboard();
+}
+
+module.exports = { app, startDashboard };

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+data/
+.cache/
+
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
+.DS_Store
+npm-debug.log*
+*.log
+*.pem
+*.key

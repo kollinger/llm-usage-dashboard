@@ -1,0 +1,31 @@
+services:
+  llm-usage-dashboard:
+    build: .
+    container_name: llm-usage-dashboard
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4177}:4177"
+      - "${OLLAMA_PROXY_PORT:-11435}:11435"
+    environment:
+      PORT: 4177
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:4177/auth/oidc/callback}
+      OIDC_SCOPE: ${OIDC_SCOPE:-openid profile email}
+      OPENAI_ADMIN_KEY: ${OPENAI_ADMIN_KEY:-}
+      ANTHROPIC_ADMIN_KEY: ${ANTHROPIC_ADMIN_KEY:-}
+      CODEX_HOME: /host/codex
+      CLAUDE_HOME: /host/claude
+      GEMINI_HOME: /host/gemini
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_PROXY_PORT: 11435
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data:/app/data
+      - ${HOME}/.codex:/host/codex:ro
+      - ${HOME}/.claude:/host/claude:ro
+      - ${HOME}/.gemini:/host/gemini:ro

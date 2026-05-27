@@ -1,0 +1,107 @@
+{
+  "name": "llm-usage-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local dashboard for Codex, OpenAI, Anthropic/Claude, Gemini, and local LLM token usage.",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "electron": "electron .",
+    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac dmg zip --universal",
+    "dist:linux": "electron-builder --linux AppImage",
+    "dist:win": "electron-builder --win nsis portable --x64",
+    "dist:dir": "electron-builder --dir"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-session": "^1.18.1",
+    "openid-client": "^5.7.1"
+  },
+  "devDependencies": {
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "local.llm-usage-dashboard",
+    "productName": "LLM Usage Dashboard",
+    "directories": {
+      "output": "dist"
+    },
+    "artifactName": "LLM-Usage-Dashboard-${version}-${os}-${arch}.${ext}",
+    "icon": "build/icon",
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "scripts/**/*",
+      "server.js",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "background": "build/dmg-background.png",
+      "window": {
+        "width": 660,
+        "height": 420
+      },
+      "contents": [
+        {
+          "x": 190,
+          "y": 240,
+          "type": "file"
+        },
+        {
+          "x": 470,
+          "y": 240,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "category": "Development",
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage"
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "LLM-Usage-Dashboard-${version}-windows-${arch}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "LLM-Usage-Dashboard-${version}-windows-${arch}-portable.${ext}"
+    }
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

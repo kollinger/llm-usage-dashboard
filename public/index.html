@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Usage</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LLM Usage</p>
+          <h1>Limits & Tokens</h1>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="refreshBtn" aria-label="Aktualisieren" title="Aktualisieren">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+          <button class="icon-button" id="settingsBtn" aria-label="Quoten bearbeiten" title="Quoten bearbeiten">
+            <i data-lucide="sliders-horizontal"></i>
+          </button>
+          <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false">
+            Alle anzeigen
+          </button>
+          <button class="text-button" id="loginBtn">Login</button>
+          <button class="text-button ghost" id="logoutBtn" hidden>Logout</button>
+        </div>
+      </header>
+
+      <section class="summary-strip" aria-label="Uebersicht">
+        <div class="metric-tile">
+          <span>5h frei</span>
+          <strong id="fiveHourOpen">--</strong>
+        </div>
+        <div class="metric-tile">
+          <span>Woche frei</span>
+          <strong id="weeklyOpen">--</strong>
+        </div>
+        <div class="metric-tile">
+          <span>Geloggte Tokens heute</span>
+          <strong id="tokensToday">--</strong>
+        </div>
+        <div class="metric-tile">
+          <span>Geloggte Tokens gesamt</span>
+          <strong id="tokensTotal">--</strong>
+        </div>
+      </section>
+
+      <section class="provider-grid" id="providerGrid" aria-label="Provider"></section>
+
+      <section class="usage-layout">
+        <div class="panel chart-panel">
+          <div class="panel-heading chart-heading">
+            <div>
+              <p class="eyebrow">Lokale Logs</p>
+              <h2>Token-Verlauf aus Logs</h2>
+            </div>
+            <div id="sourceTotals" class="source-bars" aria-label="Gesamtverbrauch nach Anbieter"></div>
+          </div>
+          <div id="chart" class="chart"></div>
+          <div id="chartLegend" class="chart-legend" aria-label="Legende"></div>
+        </div>
+
+        <div class="panel split-panel">
+          <div>
+            <p class="eyebrow">Token Mix</p>
+            <h2>Geloggte Verarbeitung</h2>
+          </div>
+          <dl class="token-list" id="tokenList"></dl>
+        </div>
+      </section>
+
+      <section class="panel price-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">API-Kosten</p>
+            <h2>Was deine Tokens über die API gekostet hätten</h2>
+          </div>
+          <span id="pricingMeta" class="soft-label">--</span>
+        </div>
+        <div class="price-table-wrap">
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th><button class="sort-button" type="button" data-price-sort="model">Modell</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="score">Score</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="region">Region</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="input">Input</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="cache">Cache</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="output">Output</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="today">Heute</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="total">Gesamt</button></th>
+                <th><button class="sort-button" type="button" data-price-sort="source">Quelle</button></th>
+              </tr>
+            </thead>
+            <tbody id="priceRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="loginDialog" class="modal">
+      <form method="dialog" class="modal-body" id="loginForm">
+        <div class="modal-heading">
+          <h2>Login</h2>
+          <button class="icon-button" value="cancel" aria-label="Schliessen" title="Schliessen">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <label class="field">
+          <span>Passwort</span>
+          <input type="password" id="passwordInput" autocomplete="current-password" />
+        </label>
+        <div class="modal-actions">
+          <a class="text-button ghost" href="/auth/oidc/start" id="oidcLink">SSO</a>
+          <button class="text-button" type="submit">Einloggen</button>
+        </div>
+        <p class="form-error" id="loginError"></p>
+      </form>
+    </dialog>
+
+    <dialog id="settingsDialog" class="modal wide-modal">
+      <form method="dialog" class="modal-body" id="settingsForm">
+        <div class="modal-heading">
+          <h2>Quoten</h2>
+          <button class="icon-button" type="button" id="settingsCloseBtn" aria-label="Schliessen" title="Schliessen">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="settings-grid">
+          <fieldset>
+            <legend>Claude</legend>
+            <label class="field">
+              <span>Plan</span>
+              <input type="text" name="claude.planType" placeholder="Pro" />
+            </label>
+            <label class="field">
+              <span>Aktuelle Sitzung genutzt (%)</span>
+              <input type="number" min="0" max="100" step="1" name="claude.currentSession.usedPercent" />
+            </label>
+            <label class="field">
+              <span>Aktuelle Sitzung Reset</span>
+              <input type="datetime-local" name="claude.currentSession.resetsAt" />
+            </label>
+            <label class="field">
+              <span>Alle Modelle genutzt (%)</span>
+              <input type="number" min="0" max="100" step="1" name="claude.allModels.usedPercent" />
+            </label>
+            <label class="field">
+              <span>Alle Modelle Reset</span>
+              <input type="datetime-local" name="claude.allModels.resetsAt" />
+            </label>
+            <label class="field">
+              <span>Claude Design genutzt (%)</span>
+              <input type="number" min="0" max="100" step="1" name="claude.claudeDesign.usedPercent" />
+            </label>
+            <label class="field">
+              <span>Claude Design Reset</span>
+              <input type="datetime-local" name="claude.claudeDesign.resetsAt" />
+            </label>
+            <label class="field check-field">
+              <span>Guthaben anzeigen</span>
+              <input type="checkbox" name="claude.credits.enabled" />
+            </label>
+            <label class="field">
+              <span>Guthaben verbraucht (EUR)</span>
+              <input type="number" min="0" step="0.01" name="claude.credits.spentAmount" />
+            </label>
+            <label class="field">
+              <span>Monatslimit (EUR)</span>
+              <input type="number" min="0" step="0.01" name="claude.credits.monthlyLimitAmount" />
+            </label>
+            <label class="field">
+              <span>Aktuelles Guthaben (EUR)</span>
+              <input type="number" min="0" step="0.01" name="claude.credits.currentCreditAmount" />
+            </label>
+            <label class="field">
+              <span>Guthaben Reset</span>
+              <input type="datetime-local" name="claude.credits.resetsAt" />
+            </label>
+            <label class="field check-field">
+              <span>Automatisch aufladen</span>
+              <input type="checkbox" name="claude.credits.autoTopUp" />
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>Gemini</legend>
+            <label class="field">
+              <span>Fenster genutzt (%)</span>
+              <input type="number" min="0" max="100" step="1" name="gemini.fiveHour.usedPercent" />
+            </label>
+            <label class="field">
+              <span>Fenster Reset</span>
+              <input type="datetime-local" name="gemini.fiveHour.resetsAt" />
+            </label>
+            <label class="field">
+              <span>Woche genutzt (%)</span>
+              <input type="number" min="0" max="100" step="1" name="gemini.weekly.usedPercent" />
+            </label>
+            <label class="field">
+              <span>Woche Reset</span>
+              <input type="datetime-local" name="gemini.weekly.resetsAt" />
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>GPT / OpenAI</legend>
+            <label class="field">
+              <span>Plan</span>
+              <input type="text" name="openai.planType" placeholder="Pro" />
+            </label>
+            <label class="field check-field">
+              <span>Guthaben anzeigen</span>
+              <input type="checkbox" name="openai.credits.enabled" />
+            </label>
+            <label class="field">
+              <span>Guthaben verbraucht (EUR)</span>
+              <input type="number" min="0" step="0.01" name="openai.credits.spentAmount" />
+            </label>
+            <label class="field">
+              <span>Monatslimit (EUR)</span>
+              <input type="number" min="0" step="0.01" name="openai.credits.monthlyLimitAmount" />
+            </label>
+            <label class="field">
+              <span>Aktuelles Guthaben (EUR)</span>
+              <input type="number" min="0" step="0.01" name="openai.credits.currentCreditAmount" />
+            </label>
+            <label class="field">
+              <span>Guthaben Reset</span>
+              <input type="datetime-local" name="openai.credits.resetsAt" />
+            </label>
+            <label class="field check-field">
+              <span>Automatisch aufladen</span>
+              <input type="checkbox" name="openai.credits.autoTopUp" />
+            </label>
+          </fieldset>
+        </div>
+        <div class="modal-actions">
+          <button class="text-button" type="submit">Speichern</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
