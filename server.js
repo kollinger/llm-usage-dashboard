@@ -6,6 +6,7 @@ const path = require("node:path");
 const os = require("node:os");
 const readline = require("node:readline");
 const crypto = require("node:crypto");
+const { spawn, spawnSync } = require("node:child_process");
 const express = require("express");
 const session = require("express-session");
 
@@ -22,8 +23,17 @@ const OLLAMA_PROXY_PORT = Number(process.env.OLLAMA_PROXY_PORT || 11435);
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const DAILY_HISTORY_DAYS = Number(process.env.DAILY_HISTORY_DAYS || 180);
+const EXTERNAL_FETCH_TIMEOUT_MS = envMs("EXTERNAL_FETCH_TIMEOUT_SECONDS", 8);
+const ANTHROPIC_API_CACHE_MS = envMs("ANTHROPIC_API_CACHE_SECONDS", 60);
+const CODEX_LIVE_RATE_LIMITS_ENABLED = parseBoolean(process.env.CODEX_LIVE_RATE_LIMITS ?? "true");
+const CODEX_LIVE_RATE_LIMITS_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS", 15);
+const CODEX_APP_SERVER_TIMEOUT_MS = envMs("CODEX_APP_SERVER_TIMEOUT_SECONDS", 5);
+const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 
 const app = express();
+const anthropicCache = createTimedCache();
+const codexLiveRateLimitsCache = createTimedCache();
+let codexAppServer = null;
 
 app.use(express.json({ limit: "200kb" }));
 app.use(
@@ -216,6 +226,47 @@ function providerError(id, error) {
   };
 }
 
+function createTimedCache() {
+  return {
+    value: null,
+    expiresAt: 0,
+    pending: null
+  };
+}
+
+async function readThroughCache(cache, ttlMs, loader) {
+  const now = Date.now();
+  if (cache.value && now < cache.expiresAt) return cache.value;
+  if (cache.pending) return cache.pending;
+
+  cache.pending = Promise.resolve()
+    .then(loader)
+    .then((value) => {
+      cache.value = value;
+      cache.expiresAt = Date.now() + ttlMs;
+      return value;
+    })
+    .catch((error) => {
+      if (!cache.value) throw error;
+      cache.value = {
+        ...cache.value,
+        cache: {
+          ...(cache.value.cache || {}),
+          stale: true,
+          staleReason: error.message,
+          staleAt: new Date().toISOString()
+        }
+      };
+      cache.expiresAt = Date.now() + Math.min(ttlMs, 30_000);
+      return cache.value;
+    })
+    .finally(() => {
+      cache.pending = null;
+    });
+
+  return cache.pending;
+}
+
 async function readManualLimits() {
   try {
     const text = await fsp.readFile(MANUAL_LIMITS_FILE, "utf8");
@@ -295,6 +346,11 @@ function parseBoolean(value) {
   if (typeof value === "boolean") return value;
   if (typeof value === "string") return ["1", "true", "yes", "on", "an"].includes(value.trim().toLowerCase());
   return Boolean(value);
+}
+
+function envMs(name, fallbackSeconds) {
+  const value = Number(process.env[name]);
+  return (Number.isFinite(value) && value > 0 ? value : fallbackSeconds) * 1000;
 }
 
 function positiveAmount(value) {
@@ -469,6 +525,7 @@ function buildLimitRows(limits, keys) {
 }
 
 async function readCodexUsage() {
+  const liveRateLimitsPromise = readCodexLiveRateLimits();
   const roots = [
     path.join(CODEX_HOME, "sessions"),
     path.join(CODEX_HOME, "archived_sessions")
@@ -569,24 +626,30 @@ async function readCodexUsage() {
   }
 
   const daily = buildDaily(dailyMap);
+  const liveRateLimits = await liveRateLimitsPromise;
+  const liveCodexLimits = liveRateLimits?.codex ? codexRateLimitsFromLive(liveRateLimits.codex, "Codex") : null;
+  const liveSparkLimits = liveRateLimits?.spark ? codexRateLimitsFromLive(liveRateLimits.spark, "Codex 5.3 Spark") : null;
 
   return {
     id: "codex",
-    status: latestEvent ? "live" : "empty",
+    status: latestEvent || liveCodexLimits ? "live" : "empty",
     updatedAt: new Date().toISOString(),
     source: {
       codexHome: CODEX_HOME,
       filesScanned: files.length,
       sessionsWithEvents,
-      eventCount
+      eventCount,
+      liveRateLimits: liveRateLimits?.source || null
     },
+    liveRateLimits: liveRateLimits?.source || null,
+    planType: liveRateLimits?.codex?.planType || null,
     latest: latestEvent
       ? {
           timestamp: latestEvent.timestamp,
           modelContextWindow: latestEvent.info.model_context_window || null,
           last: normalizeUsage(latestEvent.info.last_token_usage || {}),
           sessionTotal: normalizeUsage(latestEvent.info.total_token_usage || {}),
-          planType: latestEvent.rateLimits?.plan_type || null,
+          planType: liveRateLimits?.codex?.planType || latestEvent.rateLimits?.plan_type || null,
           file: latestEvent.file
         }
       : null,
@@ -602,8 +665,8 @@ async function readCodexUsage() {
       last24h,
       last7d
     },
-    limits: codexRateLimitsFromEvents(rateLimitEvents, latestEvent?.rateLimits),
-    spark: buildCodexSparkUsage(sparkLatestEvent, sparkFirstEvent, sparkUsage, sparkRateLimitEvents),
+    limits: liveCodexLimits || codexRateLimitsFromEvents(rateLimitEvents, latestEvent?.rateLimits),
+    spark: buildCodexSparkUsage(sparkLatestEvent, sparkFirstEvent, sparkUsage, sparkRateLimitEvents, liveSparkLimits),
     daily
   };
 }
@@ -617,17 +680,18 @@ function isCodexSparkModel(model) {
   return /spark|bengalfox|research/i.test(String(model || ""));
 }
 
-function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents) {
+function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, liveLimits) {
   const limits = codexSparkRateLimitsFromEvents(
     rateLimitEvents,
     latestEvent?.rateLimits,
     Boolean(latestEvent)
   );
+  const mergedLimits = liveLimits || limits;
   return {
     id: "codexSpark",
-    status: latestEvent ? "live" : "empty",
+    status: latestEvent || liveLimits ? "live" : "empty",
     updatedAt: new Date().toISOString(),
-    message: latestEvent ? null : "Keine Codex 5.3 Spark Events gefunden.",
+    message: latestEvent || liveLimits ? null : "Keine Codex 5.3 Spark Events gefunden.",
     latest: latestEvent
       ? {
           timestamp: latestEvent.timestamp,
@@ -646,7 +710,8 @@ function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents) {
         }
       : null,
     totals: finalizeUsageAccumulator(usage),
-    limits,
+    planType: liveLimits?.planType || latestEvent?.rateLimits?.plan_type || null,
+    limits: mergedLimits,
     daily: buildDaily(usage.dailyMap)
   };
 }
@@ -1407,6 +1472,200 @@ function safeStatMtime(file) {
   }
 }
 
+async function readCodexLiveRateLimits() {
+  if (!CODEX_LIVE_RATE_LIMITS_ENABLED) return null;
+  return readThroughCache(codexLiveRateLimitsCache, CODEX_LIVE_RATE_LIMITS_CACHE_MS, async () => {
+    try {
+      const client = await getCodexAppServer();
+      const response = await client.request("account/rateLimits/read", undefined);
+      return normalizeCodexLiveRateLimits(response);
+    } catch (error) {
+      if (codexLiveRateLimitsCache.value) throw error;
+      return {
+        source: {
+          status: "error",
+          message: error.message,
+          updatedAt: new Date().toISOString()
+        }
+      };
+    }
+  });
+}
+
+function normalizeCodexLiveRateLimits(response) {
+  const entries = [];
+  if (response?.rateLimitsByLimitId && typeof response.rateLimitsByLimitId === "object") {
+    for (const [limitId, snapshot] of Object.entries(response.rateLimitsByLimitId)) {
+      if (snapshot) entries.push([limitId, snapshot]);
+    }
+  }
+  if (!entries.length && response?.rateLimits) {
+    entries.push([response.rateLimits.limitId || "codex", response.rateLimits]);
+  }
+
+  const codex = entries.find(([, snapshot]) => !isCodexSparkSnapshot(snapshot))?.[1] || null;
+  const spark = entries.find(([, snapshot]) => isCodexSparkSnapshot(snapshot))?.[1] || null;
+
+  return {
+    codex,
+    spark,
+    source: {
+      status: codex || spark ? "live" : "empty",
+      source: "codex app-server",
+      updatedAt: new Date().toISOString(),
+      limitCount: entries.length
+    }
+  };
+}
+
+function isCodexSparkSnapshot(snapshot) {
+  return /spark|bengalfox|research/i.test(`${snapshot?.limitId || ""} ${snapshot?.limitName || ""}`);
+}
+
+function codexRateLimitsFromLive(snapshot, labelPrefix) {
+  if (!snapshot) return null;
+  return {
+    planType: snapshot.planType || null,
+    fiveHour: codexWindowFromLive(snapshot.primary, `5h ${labelPrefix} limit`),
+    weekly: codexWindowFromLive(snapshot.secondary, `Weekly ${labelPrefix} limit`)
+  };
+}
+
+function codexWindowFromLive(window, label) {
+  if (!window) return null;
+  const usedPercent = Number(window.usedPercent);
+  if (!Number.isFinite(usedPercent)) return null;
+  return {
+    label,
+    usedPercent,
+    remainingPercent: Math.max(0, 100 - usedPercent),
+    windowMinutes: Number(window.windowDurationMins || 0),
+    resetsAt: window.resetsAt ? new Date(Number(window.resetsAt) * 1000).toISOString() : null
+  };
+}
+
+async function getCodexAppServer() {
+  if (codexAppServer) return codexAppServer;
+
+  const codexBinary = resolveCodexBinary();
+  if (!codexBinary) {
+    throw new Error("Codex CLI not found");
+  }
+
+  const proc = spawn(codexBinary, ["app-server", "--listen", "stdio://"], {
+    stdio: ["pipe", "pipe", "pipe"]
+  });
+  const pending = new Map();
+  let buffer = "";
+  let closing = false;
+
+  const send = (message) => {
+    proc.stdin.write(`${JSON.stringify(message)}\n`);
+  };
+
+  const client = {
+    request(method, params) {
+      return new Promise((resolve, reject) => {
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const timeout = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error(`Timed out waiting for ${method}`));
+        }, CODEX_APP_SERVER_TIMEOUT_MS);
+        pending.set(id, { resolve, reject, timeout, method });
+        send({ id, method, params });
+      });
+    },
+    close() {
+      closing = true;
+      proc.kill("SIGTERM");
+    }
+  };
+
+  proc.stdout.on("data", (chunk) => {
+    buffer += chunk.toString("utf8");
+    let newlineIndex = buffer.indexOf("\n");
+    while (newlineIndex !== -1) {
+      const rawLine = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+      newlineIndex = buffer.indexOf("\n");
+      if (!rawLine) continue;
+
+      let message;
+      try {
+        message = JSON.parse(rawLine);
+      } catch {
+        continue;
+      }
+
+      if (!message || !Object.prototype.hasOwnProperty.call(message, "id")) continue;
+      const entry = pending.get(String(message.id));
+      if (!entry) continue;
+      clearTimeout(entry.timeout);
+      pending.delete(String(message.id));
+      if (message.error) {
+        entry.reject(new Error(message.error.message || `Request failed: ${entry.method}`));
+      } else {
+        entry.resolve(message.result);
+      }
+    }
+  });
+
+  proc.stderr.on("data", (chunk) => {
+    if (process.env.CODEX_LIVE_RATE_LIMITS_DEBUG) process.stderr.write(chunk);
+  });
+
+  const rejectPending = (error) => {
+    for (const entry of pending.values()) {
+      clearTimeout(entry.timeout);
+      entry.reject(error);
+    }
+    pending.clear();
+  };
+
+  proc.on("error", (error) => {
+    if (!closing) rejectPending(error);
+    codexAppServer = null;
+  });
+
+  proc.on("exit", (code, signal) => {
+    if (!closing) {
+      rejectPending(new Error(`Codex app-server exited (${code ?? "unknown"}${signal ? `, ${signal}` : ""})`));
+    }
+    codexAppServer = null;
+  });
+
+  codexAppServer = client;
+  try {
+    await client.request("initialize", {
+      clientInfo: { name: "llm-usage-dashboard", version: "1.0.0" },
+      capabilities: null
+    });
+    send({ method: "initialized" });
+    return client;
+  } catch (error) {
+    client.close();
+    codexAppServer = null;
+    throw error;
+  }
+}
+
+function resolveCodexBinary() {
+  const candidates = [
+    process.env.CODEX_BIN,
+    process.env.CODEX_CLI_PATH,
+    "/Applications/Codex.app/Contents/Resources/codex",
+    "/Applications/Codex.app/Contents/MacOS/Codex"
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) return candidate;
+  }
+
+  const which = spawnSync("which", ["codex"], { encoding: "utf8" });
+  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
+  return null;
+}
+
 function codexRateLimits(rateLimits) {
   if (!rateLimits) {
     return {
@@ -1585,37 +1844,121 @@ async function readAnthropicUsage() {
     };
   }
 
-  const ending = new Date();
-  const starting = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const headers = {
-    "x-api-key": key,
-    "anthropic-version": "2023-06-01",
-    "user-agent": "llm-usage-dashboard/0.1.0"
-  };
+  return readThroughCache(anthropicCache, ANTHROPIC_API_CACHE_MS, async () => {
+    const ending = new Date();
+    const starting = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const headers = {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "user-agent": "llm-usage-dashboard/1.0.0"
+    };
 
-  const usageUrl = new URL("https://api.anthropic.com/v1/organizations/usage_report/messages");
-  usageUrl.searchParams.set("starting_at", starting.toISOString());
-  usageUrl.searchParams.set("ending_at", ending.toISOString());
-  usageUrl.searchParams.set("bucket_width", "1d");
-  usageUrl.searchParams.append("group_by[]", "model");
+    const usageUrl = new URL("https://api.anthropic.com/v1/organizations/usage_report/messages");
+    usageUrl.searchParams.set("starting_at", starting.toISOString());
+    usageUrl.searchParams.set("ending_at", ending.toISOString());
+    usageUrl.searchParams.set("bucket_width", "1d");
+    usageUrl.searchParams.append("group_by[]", "model");
 
-  const costUrl = new URL("https://api.anthropic.com/v1/organizations/cost_report");
-  costUrl.searchParams.set("starting_at", starting.toISOString());
-  costUrl.searchParams.set("ending_at", ending.toISOString());
-  costUrl.searchParams.append("group_by[]", "description");
+    const costUrl = new URL("https://api.anthropic.com/v1/organizations/cost_report");
+    costUrl.searchParams.set("starting_at", starting.toISOString());
+    costUrl.searchParams.set("ending_at", ending.toISOString());
+    costUrl.searchParams.append("group_by[]", "description");
 
-  const [usage, costs] = await Promise.all([
-    fetchJson(usageUrl, { headers }),
-    fetchJson(costUrl, { headers })
-  ]);
+    const [usage, costs, limits] = await Promise.all([
+      fetchJson(usageUrl, { headers }),
+      fetchJson(costUrl, { headers }),
+      fetchAnthropicRateLimits(headers).catch((error) => ({
+        status: "error",
+        message: error.message,
+        rows: []
+      }))
+    ]);
 
+    return {
+      id: "anthropic",
+      status: "live",
+      updatedAt: new Date().toISOString(),
+      usage: summarizeAnthropicUsage(usage),
+      costs: summarizeAnthropicCosts(costs),
+      limits
+    };
+  });
+}
+
+async function fetchAnthropicRateLimits(headers) {
+  const orgUrl = new URL("https://api.anthropic.com/v1/organizations/rate_limits");
+  orgUrl.searchParams.set("group_type", "model_group");
+
+  const requests = [fetchJson(orgUrl, { headers })];
+  if (ANTHROPIC_WORKSPACE_ID) {
+    const workspaceUrl = new URL(
+      `https://api.anthropic.com/v1/organizations/workspaces/${encodeURIComponent(ANTHROPIC_WORKSPACE_ID)}/rate_limits`
+    );
+    workspaceUrl.searchParams.set("group_type", "model_group");
+    requests.push(fetchJson(workspaceUrl, { headers }));
+  }
+
+  const [organization, workspace] = await Promise.all(requests);
+  return summarizeAnthropicRateLimits(organization, workspace);
+}
+
+function summarizeAnthropicRateLimits(organization, workspace) {
+  const workspaceRows = summarizeAnthropicRateLimitRows(workspace?.data || [], "Workspace");
+  const organizationRows = summarizeAnthropicRateLimitRows(organization?.data || [], "Org");
+  const rows = [...workspaceRows, ...organizationRows].slice(0, 5);
   return {
-    id: "anthropic",
     status: "live",
+    source: ANTHROPIC_WORKSPACE_ID ? "Anthropic Admin API org/workspace rate limits" : "Anthropic Admin API org rate limits",
     updatedAt: new Date().toISOString(),
-    usage: summarizeAnthropicUsage(usage),
-    costs: summarizeAnthropicCosts(costs)
+    summaryLabel: rows.length ? `${rows.length} Limitgruppen` : "Keine Modelllimits",
+    rows
   };
+}
+
+function summarizeAnthropicRateLimitRows(entries, scope) {
+  return entries
+    .filter((entry) => entry?.group_type === "model_group")
+    .sort((a, b) => anthropicModelGroupRank(a) - anthropicModelGroupRank(b))
+    .map((entry, index) => {
+      const limits = new Map((entry.limits || []).map((limit) => [limit.type, Number(limit.value)]));
+      const requests = limits.get("requests_per_minute");
+      const input = limits.get("input_tokens_per_minute");
+      const output = limits.get("output_tokens_per_minute");
+      const valueLabel = [
+        Number.isFinite(requests) ? `${formatCompactLimit(requests)} RPM` : null,
+        Number.isFinite(input) ? `${formatCompactLimit(input)} ITPM` : null,
+        Number.isFinite(output) ? `${formatCompactLimit(output)} OTPM` : null
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return {
+        key: `${scope}-${index}-${entry.models?.[0] || entry.group_type}`,
+        label: `${scope} ${anthropicModelGroupLabel(entry)}`,
+        valueLabel: valueLabel || `${entry.limits?.length || 0} Limits`
+      };
+    });
+}
+
+function anthropicModelGroupRank(entry) {
+  const label = anthropicModelGroupLabel(entry).toLowerCase();
+  if (label.includes("opus")) return 0;
+  if (label.includes("sonnet")) return 1;
+  if (label.includes("haiku")) return 2;
+  return 3;
+}
+
+function anthropicModelGroupLabel(entry) {
+  const models = (entry.models || []).join(" ");
+  if (/opus/i.test(models)) return "Opus";
+  if (/sonnet/i.test(models)) return "Sonnet";
+  if (/haiku/i.test(models)) return "Haiku";
+  return String(entry.models?.[0] || entry.group_type || "Modelle").replace(/^claude-/, "");
+}
+
+function formatCompactLimit(value) {
+  if (value >= 1_000_000) return `${Math.round(value / 100_000) / 10}M`;
+  if (value >= 1_000) return `${Math.round(value / 100) / 10}k`;
+  return String(value);
 }
 
 function summarizeAnthropicUsage(payload) {
@@ -1667,8 +2010,22 @@ function flattenResults(payload) {
   return results;
 }
 
-async function fetchJson(url, options) {
-  const response = await fetch(url, options);
+async function fetchJson(url, options = {}) {
+  const { timeoutMs = EXTERNAL_FETCH_TIMEOUT_MS, ...fetchOptions } = options;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetch(url, { ...fetchOptions, signal: controller.signal });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error(`Timed out fetching ${new URL(url).hostname}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
   const text = await response.text();
   let json;
   try {

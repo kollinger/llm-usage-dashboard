@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "Local dashboard for Codex, OpenAI, Anthropic/Claude, Gemini, and local LLM token usage.",
+  "author": {
+    "name": "Gerhard Kollinger",
+    "email": "gerhard@kollinger.at",
+    "url": "https://github.com/kollinger"
+  },
+  "license": "MIT",
   "main": "electron/main.js",
   "scripts": {
     "start": "node server.js",

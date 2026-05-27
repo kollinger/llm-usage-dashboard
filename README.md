@@ -4,6 +4,8 @@ Local-first dashboard for LLM usage, rate limits, token logs, and API cost estim
 
 The app is intentionally simple: a Node.js/Express backend serves a vanilla HTML/CSS/JavaScript frontend. Electron packages the same local dashboard as a desktop app, and Docker is available for server-style installs.
 
+LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://github.com/kollinger) and is not affiliated with, endorsed by, or sponsored by OpenAI, Anthropic, Google, Gemini, Ollama, or the maintainers of their tools and APIs.
+
 ## Features
 
 - Codex local token usage from `~/.codex/sessions` and `~/.codex/archived_sessions`.
@@ -14,7 +16,7 @@ The app is intentionally simple: a Node.js/Express backend serves a vanilla HTML
 - Ollama local token capture through the optional built-in proxy logger.
 - Manual quota and credit tracking for Claude, Gemini, and GPT/OpenAI where providers do not expose stable local APIs.
 - Optional OpenAI and Anthropic admin API usage/cost aggregation when admin keys are provided.
-- Token history chart with per-provider color stacking, source totals, and API price comparison estimates.
+- Token history chart with per-provider color stacking, source totals, and API price comparison estimates for local/non-API usage.
 - Optional password login and OIDC/SSO.
 - Electron builds for macOS and Linux AppImage.
 
@@ -35,6 +37,9 @@ Open <http://localhost:4177>.
 By default the dashboard is local-unlocked. Set `DASHBOARD_PASSWORD` if you expose the port beyond your own machine. If `SESSION_SECRET` is unset, the server generates a random one on startup; set a stable value if you want login sessions to survive restarts.
 
 ## Desktop App
+
+Prebuilt desktop downloads are published on the [GitHub Releases page](https://github.com/kollinger/llm-usage-dashboard/releases/latest).
+Current desktop release assets are marked as unsigned prereleases until macOS notarization and Windows code signing are configured.
 
 Run the Electron app in development:
 
@@ -60,6 +65,15 @@ Artifacts are written to `dist/`.
 Windows builds can be produced on Windows directly. Cross-building from macOS or Linux may require Wine/Mono; the GitHub Actions workflow uses a native Windows runner for the most reliable Windows artifacts.
 
 Desktop artifacts are generated release outputs and should normally not be committed to Git. Publish them through GitHub Releases or workflow artifacts.
+
+Release builds are created by GitHub Actions when a `v*` tag is pushed. For example:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow builds macOS, Linux, and Windows packages on native GitHub-hosted runners, uploads them as workflow artifacts, and attaches them to a GitHub Release. Release artifacts are currently unsigned prereleases; macOS Gatekeeper and Windows SmartScreen may warn until code signing/notarization certificates are configured as repository secrets.
 
 ## Docker
 
@@ -109,12 +123,16 @@ PORT=4177
 DASHBOARD_PASSWORD=
 SESSION_SECRET=
 CODEX_HOME=~/.codex
+CODEX_LIVE_RATE_LIMITS=true
+CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS=15
 CLAUDE_HOME=~/.claude
 GEMINI_HOME=~/.gemini
 OLLAMA_HOST=http://localhost:11434
 OLLAMA_PROXY_PORT=11435
 OPENAI_ADMIN_KEY=
 ANTHROPIC_ADMIN_KEY=
+ANTHROPIC_WORKSPACE_ID=
+ANTHROPIC_API_CACHE_SECONDS=60
 ```
 
 OIDC/SSO is optional:
@@ -141,6 +159,8 @@ $CODEX_HOME/archived_sessions
 ```
 
 The dashboard reads `token_count` events and aggregates input, cached input, output, reasoning, 5-hour usage, 24-hour usage, all-time totals, daily history, and Codex Spark buckets when present.
+
+By default, Codex rate-limit rings also try to read a live snapshot from the local Codex app-server with `account/rateLimits/read`. This is cached for 15 seconds and falls back to session logs if Codex is missing, logged out, unavailable, or disabled with `CODEX_LIVE_RATE_LIMITS=false`.
 
 ### Claude Code
 
@@ -216,7 +236,24 @@ OPENAI_ADMIN_KEY="..." ANTHROPIC_ADMIN_KEY="..." npm start
 
 Admin keys stay on the server. The browser receives only aggregated usage/cost data.
 
+Anthropic admin keys also enable configured organization rate-limit display through `GET /v1/organizations/rate_limits`. Set `ANTHROPIC_WORKSPACE_ID` to additionally read workspace-level overrides. These rate limits are cached for 60 seconds because they are configured limits, not a per-second live usage counter.
+
 Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not generally available through the same API keys. Use manual quota/credit fields unless a local provider-specific telemetry source exposes it.
+
+The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs.
+
+## Known Limits and To-Dos
+
+- Codex live quota source: the dashboard reads Codex rate-limit snapshots from the local Codex app-server when available, then falls back to `token_count` events in session logs. The app-server interface is local and experimental, so log parsing remains the durable history source.
+- Desktop signing: GitHub Actions publishes unsigned prerelease desktop artifacts today. To-do: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
+- API customer reporting: OpenAI and Anthropic admin API support is intentionally minimal today. To-do: expand it for API customers with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.
+- Provider data gaps: Claude Code, Gemini, and consumer subscription usage fields only appear when local telemetry, statusline capture, admin APIs, or manual entries expose them. To-do: keep new provider-specific local sources documented as they become stable enough to trust.
+
+## Author and License
+
+Created by [Gerhard Kollinger](https://github.com/kollinger) <gerhard@kollinger.at>.
+
+Released under the [MIT License](LICENSE).
 
 ## Privacy and Git Safety
 

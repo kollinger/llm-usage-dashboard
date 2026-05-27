@@ -124,6 +124,7 @@ a {
   min-width: 118px;
 }
 
+.icon-button:disabled,
 .text-button:disabled {
   cursor: default;
   opacity: 0.58;
@@ -133,6 +134,21 @@ a {
 .text-button svg {
   width: 18px;
   height: 18px;
+}
+
+.icon-button.is-loading {
+  color: var(--green);
+}
+
+.icon-button.is-loading svg {
+  animation: refresh-spin 0.8s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .summary-strip {

@@ -2,6 +2,7 @@ const state = {
   auth: null,
   usage: null,
   loadingUsage: false,
+  refreshIndicator: false,
   showAllProviders: false,
   chartRendered: false,
   pricingSort: null
@@ -296,12 +297,12 @@ async function init() {
   loadProviderFilterPreference();
   bindEvents();
   await loadAuth();
-  await loadUsage();
+  await loadUsage({ showIndicator: true });
   setInterval(loadUsage, 5_000);
 }
 
 function bindEvents() {
-  els.refreshBtn.addEventListener("click", loadUsage);
+  els.refreshBtn.addEventListener("click", () => loadUsage({ showIndicator: true }));
   els.loginBtn.addEventListener("click", () => els.loginDialog.showModal());
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
@@ -380,13 +381,19 @@ async function logout() {
   renderLocked();
 }
 
-async function loadUsage() {
-  if (state.loadingUsage) return;
+async function loadUsage({ showIndicator = false } = {}) {
+  if (state.loadingUsage) {
+    if (showIndicator) {
+      state.refreshIndicator = true;
+      setRefreshIndicator(true);
+    }
+    return;
+  }
   if (state.auth && !state.auth.authenticated) {
     renderLocked();
     return;
   }
-  state.loadingUsage = true;
+  setUsageLoading(true, showIndicator);
   try {
     state.usage = await fetchJson(`/api/usage?ts=${Date.now()}`);
     render();
@@ -398,8 +405,21 @@ async function loadUsage() {
     }
     els.providerGrid.innerHTML = `<article class="provider-card"><h2>Fehler</h2><p>${escapeHtml(error.message)}</p></article>`;
   } finally {
-    state.loadingUsage = false;
+    setUsageLoading(false);
   }
+}
+
+function setUsageLoading(isLoading, showIndicator = false) {
+  state.loadingUsage = isLoading;
+  if (isLoading && showIndicator) state.refreshIndicator = true;
+  if (!isLoading) state.refreshIndicator = false;
+  setRefreshIndicator(state.refreshIndicator);
+}
+
+function setRefreshIndicator(isLoading) {
+  els.refreshBtn.disabled = isLoading;
+  els.refreshBtn.classList.toggle("is-loading", isLoading);
+  els.refreshBtn.toggleAttribute("aria-busy", isLoading);
 }
 
 function renderLocked() {
@@ -499,6 +519,7 @@ function normalizeCodexProvider(codex) {
   const last24hTokens = subtractTokenTotals(codex?.totals?.last24h, codex?.spark?.totals?.last24h);
   const allTimeTokens = subtractTokenTotals(codex?.totals?.allTime, codex?.spark?.totals?.allTime);
   const limitRows = normalizeLimitRows(codex?.limits);
+  const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
   return {
     id: "codex",
     name: meta.name,
@@ -519,7 +540,7 @@ function normalizeCodexProvider(codex) {
       ["5h genutzt", formatPercent(codex?.limits?.fiveHour?.usedPercent)],
       ["Woche genutzt", formatPercent(codex?.limits?.weekly?.usedPercent)],
       ["Seit", formatDate(codex?.first?.timestamp)],
-      ["Stand", formatTime(codex?.latest?.timestamp)]
+      ["Stand", formatTime(limitUpdatedAt)]
     ]
   };
 }
@@ -662,17 +683,23 @@ function normalizeLimitRows(limits) {
 }
 
 function normalizeLimitRow(row) {
-  if (!row || !Number.isFinite(Number(row.usedPercent))) return null;
-  const usedPercent = Math.max(0, Math.min(100, Number(row.usedPercent)));
+  if (!row) return null;
+  const hasUsedPercent = Number.isFinite(Number(row.usedPercent));
+  if (!hasUsedPercent && !row.valueLabel) return null;
+  const usedPercent = hasUsedPercent ? Math.max(0, Math.min(100, Number(row.usedPercent))) : null;
   return {
     key: row.key || row.label || "limit",
     label: row.label || row.limitLabel || row.key || "Limit",
     usedPercent,
-    remainingPercent: Number.isFinite(Number(row.remainingPercent))
-      ? Math.max(0, Math.min(100, Number(row.remainingPercent)))
-      : Math.max(0, 100 - usedPercent),
+    remainingPercent:
+      usedPercent === null
+        ? null
+        : Number.isFinite(Number(row.remainingPercent))
+          ? Math.max(0, Math.min(100, Number(row.remainingPercent)))
+          : Math.max(0, 100 - usedPercent),
+    valueLabel: row.valueLabel || null,
     resetsAt: row.resetsAt || null,
-    resetLabel: row.resetLabel || null
+    resetLabel: row.resetLabel || row.detail || null
   };
 }
 
@@ -685,11 +712,13 @@ function normalizeApiProvider(id, provider) {
   const totalTokens = provider?.usage?.totals?.totalTokens;
   const costs = provider?.costs;
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
+  const limitRows = normalizeLimitRows(provider?.limits);
   const planType = provider?.planType || provider?.plan || null;
   const foot = [
     ["Tokens 7d", formatTokens(totalTokens)],
     ["Kosten 7d", formatMoney(costs?.total, costs?.currency)]
   ];
+  if (provider?.limits?.summaryLabel) foot.push(["Limits", provider.limits.summaryLabel]);
   if (planType) foot.push(["Plan", planType]);
   return {
     id,
@@ -699,7 +728,7 @@ function normalizeApiProvider(id, provider) {
     status: provider?.status || "not_configured",
     fiveHour: null,
     weekly: null,
-    limitRows: [],
+    limitRows,
     creditRows,
     planType,
     primaryLabel: "7d",
@@ -766,7 +795,8 @@ function renderNoActiveProviders() {
 
 function renderProvider(provider) {
   const statusClass = `status-${provider.status}`;
-  const showLimitBars = provider.limitRows?.length > 2 || Boolean(provider.planType);
+  const hasConfiguredLimitRows = provider.limitRows?.some((row) => row.valueLabel);
+  const showLimitBars = hasConfiguredLimitRows || provider.limitRows?.length > 2 || Boolean(provider.planType);
   const main = provider.limitRows?.length || provider.fiveHour || provider.weekly
     ? showLimitBars
       ? renderLimitBars(provider)
@@ -848,17 +878,23 @@ function renderLimitBars(provider) {
 }
 
 function renderLimitBar(row, accent) {
+  const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
   const detail = row.resetLabel || (row.resetsAt ? `Reset ${formatDateTime(row.resetsAt)}` : "");
+  const value = row.valueLabel || `${used}% genutzt`;
   return `
     <div class="limit-bar">
       <div class="limit-bar-top">
         <strong>${escapeHtml(row.label)}</strong>
-        <span>${used}% genutzt</span>
+        <span>${escapeHtml(value)}</span>
       </div>
-      <div class="limit-bar-track" aria-hidden="true">
-        <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${accent}"></span>
-      </div>
+      ${
+        hasUsedPercent
+          ? `<div class="limit-bar-track" aria-hidden="true">
+              <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${accent}"></span>
+            </div>`
+          : ""
+      }
       ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
     </div>
   `;
