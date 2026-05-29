@@ -692,9 +692,9 @@ function normalizeCodexProvider(codex) {
     allTimeTokens,
     foot: [
       [t("labels.today"), formatTokens(last24hTokens)],
+      [t("labels.since"), formatDate(codex?.first?.timestamp)],
       [t("labels.fiveHourLeft"), formatLimitRemainingPercent(codex?.limits?.fiveHour)],
       [t("labels.weekLeft"), formatLimitRemainingPercent(codex?.limits?.weekly)],
-      [t("labels.since"), formatDate(codex?.first?.timestamp)],
       [t("labels.updated"), formatTime(limitUpdatedAt)]
     ]
   };
@@ -726,9 +726,9 @@ function normalizeCodexSparkProvider(spark) {
     message: localizeProviderMessage(spark?.message, "providers.messages.sparkTokens24h"),
     foot: [
       [t("labels.today"), formatTokens(spark?.totals?.last24h?.totalTokens)],
+      [t("labels.since"), formatDate(spark?.first?.timestamp)],
       [t("labels.fiveHourLeft"), formatLimitRemainingPercent(spark?.limits?.fiveHour)],
       [t("labels.weekLeft"), formatLimitRemainingPercent(spark?.limits?.weekly)],
-      [t("labels.since"), formatDate(spark?.first?.timestamp)],
       [t("labels.updated"), formatTime(spark?.latest?.timestamp)]
     ]
   };
