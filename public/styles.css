@@ -818,6 +818,11 @@ a {
   padding: 18px;
 }
 
+.wide-modal .modal-body {
+  max-height: min(86vh, 820px);
+  overflow: auto;
+}
+
 .modal-heading {
   justify-content: space-between;
   gap: 18px;
@@ -877,6 +882,14 @@ fieldset {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px;
+}
+
+.settings-actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  padding-bottom: 4px;
 }
 
 .form-error {
