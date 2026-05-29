@@ -188,7 +188,7 @@ $COPILOT_HOME/session-state/**/events.jsonl
 
 The dashboard only uses `session.shutdown` events and extracts aggregate fields such as model token totals, API duration, and `totalPremiumRequests`. It intentionally ignores prompt, response, hook, and tool payload events because those can contain source code, prompts, command arguments, and other sensitive work context.
 
-GitHub's official Copilot usage metrics APIs are enterprise/organization reporting surfaces, not a stable personal-account token/quota API for this local-first dashboard. Personal Copilot AI-credit and subscription allowance tracking should stay separate from the API price comparison table. Copilot CLI tokens are therefore shown as local usage but excluded from "what this would have cost through the API" estimates.
+GitHub's official Copilot usage metrics APIs are enterprise/organization reporting surfaces, not a stable personal-account token/quota API for this local-first dashboard. Personal Copilot AI-credit and subscription allowance tracking should stay separate from the API price comparison table. Copilot CLI tokens are therefore shown as local usage but excluded from "what this would have cost through the API" estimates. Personal Copilot quota research is tracked in the open to-dos below.
 
 ### Claude Code
 
@@ -285,13 +285,32 @@ The pricing section is mainly a comparison view for local or consumer-style usag
 
 Model quality scores in the pricing table are an internal heuristic for quick sorting and visual comparison. They are not an official benchmark, not a provider claim, and should be recalibrated or removed when a better documented scoring method is adopted.
 
-## Known Limits and To-Dos
+## Implementation Status
 
-- Codex live quota source: the dashboard reads Codex rate-limit snapshots from the local Codex app-server when available, then falls back to `token_count` events in session logs. The app-server interface is local and experimental, so log parsing remains the durable history source.
-- Copilot usage coverage: Copilot CLI shutdown metrics are supported locally. IDE completions, personal AI-credit allowance, warning thresholds, and subscription quota resets are not exposed through a stable personal local/API source today; use GitHub's own account UI or enterprise/org metrics APIs where applicable.
-- Desktop signing: GitHub Actions publishes unsigned prerelease desktop artifacts today. To-do: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
-- API customer reporting: OpenAI and Anthropic admin API support is intentionally minimal today. To-do: expand it for API customers with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.
-- Provider data gaps: Claude Code, Gemini, and consumer subscription usage fields only appear when local telemetry, statusline capture, admin APIs, or manual entries expose them. To-do: keep new provider-specific local sources documented as they become stable enough to trust.
+### Implemented
+
+- Codex local usage and live quota display: the dashboard reads `token_count` history and tries the local Codex app-server for live rate-limit snapshots when available.
+- Copilot CLI local usage: shutdown metrics are supported without reading prompt, response, hook, or tool payload content into dashboard output.
+- Claude Code local usage and live limits: transcript usage, statusline setup, sanitized quota capture, 5-hour and 7-day reset display, stale-limit detection, and app-driven Claude Code launch are supported.
+- Gemini local usage: known telemetry and chat metadata paths are scanned when present.
+- Ollama local usage: the optional proxy logger can capture Ollama-compatible usage into `data/ollama-usage.jsonl`.
+- OpenAI and Anthropic API reporting: minimal admin-key aggregation is available for usage, cost, and configured Anthropic organization/workspace rate limits.
+- Pricing comparison and model scores: public API price rows can be compared against local usage, and model quality scores are displayed as an internal heuristic.
+
+### Known Limits
+
+- Codex live quota source: the Codex app-server interface is local and experimental, so session log parsing remains the durable history source.
+- Copilot usage coverage: IDE completions, personal AI-credit allowance, warning thresholds, and subscription quota resets are not exposed through a stable personal local/API source today.
+- Consumer subscription counters: ChatGPT, Claude, Copilot, Gemini, and similar consumer-plan usage fields are only shown when local telemetry, statusline capture, admin APIs, or manual entries expose them.
+- Desktop signing: GitHub Actions publishes unsigned prerelease desktop artifacts until macOS notarization and Windows code signing are configured.
+
+### Open To-Dos
+
+- Copilot quota limits: investigate whether GitHub Copilot CLI exposes personal 5-hour, 7-day, weekly, AI-credit, premium-request, or other quota limits through any stable local or official API. If reliable limit data exists, show those limits in the Copilot card instead of the current empty `5h left` and `Week left` placeholders.
+- Model quality scores: review every model score against current model capabilities, public benchmark signals, real-world usefulness, context/window limits, multimodal/tool strengths, and price/performance tradeoffs; update or remove scores that do not make sense.
+- Desktop signing: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
+- API customer reporting: expand OpenAI and Anthropic admin reporting with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.
+- Provider data gaps: keep new provider-specific local sources documented as they become stable enough to trust.
 
 ## Author and License
 
