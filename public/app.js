@@ -690,13 +690,13 @@ function normalizeCodexProvider(codex) {
     secondaryLabel: t("limits.weekly"),
     todayTokens: last24hTokens,
     allTimeTokens,
-    foot: [
-      [t("labels.today"), formatTokens(last24hTokens)],
-      [t("labels.since"), formatDate(codex?.first?.timestamp)],
-      [t("labels.fiveHourLeft"), formatLimitRemainingPercent(codex?.limits?.fiveHour)],
-      [t("labels.weekLeft"), formatLimitRemainingPercent(codex?.limits?.weekly)],
-      [t("labels.updated"), formatTime(limitUpdatedAt)]
-    ]
+    foot: buildQuotaFoot({
+      todayTokens: last24hTokens,
+      since: codex?.first?.timestamp,
+      fiveHour: codex?.limits?.fiveHour,
+      weekly: codex?.limits?.weekly,
+      updated: limitUpdatedAt
+    })
   };
 }
 
@@ -724,14 +724,24 @@ function normalizeCodexSparkProvider(spark) {
     allTimeTokens: spark?.totals?.allTime?.totalTokens,
     apiTokens: spark?.totals?.last24h?.totalTokens,
     message: localizeProviderMessage(spark?.message, "providers.messages.sparkTokens24h"),
-    foot: [
-      [t("labels.today"), formatTokens(spark?.totals?.last24h?.totalTokens)],
-      [t("labels.since"), formatDate(spark?.first?.timestamp)],
-      [t("labels.fiveHourLeft"), formatLimitRemainingPercent(spark?.limits?.fiveHour)],
-      [t("labels.weekLeft"), formatLimitRemainingPercent(spark?.limits?.weekly)],
-      [t("labels.updated"), formatTime(spark?.latest?.timestamp)]
-    ]
+    foot: buildQuotaFoot({
+      todayTokens: spark?.totals?.last24h?.totalTokens,
+      since: spark?.first?.timestamp,
+      fiveHour: spark?.limits?.fiveHour,
+      weekly: spark?.limits?.weekly,
+      updated: spark?.latest?.timestamp
+    })
   };
+}
+
+function buildQuotaFoot({ todayTokens, since, fiveHour, weekly, updated }) {
+  return [
+    [t("labels.today"), formatTokens(todayTokens)],
+    [t("labels.since"), formatDate(since)],
+    [t("labels.fiveHourLeft"), formatLimitRemainingPercent(fiveHour)],
+    [t("labels.weekLeft"), formatLimitRemainingPercent(weekly)],
+    [t("labels.updated"), formatTime(updated)]
+  ];
 }
 
 function normalizeLocalProvider(id, provider) {
@@ -740,14 +750,6 @@ function normalizeLocalProvider(id, provider) {
   const limitRows = normalizeLimitRows(provider?.limits);
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const planType = provider?.planType || provider?.plan || null;
-  const foot = [
-    [t("labels.fiveHourTokens"), formatTokens(provider?.totals?.last5h?.totalTokens)],
-    [t("labels.today"), formatTokens(provider?.totals?.last24h?.totalTokens)],
-    [t("labels.total"), formatTokens(provider?.totals?.allTime?.totalTokens)],
-    [t("labels.since"), formatDate(provider?.first?.timestamp)],
-    [t("labels.updated"), formatTime(provider?.latest?.timestamp)]
-  ];
-  if (planType) foot.splice(3, 0, [t("labels.plan"), planType]);
   return {
     id,
     name: meta.name,
@@ -768,7 +770,13 @@ function normalizeLocalProvider(id, provider) {
       provider?.message,
       id === "copilot" ? "providers.messages.copilotLogTokens" : "providers.messages.logTokens24h"
     ),
-    foot
+    foot: buildQuotaFoot({
+      todayTokens: provider?.totals?.last24h?.totalTokens,
+      since: provider?.first?.timestamp,
+      fiveHour: provider?.limits?.fiveHour,
+      weekly: provider?.limits?.weekly,
+      updated: provider?.latest?.timestamp
+    })
   };
 }
 
