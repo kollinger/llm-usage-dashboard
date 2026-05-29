@@ -24,6 +24,11 @@ const CODEX_HOMES = uniquePaths([
 ]);
 const COPILOT_HOME = expandHome(process.env.COPILOT_HOME || path.join(os.homedir(), ".copilot"));
 const CLAUDE_HOME = expandHome(process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude"));
+const CLAUDE_SETTINGS_FILE = path.join(CLAUDE_HOME, "settings.json");
+const CLAUDE_STATUSLINE_FILE = path.join(CLAUDE_HOME, "usage-dashboard-statusline.json");
+const CLAUDE_STATUSLINE_SCRIPT = path.join(CLAUDE_HOME, "llm-usage-statusline-capture.js");
+const DEFAULT_CLAUDE_SETUP_PROMPT =
+  "Reply briefly: The LLM Usage setup check was triggered. If this answer is visible, return to the dashboard; the Claude limits should update within a few seconds.";
 const GEMINI_HOME = expandHome(process.env.GEMINI_HOME || path.join(os.homedir(), ".gemini"));
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
 const OLLAMA_PROXY_PORT = Number(process.env.OLLAMA_PROXY_PORT || 11435);
@@ -39,6 +44,7 @@ const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS"
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 
 const app = express();
+let currentDashboardUrl = null;
 const anthropicCache = createTimedCache();
 const codexLiveRateLimitsCache = createTimedCache();
 let codexAppServer = null;
@@ -241,6 +247,32 @@ app.post("/api/manual-limits", authMiddleware, async (req, res) => {
   res.json(next);
 });
 
+app.get("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await readClaudeStatuslineSetupStatus());
+  } catch (error) {
+    sendApiError(res, error, "claude_statusline_setup_status_failed");
+  }
+});
+
+app.post("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await configureClaudeStatusline());
+  } catch (error) {
+    sendApiError(res, error, "claude_statusline_setup_failed");
+  }
+});
+
+app.post("/api/claude/open", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await launchClaudeCode(sanitizeClaudeSetupPrompt(_req.body?.prompt), {
+      focusBackDelayMs: Number(_req.body?.focusBackDelayMs || 10000)
+    }));
+  } catch (error) {
+    sendApiError(res, error, "claude_open_failed");
+  }
+});
+
 app.get("*", (_req, res) => {
   res.sendFile(path.join(ROOT, "public", "index.html"));
 });
@@ -252,6 +284,14 @@ function providerError(id, error) {
     error: error.message,
     updatedAt: new Date().toISOString()
   };
+}
+
+function sendApiError(res, error, fallbackCode) {
+  const status = error.statusCode || error.status || 500;
+  res.status(status).json({
+    error: error.code || fallbackCode,
+    message: error.message || "Request failed"
+  });
 }
 
 function createTimedCache() {
@@ -894,8 +934,14 @@ async function readClaudeCodeUsage() {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
-  const [statusline, authStatus] = await Promise.all([readClaudeStatusline(), readClaudeAuthStatus()]);
+  const [statusline, authStatus, settingsInfo, scriptInstalled] = await Promise.all([
+    readClaudeStatusline(),
+    readClaudeAuthStatus(),
+    readClaudeSettings(),
+    pathExists(CLAUDE_STATUSLINE_SCRIPT)
+  ]);
   const planType = statusline?.planType || authStatus?.planType || null;
+  const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
   return {
     id: "claudeCode",
     status: latestEvent ? "live" : "empty",
@@ -919,6 +965,15 @@ async function readClaudeCodeUsage() {
           }
         : null
     },
+    setup: {
+      claudeAvailable: Boolean(authStatus?.available),
+      configured: statuslineConfigured,
+      settingsError: settingsInfo.error || null,
+      scriptInstalled,
+      statusFileFound: Boolean(statusline?.found),
+      hasLimits: Boolean(statusline?.limits),
+      staleLimits: Boolean(statusline?.staleLimits)
+    },
     latest: latestEvent
       ? {
           timestamp: latestEvent.timestamp,
@@ -935,6 +990,7 @@ async function readClaudeCodeUsage() {
       : null,
     totals: finalizeUsageAccumulator(usage),
     limits: statusline?.limits || null,
+    limitsUpdatedAt: statusline?.updatedAt || null,
     planType,
     credits: statusline?.credits || null,
     creditRows: buildCreditRows(statusline?.credits),
@@ -950,9 +1006,10 @@ async function readClaudeCodeUsage() {
 }
 
 function claudeCodeStatusMessage(statusline) {
+  if (statusline?.staleLimits) return "Claude live limits are stale. Open Claude Code once to refresh them.";
   if (statusline?.limits) return null;
-  if (statusline?.found) return "Claude statusline captured, but no official Pro/Max quota values yet.";
-  return "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas.";
+  if (statusline?.found) return "Claude live data received, but no official Pro/Max quota values yet.";
+  return "Claude live limits are not set up yet. Open Settings to enable them once.";
 }
 
 async function readGeminiUsage() {
@@ -1444,13 +1501,15 @@ function normalizeClaudeUsage(usage) {
 }
 
 async function readClaudeStatusline() {
-  const statusFile = path.join(CLAUDE_HOME, "usage-dashboard-statusline.json");
+  const statusFile = CLAUDE_STATUSLINE_FILE;
   try {
+    const stat = await fsp.stat(statusFile);
     const raw = JSON.parse(await fsp.readFile(statusFile, "utf8"));
     const extracted = extractClaudeStatusline(raw) || {};
     return {
       statusFile,
       found: true,
+      updatedAt: stat.mtime.toISOString(),
       ...extracted
     };
   } catch (error) {
@@ -1460,6 +1519,200 @@ async function readClaudeStatusline() {
       error: error?.code === "ENOENT" ? "missing" : "unreadable"
     };
   }
+}
+
+async function readClaudeStatuslineSetupStatus() {
+  const [settingsInfo, statusline, authStatus] = await Promise.all([
+    readClaudeSettings(),
+    readClaudeStatusline(),
+    readClaudeAuthStatus()
+  ]);
+  const statusLine = settingsInfo.settings?.statusLine || null;
+  const command = typeof statusLine?.command === "string" ? statusLine.command : "";
+  const configured = isClaudeStatuslineConfigured(settingsInfo.settings);
+  const statusFileUpdatedAt = await fileMtime(CLAUDE_STATUSLINE_FILE);
+
+  return {
+    claudeAvailable: Boolean(resolveClaudeBinary()),
+    claudeAuthStatus: authStatus?.status || "unknown",
+    claudeLoggedIn: Boolean(authStatus?.loggedIn),
+    configured,
+    settingsPath: CLAUDE_SETTINGS_FILE,
+    settingsError: settingsInfo.error || null,
+    scriptInstalled: await pathExists(CLAUDE_STATUSLINE_SCRIPT),
+    statusFile: CLAUDE_STATUSLINE_FILE,
+    statusFileFound: Boolean(statusline?.found),
+    statusFileUpdatedAt: statusline?.updatedAt || statusFileUpdatedAt,
+    hasLimits: Boolean(statusline?.limits),
+    staleLimits: Boolean(statusline?.staleLimits),
+    hasCredits: Boolean(statusline?.credits),
+    planType: statusline?.planType || authStatus?.planType || null,
+    currentCommandManaged: command.includes(CLAUDE_STATUSLINE_SCRIPT)
+  };
+}
+
+async function configureClaudeStatusline() {
+  const settingsInfo = await readClaudeSettings();
+  if (settingsInfo.error) {
+    const error = new Error("Claude settings could not be read because settings.json is not valid JSON.");
+    error.statusCode = 400;
+    error.code = "claude_settings_invalid_json";
+    throw error;
+  }
+
+  await installClaudeStatuslineScript();
+  const command = claudeStatuslineCommand();
+  const nextSettings = {
+    ...settingsInfo.settings,
+    statusLine: {
+      type: "command",
+      command
+    }
+  };
+  const changed = JSON.stringify(settingsInfo.settings?.statusLine || null) !== JSON.stringify(nextSettings.statusLine);
+  let backupPath = null;
+
+  if (changed) {
+    await fsp.mkdir(CLAUDE_HOME, { recursive: true });
+    if (settingsInfo.exists) {
+      backupPath = path.join(CLAUDE_HOME, `settings.json.llm-usage-backup-${timestampForFile()}`);
+      await fsp.copyFile(CLAUDE_SETTINGS_FILE, backupPath);
+    }
+    await fsp.writeFile(CLAUDE_SETTINGS_FILE, `${JSON.stringify(nextSettings, null, 2)}\n`, { mode: 0o600 });
+  }
+
+  return {
+    ...(await readClaudeStatuslineSetupStatus()),
+    changed,
+    backupPath
+  };
+}
+
+async function readClaudeSettings() {
+  try {
+    const text = await fsp.readFile(CLAUDE_SETTINGS_FILE, "utf8");
+    const settings = JSON.parse(text || "{}");
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+      return { exists: true, settings: {}, error: "invalid_json" };
+    }
+    return { exists: true, settings, error: null };
+  } catch (error) {
+    if (error?.code === "ENOENT") return { exists: false, settings: {}, error: null };
+    if (error instanceof SyntaxError) return { exists: true, settings: {}, error: "invalid_json" };
+    throw error;
+  }
+}
+
+async function installClaudeStatuslineScript() {
+  const source = path.join(ROOT, "scripts", "claude-statusline-capture.js");
+  const content = await fsp.readFile(source, "utf8");
+  await fsp.mkdir(CLAUDE_HOME, { recursive: true });
+  await fsp.writeFile(CLAUDE_STATUSLINE_SCRIPT, content, { mode: 0o700 });
+}
+
+function isClaudeStatuslineConfigured(settings) {
+  const statusLine = settings?.statusLine;
+  return (
+    statusLine?.type === "command" &&
+    typeof statusLine.command === "string" &&
+    statusLine.command.includes(CLAUDE_STATUSLINE_SCRIPT)
+  );
+}
+
+function claudeStatuslineCommand() {
+  const runner = process.versions?.electron
+    ? `ELECTRON_RUN_AS_NODE=1 ${shellQuote(process.execPath)}`
+    : shellQuote(process.execPath);
+  return `CLAUDE_HOME=${shellQuote(CLAUDE_HOME)} ${runner} ${shellQuote(CLAUDE_STATUSLINE_SCRIPT)}`;
+}
+
+async function launchClaudeCode(prompt = DEFAULT_CLAUDE_SETUP_PROMPT, options = {}) {
+  const claudeBinary = resolveClaudeBinary();
+  if (!claudeBinary) {
+    const error = new Error("Claude Code was not found on this machine.");
+    error.statusCode = 404;
+    error.code = "claude_not_found";
+    throw error;
+  }
+
+  if (process.platform === "darwin") {
+    return launchClaudeCodeInTerminal(claudeBinary, prompt, options);
+  }
+
+  const child = spawn(claudeBinary, [prompt], {
+    cwd: os.homedir(),
+    detached: true,
+    stdio: "ignore"
+  });
+  child.unref();
+  return { opened: true, method: "detached", claudeBinary };
+}
+
+function launchClaudeCodeInTerminal(claudeBinary, prompt, options = {}) {
+  const command = `cd ${shellQuote(os.homedir())} && ${shellQuote(claudeBinary)} ${shellQuote(prompt)}`;
+  const result = spawnSync(
+    "osascript",
+    ["-e", "tell application \"Terminal\"", "-e", "activate", "-e", `do script ${JSON.stringify(command)}`, "-e", "end tell"],
+    {
+      encoding: "utf8",
+      timeout: 15000
+    }
+  );
+  if (result.error?.code === "ETIMEDOUT") {
+    return { opened: true, method: "terminal", claudeBinary, warning: "terminal_open_timeout" };
+  }
+  if (result.error || result.status !== 0) {
+    const error = new Error(result.error?.message || result.stderr || "Could not open Claude Code in Terminal.");
+    error.statusCode = 500;
+    error.code = "claude_open_terminal_failed";
+    throw error;
+  }
+  scheduleDashboardFocusBack(options.focusBackDelayMs);
+  return { opened: true, method: "terminal", claudeBinary };
+}
+
+function scheduleDashboardFocusBack(delayMs = 10000) {
+  const delaySeconds = Math.max(3, Math.min(30, Number(delayMs || 10000) / 1000));
+  const focusCommand = process.versions?.electron
+    ? `osascript -e ${shellQuote('tell application "LLM Usage Dashboard" to activate')}`
+    : `open ${shellQuote(currentDashboardUrl || `http://localhost:${PORT}`)}`;
+  const child = spawn("/bin/sh", ["-lc", `sleep ${delaySeconds}; ${focusCommand} >/dev/null 2>&1`], {
+    detached: true,
+    stdio: "ignore"
+  });
+  child.unref();
+}
+
+function sanitizeClaudeSetupPrompt(prompt) {
+  const text = String(prompt || "").trim();
+  if (!text || text.length > 600) return DEFAULT_CLAUDE_SETUP_PROMPT;
+  return text.replaceAll(/[\u0000-\u001f\u007f]/g, " ").replaceAll(/\s+/g, " ");
+}
+
+async function pathExists(filePath) {
+  try {
+    await fsp.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fileMtime(filePath) {
+  try {
+    const stat = await fsp.stat(filePath);
+    return stat.mtime.toISOString();
+  } catch {
+    return null;
+  }
+}
+
+function timestampForFile() {
+  return new Date().toISOString().replaceAll(/[-:.TZ]/g, "").slice(0, 14);
+}
+
+function shellQuote(value) {
+  return `'${String(value).replaceAll("'", "'\\''")}'`;
 }
 
 async function readClaudeAuthStatus() {
@@ -1498,7 +1751,10 @@ async function readClaudeAuthStatus() {
 function resolveClaudeBinary() {
   const candidates = [
     process.env.CLAUDE_BIN,
-    process.env.CLAUDE_CLI_PATH
+    process.env.CLAUDE_CLI_PATH,
+    "/opt/homebrew/bin/claude",
+    "/usr/local/bin/claude",
+    "/usr/bin/claude"
   ];
 
   for (const candidate of candidates) {
@@ -1513,10 +1769,12 @@ function resolveClaudeBinary() {
 function extractClaudeStatusline(raw) {
   if (!raw || typeof raw !== "object") return null;
   const rateLimits = raw.rate_limits || raw.rateLimits || raw;
-  const limits = extractClaudeRateLimits(rateLimits);
+  const extractedLimits = extractClaudeRateLimits(rateLimits);
+  const limits = hasActiveClaudeLimits(extractedLimits) ? extractedLimits : null;
+  const staleLimits = Boolean(extractedLimits?.staleWindows?.length);
   const planType = extractClaudePlanType(raw) || extractClaudePlanType(rateLimits);
   const credits = extractUsageCredits(raw) || extractUsageCredits(rateLimits);
-  return limits || planType || credits ? { limits, planType, credits } : null;
+  return limits || planType || credits || staleLimits ? { limits, staleLimits, planType, credits } : null;
 }
 
 function extractUsageCredits(source) {
@@ -1574,48 +1832,58 @@ function extractClaudeRateLimits(rateLimits) {
 }
 
 function extractOfficialClaudeRateLimits(rateLimits) {
-  const fiveHour = claudeLimitWindow(
+  const fiveHourCandidate = claudeLimitWindow(
     findClaudeLimit(rateLimits, ["five_hour", "fiveHour"]),
     "5h",
     300
   );
-  const weekly = claudeLimitWindow(
+  const weeklyCandidate = claudeLimitWindow(
     findClaudeLimit(rateLimits, ["seven_day", "sevenDay"]),
     "Woche",
     10080
   );
-  if (!fiveHour && !weekly) return null;
+  const staleWindows = staleClaudeWindows(fiveHourCandidate, weeklyCandidate);
+  const fiveHour = freshClaudeWindow(fiveHourCandidate);
+  const weekly = freshClaudeWindow(weeklyCandidate);
+  if (!fiveHour && !weekly && !staleWindows.length) return null;
   const limits = {
     fiveHour,
     weekly,
     currentSession: fiveHour,
     allModels: weekly
   };
+  if (staleWindows.length) limits.staleWindows = staleWindows;
   limits.rows = buildLimitRows(limits, ["fiveHour", "weekly"]);
   return limits;
 }
 
 function extractFallbackClaudeRateLimits(rateLimits) {
   const weeklyRoot = rateLimits.weekly || rateLimits.weekly_limits || rateLimits.weeklyLimits || {};
-  const currentSession = claudeLimitWindow(
+  const currentSessionCandidate = claudeLimitWindow(
     findClaudeLimit(rateLimits, ["current_session", "currentSession", "session", "five_hour", "fiveHour", "primary", "5h"]),
     "Aktuelle Sitzung",
     300
   );
-  const allModels = claudeLimitWindow(
+  const allModelsCandidate = claudeLimitWindow(
     findClaudeLimit(weeklyRoot, ["all_models", "allModels", "all", "models"]) ||
       findClaudeLimit(rateLimits, ["all_models", "allModels", "secondary", "seven_day", "sevenDay", "7d"]),
     "Alle Modelle",
     10080
   );
-  const claudeDesign = claudeLimitWindow(
+  const claudeDesignCandidate = claudeLimitWindow(
     findClaudeLimit(weeklyRoot, ["claude_design", "claudeDesign", "design"]) ||
       findClaudeLimit(rateLimits, ["claude_design", "claudeDesign", "design"]),
     "Claude Design",
     10080
   );
+  const staleWindows = staleClaudeWindows(currentSessionCandidate, allModelsCandidate, claudeDesignCandidate);
+  const currentSession = freshClaudeWindow(currentSessionCandidate);
+  const allModels = freshClaudeWindow(allModelsCandidate);
+  const claudeDesign = freshClaudeWindow(claudeDesignCandidate);
+  const weeklyCandidate = allModelsCandidate || claudeLimitWindow(findClaudeLimit(rateLimits, ["weekly"]), "Woche", 10080);
+  const weekly = freshClaudeWindow(weeklyCandidate);
+  if (!allModelsCandidate && weeklyCandidate?.expired) staleWindows.push(weeklyCandidate.label);
   const fiveHour = currentSession;
-  const weekly = allModels || claudeLimitWindow(findClaudeLimit(rateLimits, ["weekly"]), "Woche", 10080);
   const limits = {
     fiveHour,
     weekly,
@@ -1623,8 +1891,9 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     allModels,
     claudeDesign
   };
+  if (staleWindows.length) limits.staleWindows = staleWindows;
   limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
-  if (!fiveHour && !weekly && !claudeDesign) return null;
+  if (!fiveHour && !weekly && !claudeDesign && !staleWindows.length) return null;
   return limits;
 }
 
@@ -1673,14 +1942,37 @@ function claudeLimitWindow(window, label, minutes) {
     window.resetIn ||
     null;
   const safeUsedPercent = Math.max(0, Math.min(100, Number(usedPercent)));
+  const normalizedResetsAt = normalizeOptionalDate(resetsAt);
+  const resetMs = normalizedResetsAt ? Date.parse(normalizedResetsAt) : null;
   return {
     label: String(window.label || window.name || window.limit_name || window.limitName || label),
     usedPercent: safeUsedPercent,
     remainingPercent: Math.max(0, 100 - safeUsedPercent),
     windowMinutes: Number(window.window_minutes || window.windowMinutes || minutes),
-    resetsAt: normalizeOptionalDate(resetsAt),
-    resetLabel: resetLabel ? String(resetLabel) : null
+    resetsAt: normalizedResetsAt,
+    resetLabel: resetLabel ? String(resetLabel) : null,
+    expired: Number.isFinite(resetMs) && resetMs <= Date.now()
   };
+}
+
+function freshClaudeWindow(window) {
+  return window?.expired ? null : window;
+}
+
+function staleClaudeWindows(...windows) {
+  return windows.filter((window) => window?.expired).map((window) => window.label);
+}
+
+function hasActiveClaudeLimits(limits) {
+  return Boolean(
+    limits &&
+      (limits.fiveHour ||
+        limits.weekly ||
+        limits.currentSession ||
+        limits.allModels ||
+        limits.claudeDesign ||
+        limits.rows?.length)
+  );
 }
 
 async function listGeminiUsageFiles(root) {
@@ -2492,6 +2784,7 @@ function startDashboard(options = {}) {
   const dashboardServer = app.listen(port, () => {
     const address = dashboardServer.address();
     const actualPort = typeof address === "object" && address ? address.port : port;
+    currentDashboardUrl = `http://localhost:${actualPort}`;
     console.log(`LLM usage dashboard listening on http://localhost:${actualPort}`);
   });
   const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy();

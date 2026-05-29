@@ -8,7 +8,14 @@ const state = {
   pricingSort: null,
   language: "en",
   translations: {},
-  fallbackTranslations: {}
+  fallbackTranslations: {},
+  claudeSetup: {
+    status: null,
+    loading: false,
+    opening: false,
+    pollTimer: null,
+    pollAttempts: 0
+  }
 };
 
 const els = {
@@ -26,6 +33,9 @@ const els = {
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
   settingsForm: document.getElementById("settingsForm"),
+  claudeSetupStatus: document.getElementById("claudeSetupStatus"),
+  claudeSetupEnableBtn: document.getElementById("claudeSetupEnableBtn"),
+  claudeSetupOpenBtn: document.getElementById("claudeSetupOpenBtn"),
   languageSelect: document.getElementById("languageSelect"),
   fiveHourOpen: document.getElementById("fiveHourOpen"),
   weeklyOpen: document.getElementById("weeklyOpen"),
@@ -349,7 +359,13 @@ function bindEvents() {
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
+  els.providerGrid.addEventListener("click", handleProviderActionClick);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
+  els.loginDialog.addEventListener("click", closeDialogOnBackdrop);
+  els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
+  els.settingsDialog.addEventListener("close", clearClaudeSetupPoll);
+  els.claudeSetupEnableBtn?.addEventListener("click", enableClaudeSetup);
+  els.claudeSetupOpenBtn?.addEventListener("click", openClaudeCode);
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
@@ -457,6 +473,7 @@ function rerenderLanguageSensitiveViews() {
   } else {
     updateProviderFilterControl([], []);
   }
+  renderClaudeSetupStatus(state.claudeSetup.status);
   refreshIcons();
 }
 
@@ -497,6 +514,29 @@ function toggleProviderFilter() {
     // Ignore storage failures; the toggle should still work for this session.
   }
   if (state.usage) render();
+}
+
+async function handleProviderActionClick(event) {
+  const button = event.target.closest("[data-provider-action]");
+  if (!button) return;
+  if (button.dataset.providerAction !== "claude-setup") return;
+  button.disabled = true;
+  try {
+    const status = await fetchJson("/api/claude/statusline-setup");
+    state.claudeSetup.status = status;
+    if (status?.configured) {
+      await openClaudeCode({ requireSettingsControls: false });
+    } else {
+      await enableClaudeSetup({ requireSettingsControls: false });
+    }
+  } finally {
+    button.disabled = false;
+    await loadUsage({ showIndicator: true });
+  }
+}
+
+function claudeSetupPrompt() {
+  return t("settings.claudeSetup.prompt");
 }
 
 async function loadAuth() {
@@ -750,6 +790,7 @@ function normalizeLocalProvider(id, provider) {
   const limitRows = normalizeLimitRows(provider?.limits);
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const planType = provider?.planType || provider?.plan || null;
+  const updatedAt = id === "claudeCode" ? provider?.limitsUpdatedAt || provider?.latest?.timestamp : provider?.latest?.timestamp;
   return {
     id,
     name: meta.name,
@@ -760,6 +801,7 @@ function normalizeLocalProvider(id, provider) {
     weekly: hasLimits ? provider?.limits?.weekly || null : null,
     limitRows,
     creditRows,
+    claudeSetup: id === "claudeCode" ? provider?.setup || null : null,
     planType,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
@@ -775,7 +817,7 @@ function normalizeLocalProvider(id, provider) {
       since: provider?.first?.timestamp,
       fiveHour: provider?.limits?.fiveHour,
       weekly: provider?.limits?.weekly,
-      updated: provider?.latest?.timestamp
+      updated: updatedAt
     })
   };
 }
@@ -882,8 +924,13 @@ function localizeProviderMessage(message, fallbackKey) {
   const knownMessages = {
     "Keine Codex 5.3 Spark Events gefunden.": "providers.messages.noCodexSparkEvents",
     "Claude statusline captured, but no official Pro/Max quota values yet.": "providers.messages.claudeStatuslineNoQuotas",
+    "Claude live data received, but no official Pro/Max quota values yet.": "providers.messages.claudeStatuslineNoQuotas",
     "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas.":
       "providers.messages.claudeStatuslineMissing",
+    "Claude live limits are not set up yet. Open Settings to enable them once.":
+      "providers.messages.claudeLiveLimitsMissing",
+    "Claude live limits are stale. Open Claude Code once to refresh them.":
+      "providers.messages.claudeLimitsStale",
     "Keine lokalen Copilot CLI Session-Metriken gefunden.": "providers.messages.noCopilotSessionMetrics",
     "Keine lokalen Gemini Usage-Logs gefunden.": "providers.messages.noGeminiLogs",
     "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
@@ -1031,6 +1078,9 @@ function renderProvider(provider) {
         <span class="status-pill ${statusClass}">${statusText(provider.status)}</span>
       </div>
       ${main}
+      ${provider.message && (provider.limitRows?.length || provider.fiveHour || provider.weekly)
+        ? `<p class="provider-note">${escapeHtml(provider.message)}</p>`
+        : ""}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       <div class="provider-foot">
         ${provider.foot
@@ -1039,7 +1089,34 @@ function renderProvider(provider) {
           )
           .join("")}
       </div>
+      ${renderProviderAction(provider)}
     </article>
+  `;
+}
+
+function renderProviderAction(provider) {
+  if (provider.id !== "claudeCode" || !provider.claudeSetup?.claudeAvailable) return "";
+  const configured = Boolean(provider.claudeSetup.configured);
+  const hasLimits = Boolean(provider.claudeSetup.hasLimits);
+  const staleLimits = Boolean(provider.claudeSetup.staleLimits);
+  if (hasLimits && !staleLimits) return "";
+  const label = staleLimits
+    ? t("settings.claudeSetup.refreshClaude")
+    : configured
+      ? t("settings.claudeSetup.openClaude")
+      : t("settings.claudeSetup.enable");
+  const title = staleLimits
+    ? t("settings.claudeSetup.statusStale")
+    : configured
+      ? t("settings.claudeSetup.statusConfiguredWaiting")
+      : t("settings.claudeSetup.statusNotConfigured");
+  return `
+    <button
+      class="text-button provider-action"
+      type="button"
+      data-provider-action="claude-setup"
+      title="${escapeHtml(title)}"
+    >${escapeHtml(label)}</button>
   `;
 }
 
@@ -1573,6 +1650,7 @@ async function openSettings() {
   const manual = await fetchJson("/api/manual-limits");
   fillSettings(manual);
   els.settingsDialog.showModal();
+  await loadClaudeSetupStatus();
 }
 
 function fillSettings(manual) {
@@ -1611,6 +1689,155 @@ async function saveSettings(event) {
   });
   els.settingsDialog.close();
   await loadUsage();
+}
+
+function closeDialogOnBackdrop(event) {
+  if (event.target !== event.currentTarget) return;
+  const body = event.currentTarget.querySelector(".modal-body");
+  if (!body) return event.currentTarget.close();
+  const rect = body.getBoundingClientRect();
+  const inside =
+    event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  if (!inside) event.currentTarget.close();
+}
+
+async function loadClaudeSetupStatus({ silent = false } = {}) {
+  if (!els.claudeSetupStatus) return null;
+  if (!silent) setClaudeSetupStatus(t("settings.claudeSetup.statusLoading"), "loading");
+  try {
+    const status = await fetchJson(`/api/claude/statusline-setup?ts=${Date.now()}`);
+    state.claudeSetup.status = status;
+    renderClaudeSetupStatus(status);
+    return status;
+  } catch (error) {
+    state.claudeSetup.status = { error: error.message };
+    setClaudeSetupStatus(t("settings.claudeSetup.statusError"), "error");
+    renderClaudeSetupControls();
+    return null;
+  }
+}
+
+async function enableClaudeSetup({ requireSettingsControls = true } = {}) {
+  if (requireSettingsControls && !els.claudeSetupEnableBtn) return;
+  clearClaudeSetupPoll();
+  state.claudeSetup.loading = true;
+  setClaudeSetupStatus(t("settings.claudeSetup.enabling"), "loading");
+  renderClaudeSetupControls();
+  try {
+    const status = await fetchJson("/api/claude/statusline-setup", { method: "POST" });
+    state.claudeSetup.status = status;
+    renderClaudeSetupStatus(status);
+    await openClaudeCode({ requireSettingsControls });
+    await loadUsage();
+  } catch (error) {
+    state.claudeSetup.status = { ...(state.claudeSetup.status || {}), error: error.message };
+    setClaudeSetupStatus(t("settings.claudeSetup.statusError"), "error");
+  } finally {
+    state.claudeSetup.loading = false;
+    renderClaudeSetupControls();
+  }
+}
+
+async function openClaudeCode({ requireSettingsControls = true } = {}) {
+  if (requireSettingsControls && !els.claudeSetupOpenBtn) return;
+  state.claudeSetup.opening = true;
+  setClaudeSetupStatus(t("settings.claudeSetup.opening"), "loading");
+  renderClaudeSetupControls();
+  try {
+    await fetchJson("/api/claude/open", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: claudeSetupPrompt(), focusBackDelayMs: 10000 })
+    });
+    setClaudeSetupStatus(t("settings.claudeSetup.opened"), "loading");
+    scheduleClaudeSetupPoll({ requireSettingsOpen: requireSettingsControls });
+  } catch (error) {
+    state.claudeSetup.status = { ...(state.claudeSetup.status || {}), error: error.message };
+    setClaudeSetupStatus(t("settings.claudeSetup.openError"), "error");
+  } finally {
+    state.claudeSetup.opening = false;
+    renderClaudeSetupControls();
+  }
+}
+
+function renderClaudeSetupStatus(status) {
+  if (!els.claudeSetupStatus) return;
+  if (!status) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusLoading"), "loading");
+    renderClaudeSetupControls();
+    return;
+  }
+  if (status.error) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusError"), "error");
+  } else if (status.settingsError) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusSettingsInvalid"), "error");
+  } else if (!status.claudeAvailable) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusMissingClaude"), "error");
+  } else if (status.configured && status.staleLimits) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusStale"), "waiting");
+  } else if (status.configured && status.hasLimits) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusReady"), "ready");
+  } else if (status.configured && status.statusFileFound) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusCapturedNoQuotas"), "waiting");
+  } else if (status.configured) {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusConfiguredWaiting"), "waiting");
+  } else {
+    setClaudeSetupStatus(t("settings.claudeSetup.statusNotConfigured"), "waiting");
+  }
+  renderClaudeSetupControls();
+}
+
+function setClaudeSetupStatus(message, status) {
+  if (!els.claudeSetupStatus) return;
+  els.claudeSetupStatus.textContent = message;
+  els.claudeSetupStatus.dataset.status = status;
+}
+
+function renderClaudeSetupControls() {
+  const busy = state.claudeSetup.loading || state.claudeSetup.opening;
+  const configured = Boolean(state.claudeSetup.status?.configured);
+  if (els.claudeSetupEnableBtn) {
+    els.claudeSetupEnableBtn.hidden = configured && !state.claudeSetup.loading;
+    els.claudeSetupEnableBtn.disabled = busy;
+    els.claudeSetupEnableBtn.textContent = state.claudeSetup.loading
+      ? t("settings.claudeSetup.enabling")
+      : t("settings.claudeSetup.enable");
+  }
+  if (els.claudeSetupOpenBtn) {
+    els.claudeSetupOpenBtn.hidden = !configured && !state.claudeSetup.opening;
+    els.claudeSetupOpenBtn.disabled =
+      busy || !state.claudeSetup.status?.claudeAvailable || !configured;
+    els.claudeSetupOpenBtn.textContent = state.claudeSetup.opening
+      ? t("settings.claudeSetup.opening")
+      : t("settings.claudeSetup.openClaude");
+  }
+}
+
+function scheduleClaudeSetupPoll({ requireSettingsOpen = false } = {}) {
+  clearClaudeSetupPoll();
+  state.claudeSetup.pollAttempts = 0;
+  pollClaudeSetupSoon({ requireSettingsOpen });
+}
+
+function pollClaudeSetupSoon({ requireSettingsOpen = false } = {}) {
+  state.claudeSetup.pollTimer = window.setTimeout(async () => {
+    const status = await loadClaudeSetupStatus({ silent: true });
+    await loadUsage({ showIndicator: false });
+    state.claudeSetup.pollAttempts += 1;
+    const ready = status?.hasLimits && !status?.staleLimits;
+    const shouldContinue =
+      !ready &&
+      state.claudeSetup.pollAttempts < 10 &&
+      (!requireSettingsOpen || els.settingsDialog.open);
+    if (shouldContinue) {
+      pollClaudeSetupSoon({ requireSettingsOpen });
+    }
+  }, 4000);
+}
+
+function clearClaudeSetupPoll() {
+  if (state.claudeSetup.pollTimer) window.clearTimeout(state.claudeSetup.pollTimer);
+  state.claudeSetup.pollTimer = null;
 }
 
 function getPath(object, dotted) {

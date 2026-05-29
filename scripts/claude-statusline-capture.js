@@ -15,7 +15,8 @@ process.stdin.on("end", () => {
   try {
     const payload = input.trim() ? JSON.parse(input) : {};
     const captured = sanitizeStatuslinePayload(payload);
-    const target = path.join(os.homedir(), ".claude", "usage-dashboard-statusline.json");
+    const claudeHome = process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude");
+    const target = path.join(claudeHome, "usage-dashboard-statusline.json");
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, `${JSON.stringify(captured, null, 2)}\n`, { mode: 0o600 });
     process.stdout.write(formatStatusLine(captured));
@@ -48,6 +49,7 @@ function sanitizeStatuslinePayload(payload) {
     if (design) captured.rate_limits.claude_design = design;
   }
   if (credits) captured.usage_credits = credits;
+  captured.captured_at = new Date().toISOString();
   return captured;
 }
 

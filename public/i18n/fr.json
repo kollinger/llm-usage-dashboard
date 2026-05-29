@@ -102,8 +102,10 @@
       "noOllamaLogs": "Aucun journal Ollama local trouvé.",
       "copilotLogTokens": "Copilot CLI tokens 24h",
       "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
-      "claudeStatuslineNoQuotas": "Statusline Claude capturée, mais pas encore de valeurs officielles de quota Pro/Max.",
-      "claudeStatuslineMissing": "Statusline Claude non configurée. Activez la commande statusline du tableau de bord pour les quotas Pro/Max en direct."
+      "claudeStatuslineNoQuotas": "Claude is sending data, but not official Pro/Max limit values yet.",
+      "claudeStatuslineMissing": "Statusline Claude non configurée. Activez la commande statusline du tableau de bord pour les quotas Pro/Max en direct.",
+      "claudeLiveLimitsMissing": "Claude live limits are not set up yet. Open Settings to enable them once.",
+      "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them."
     },
     "emptyState": {
       "eyebrow": "Fournisseur",
@@ -207,6 +209,27 @@
       "windowReset": "Réinitialisation de la fenêtre",
       "weekUsed": "Semaine utilisée (%)",
       "weekReset": "Réinitialisation hebdomadaire"
+    },
+    "claudeSetup": {
+      "title": "Claude live limits",
+      "description": "Sets up Claude once and opens Claude Code with a tiny setup check so the dashboard can read real Pro/Max limits.",
+      "statusLoading": "Checking setup...",
+      "statusNotConfigured": "Not set up yet. One click sets it up and opens Claude Code.",
+      "statusConfiguredWaiting": "Setup is saved. Open Claude Code and send one short message so the live limits can appear.",
+      "statusCapturedNoQuotas": "Claude Code is open, but no Claude answer has finished yet. Send the short setup check in Terminal, then return here.",
+      "statusReady": "Live limits are active.",
+      "statusMissingClaude": "Claude Code was not found on this Mac.",
+      "statusSettingsInvalid": "Claude settings.json is not valid JSON. Please check it manually.",
+      "statusError": "Setup could not be checked or saved.",
+      "enable": "Enable Claude limits",
+      "openClaude": "Open Claude Code",
+      "enabling": "Setting up...",
+      "opening": "Opening Claude Code...",
+      "opened": "Claude Code is open with a short setup check. Wait for its answer, then return here.",
+      "openError": "Claude Code could not be confirmed as open. If Terminal opened anyway, send one short message there and return here.",
+      "prompt": "Reply briefly: The LLM Usage setup check was triggered. If this answer is visible, return to the dashboard; the Claude limits should update within a few seconds.",
+      "statusStale": "Claude limits are out of date. Open Claude Code briefly so fresh values can be written.",
+      "refreshClaude": "Refresh Claude limits"
     }
   },
   "errors": {
