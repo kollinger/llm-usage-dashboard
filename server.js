@@ -737,7 +737,14 @@ async function readCodexUsage() {
       last7d
     },
     limits: liveCodexLimits || codexRateLimitsFromEvents(rateLimitEvents, latestEvent?.rateLimits),
-    spark: buildCodexSparkUsage(sparkLatestEvent, sparkFirstEvent, sparkUsage, sparkRateLimitEvents, liveSparkLimits),
+    spark: buildCodexSparkUsage(
+      sparkLatestEvent,
+      sparkFirstEvent,
+      sparkUsage,
+      sparkRateLimitEvents,
+      liveSparkLimits,
+      liveRateLimits?.source?.updatedAt || null
+    ),
     daily
   };
 }
@@ -850,7 +857,7 @@ function isCodexSparkModel(model) {
   return /spark|bengalfox|research/i.test(String(model || ""));
 }
 
-function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, liveLimits) {
+function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, liveLimits, liveLimitsUpdatedAt = null) {
   const limits = codexSparkRateLimitsFromEvents(
     rateLimitEvents,
     latestEvent?.rateLimits,
@@ -881,6 +888,7 @@ function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, l
       : null,
     totals: finalizeUsageAccumulator(usage),
     planType: liveLimits?.planType || latestEvent?.rateLimits?.plan_type || null,
+    limitsUpdatedAt: liveLimits ? liveLimitsUpdatedAt : null,
     limits: mergedLimits,
     daily: buildDaily(usage.dailyMap)
   };

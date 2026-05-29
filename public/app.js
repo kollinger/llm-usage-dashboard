@@ -67,33 +67,33 @@ const PRICING_DATE = "2026-05-29";
 const SCORE_DATE = "2026-05-29";
 const MILLION = 1_000_000;
 const LANGUAGE_OPTIONS = [
-  { code: "bg", label: "Български", locale: "bg-BG" },
-  { code: "cs", label: "Čeština", locale: "cs-CZ" },
-  { code: "da", label: "Dansk", locale: "da-DK" },
-  { code: "de", label: "Deutsch", locale: "de-DE" },
-  { code: "el", label: "Ελληνικά", locale: "el-GR" },
-  { code: "en", label: "English", locale: "en-US" },
-  { code: "es", label: "Español", locale: "es-ES" },
-  { code: "et", label: "Eesti", locale: "et-EE" },
-  { code: "fi", label: "Suomi", locale: "fi-FI" },
-  { code: "fr", label: "Français", locale: "fr-FR" },
-  { code: "ga", label: "Gaeilge", locale: "ga-IE" },
-  { code: "hr", label: "Hrvatski", locale: "hr-HR" },
-  { code: "hu", label: "Magyar", locale: "hu-HU" },
-  { code: "it", label: "Italiano", locale: "it-IT" },
-  { code: "lt", label: "Lietuvių", locale: "lt-LT" },
-  { code: "lv", label: "Latviešu", locale: "lv-LV" },
-  { code: "mt", label: "Malti", locale: "mt-MT" },
-  { code: "nl", label: "Nederlands", locale: "nl-NL" },
-  { code: "pl", label: "Polski", locale: "pl-PL" },
-  { code: "pt", label: "Português", locale: "pt-PT" },
-  { code: "ro", label: "Română", locale: "ro-RO" },
-  { code: "sk", label: "Slovenčina", locale: "sk-SK" },
-  { code: "sl", label: "Slovenščina", locale: "sl-SI" },
-  { code: "sv", label: "Svenska", locale: "sv-SE" },
-  { code: "ar", label: "العربية", locale: "ar-SA", dir: "rtl" },
-  { code: "ru", label: "Русский", locale: "ru-RU" },
-  { code: "zh", label: "中文（简体）", locale: "zh-CN" }
+  { code: "bg", flag: "🇧🇬", label: "Български", locale: "bg-BG" },
+  { code: "cs", flag: "🇨🇿", label: "Čeština", locale: "cs-CZ" },
+  { code: "da", flag: "🇩🇰", label: "Dansk", locale: "da-DK" },
+  { code: "de", flag: "🇩🇪", label: "Deutsch", locale: "de-DE" },
+  { code: "el", flag: "🇬🇷", label: "Ελληνικά", locale: "el-GR" },
+  { code: "en", flag: "🇺🇸", label: "English", locale: "en-US" },
+  { code: "es", flag: "🇪🇸", label: "Español", locale: "es-ES" },
+  { code: "et", flag: "🇪🇪", label: "Eesti", locale: "et-EE" },
+  { code: "fi", flag: "🇫🇮", label: "Suomi", locale: "fi-FI" },
+  { code: "fr", flag: "🇫🇷", label: "Français", locale: "fr-FR" },
+  { code: "ga", flag: "🇮🇪", label: "Gaeilge", locale: "ga-IE" },
+  { code: "hr", flag: "🇭🇷", label: "Hrvatski", locale: "hr-HR" },
+  { code: "hu", flag: "🇭🇺", label: "Magyar", locale: "hu-HU" },
+  { code: "it", flag: "🇮🇹", label: "Italiano", locale: "it-IT" },
+  { code: "lt", flag: "🇱🇹", label: "Lietuvių", locale: "lt-LT" },
+  { code: "lv", flag: "🇱🇻", label: "Latviešu", locale: "lv-LV" },
+  { code: "mt", flag: "🇲🇹", label: "Malti", locale: "mt-MT" },
+  { code: "nl", flag: "🇳🇱", label: "Nederlands", locale: "nl-NL" },
+  { code: "pl", flag: "🇵🇱", label: "Polski", locale: "pl-PL" },
+  { code: "pt", flag: "🇵🇹", label: "Português", locale: "pt-PT" },
+  { code: "ro", flag: "🇷🇴", label: "Română", locale: "ro-RO" },
+  { code: "sk", flag: "🇸🇰", label: "Slovenčina", locale: "sk-SK" },
+  { code: "sl", flag: "🇸🇮", label: "Slovenščina", locale: "sl-SI" },
+  { code: "sv", flag: "🇸🇪", label: "Svenska", locale: "sv-SE" },
+  { code: "ar", flag: "🇸🇦", label: "العربية", locale: "ar-SA", dir: "rtl" },
+  { code: "ru", flag: "🇷🇺", label: "Русский", locale: "ru-RU" },
+  { code: "zh", flag: "🇨🇳", label: "中文（简体）", locale: "zh-CN" }
 ];
 const SUPPORTED_LANGUAGES = LANGUAGE_OPTIONS.map((language) => language.code);
 const LANGUAGE_META = Object.fromEntries(LANGUAGE_OPTIONS.map((language) => [language.code, language]));
@@ -459,7 +459,7 @@ function applyStaticTranslations() {
 function renderLanguageOptions() {
   if (!els.languageSelect) return;
   els.languageSelect.innerHTML = LANGUAGE_OPTIONS.map((language) => {
-    return `<option value="${escapeHtml(language.code)}">${escapeHtml(language.label)}</option>`;
+    return `<option value="${escapeHtml(language.code)}">${escapeHtml(`${language.flag} ${language.label}`)}</option>`;
   }).join("");
   els.languageSelect.value = state.language;
 }
@@ -635,12 +635,12 @@ function renderLocked() {
 function render() {
   const usage = state.usage;
   const providers = [
+    normalizeLocalProvider("claudeCode", usage.claudeCode),
+    normalizeApiProvider("anthropic", usage.anthropic),
     normalizeCodexProvider(usage.codex),
     normalizeCodexSparkProvider(usage.codex?.spark),
     normalizeLocalProvider("copilot", usage.copilot),
-    normalizeLocalProvider("claudeCode", usage.claudeCode),
     normalizeLocalProvider("ollama", usage.ollama),
-    normalizeApiProvider("anthropic", usage.anthropic),
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
   ];
@@ -747,6 +747,7 @@ function subtractTokenTotals(total, subset) {
 function normalizeCodexSparkProvider(spark) {
   const meta = providerMeta.codexSpark;
   const limitRows = normalizeLimitRows(spark?.limits);
+  const limitUpdatedAt = spark?.limitsUpdatedAt || spark?.latest?.timestamp;
   return {
     id: "codexSpark",
     name: meta.name,
@@ -769,7 +770,7 @@ function normalizeCodexSparkProvider(spark) {
       since: spark?.first?.timestamp,
       fiveHour: spark?.limits?.fiveHour,
       weekly: spark?.limits?.weekly,
-      updated: spark?.latest?.timestamp
+      updated: limitUpdatedAt
     })
   };
 }
@@ -1005,9 +1006,8 @@ function normalizeApiProvider(id, provider) {
 }
 
 function providerHasUsage(provider) {
-  const hasTrackedUsage = [
+  const hasActiveUsage = [
     provider.todayTokens,
-    provider.allTimeTokens,
     provider.apiTokens,
     provider.cost
   ].some((value) => Number(value || 0) > 0);
@@ -1016,7 +1016,7 @@ function providerHasUsage(provider) {
   );
   const needsAttention = provider.status === "error";
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
-  return hasTrackedUsage || hasLimitTelemetry || needsAttention || configuredApi;
+  return hasActiveUsage || hasLimitTelemetry || needsAttention || configuredApi;
 }
 
 function updateProviderFilterControl(providers, visibleProviders) {
