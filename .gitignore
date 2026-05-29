@@ -2,6 +2,8 @@ node_modules/
 dist/
 data/
 .cache/
+.agent_context/
+.multica/
 
 .env
 .env.*
