@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Costi API",
     "heading": "Quanto sarebbero costati i tuoi token tramite API",
-    "meta": "EUR via BCE {fxDate} · prezzi {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Mix benchmark {scoreDate}: {score}/100",
+    "meta": "EUR via BCE {fxDate} · prezzi {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Cina",
     "regions": {
       "apiDiscount": "Sconto API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Nessun evento Codex 5.3 Spark trovato.",
       "noGeminiLogs": "Nessun log locale di utilizzo Gemini trovato.",
       "ollamaLogTokens": "Token Ollama locali dai log",
-      "noOllamaLogs": "Nessun log Ollama locale trovato."
+      "noOllamaLogs": "Nessun log Ollama locale trovato.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Statusline Claude acquisita, ma non ci sono ancora valori quota Pro/Max ufficiali.",
+      "claudeStatuslineMissing": "Statusline Claude non configurata. Attiva il comando statusline della dashboard per le quote Pro/Max live."
     },
     "emptyState": {
       "eyebrow": "Provider",
@@ -109,6 +113,9 @@
       "visible": "Visibile",
       "hidden": "Nascosto",
       "all": "Tutti"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Oggi",
     "fiveHourUsed": "5h usate",
     "weekUsed": "Settimana usata",
+    "fiveHourLeft": "5 h rimaste",
+    "weekLeft": "Settimana rimasta",
     "since": "Da",
     "updated": "Aggiornato",
     "plan": "Piano",
@@ -151,9 +160,11 @@
     "default": "Limite",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% usato",
+    "leftValue": "{percent}% rimasto",
     "freeLabel": "{label} disponibile",
     "limitGroups": "{count} gruppi di limiti",
-    "noModelLimits": "Nessun limite modello"
+    "noModelLimits": "Nessun limite modello",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Input",

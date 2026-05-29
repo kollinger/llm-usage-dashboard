@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API troškovi",
     "heading": "Koliko bi tvoji tokeni koštali putem API-ja",
-    "meta": "EUR preko ECB {fxDate} · cijene {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmark miks {scoreDate}: {score}/100",
+    "meta": "EUR preko ECB {fxDate} · cijene {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kina",
     "regions": {
       "apiDiscount": "API popust"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Nisu pronađeni Codex 5.3 Spark događaji.",
       "noGeminiLogs": "Nisu pronađeni lokalni Gemini usage zapisi.",
       "ollamaLogTokens": "Lokalni Ollama tokeni iz zapisa",
-      "noOllamaLogs": "Nisu pronađeni lokalni Ollama zapisi."
+      "noOllamaLogs": "Nisu pronađeni lokalni Ollama zapisi.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude statusline je zabilježen, ali još nema službenih Pro/Max vrijednosti kvote.",
+      "claudeStatuslineMissing": "Claude statusline nije konfiguriran. Omogućite statusline naredbu nadzorne ploče za Pro/Max kvote uživo."
     },
     "emptyState": {
       "eyebrow": "Pružatelj",
@@ -109,6 +113,9 @@
       "visible": "Vidljivo",
       "hidden": "Skriveno",
       "all": "Sve"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Danas",
     "fiveHourUsed": "5h iskorišteno",
     "weekUsed": "Tjedan iskorišten",
+    "fiveHourLeft": "5 h preostalo",
+    "weekLeft": "Tjedan preostao",
     "since": "Od",
     "updated": "Ažurirano",
     "plan": "Plan",
@@ -151,9 +160,11 @@
     "default": "Ograničenje",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% iskorišteno",
+    "leftValue": "{percent}% preostalo",
     "freeLabel": "{label} dostupno",
     "limitGroups": "{count} grupa ograničenja",
-    "noModelLimits": "Nema ograničenja modela"
+    "noModelLimits": "Nema ograničenja modela",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Ulaz",

@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API 成本",
     "heading": "你的令牌通过 API 会产生的费用",
-    "meta": "EUR via ECB {fxDate} · 价格 {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "基准组合 {scoreDate}: {score}/100",
+    "meta": "EUR via ECB {fxDate} · 价格 {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "中国",
     "regions": {
       "apiDiscount": "API 折扣"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "未找到 Codex 5.3 Spark 事件。",
       "noGeminiLogs": "未找到本地 Gemini 使用日志。",
       "ollamaLogTokens": "来自日志的本地 Ollama 令牌",
-      "noOllamaLogs": "未找到本地 Ollama 日志。"
+      "noOllamaLogs": "未找到本地 Ollama 日志。",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "已捕获 Claude 状态行，但还没有官方 Pro/Max 配额值。",
+      "claudeStatuslineMissing": "未配置 Claude 状态行。启用仪表板状态行命令以获取 Pro/Max 实时配额。"
     },
     "emptyState": {
       "eyebrow": "提供商",
@@ -109,6 +113,9 @@
       "visible": "可见",
       "hidden": "隐藏",
       "all": "全部"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "今天",
     "fiveHourUsed": "5h 已用",
     "weekUsed": "本周已用",
+    "fiveHourLeft": "5小时剩余",
+    "weekLeft": "本周剩余",
     "since": "自",
     "updated": "已更新",
     "plan": "计划",
@@ -151,9 +160,11 @@
     "default": "限制",
     "resetPrefix": "重置 {time}",
     "usedValue": "已用 {percent}%",
+    "leftValue": "剩余 {percent}%",
     "freeLabel": "{label} 可用",
     "limitGroups": "{count} 个限制组",
-    "noModelLimits": "无模型限制"
+    "noModelLimits": "无模型限制",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "输入",

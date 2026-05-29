@@ -15,7 +15,14 @@ const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
 const MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
-const CODEX_HOME = expandHome(process.env.CODEX_HOME || path.join(os.homedir(), ".codex"));
+const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
+const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
+const CODEX_HOMES = uniquePaths([
+  DEFAULT_CODEX_HOME,
+  CODEX_HOME,
+  ...parsePathList(process.env.LLM_USAGE_CODEX_HOMES)
+]);
+const COPILOT_HOME = expandHome(process.env.COPILOT_HOME || path.join(os.homedir(), ".copilot"));
 const CLAUDE_HOME = expandHome(process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude"));
 const GEMINI_HOME = expandHome(process.env.GEMINI_HOME || path.join(os.homedir(), ".gemini"));
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
@@ -28,6 +35,7 @@ const ANTHROPIC_API_CACHE_MS = envMs("ANTHROPIC_API_CACHE_SECONDS", 60);
 const CODEX_LIVE_RATE_LIMITS_ENABLED = parseBoolean(process.env.CODEX_LIVE_RATE_LIMITS ?? "true");
 const CODEX_LIVE_RATE_LIMITS_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS", 15);
 const CODEX_APP_SERVER_TIMEOUT_MS = envMs("CODEX_APP_SERVER_TIMEOUT_SECONDS", 5);
+const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 
 const app = express();
@@ -67,6 +75,24 @@ function expandHome(value) {
   if (value === "~") return os.homedir();
   if (value.startsWith("~/")) return path.join(os.homedir(), value.slice(2));
   return value;
+}
+
+function parsePathList(value) {
+  return String(value || "")
+    .split(path.delimiter)
+    .map((item) => expandHome(item.trim()))
+    .filter(Boolean);
+}
+
+function uniquePaths(paths) {
+  const seen = new Set();
+  return paths
+    .map((item) => path.resolve(expandHome(item)))
+    .filter((item) => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
 }
 
 function isProtected() {
@@ -177,9 +203,10 @@ app.get("/auth/oidc/callback", async (req, res) => {
 });
 
 app.get("/api/usage", authMiddleware, async (_req, res) => {
-  const [manual, codex, claudeCode, geminiLocal, ollama, openai, anthropic] = await Promise.all([
+  const [manual, codex, copilot, claudeCode, geminiLocal, ollama, openai, anthropic] = await Promise.all([
     readManualLimits(),
     readCodexUsage().catch((error) => providerError("codex", error)),
+    readCopilotUsage().catch((error) => providerError("copilot", error)),
     readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
     readGeminiUsage().catch((error) => providerError("gemini", error)),
     readOllamaUsage().catch((error) => providerError("ollama", error)),
@@ -191,10 +218,11 @@ app.get("/api/usage", authMiddleware, async (_req, res) => {
   res.json({
     generatedAt: now,
     codex,
+    copilot,
     claudeCode: mergeManualLimits(claudeCode, manual.claude),
     gemini: mergeManualLimits(geminiLocal, manual.gemini),
     ollama,
-    local: buildLocalAggregate([codex, claudeCode, geminiLocal, ollama]),
+    local: buildLocalAggregate([codex, copilot, claudeCode, geminiLocal, ollama]),
     openai: mergeManualLimits(openai, manual.openai),
     anthropic,
     manual
@@ -379,8 +407,15 @@ function hasUsageCredits(credits) {
 }
 
 function normalizeOptionalDate(value) {
-  if (!value) return null;
-  const date = new Date(value);
+  if (value === undefined || value === null || value === "") return null;
+  const numeric =
+    typeof value === "number" || (typeof value === "string" && /^-?\d+(\.\d+)?$/.test(value.trim()))
+      ? Number(value)
+      : null;
+  const date =
+    numeric !== null && Number.isFinite(numeric)
+      ? new Date(Math.abs(numeric) < 1e12 ? numeric * 1000 : numeric)
+      : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
@@ -526,14 +561,7 @@ function buildLimitRows(limits, keys) {
 
 async function readCodexUsage() {
   const liveRateLimitsPromise = readCodexLiveRateLimits();
-  const roots = [
-    path.join(CODEX_HOME, "sessions"),
-    path.join(CODEX_HOME, "archived_sessions")
-  ];
-  const files = [];
-  for (const root of roots) {
-    files.push(...(await listJsonlFiles(root)));
-  }
+  const { files, roots, duplicatesSkipped } = await listCodexUsageFiles();
 
   const aggregates = createUsageTotals();
   const last5h = createUsageTotals();
@@ -636,7 +664,10 @@ async function readCodexUsage() {
     updatedAt: new Date().toISOString(),
     source: {
       codexHome: CODEX_HOME,
+      codexHomes: CODEX_HOMES,
+      rootsScanned: roots,
       filesScanned: files.length,
+      duplicatesSkipped,
       sessionsWithEvents,
       eventCount,
       liveRateLimits: liveRateLimits?.source || null
@@ -668,6 +699,105 @@ async function readCodexUsage() {
     limits: liveCodexLimits || codexRateLimitsFromEvents(rateLimitEvents, latestEvent?.rateLimits),
     spark: buildCodexSparkUsage(sparkLatestEvent, sparkFirstEvent, sparkUsage, sparkRateLimitEvents, liveSparkLimits),
     daily
+  };
+}
+
+async function readCopilotUsage() {
+  const files = await listFiles(path.join(COPILOT_HOME, "session-state"), (file) => path.basename(file) === "events.jsonl");
+  const usage = createUsageAccumulator();
+  const modelMap = new Map();
+  let firstEvent = null;
+  let latestEvent = null;
+  let eventCount = 0;
+  let sessionsWithEvents = 0;
+  let totalPremiumRequests = 0;
+  let totalApiDurationMs = 0;
+  let totalNanoAiu = 0;
+
+  for (const file of files) {
+    let fileEvents = 0;
+    await readJsonl(file, (event) => {
+      if (event?.type !== "session.shutdown" || !event?.data) return;
+      const data = event.data;
+      const timestampMs = copilotSessionTimestampMs(data, event.timestamp);
+      if (!Number.isFinite(timestampMs)) return;
+
+      const sessionUsage = createUsageTotals();
+      const modelMetrics = data.modelMetrics && typeof data.modelMetrics === "object" ? data.modelMetrics : {};
+      for (const [model, metrics] of Object.entries(modelMetrics)) {
+        const normalized = normalizeCopilotUsage(metrics?.usage || {});
+        if (!normalized.total_tokens) continue;
+        addUsage(sessionUsage, normalized);
+        const modelName = model || data.currentModel || "copilot";
+        if (!modelMap.has(modelName)) modelMap.set(modelName, createUsageTotals());
+        addUsage(modelMap.get(modelName), normalized);
+      }
+
+      const premiumRequests = Number(data.totalPremiumRequests || 0);
+      if (!sessionUsage.totalTokens && !premiumRequests) return;
+
+      addUsageEvent(usage, timestampMs, sessionUsage);
+      totalPremiumRequests += premiumRequests;
+      totalApiDurationMs += Number(data.totalApiDurationMs || 0);
+      totalNanoAiu += Number(data.totalNanoAiu || 0);
+      eventCount += 1;
+      fileEvents += 1;
+
+      const row = {
+        timestamp: new Date(timestampMs).toISOString(),
+        model: data.currentModel || Object.keys(modelMetrics)[0] || "copilot",
+        usage: sessionUsage,
+        premiumRequests,
+        file
+      };
+      if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) firstEvent = row;
+      if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) latestEvent = row;
+    });
+    if (fileEvents) sessionsWithEvents += 1;
+  }
+
+  return {
+    id: "copilot",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    message: latestEvent ? null : "Keine lokalen Copilot CLI Session-Metriken gefunden.",
+    source: {
+      copilotHome: COPILOT_HOME,
+      filesScanned: files.length,
+      sessionsWithEvents,
+      eventCount,
+      totalPremiumRequests,
+      totalApiDurationMs,
+      totalNanoAiu,
+      dataScope: "session.shutdown metrics only; prompt and response content events are ignored"
+    },
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          model: latestEvent.model,
+          last: latestEvent.usage,
+          premiumRequests: latestEvent.premiumRequests
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          model: firstEvent.model,
+          file: firstEvent.file
+        }
+      : null,
+    totals: finalizeUsageAccumulator(usage),
+    usageUnits: {
+      premiumRequests: totalPremiumRequests,
+      totalApiDurationMs,
+      totalNanoAiu
+    },
+    limits: null,
+    byModel: Array.from(modelMap.entries())
+      .map(([model, modelUsage]) => ({ model, ...modelUsage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8),
+    daily: buildDaily(usage.dailyMap)
   };
 }
 
@@ -764,7 +894,8 @@ async function readClaudeCodeUsage() {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
-  const statusline = await readClaudeStatusline();
+  const [statusline, authStatus] = await Promise.all([readClaudeStatusline(), readClaudeAuthStatus()]);
+  const planType = statusline?.planType || authStatus?.planType || null;
   return {
     id: "claudeCode",
     status: latestEvent ? "live" : "empty",
@@ -773,7 +904,20 @@ async function readClaudeCodeUsage() {
       claudeHome: CLAUDE_HOME,
       filesScanned: files.length,
       sessionsWithEvents,
-      eventCount: responseCount
+      eventCount: responseCount,
+      statusline: statusline
+        ? {
+            found: Boolean(statusline.found),
+            hasLimits: Boolean(statusline.limits),
+            file: statusline.statusFile
+          }
+        : null,
+      authStatus: authStatus
+        ? {
+            available: Boolean(authStatus.available),
+            status: authStatus.status || "unknown"
+          }
+        : null
     },
     latest: latestEvent
       ? {
@@ -791,16 +935,24 @@ async function readClaudeCodeUsage() {
       : null,
     totals: finalizeUsageAccumulator(usage),
     limits: statusline?.limits || null,
-    planType: statusline?.planType || null,
+    planType,
     credits: statusline?.credits || null,
     creditRows: buildCreditRows(statusline?.credits),
     limitSource: statusline?.limits ? "claude_statusline" : null,
+    planSource: statusline?.planType ? "claude_statusline" : authStatus?.planType ? "claude_auth_status" : null,
+    message: claudeCodeStatusMessage(statusline),
     byModel: Array.from(modelMap.entries())
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
       .slice(0, 8),
     daily: buildDaily(usage.dailyMap)
   };
+}
+
+function claudeCodeStatusMessage(statusline) {
+  if (statusline?.limits) return null;
+  if (statusline?.found) return "Claude statusline captured, but no official Pro/Max quota values yet.";
+  return "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas.";
 }
 
 async function readGeminiUsage() {
@@ -1054,6 +1206,46 @@ function subtractUsageTotals(total, subset) {
   return result;
 }
 
+async function listCodexUsageFiles() {
+  const roots = CODEX_HOMES.flatMap((home) => [
+    path.join(home, "sessions"),
+    path.join(home, "archived_sessions")
+  ]);
+  const files = [];
+  const seenRealPaths = new Set();
+  const seenSessionIds = new Set();
+  let duplicatesSkipped = 0;
+
+  for (const root of roots) {
+    for (const file of await listJsonlFiles(root)) {
+      const realPath = await safeRealpath(file);
+      const sessionId = codexSessionId(file);
+      if (seenRealPaths.has(realPath) || (sessionId && seenSessionIds.has(sessionId))) {
+        duplicatesSkipped += 1;
+        continue;
+      }
+      seenRealPaths.add(realPath);
+      if (sessionId) seenSessionIds.add(sessionId);
+      files.push(file);
+    }
+  }
+
+  return { files, roots, duplicatesSkipped };
+}
+
+async function safeRealpath(file) {
+  try {
+    return await fsp.realpath(file);
+  } catch {
+    return path.resolve(file);
+  }
+}
+
+function codexSessionId(file) {
+  const match = path.basename(file).match(/^rollout-[^.]+(?:\.jsonl)?$/);
+  return match ? path.basename(file, ".jsonl") : "";
+}
+
 async function listJsonlFiles(root) {
   const result = [];
   async function walk(dir) {
@@ -1194,6 +1386,29 @@ function normalizeUsage(usage) {
   return totals;
 }
 
+function normalizeCopilotUsage(usage) {
+  const input = Number(usage.inputTokens ?? usage.input_tokens ?? 0);
+  const cacheWrite = Number(usage.cacheWriteTokens ?? usage.cache_write_tokens ?? 0);
+  const cacheRead = Number(usage.cacheReadTokens ?? usage.cache_read_tokens ?? 0);
+  const output = Number(usage.outputTokens ?? usage.output_tokens ?? 0);
+  const reasoning = Number(usage.reasoningTokens ?? usage.reasoning_tokens ?? 0);
+  return {
+    input_tokens: input,
+    cache_creation_input_tokens: cacheWrite,
+    cached_input_tokens: cacheRead,
+    output_tokens: output,
+    reasoning_output_tokens: reasoning,
+    total_tokens: Number(usage.totalTokens ?? usage.total_tokens ?? input + cacheWrite + cacheRead + output + reasoning)
+  };
+}
+
+function copilotSessionTimestampMs(data, fallbackTimestamp) {
+  const sessionStart = Number(data?.sessionStartTime);
+  if (Number.isFinite(sessionStart) && sessionStart > 0) return sessionStart;
+  const fallback = Date.parse(fallbackTimestamp);
+  return Number.isNaN(fallback) ? NaN : fallback;
+}
+
 function addUsage(target, usage) {
   const input = Number(usage.input_tokens ?? usage.inputTokens ?? 0);
   const cacheCreation = Number(usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? 0);
@@ -1232,10 +1447,67 @@ async function readClaudeStatusline() {
   const statusFile = path.join(CLAUDE_HOME, "usage-dashboard-statusline.json");
   try {
     const raw = JSON.parse(await fsp.readFile(statusFile, "utf8"));
-    return extractClaudeStatusline(raw);
-  } catch {
-    return null;
+    const extracted = extractClaudeStatusline(raw) || {};
+    return {
+      statusFile,
+      found: true,
+      ...extracted
+    };
+  } catch (error) {
+    return {
+      statusFile,
+      found: false,
+      error: error?.code === "ENOENT" ? "missing" : "unreadable"
+    };
   }
+}
+
+async function readClaudeAuthStatus() {
+  const claudeBinary = resolveClaudeBinary();
+  if (!claudeBinary) return { available: false, status: "missing", planType: null };
+
+  const result = spawnSync(claudeBinary, ["auth", "status", "--json"], {
+    encoding: "utf8",
+    timeout: CLAUDE_AUTH_STATUS_TIMEOUT_MS,
+    maxBuffer: 256 * 1024
+  });
+  if (result.error) {
+    return {
+      available: true,
+      status: result.error.code === "ETIMEDOUT" ? "timeout" : "error",
+      planType: null
+    };
+  }
+  if (result.status !== 0) {
+    return { available: true, status: "unavailable", planType: null };
+  }
+
+  try {
+    const raw = JSON.parse(result.stdout || "{}");
+    return {
+      available: true,
+      status: "ok",
+      planType: extractClaudePlanType(raw),
+      loggedIn: parseBoolean(raw.loggedIn ?? raw.logged_in)
+    };
+  } catch {
+    return { available: true, status: "invalid_json", planType: null };
+  }
+}
+
+function resolveClaudeBinary() {
+  const candidates = [
+    process.env.CLAUDE_BIN,
+    process.env.CLAUDE_CLI_PATH
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) return candidate;
+  }
+
+  const which = spawnSync("which", ["claude"], { encoding: "utf8" });
+  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
+  return null;
 }
 
 function extractClaudeStatusline(raw) {
@@ -1273,6 +1545,8 @@ function extractUsageCredits(source) {
 function extractClaudePlanType(raw) {
   if (!raw || typeof raw !== "object") return null;
   const value =
+    raw.subscriptionType ??
+    raw.subscription_type ??
     raw.plan_type ??
     raw.planType ??
     raw.plan ??
@@ -1286,6 +1560,42 @@ function extractClaudePlanType(raw) {
 
 function extractClaudeRateLimits(rateLimits) {
   if (!rateLimits || typeof rateLimits !== "object") return null;
+  const official = extractOfficialClaudeRateLimits(rateLimits);
+  const fallback = extractFallbackClaudeRateLimits(rateLimits);
+  if (official) {
+    const limits = {
+      ...official,
+      claudeDesign: fallback?.claudeDesign || null
+    };
+    limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "claudeDesign"]);
+    return limits;
+  }
+  return fallback;
+}
+
+function extractOfficialClaudeRateLimits(rateLimits) {
+  const fiveHour = claudeLimitWindow(
+    findClaudeLimit(rateLimits, ["five_hour", "fiveHour"]),
+    "5h",
+    300
+  );
+  const weekly = claudeLimitWindow(
+    findClaudeLimit(rateLimits, ["seven_day", "sevenDay"]),
+    "Woche",
+    10080
+  );
+  if (!fiveHour && !weekly) return null;
+  const limits = {
+    fiveHour,
+    weekly,
+    currentSession: fiveHour,
+    allModels: weekly
+  };
+  limits.rows = buildLimitRows(limits, ["fiveHour", "weekly"]);
+  return limits;
+}
+
+function extractFallbackClaudeRateLimits(rateLimits) {
   const weeklyRoot = rateLimits.weekly || rateLimits.weekly_limits || rateLimits.weeklyLimits || {};
   const currentSession = claudeLimitWindow(
     findClaudeLimit(rateLimits, ["current_session", "currentSession", "session", "five_hour", "fiveHour", "primary", "5h"]),

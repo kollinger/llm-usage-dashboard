@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "تكاليف API",
     "heading": "ما كانت ستكلفه توكناتك عبر API",
-    "meta": "EUR عبر ECB {fxDate} · الأسعار {pricingDate} · الدرجة {scoreDate}",
-    "qualityScoreTitle": "مزيج المعايير {scoreDate}: {score}/100",
+    "meta": "EUR عبر ECB {fxDate} · الأسعار {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "الصين",
     "regions": {
       "apiDiscount": "خصم API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "لم يتم العثور على أحداث Codex 5.3 Spark.",
       "noGeminiLogs": "لم يتم العثور على سجلات استخدام Gemini محلية.",
       "ollamaLogTokens": "توكنات Ollama المحلية من السجلات",
-      "noOllamaLogs": "لم يتم العثور على سجلات Ollama محلية."
+      "noOllamaLogs": "لم يتم العثور على سجلات Ollama محلية.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "تم التقاط سطر حالة Claude، لكن لا توجد قيم حصص Pro/Max رسمية بعد.",
+      "claudeStatuslineMissing": "سطر حالة Claude غير مكوّن. فعّل أمر سطر حالة لوحة البيانات لحصص Pro/Max المباشرة."
     },
     "emptyState": {
       "eyebrow": "المزوّد",
@@ -109,6 +113,9 @@
       "visible": "ظاهر",
       "hidden": "مخفي",
       "all": "الكل"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "اليوم",
     "fiveHourUsed": "5h مستخدمة",
     "weekUsed": "الأسبوع مستخدم",
+    "fiveHourLeft": "5h متبقية",
+    "weekLeft": "الأسبوع متبقٍ",
     "since": "منذ",
     "updated": "محدّث",
     "plan": "الخطة",
@@ -151,9 +160,11 @@
     "default": "الحد",
     "resetPrefix": "إعادة ضبط {time}",
     "usedValue": "{percent}% مستخدم",
+    "leftValue": "{percent}% متبقٍ",
     "freeLabel": "{label} متاح",
     "limitGroups": "{count} مجموعات حدود",
-    "noModelLimits": "لا توجد حدود للنماذج"
+    "noModelLimits": "لا توجد حدود للنماذج",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "الإدخال",

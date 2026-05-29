@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Spejjeż API",
     "heading": "Kemm kienu jiswew it-tokens tiegħek permezz tal-API",
-    "meta": "EUR permezz tal-ECB {fxDate} · prezzijiet {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Taħlita benchmark {scoreDate}: {score}/100",
+    "meta": "EUR permezz tal-ECB {fxDate} · prezzijiet {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Ċina",
     "regions": {
       "apiDiscount": "Skont API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Ma nstabux avvenimenti Codex 5.3 Spark.",
       "noGeminiLogs": "Ma nstabux Gemini usage logs lokali.",
       "ollamaLogTokens": "Tokens Ollama lokali mil-logs",
-      "noOllamaLogs": "Ma nstabux logs Ollama lokali."
+      "noOllamaLogs": "Ma nstabux logs Ollama lokali.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Il-statusline ta Claude nqabad, iżda għad mhemmx valuri uffiċjali tal-kwoti Pro/Max.",
+      "claudeStatuslineMissing": "Il-statusline ta Claude mhuwiex ikkonfigurat. Attiva l-kmand statusline tad-dashboard għal kwoti Pro/Max live."
     },
     "emptyState": {
       "eyebrow": "Fornitur",
@@ -109,6 +113,9 @@
       "visible": "Viżibbli",
       "hidden": "Moħbi",
       "all": "Kollha"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Illum",
     "fiveHourUsed": "5h użati",
     "weekUsed": "Ġimgħa użata",
+    "fiveHourLeft": "5 h fadal",
+    "weekLeft": "Ġimgħa fadal",
     "since": "Minn",
     "updated": "Aġġornat",
     "plan": "Pjan",
@@ -151,9 +160,11 @@
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% użat",
+    "leftValue": "{percent}% fadal",
     "freeLabel": "{label} disponibbli",
     "limitGroups": "{count} gruppi ta’ limiti",
-    "noModelLimits": "Ebda limiti tal-mudelli"
+    "noModelLimits": "Ebda limiti tal-mudelli",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Input",

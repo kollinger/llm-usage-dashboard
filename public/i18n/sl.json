@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Stroški API",
     "heading": "Koliko bi tvoji tokeni stali prek API-ja",
-    "meta": "EUR prek ECB {fxDate} · cene {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmark mešanica {scoreDate}: {score}/100",
+    "meta": "EUR prek ECB {fxDate} · cene {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kitajska",
     "regions": {
       "apiDiscount": "API popust"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Dogodkov Codex 5.3 Spark ni bilo mogoče najti.",
       "noGeminiLogs": "Lokalnih dnevnikov uporabe Gemini ni bilo mogoče najti.",
       "ollamaLogTokens": "Lokalni Ollama tokeni iz dnevnikov",
-      "noOllamaLogs": "Lokalnih dnevnikov Ollama ni bilo mogoče najti."
+      "noOllamaLogs": "Lokalnih dnevnikov Ollama ni bilo mogoče najti.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude statusline je zajet, vendar še ni uradnih vrednosti kvot Pro/Max.",
+      "claudeStatuslineMissing": "Claude statusline ni nastavljen. Omogočite ukaz statusline nadzorne plošče za žive kvote Pro/Max."
     },
     "emptyState": {
       "eyebrow": "Ponudnik",
@@ -109,6 +113,9 @@
       "visible": "Vidno",
       "hidden": "Skrito",
       "all": "Vse"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Danes",
     "fiveHourUsed": "5h uporabljeno",
     "weekUsed": "Teden uporabljen",
+    "fiveHourLeft": "5 h preostalo",
+    "weekLeft": "Teden preostal",
     "since": "Od",
     "updated": "Posodobljeno",
     "plan": "Paket",
@@ -151,9 +160,11 @@
     "default": "Omejitev",
     "resetPrefix": "Ponastavitev {time}",
     "usedValue": "{percent}% uporabljeno",
+    "leftValue": "{percent}% preostalo",
     "freeLabel": "{label} na voljo",
     "limitGroups": "{count} skupin omejitev",
-    "noModelLimits": "Ni omejitev modelov"
+    "noModelLimits": "Ni omejitev modelov",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Vhod",

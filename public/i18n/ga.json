@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Costais API",
     "heading": "Cad a chosnódh do tokens tríd an API",
-    "meta": "EUR trí ECB {fxDate} · praghsanna {pricingDate} · scór {scoreDate}",
-    "qualityScoreTitle": "Meascán tagarmharcanna {scoreDate}: {score}/100",
+    "meta": "EUR trí ECB {fxDate} · praghsanna {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "An tSín",
     "regions": {
       "apiDiscount": "Lascaine API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Níor aimsíodh aon imeachtaí Codex 5.3 Spark.",
       "noGeminiLogs": "Níor aimsíodh aon logaí úsáide Gemini áitiúla.",
       "ollamaLogTokens": "Tokens Ollama áitiúla ó logaí",
-      "noOllamaLogs": "Níor aimsíodh aon logaí Ollama áitiúla."
+      "noOllamaLogs": "Níor aimsíodh aon logaí Ollama áitiúla.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Gabhadh statusline Claude, ach níl luachanna oifigiúla cuóta Pro/Max ann fós.",
+      "claudeStatuslineMissing": "Níl statusline Claude cumraithe. Cumasaigh ordú statusline an deais le haghaidh cuótaí beo Pro/Max."
     },
     "emptyState": {
       "eyebrow": "Soláthraí",
@@ -109,6 +113,9 @@
       "visible": "Infheicthe",
       "hidden": "Folaithe",
       "all": "Uile"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Inniu",
     "fiveHourUsed": "5h úsáidte",
     "weekUsed": "Seachtain úsáidte",
+    "fiveHourLeft": "5h fágtha",
+    "weekLeft": "Seachtain fágtha",
     "since": "Ó",
     "updated": "Nuashonraithe",
     "plan": "Plean",
@@ -151,9 +160,11 @@
     "default": "Teorainn",
     "resetPrefix": "Athshocrú {time}",
     "usedValue": "{percent}% úsáidte",
+    "leftValue": "{percent}% fágtha",
     "freeLabel": "{label} ar fáil",
     "limitGroups": "{count} grúpa teorainneacha",
-    "noModelLimits": "Gan teorainneacha samhlacha"
+    "noModelLimits": "Gan teorainneacha samhlacha",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Ionchur",

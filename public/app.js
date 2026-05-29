@@ -43,6 +43,7 @@ const els = {
 const providerMeta = {
   codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: "#23745c" },
   codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: "#5b6ee1" },
+  copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: "#6f42c1" },
   claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: "#d55e00" },
   anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
   openai: { name: "OpenAI / GPT", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
@@ -52,8 +53,8 @@ const providerMeta = {
 
 const USD_PER_EUR = 1.1595;
 const FX_DATE = "2026-05-22";
-const PRICING_DATE = "2026-05-27";
-const SCORE_DATE = "2026-05-23";
+const PRICING_DATE = "2026-05-29";
+const SCORE_DATE = "2026-05-29";
 const MILLION = 1_000_000;
 const LANGUAGE_OPTIONS = [
   { code: "bg", label: "Български", locale: "bg-BG" },
@@ -91,10 +92,11 @@ const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
 const translationCache = new Map();
-const chartSourceOrder = ["codex", "codexSpark", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
+const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
   codexSpark: providerMeta.codexSpark.accent,
+  copilot: providerMeta.copilot.accent,
   claudeCode: providerMeta.claudeCode.accent,
   ollama: providerMeta.ollama.accent,
   gemini: providerMeta.gemini.accent,
@@ -113,6 +115,7 @@ const pricingSortDefaults = {
   total: "asc",
   source: "asc"
 };
+const pricingExcludedSourceIds = new Set(["copilot"]);
 
 const pricingModels = [
   {
@@ -184,7 +187,7 @@ const pricingModels = [
     cachedInputUsd: 0.5,
     outputUsd: 25,
     source: "Anthropic",
-    sourceUrl: "https://www.anthropic.com/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   {
     provider: "Anthropic",
@@ -195,7 +198,7 @@ const pricingModels = [
     cachedInputUsd: 0.3,
     outputUsd: 15,
     source: "Anthropic",
-    sourceUrl: "https://www.anthropic.com/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   {
     provider: "Anthropic",
@@ -206,7 +209,7 @@ const pricingModels = [
     cachedInputUsd: 0.1,
     outputUsd: 5,
     source: "Anthropic",
-    sourceUrl: "https://www.anthropic.com/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   {
     provider: "Google",
@@ -254,11 +257,10 @@ const pricingModels = [
   {
     provider: "Alibaba",
     model: "Qwen3-Max",
-    region: "EU Frankfurt <=32k",
-    inputUsd: 1.2,
-    cacheWriteUsd: 1.5,
-    cachedInputUsd: 0.12,
-    outputUsd: 6,
+    region: "Global <=32k",
+    inputUsd: 0.359,
+    cachedInputUsd: 0.0718,
+    outputUsd: 1.434,
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     china: true
@@ -268,8 +270,7 @@ const pricingModels = [
     model: "Qwen3.5-Plus",
     region: "Global <=128k",
     inputUsd: 0.115,
-    cacheWriteUsd: 0.14375,
-    cachedInputUsd: 0.0115,
+    cachedInputUsd: 0.023,
     outputUsd: 0.688,
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
@@ -596,6 +597,7 @@ function render() {
   const providers = [
     normalizeCodexProvider(usage.codex),
     normalizeCodexSparkProvider(usage.codex?.spark),
+    normalizeLocalProvider("copilot", usage.copilot),
     normalizeLocalProvider("claudeCode", usage.claudeCode),
     normalizeLocalProvider("ollama", usage.ollama),
     normalizeApiProvider("anthropic", usage.anthropic),
@@ -690,8 +692,8 @@ function normalizeCodexProvider(codex) {
     allTimeTokens,
     foot: [
       [t("labels.today"), formatTokens(last24hTokens)],
-      [t("labels.fiveHourUsed"), formatPercent(codex?.limits?.fiveHour?.usedPercent)],
-      [t("labels.weekUsed"), formatPercent(codex?.limits?.weekly?.usedPercent)],
+      [t("labels.fiveHourLeft"), formatLimitRemainingPercent(codex?.limits?.fiveHour)],
+      [t("labels.weekLeft"), formatLimitRemainingPercent(codex?.limits?.weekly)],
       [t("labels.since"), formatDate(codex?.first?.timestamp)],
       [t("labels.updated"), formatTime(limitUpdatedAt)]
     ]
@@ -724,8 +726,8 @@ function normalizeCodexSparkProvider(spark) {
     message: localizeProviderMessage(spark?.message, "providers.messages.sparkTokens24h"),
     foot: [
       [t("labels.today"), formatTokens(spark?.totals?.last24h?.totalTokens)],
-      [t("labels.fiveHourUsed"), formatPercent(spark?.limits?.fiveHour?.usedPercent)],
-      [t("labels.weekUsed"), formatPercent(spark?.limits?.weekly?.usedPercent)],
+      [t("labels.fiveHourLeft"), formatLimitRemainingPercent(spark?.limits?.fiveHour)],
+      [t("labels.weekLeft"), formatLimitRemainingPercent(spark?.limits?.weekly)],
       [t("labels.since"), formatDate(spark?.first?.timestamp)],
       [t("labels.updated"), formatTime(spark?.latest?.timestamp)]
     ]
@@ -762,7 +764,10 @@ function normalizeLocalProvider(id, provider) {
     todayTokens: provider?.totals?.last24h?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
-    message: localizeProviderMessage(provider?.message, "providers.messages.logTokens24h"),
+    message: localizeProviderMessage(
+      provider?.message,
+      id === "copilot" ? "providers.messages.copilotLogTokens" : "providers.messages.logTokens24h"
+    ),
     foot
   };
 }
@@ -868,6 +873,10 @@ function providerKicker(id) {
 function localizeProviderMessage(message, fallbackKey) {
   const knownMessages = {
     "Keine Codex 5.3 Spark Events gefunden.": "providers.messages.noCodexSparkEvents",
+    "Claude statusline captured, but no official Pro/Max quota values yet.": "providers.messages.claudeStatuslineNoQuotas",
+    "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas.":
+      "providers.messages.claudeStatuslineMissing",
+    "Keine lokalen Copilot CLI Session-Metriken gefunden.": "providers.messages.noCopilotSessionMetrics",
     "Keine lokalen Gemini Usage-Logs gefunden.": "providers.messages.noGeminiLogs",
     "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
     "Keine lokalen Ollama-Logs gefunden.": "providers.messages.noOllamaLogs"
@@ -1073,7 +1082,10 @@ function renderLimitBars(provider) {
 function renderLimitBar(row, accent) {
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
-  const detail = row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
+  const remaining = Math.round(row.remainingPercent ?? Math.max(0, 100 - used));
+  const leftDetail = hasUsedPercent ? t("limits.leftValue", { percent: remaining }) : "";
+  const resetDetail = row.resetLabel || renderLimitRemaining(row.resetsAt);
+  const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || t("limits.usedValue", { percent: used });
   return `
     <div class="limit-bar">
@@ -1091,6 +1103,20 @@ function renderLimitBar(row, accent) {
       ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
     </div>
   `;
+}
+
+function renderLimitRemaining(resetsAt) {
+  if (!resetsAt) return "";
+  const ms = Date.parse(resetsAt);
+  if (!Number.isFinite(ms)) return t("limits.resetPrefix", { time: formatDateTime(resetsAt) });
+  const remainingMs = ms - Date.now();
+  if (remainingMs > 0) {
+    const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+    return `${t("limits.remainingShort", { days, hours, minutes })} · ${formatDateTime(resetsAt)}`;
+  }
+  return t("limits.resetPrefix", { time: formatDateTime(resetsAt) });
 }
 
 function renderRings(provider) {
@@ -1112,12 +1138,17 @@ function renderRing(limit, label, accent) {
     `;
   }
   const remaining = Math.round(limit.remainingPercent ?? 0);
+  let sub = "";
+  if (limit.resetsAt) {
+    sub = `<div class="ring-sub">${escapeHtml(renderLimitRemaining(limit.resetsAt))}</div>`;
+  }
   return `
     <div class="ring-box">
       <div class="ring" style="--percent: ${remaining}; --accent: ${accent}">
         <strong>${remaining}%</strong>
       </div>
       <span class="ring-label">${escapeHtml(t("limits.freeLabel", { label }))}</span>
+      ${sub}
     </div>
   `;
 }
@@ -1258,7 +1289,7 @@ function renderQualityScore(price) {
 
 function billingTotalsForWindow(local, windowKey) {
   const sources = Array.isArray(local?.sources)
-    ? local.sources.filter((source) => source?.totals?.[windowKey])
+    ? local.sources.filter((source) => source?.totals?.[windowKey] && !pricingExcludedSourceIds.has(source.id))
     : [];
   if (!sources.length) return normalizeBillingTotals("mixed", local?.totals?.[windowKey]);
 
@@ -1636,6 +1667,13 @@ function percentAverage(values) {
 function formatPercent(value) {
   if (value === undefined || value === null || Number.isNaN(Number(value))) return "--";
   return `${Math.round(Number(value))}%`;
+}
+
+function formatLimitRemainingPercent(limit) {
+  if (!limit) return "--";
+  if (Number.isFinite(Number(limit.remainingPercent))) return formatPercent(limit.remainingPercent);
+  if (Number.isFinite(Number(limit.usedPercent))) return formatPercent(Math.max(0, 100 - Number(limit.usedPercent)));
+  return "--";
 }
 
 function formatSharePercent(value) {

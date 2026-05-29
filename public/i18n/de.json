@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API-Kosten",
     "heading": "Was deine Tokens über die API gekostet hätten",
-    "meta": "EUR via EZB {fxDate} · Preise {pricingDate} · Score {scoreDate}",
-    "qualityScoreTitle": "Benchmark-Mix {scoreDate}: {score}/100",
+    "meta": "EUR via EZB {fxDate} · API-Preise {pricingDate} · interner Score {scoreDate}",
+    "qualityScoreTitle": "Interner Heuristik-Score {scoreDate}: {score}/100",
     "chinaBadge": "China",
     "regions": {
       "apiDiscount": "API-Rabatt"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Keine Codex 5.3 Spark Events gefunden.",
       "noGeminiLogs": "Keine lokalen Gemini Usage-Logs gefunden.",
       "ollamaLogTokens": "Lokale Ollama-Tokens aus Logs",
-      "noOllamaLogs": "Keine lokalen Ollama-Logs gefunden."
+      "noOllamaLogs": "Keine lokalen Ollama-Logs gefunden.",
+      "copilotLogTokens": "Copilot-CLI-Tokens 24h",
+      "noCopilotSessionMetrics": "Keine lokalen Copilot-CLI-Session-Metriken gefunden.",
+      "claudeStatuslineNoQuotas": "Claude-Statusline erfasst, aber noch ohne offizielle Pro/Max-Quota-Werte.",
+      "claudeStatuslineMissing": "Claude-Statusline nicht eingerichtet. Aktiviere den Dashboard-Statusline-Befehl für Live-Quotas bei Pro/Max."
     },
     "emptyState": {
       "eyebrow": "Anbieter",
@@ -109,6 +113,9 @@
       "visible": "Sichtbar",
       "hidden": "Ausgeblendet",
       "all": "Alle"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Heute",
     "fiveHourUsed": "5h genutzt",
     "weekUsed": "Woche genutzt",
+    "fiveHourLeft": "5h frei",
+    "weekLeft": "Woche frei",
     "since": "Seit",
     "updated": "Stand",
     "plan": "Plan",
@@ -151,7 +160,9 @@
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% genutzt",
+    "leftValue": "{percent}% frei",
     "freeLabel": "{label} frei",
+    "remainingShort": "{days}d {hours}h {minutes}m",
     "limitGroups": "{count} Limitgruppen",
     "noModelLimits": "Keine Modelllimits"
   },

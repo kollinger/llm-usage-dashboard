@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API kulud",
     "heading": "Mida sinu tokenid API kaudu maksaksid",
-    "meta": "EUR ECB kaudu {fxDate} · hinnad {pricingDate} · skoor {scoreDate}",
-    "qualityScoreTitle": "Benchmarkide segu {scoreDate}: {score}/100",
+    "meta": "EUR ECB kaudu {fxDate} · hinnad {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Hiina",
     "regions": {
       "apiDiscount": "API allahindlus"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Codex 5.3 Spark sündmusi ei leitud.",
       "noGeminiLogs": "Kohalikke Gemini kasutusloge ei leitud.",
       "ollamaLogTokens": "Kohalikud Ollama tokenid logidest",
-      "noOllamaLogs": "Kohalikke Ollama logisid ei leitud."
+      "noOllamaLogs": "Kohalikke Ollama logisid ei leitud.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude statusline on salvestatud, kuid ametlikke Pro/Max kvoodi väärtusi pole veel.",
+      "claudeStatuslineMissing": "Claude statusline pole seadistatud. Luba töölaua statusline käsk Pro/Max reaalajas kvootide jaoks."
     },
     "emptyState": {
       "eyebrow": "Pakkuja",
@@ -109,6 +113,9 @@
       "visible": "Nähtav",
       "hidden": "Peidetud",
       "all": "Kõik"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Täna",
     "fiveHourUsed": "5h kasutatud",
     "weekUsed": "Nädal kasutatud",
+    "fiveHourLeft": "5 h alles",
+    "weekLeft": "Nädal alles",
     "since": "Alates",
     "updated": "Uuendatud",
     "plan": "Plaan",
@@ -151,9 +160,11 @@
     "default": "Piirang",
     "resetPrefix": "Lähtestus {time}",
     "usedValue": "{percent}% kasutatud",
+    "leftValue": "{percent}% alles",
     "freeLabel": "{label} saadaval",
     "limitGroups": "{count} piirangugruppi",
-    "noModelLimits": "Mudeli piiranguid pole"
+    "noModelLimits": "Mudeli piiranguid pole",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Sisend",

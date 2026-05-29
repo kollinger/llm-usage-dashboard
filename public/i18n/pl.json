@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Koszty API",
     "heading": "Ile kosztowałyby twoje tokeny przez API",
-    "meta": "EUR przez EBC {fxDate} · ceny {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Miks benchmarków {scoreDate}: {score}/100",
+    "meta": "EUR przez EBC {fxDate} · ceny {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Chiny",
     "regions": {
       "apiDiscount": "Rabat API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Nie znaleziono zdarzeń Codex 5.3 Spark.",
       "noGeminiLogs": "Nie znaleziono lokalnych logów użycia Gemini.",
       "ollamaLogTokens": "Lokalne tokeny Ollama z logów",
-      "noOllamaLogs": "Nie znaleziono lokalnych logów Ollama."
+      "noOllamaLogs": "Nie znaleziono lokalnych logów Ollama.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Statusline Claude przechwycony, ale nie ma jeszcze oficjalnych wartości limitów Pro/Max.",
+      "claudeStatuslineMissing": "Statusline Claude nie jest skonfigurowany. Włącz polecenie statusline dashboardu dla limitów Pro/Max na żywo."
     },
     "emptyState": {
       "eyebrow": "Dostawca",
@@ -109,6 +113,9 @@
       "visible": "Widoczne",
       "hidden": "Ukryte",
       "all": "Wszystkie"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Dziś",
     "fiveHourUsed": "5h użyte",
     "weekUsed": "Tydzień użyty",
+    "fiveHourLeft": "Pozostało 5 h",
+    "weekLeft": "Pozostał tydzień",
     "since": "Od",
     "updated": "Zaktualizowano",
     "plan": "Plan",
@@ -151,9 +160,11 @@
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% użyte",
+    "leftValue": "Pozostało {percent}%",
     "freeLabel": "{label} dostępne",
     "limitGroups": "{count} grup limitów",
-    "noModelLimits": "Brak limitów modeli"
+    "noModelLimits": "Brak limitów modeli",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Wejście",

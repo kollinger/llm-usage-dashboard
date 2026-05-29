@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API Costs",
     "heading": "What your tokens would have cost through the API",
-    "meta": "EUR via ECB {fxDate} · prices {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmark mix {scoreDate}: {score}/100",
+    "meta": "EUR via ECB {fxDate} · API prices {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "China",
     "regions": {
       "apiDiscount": "API discount"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "No Codex 5.3 Spark events found.",
       "noGeminiLogs": "No local Gemini usage logs found.",
       "ollamaLogTokens": "Local Ollama tokens from logs",
-      "noOllamaLogs": "No local Ollama logs found."
+      "noOllamaLogs": "No local Ollama logs found.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude statusline captured, but no official Pro/Max quota values yet.",
+      "claudeStatuslineMissing": "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas."
     },
     "emptyState": {
       "eyebrow": "Provider",
@@ -109,6 +113,9 @@
       "visible": "Visible",
       "hidden": "Hidden",
       "all": "All"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Today",
     "fiveHourUsed": "5h used",
     "weekUsed": "Week used",
+    "fiveHourLeft": "5h left",
+    "weekLeft": "Week left",
     "since": "Since",
     "updated": "Updated",
     "plan": "Plan",
@@ -151,7 +160,9 @@
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% used",
+    "leftValue": "{percent}% left",
     "freeLabel": "{label} available",
+    "remainingShort": "{days}d {hours}h {minutes}m",
     "limitGroups": "{count} limit groups",
     "noModelLimits": "No model limits"
   },

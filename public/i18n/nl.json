@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API-kosten",
     "heading": "Wat je tokens via de API zouden hebben gekost",
-    "meta": "EUR via ECB {fxDate} · prijzen {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmarkmix {scoreDate}: {score}/100",
+    "meta": "EUR via ECB {fxDate} · prijzen {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "China",
     "regions": {
       "apiDiscount": "API-korting"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Geen Codex 5.3 Spark-events gevonden.",
       "noGeminiLogs": "Geen lokale Gemini-gebruikslogs gevonden.",
       "ollamaLogTokens": "Lokale Ollama-tokens uit logs",
-      "noOllamaLogs": "Geen lokale Ollama-logs gevonden."
+      "noOllamaLogs": "Geen lokale Ollama-logs gevonden.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude-statusline vastgelegd, maar nog geen officiële Pro/Max-quotawaarden.",
+      "claudeStatuslineMissing": "Claude-statusline niet geconfigureerd. Schakel de statusline-opdracht van het dashboard in voor live Pro/Max-quota."
     },
     "emptyState": {
       "eyebrow": "Provider",
@@ -109,6 +113,9 @@
       "visible": "Zichtbaar",
       "hidden": "Verborgen",
       "all": "Alles"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Vandaag",
     "fiveHourUsed": "5h gebruikt",
     "weekUsed": "Week gebruikt",
+    "fiveHourLeft": "5 u over",
+    "weekLeft": "Week over",
     "since": "Sinds",
     "updated": "Bijgewerkt",
     "plan": "Plan",
@@ -151,9 +160,11 @@
     "default": "Limiet",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% gebruikt",
+    "leftValue": "{percent}% over",
     "freeLabel": "{label} beschikbaar",
     "limitGroups": "{count} limietgroepen",
-    "noModelLimits": "Geen modellimieten"
+    "noModelLimits": "Geen modellimieten",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Invoer",

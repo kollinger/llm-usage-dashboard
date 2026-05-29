@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API-kustannukset",
     "heading": "Mitä tokenisi olisivat maksaneet API:n kautta",
-    "meta": "EUR ECB:n kautta {fxDate} · hinnat {pricingDate} · pisteet {scoreDate}",
-    "qualityScoreTitle": "Benchmark-yhdistelmä {scoreDate}: {score}/100",
+    "meta": "EUR ECB:n kautta {fxDate} · hinnat {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kiina",
     "regions": {
       "apiDiscount": "API-alennus"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Codex 5.3 Spark -tapahtumia ei löytynyt.",
       "noGeminiLogs": "Paikallisia Gemini-käyttölokeja ei löytynyt.",
       "ollamaLogTokens": "Paikalliset Ollama-tokenit lokeista",
-      "noOllamaLogs": "Paikallisia Ollama-lokeja ei löytynyt."
+      "noOllamaLogs": "Paikallisia Ollama-lokeja ei löytynyt.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude-statusline on tallennettu, mutta virallisia Pro/Max-kiintiöarvoja ei ole vielä.",
+      "claudeStatuslineMissing": "Claude-statuslinea ei ole määritetty. Ota dashboardin statusline-komento käyttöön Pro/Max-livekiintiöille."
     },
     "emptyState": {
       "eyebrow": "Palveluntarjoaja",
@@ -109,6 +113,9 @@
       "visible": "Näkyvissä",
       "hidden": "Piilotettu",
       "all": "Kaikki"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Tänään",
     "fiveHourUsed": "5h käytetty",
     "weekUsed": "Viikko käytetty",
+    "fiveHourLeft": "5 h jäljellä",
+    "weekLeft": "Viikko jäljellä",
     "since": "Alkaen",
     "updated": "Päivitetty",
     "plan": "Tilaukset",
@@ -151,9 +160,11 @@
     "default": "Raja",
     "resetPrefix": "Nollaus {time}",
     "usedValue": "{percent}% käytetty",
+    "leftValue": "{percent}% jäljellä",
     "freeLabel": "{label} käytettävissä",
     "limitGroups": "{count} rajaryhmää",
-    "noModelLimits": "Ei mallirajoja"
+    "noModelLimits": "Ei mallirajoja",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Syöte",

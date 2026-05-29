@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Náklady API",
     "heading": "Koľko by tvoje tokeny stáli cez API",
-    "meta": "EUR cez ECB {fxDate} · ceny {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmark mix {scoreDate}: {score}/100",
+    "meta": "EUR cez ECB {fxDate} · ceny {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Čína",
     "regions": {
       "apiDiscount": "API zľava"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Nenašli sa žiadne udalosti Codex 5.3 Spark.",
       "noGeminiLogs": "Nenašli sa žiadne lokálne Gemini usage logy.",
       "ollamaLogTokens": "Lokálne Ollama tokeny z logov",
-      "noOllamaLogs": "Nenašli sa žiadne lokálne Ollama logy."
+      "noOllamaLogs": "Nenašli sa žiadne lokálne Ollama logy.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Stavový riadok Claude bol zachytený, ale zatiaľ bez oficiálnych hodnôt kvót Pro/Max.",
+      "claudeStatuslineMissing": "Stavový riadok Claude nie je nastavený. Zapnite príkaz statusline dashboardu pre živé kvóty Pro/Max."
     },
     "emptyState": {
       "eyebrow": "Poskytovateľ",
@@ -109,6 +113,9 @@
       "visible": "Viditeľné",
       "hidden": "Skryté",
       "all": "Všetko"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Dnes",
     "fiveHourUsed": "5h použité",
     "weekUsed": "Týždeň použitý",
+    "fiveHourLeft": "Zostáva 5 h",
+    "weekLeft": "Zostáva týždeň",
     "since": "Od",
     "updated": "Aktualizované",
     "plan": "Plán",
@@ -151,9 +160,11 @@
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% použité",
+    "leftValue": "Zostáva {percent} %",
     "freeLabel": "{label} dostupné",
     "limitGroups": "{count} skupín limitov",
-    "noModelLimits": "Žiadne modelové limity"
+    "noModelLimits": "Žiadne modelové limity",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Vstup",

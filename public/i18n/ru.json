@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Стоимость API",
     "heading": "Сколько стоили бы твои токены через API",
-    "meta": "EUR через ECB {fxDate} · цены {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Смесь бенчмарков {scoreDate}: {score}/100",
+    "meta": "EUR через ECB {fxDate} · цены {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Китай",
     "regions": {
       "apiDiscount": "Скидка API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "События Codex 5.3 Spark не найдены.",
       "noGeminiLogs": "Локальные логи использования Gemini не найдены.",
       "ollamaLogTokens": "Локальные токены Ollama из логов",
-      "noOllamaLogs": "Локальные логи Ollama не найдены."
+      "noOllamaLogs": "Локальные логи Ollama не найдены.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Строка состояния Claude получена, но официальных значений квот Pro/Max пока нет.",
+      "claudeStatuslineMissing": "Строка состояния Claude не настроена. Включите команду statusline панели для live-квот Pro/Max."
     },
     "emptyState": {
       "eyebrow": "Провайдер",
@@ -109,6 +113,9 @@
       "visible": "Видимые",
       "hidden": "Скрытые",
       "all": "Все"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Сегодня",
     "fiveHourUsed": "5h использовано",
     "weekUsed": "Неделя использована",
+    "fiveHourLeft": "Осталось 5 ч",
+    "weekLeft": "Осталась неделя",
     "since": "С",
     "updated": "Обновлено",
     "plan": "План",
@@ -151,9 +160,11 @@
     "default": "Лимит",
     "resetPrefix": "Сброс {time}",
     "usedValue": "{percent}% использовано",
+    "leftValue": "Осталось {percent}%",
     "freeLabel": "{label} доступно",
     "limitGroups": "{count} групп лимитов",
-    "noModelLimits": "Нет лимитов моделей"
+    "noModelLimits": "Нет лимитов моделей",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Ввод",

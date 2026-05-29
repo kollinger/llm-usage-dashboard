@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API-kostnader",
     "heading": "Vad dina tokens skulle ha kostat via API",
-    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmarkmix {scoreDate}: {score}/100",
+    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kina",
     "regions": {
       "apiDiscount": "API-rabatt"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Inga Codex 5.3 Spark-händelser hittades.",
       "noGeminiLogs": "Inga lokala Gemini-användningsloggar hittades.",
       "ollamaLogTokens": "Lokala Ollama-tokens från loggar",
-      "noOllamaLogs": "Inga lokala Ollama-loggar hittades."
+      "noOllamaLogs": "Inga lokala Ollama-loggar hittades.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude-statusraden har fångats, men det finns inga officiella Pro/Max-kvotvärden ännu.",
+      "claudeStatuslineMissing": "Claude-statusraden är inte konfigurerad. Aktivera dashboardens statusradskommando för livekvoter i Pro/Max."
     },
     "emptyState": {
       "eyebrow": "Leverantör",
@@ -109,6 +113,9 @@
       "visible": "Synlig",
       "hidden": "Dold",
       "all": "Alla"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Idag",
     "fiveHourUsed": "5h använt",
     "weekUsed": "Vecka använd",
+    "fiveHourLeft": "5 h kvar",
+    "weekLeft": "Vecka kvar",
     "since": "Sedan",
     "updated": "Uppdaterad",
     "plan": "Plan",
@@ -151,9 +160,11 @@
     "default": "Gräns",
     "resetPrefix": "Återställning {time}",
     "usedValue": "{percent}% använt",
+    "leftValue": "{percent}% kvar",
     "freeLabel": "{label} tillgängligt",
     "limitGroups": "{count} gränsgrupper",
-    "noModelLimits": "Inga modellgränser"
+    "noModelLimits": "Inga modellgränser",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Indata",

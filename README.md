@@ -1,6 +1,6 @@
 # LLM Usage Dashboard
 
-Local-first dashboard for LLM usage, rate limits, token logs, and API cost estimates across Codex, Claude Code, Gemini, Ollama, OpenAI, and Anthropic.
+Local-first dashboard for LLM usage, rate limits, token logs, and API cost estimates across Codex, GitHub Copilot CLI, Claude Code, Gemini, Ollama, OpenAI, and Anthropic.
 
 The app is intentionally simple: a Node.js/Express backend serves a vanilla HTML/CSS/JavaScript frontend. Electron packages the same local dashboard as a desktop app, and Docker is available for server-style installs.
 
@@ -10,6 +10,7 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 
 - Codex local token usage from `~/.codex/sessions` and `~/.codex/archived_sessions`.
 - Codex Spark / research quota detection from Codex `token_count` events when available.
+- GitHub Copilot CLI session metrics from local shutdown events, without reading prompt/response content into dashboard output.
 - Claude Code local transcript token usage from `~/.claude/projects`.
 - Claude Code plan limit capture from a statusline JSON file when Claude exposes those values.
 - Gemini local usage metadata from known local Gemini telemetry/chat paths when present.
@@ -91,6 +92,7 @@ The default Compose file expects:
 
 ```text
 ~/.codex
+~/.copilot
 ~/.claude
 ~/.gemini
 ```
@@ -99,6 +101,7 @@ Inside the container those folders are mounted as:
 
 ```text
 /host/codex
+/host/copilot
 /host/claude
 /host/gemini
 ```
@@ -124,8 +127,10 @@ PORT=4177
 DASHBOARD_PASSWORD=
 SESSION_SECRET=
 CODEX_HOME=~/.codex
+LLM_USAGE_CODEX_HOMES=
 CODEX_LIVE_RATE_LIMITS=true
 CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS=15
+COPILOT_HOME=~/.copilot
 CLAUDE_HOME=~/.claude
 GEMINI_HOME=~/.gemini
 OLLAMA_HOST=http://localhost:11434
@@ -167,9 +172,23 @@ $CODEX_HOME/sessions
 $CODEX_HOME/archived_sessions
 ```
 
-The dashboard reads `token_count` events and aggregates input, cached input, output, reasoning, 5-hour usage, 24-hour usage, all-time totals, daily history, and Codex Spark buckets when present.
+The dashboard always considers the default `~/.codex` path, the active `CODEX_HOME`, and any additional roots listed in `LLM_USAGE_CODEX_HOMES` (separated by the OS path delimiter, `:` on macOS/Linux and `;` on Windows). It deduplicates matching sessions by real path and Codex rollout session id before aggregating.
+
+The dashboard reads `token_count` events and aggregates input, cached input, output, reasoning, 5-hour usage, 24-hour usage, all-time totals, daily history, and Codex Spark buckets when present. The `/api/usage` response includes `codex.source.codexHomes`, `codex.source.rootsScanned`, and `codex.source.duplicatesSkipped` for diagnostics.
 
 By default, Codex rate-limit rings also try to read a live snapshot from the local Codex app-server with `account/rateLimits/read`. This is cached for 15 seconds and falls back to session logs if Codex is missing, logged out, unavailable, or disabled with `CODEX_LIVE_RATE_LIMITS=false`.
+
+### GitHub Copilot CLI
+
+Copilot CLI stores resumable local session data under:
+
+```text
+$COPILOT_HOME/session-state/**/events.jsonl
+```
+
+The dashboard only uses `session.shutdown` events and extracts aggregate fields such as model token totals, API duration, and `totalPremiumRequests`. It intentionally ignores prompt, response, hook, and tool payload events because those can contain source code, prompts, command arguments, and other sensitive work context.
+
+GitHub's official Copilot usage metrics APIs are enterprise/organization reporting surfaces, not a stable personal-account token/quota API for this local-first dashboard. Personal Copilot AI-credit and subscription allowance tracking should stay separate from the API price comparison table. Copilot CLI tokens are therefore shown as local usage but excluded from "what this would have cost through the API" estimates.
 
 ### Claude Code
 
@@ -179,24 +198,37 @@ Claude Code transcript usage is read from:
 $CLAUDE_HOME/projects
 ```
 
-Live plan limits are not part of normal transcript logs. Claude Code can expose rate-limit fields to statusline scripts, so this dashboard also reads:
+Live plan limits are not part of normal transcript logs. Claude Code can expose rate-limit fields to statusline scripts for Claude.ai Pro/Max accounts, usually after the first API response in a session. The dashboard reads the sanitized capture file:
 
 ```text
 ~/.claude/usage-dashboard-statusline.json
 ```
 
-The helper script at `scripts/claude-statusline-capture.js` can be used as a Claude Code statusline command. It captures the JSON payload, writes it to that file, and prints a compact status line.
+The helper script at `scripts/claude-statusline-capture.js` can be used as a Claude Code statusline command. It keeps only quota, reset, plan, and credit metadata, writes that sanitized subset to the file above, and prints a compact status line.
+
+Example `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node /absolute/path/to/llm-usage-dashboard/scripts/claude-statusline-capture.js"
+  }
+}
+```
 
 Fields parsed when present:
 
-- plan type
-- current session / 5-hour usage
-- weekly all-models usage
-- Claude Design usage
+- official Claude Code statusline quota windows: `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, and `rate_limits.seven_day.resets_at`
+- plan type from the sanitized statusline data, or from the read-only `claude auth status --json` `subscriptionType` field
+- best-effort fallback aliases for older local statusline helpers
+- best-effort Claude Design usage when a local statusline helper exposes it
 - reset timestamps or reset labels
 - usage credit fields if Claude includes them in the payload
 
-Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API. Those can be tracked manually in the dashboard settings.
+`resets_at` values may be Unix epoch seconds, Unix epoch milliseconds, or ISO timestamps. The dashboard normalizes all three forms before display.
+
+The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API. Those can be tracked manually in the dashboard settings.
 
 The `Guthaben anzeigen` setting controls whether a credit block is shown even when every amount is still zero. Any entered credit amount or monthly limit also makes the block visible automatically.
 
@@ -249,11 +281,14 @@ Anthropic admin keys also enable configured organization rate-limit display thro
 
 Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not generally available through the same API keys. Use manual quota/credit fields unless a local provider-specific telemetry source exposes it.
 
-The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs.
+The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs. Provider subscription counters, such as Copilot premium requests or AI credits, are kept out of the API-cost estimate.
+
+Model quality scores in the pricing table are an internal heuristic for quick sorting and visual comparison. They are not an official benchmark, not a provider claim, and should be recalibrated or removed when a better documented scoring method is adopted.
 
 ## Known Limits and To-Dos
 
 - Codex live quota source: the dashboard reads Codex rate-limit snapshots from the local Codex app-server when available, then falls back to `token_count` events in session logs. The app-server interface is local and experimental, so log parsing remains the durable history source.
+- Copilot usage coverage: Copilot CLI shutdown metrics are supported locally. IDE completions, personal AI-credit allowance, warning thresholds, and subscription quota resets are not exposed through a stable personal local/API source today; use GitHub's own account UI or enterprise/org metrics APIs where applicable.
 - Desktop signing: GitHub Actions publishes unsigned prerelease desktop artifacts today. To-do: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
 - API customer reporting: OpenAI and Anthropic admin API support is intentionally minimal today. To-do: expand it for API customers with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.
 - Provider data gaps: Claude Code, Gemini, and consumer subscription usage fields only appear when local telemetry, statusline capture, admin APIs, or manual entries expose them. To-do: keep new provider-specific local sources documented as they become stable enough to trust.

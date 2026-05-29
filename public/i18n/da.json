@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API-omkostninger",
     "heading": "Hvad dine tokens ville have kostet via API",
-    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmarkmix {scoreDate}: {score}/100",
+    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kina",
     "regions": {
       "apiDiscount": "API-rabat"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Ingen Codex 5.3 Spark-hændelser fundet.",
       "noGeminiLogs": "Ingen lokale Gemini usage-logs fundet.",
       "ollamaLogTokens": "Lokale Ollama-tokens fra logs",
-      "noOllamaLogs": "Ingen lokale Ollama-logs fundet."
+      "noOllamaLogs": "Ingen lokale Ollama-logs fundet.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude-statuslinjen er registreret, men der er endnu ingen officielle Pro/Max-kvoteværdier.",
+      "claudeStatuslineMissing": "Claude-statuslinjen er ikke konfigureret. Aktivér dashboardets statuslinjekommando for live Pro/Max-kvoter."
     },
     "emptyState": {
       "eyebrow": "Udbyder",
@@ -109,6 +113,9 @@
       "visible": "Synlige",
       "hidden": "Skjulte",
       "all": "Alle"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "I dag",
     "fiveHourUsed": "5h brugt",
     "weekUsed": "Uge brugt",
+    "fiveHourLeft": "5 t tilbage",
+    "weekLeft": "Uge tilbage",
     "since": "Siden",
     "updated": "Opdateret",
     "plan": "Plan",
@@ -151,9 +160,11 @@
     "default": "Grænse",
     "resetPrefix": "Nulstilling {time}",
     "usedValue": "{percent}% brugt",
+    "leftValue": "{percent}% tilbage",
     "freeLabel": "{label} tilgængelig",
     "limitGroups": "{count} grænsegrupper",
-    "noModelLimits": "Ingen modelgrænser"
+    "noModelLimits": "Ingen modelgrænser",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Input",

@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Κόστη API",
     "heading": "Τι θα κόστιζαν τα tokens σου μέσω API",
-    "meta": "EUR μέσω ECB {fxDate} · τιμές {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Μείγμα benchmark {scoreDate}: {score}/100",
+    "meta": "EUR μέσω ECB {fxDate} · τιμές {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Κίνα",
     "regions": {
       "apiDiscount": "Έκπτωση API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Δεν βρέθηκαν συμβάντα Codex 5.3 Spark.",
       "noGeminiLogs": "Δεν βρέθηκαν τοπικά Gemini usage logs.",
       "ollamaLogTokens": "Τοπικά Ollama tokens από logs",
-      "noOllamaLogs": "Δεν βρέθηκαν τοπικά Ollama logs."
+      "noOllamaLogs": "Δεν βρέθηκαν τοπικά Ollama logs.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Η γραμμή κατάστασης Claude καταγράφηκε, αλλά δεν υπάρχουν ακόμα επίσημες τιμές quota Pro/Max.",
+      "claudeStatuslineMissing": "Η γραμμή κατάστασης Claude δεν έχει ρυθμιστεί. Ενεργοποιήστε την εντολή statusline του dashboard για ζωντανά Pro/Max quota."
     },
     "emptyState": {
       "eyebrow": "Πάροχος",
@@ -109,6 +113,9 @@
       "visible": "Ορατά",
       "hidden": "Κρυφά",
       "all": "Όλα"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Σήμερα",
     "fiveHourUsed": "5h χρησιμοποιήθηκαν",
     "weekUsed": "Εβδομάδα χρησιμοποιήθηκε",
+    "fiveHourLeft": "5ω απομένουν",
+    "weekLeft": "Εβδομάδα απομένει",
     "since": "Από",
     "updated": "Ενημερώθηκε",
     "plan": "Πλάνο",
@@ -151,9 +160,11 @@
     "default": "Όριο",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% χρησιμοποιήθηκε",
+    "leftValue": "{percent}% απομένει",
     "freeLabel": "{label} διαθέσιμο",
     "limitGroups": "{count} ομάδες ορίων",
-    "noModelLimits": "Δεν υπάρχουν όρια μοντέλων"
+    "noModelLimits": "Δεν υπάρχουν όρια μοντέλων",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Είσοδος",

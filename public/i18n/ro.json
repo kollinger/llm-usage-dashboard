@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Costuri API",
     "heading": "Cât ar fi costat tokenii tăi prin API",
-    "meta": "EUR prin BCE {fxDate} · prețuri {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Mix benchmark {scoreDate}: {score}/100",
+    "meta": "EUR prin BCE {fxDate} · prețuri {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "China",
     "regions": {
       "apiDiscount": "Reducere API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Nu s-au găsit evenimente Codex 5.3 Spark.",
       "noGeminiLogs": "Nu s-au găsit jurnale locale de utilizare Gemini.",
       "ollamaLogTokens": "Tokeni Ollama locali din jurnale",
-      "noOllamaLogs": "Nu s-au găsit jurnale Ollama locale."
+      "noOllamaLogs": "Nu s-au găsit jurnale Ollama locale.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Statusline Claude a fost capturat, dar încă nu există valori oficiale pentru cotele Pro/Max.",
+      "claudeStatuslineMissing": "Statusline Claude nu este configurat. Activează comanda statusline a dashboardului pentru cote Pro/Max live."
     },
     "emptyState": {
       "eyebrow": "Furnizor",
@@ -109,6 +113,9 @@
       "visible": "Vizibil",
       "hidden": "Ascuns",
       "all": "Toate"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Azi",
     "fiveHourUsed": "5h utilizate",
     "weekUsed": "Săptămână utilizată",
+    "fiveHourLeft": "5 h rămase",
+    "weekLeft": "Săptămână rămasă",
     "since": "Din",
     "updated": "Actualizat",
     "plan": "Plan",
@@ -151,9 +160,11 @@
     "default": "Limită",
     "resetPrefix": "Resetare {time}",
     "usedValue": "{percent}% utilizat",
+    "leftValue": "{percent}% rămas",
     "freeLabel": "{label} disponibil",
     "limitGroups": "{count} grupuri de limite",
-    "noModelLimits": "Fără limite de model"
+    "noModelLimits": "Fără limite de model",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Intrare",

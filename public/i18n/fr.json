@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "Coûts API",
     "heading": "Ce que tes jetons auraient coûté via l’API",
-    "meta": "EUR via BCE {fxDate} · prix {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Mix de benchmarks {scoreDate}: {score}/100",
+    "meta": "EUR via BCE {fxDate} · prix {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Chine",
     "regions": {
       "apiDiscount": "Remise API"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Aucun événement Codex 5.3 Spark trouvé.",
       "noGeminiLogs": "Aucun journal local d’utilisation Gemini trouvé.",
       "ollamaLogTokens": "Jetons Ollama locaux depuis les journaux",
-      "noOllamaLogs": "Aucun journal Ollama local trouvé."
+      "noOllamaLogs": "Aucun journal Ollama local trouvé.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Statusline Claude capturée, mais pas encore de valeurs officielles de quota Pro/Max.",
+      "claudeStatuslineMissing": "Statusline Claude non configurée. Activez la commande statusline du tableau de bord pour les quotas Pro/Max en direct."
     },
     "emptyState": {
       "eyebrow": "Fournisseur",
@@ -109,6 +113,9 @@
       "visible": "Visible",
       "hidden": "Masqué",
       "all": "Tous"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Aujourd’hui",
     "fiveHourUsed": "5h utilisées",
     "weekUsed": "Semaine utilisée",
+    "fiveHourLeft": "5 h restantes",
+    "weekLeft": "Semaine restante",
     "since": "Depuis",
     "updated": "Mis à jour",
     "plan": "Forfait",
@@ -151,9 +160,11 @@
     "default": "Limite",
     "resetPrefix": "Réinitialisation {time}",
     "usedValue": "{percent}% utilisé",
+    "leftValue": "{percent}% restant",
     "freeLabel": "{label} disponible",
     "limitGroups": "{count} groupes de limites",
-    "noModelLimits": "Aucune limite de modèle"
+    "noModelLimits": "Aucune limite de modèle",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Entrée",

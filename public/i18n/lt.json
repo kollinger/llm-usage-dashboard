@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API sąnaudos",
     "heading": "Kiek tavo žetonai būtų kainavę per API",
-    "meta": "EUR per ECB {fxDate} · kainos {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmark mišinys {scoreDate}: {score}/100",
+    "meta": "EUR per ECB {fxDate} · kainos {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kinija",
     "regions": {
       "apiDiscount": "API nuolaida"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Codex 5.3 Spark įvykių nerasta.",
       "noGeminiLogs": "Vietinių Gemini naudojimo žurnalų nerasta.",
       "ollamaLogTokens": "Vietiniai Ollama žetonai iš žurnalų",
-      "noOllamaLogs": "Vietinių Ollama žurnalų nerasta."
+      "noOllamaLogs": "Vietinių Ollama žurnalų nerasta.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude būsenos eilutė užfiksuota, bet oficialių Pro/Max kvotų reikšmių dar nėra.",
+      "claudeStatuslineMissing": "Claude būsenos eilutė nesukonfigūruota. Įjunkite skydelio būsenos eilutės komandą gyvoms Pro/Max kvotoms."
     },
     "emptyState": {
       "eyebrow": "Teikėjas",
@@ -109,6 +113,9 @@
       "visible": "Matoma",
       "hidden": "Paslėpta",
       "all": "Visi"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Šiandien",
     "fiveHourUsed": "5h panaudota",
     "weekUsed": "Savaitė panaudota",
+    "fiveHourLeft": "Liko 5 val.",
+    "weekLeft": "Liko savaitė",
     "since": "Nuo",
     "updated": "Atnaujinta",
     "plan": "Planas",
@@ -151,9 +160,11 @@
     "default": "Limitas",
     "resetPrefix": "Atstatymas {time}",
     "usedValue": "{percent}% panaudota",
+    "leftValue": "Liko {percent} %",
     "freeLabel": "{label} pasiekiama",
     "limitGroups": "{count} limitų grupės",
-    "noModelLimits": "Modelių limitų nėra"
+    "noModelLimits": "Modelių limitų nėra",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Įvestis",

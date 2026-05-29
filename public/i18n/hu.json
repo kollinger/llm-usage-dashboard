@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API-költségek",
     "heading": "Ennyibe kerültek volna a tokenjeid API-n keresztül",
-    "meta": "EUR ECB alapján {fxDate} · árak {pricingDate} · pontszám {scoreDate}",
-    "qualityScoreTitle": "Benchmark-mix {scoreDate}: {score}/100",
+    "meta": "EUR ECB alapján {fxDate} · árak {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Kína",
     "regions": {
       "apiDiscount": "API-kedvezmény"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Nem találhatók Codex 5.3 Spark események.",
       "noGeminiLogs": "Nem találhatók helyi Gemini használati naplók.",
       "ollamaLogTokens": "Helyi Ollama tokenek naplókból",
-      "noOllamaLogs": "Nem találhatók helyi Ollama naplók."
+      "noOllamaLogs": "Nem találhatók helyi Ollama naplók.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "A Claude statusline rögzítve lett, de még nincs hivatalos Pro/Max kvótaérték.",
+      "claudeStatuslineMissing": "A Claude statusline nincs beállítva. Kapcsold be az irányítópult statusline parancsát az élő Pro/Max kvótákhoz."
     },
     "emptyState": {
       "eyebrow": "Szolgáltató",
@@ -109,6 +113,9 @@
       "visible": "Látható",
       "hidden": "Rejtett",
       "all": "Összes"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Ma",
     "fiveHourUsed": "5h felhasználva",
     "weekUsed": "Hét felhasználva",
+    "fiveHourLeft": "5 óra maradt",
+    "weekLeft": "Hét maradt",
     "since": "Ettől",
     "updated": "Frissítve",
     "plan": "Csomag",
@@ -151,9 +160,11 @@
     "default": "Korlát",
     "resetPrefix": "Visszaállítás {time}",
     "usedValue": "{percent}% felhasználva",
+    "leftValue": "{percent}% maradt",
     "freeLabel": "{label} elérhető",
     "limitGroups": "{count} korlátcsoport",
-    "noModelLimits": "Nincsenek modellkorlátok"
+    "noModelLimits": "Nincsenek modellkorlátok",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Bemenet",

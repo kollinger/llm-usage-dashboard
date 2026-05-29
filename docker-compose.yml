@@ -18,6 +18,7 @@ services:
       OPENAI_ADMIN_KEY: ${OPENAI_ADMIN_KEY:-}
       ANTHROPIC_ADMIN_KEY: ${ANTHROPIC_ADMIN_KEY:-}
       CODEX_HOME: /host/codex
+      COPILOT_HOME: /host/copilot
       CLAUDE_HOME: /host/claude
       GEMINI_HOME: /host/gemini
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
@@ -27,5 +28,6 @@ services:
     volumes:
       - ./data:/app/data
       - ${HOME}/.codex:/host/codex:ro
+      - ${HOME}/.copilot:/host/copilot:ro
       - ${HOME}/.claude:/host/claude:ro
       - ${HOME}/.gemini:/host/gemini:ro

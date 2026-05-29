@@ -46,8 +46,8 @@
   "pricing": {
     "eyebrow": "API izmaksas",
     "heading": "Cik tavi tokeni maksātu caur API",
-    "meta": "EUR caur ECB {fxDate} · cenas {pricingDate} · score {scoreDate}",
-    "qualityScoreTitle": "Benchmark kopums {scoreDate}: {score}/100",
+    "meta": "EUR caur ECB {fxDate} · cenas {pricingDate} · internal score {scoreDate}",
+    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "Ķīna",
     "regions": {
       "apiDiscount": "API atlaide"
@@ -99,7 +99,11 @@
       "noCodexSparkEvents": "Codex 5.3 Spark notikumi nav atrasti.",
       "noGeminiLogs": "Lokāli Gemini usage žurnāli nav atrasti.",
       "ollamaLogTokens": "Lokāli Ollama tokeni no žurnāliem",
-      "noOllamaLogs": "Lokāli Ollama žurnāli nav atrasti."
+      "noOllamaLogs": "Lokāli Ollama žurnāli nav atrasti.",
+      "copilotLogTokens": "Copilot CLI tokens 24h",
+      "noCopilotSessionMetrics": "No local Copilot CLI session metrics found.",
+      "claudeStatuslineNoQuotas": "Claude statusline ir uztverts, bet oficiālu Pro/Max kvotu vērtību vēl nav.",
+      "claudeStatuslineMissing": "Claude statusline nav konfigurēts. Iespējojiet paneļa statusline komandu Pro/Max tiešsaistes kvotām."
     },
     "emptyState": {
       "eyebrow": "Sniedzējs",
@@ -109,6 +113,9 @@
       "visible": "Redzams",
       "hidden": "Paslēpts",
       "all": "Visi"
+    },
+    "copilot": {
+      "kicker": "Copilot CLI"
     }
   },
   "status": {
@@ -122,6 +129,8 @@
     "today": "Šodien",
     "fiveHourUsed": "5h izmantots",
     "weekUsed": "Nedēļa izmantota",
+    "fiveHourLeft": "Atlikušas 5 h",
+    "weekLeft": "Atlikusi nedēļa",
     "since": "Kopš",
     "updated": "Atjaunināts",
     "plan": "Plāns",
@@ -151,9 +160,11 @@
     "default": "Limits",
     "resetPrefix": "Atiestatīšana {time}",
     "usedValue": "{percent}% izmantots",
+    "leftValue": "Atlikuši {percent}%",
     "freeLabel": "{label} pieejams",
     "limitGroups": "{count} limitu grupas",
-    "noModelLimits": "Nav modeļu limitu"
+    "noModelLimits": "Nav modeļu limitu",
+    "remainingShort": "{days}d {hours}h {minutes}m"
   },
   "tokens": {
     "input": "Ievade",
