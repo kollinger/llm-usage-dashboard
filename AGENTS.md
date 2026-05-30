@@ -54,6 +54,17 @@ docker build -t llm-usage-dashboard:local .
 
 Desktop artifacts are written to `dist/` and should normally be published as release artifacts, not committed.
 
+## Versioning
+
+- Use Semantic Versioning for releases and tags: `MAJOR.MINOR.PATCH` (for example `v1.4.2`).
+- Increase `PATCH` for bug fixes, copy tweaks, small UI/layout fixes, dependency bumps without user-visible behavior changes, and packaging-only fixes.
+- Increase `MINOR` for new backward-compatible features, new providers, new settings, new views, or new export/reporting capabilities.
+- Increase `MAJOR` for breaking changes, including removed features, incompatible config changes, changed data formats, changed default behavior that can break existing usage, or required migration steps.
+- For preview/testing releases, use SemVer prerelease tags instead of reusing the same main version: `v1.2.0-preview.1`, `v1.2.0-preview.2`, `v1.2.0-rc.1`, then `v1.2.0`.
+- If the product is still considered not yet stable, prefer `0.x.y` releases and treat any substantial new feature or behavior change as at least a `MINOR` bump.
+- Use Conventional Commits where practical so release intent is obvious: `fix:` maps to `PATCH`, `feat:` maps to `MINOR`, and `!` or `BREAKING CHANGE:` maps to `MAJOR`.
+- Treat GitHub prerelease status as separate from the version number. `prerelease` means the asset is not final; it does not replace SemVer patch/minor/major increments.
+
 ## Commit Hygiene
 
 - Do not commit automatically.

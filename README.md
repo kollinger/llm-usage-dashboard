@@ -75,6 +75,13 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
+Version numbers follow Semantic Versioning:
+
+- `PATCH` for bug fixes and small non-breaking corrections: `v1.0.0` -> `v1.0.1`
+- `MINOR` for new backward-compatible features: `v1.0.0` -> `v1.1.0`
+- `MAJOR` for breaking changes: `v1.0.0` -> `v2.0.0`
+- Preview builds should use SemVer prerelease tags such as `v1.1.0-preview.1` or `v1.1.0-rc.1`
+
 The workflow builds macOS, Linux, and Windows packages on native GitHub-hosted runners, uploads them as workflow artifacts, and attaches them to a GitHub Release. Release artifacts are currently unsigned prereleases; macOS Gatekeeper and Windows SmartScreen may warn until code signing/notarization certificates are configured as repository secrets.
 
 ## Docker
