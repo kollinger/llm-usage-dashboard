@@ -43,6 +43,17 @@ Before proposing a commit, run:
 npm run check
 ```
 
+Before proposing a commit or calling a change fully tested, include Docker
+verification. At minimum, rebuild the container image:
+
+```sh
+docker build -t llm-usage-dashboard:local .
+```
+
+When the change touches runtime behavior, startup, networking, data paths, auth,
+provider integrations, or packaging-adjacent behavior, also run the app through
+Docker Compose and smoke-test the dashboard locally before stopping it again.
+
 For packaging changes, also verify the relevant build:
 
 ```sh
@@ -53,6 +64,12 @@ docker build -t llm-usage-dashboard:local .
 ```
 
 Desktop artifacts are written to `dist/` and should normally be published as release artifacts, not committed.
+
+For final macOS desktop verification on Gerhard's machine, build a fresh DMG
+with `npm run dist:mac`, install the app from that DMG into `/Applications`, and
+launch the installed `/Applications/LLM Usage Dashboard.app` directly. Do not
+treat a desktop build as final based only on `npm run electron`, `dist:dir`, or
+an older `dist/` artifact.
 
 ## Versioning
 
