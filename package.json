@@ -38,6 +38,9 @@
     },
     "artifactName": "LLM-Usage-Dashboard-${version}-${os}-${arch}.${ext}",
     "icon": "build/icon",
+    "asarUnpack": [
+      "scripts/copilot-quota-probe.mjs"
+    ],
     "files": [
       "electron/**/*",
       "public/**/*",

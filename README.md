@@ -195,7 +195,7 @@ $COPILOT_HOME/session-state/**/events.jsonl
 
 The dashboard only uses `session.shutdown` events and extracts aggregate fields such as model token totals, API duration, and `totalPremiumRequests`. It intentionally ignores prompt, response, hook, and tool payload events because those can contain source code, prompts, command arguments, and other sensitive work context.
 
-GitHub's official Copilot usage metrics APIs are enterprise/organization reporting surfaces, not a stable personal-account token/quota API for this local-first dashboard. Personal Copilot AI-credit and subscription allowance tracking should stay separate from the API price comparison table. Copilot CLI tokens are therefore shown as local usage but excluded from "what this would have cost through the API" estimates. Personal Copilot quota research is tracked in the open to-dos below.
+GitHub's official Copilot usage metrics APIs are enterprise/organization reporting surfaces, not a stable personal-account token/quota API for this local-first dashboard. The dashboard also runs an isolated local quota probe through the installed Copilot CLI SDK (`account.getQuota`) when available. That probe is treated as experimental: it reads only sanitized quota snapshot fields and never prompt, response, hook, tool, or raw session payload content. Copilot CLI tokens are shown as local usage but excluded from "what this would have cost through the API" estimates.
 
 ### Claude Code
 
@@ -297,7 +297,7 @@ Model quality scores in the pricing table are an internal heuristic for quick so
 ### Implemented
 
 - Codex local usage and live quota display: the dashboard reads `token_count` history and tries the local Codex app-server for live rate-limit snapshots when available.
-- Copilot CLI local usage: shutdown metrics are supported without reading prompt, response, hook, or tool payload content into dashboard output.
+- Copilot CLI local usage: shutdown metrics are supported without reading prompt, response, hook, or tool payload content into dashboard output. Experimental live quota snapshots are read through the local Copilot SDK when the installed CLI exposes them.
 - Claude Code local usage and live limits: transcript usage, statusline setup, sanitized quota capture, 5-hour and 7-day reset display, stale-limit detection, and app-driven Claude Code launch are supported.
 - Gemini local usage: known telemetry and chat metadata paths are scanned when present.
 - Ollama local usage: the optional proxy logger can capture Ollama-compatible usage into `data/ollama-usage.jsonl`.
@@ -307,13 +307,13 @@ Model quality scores in the pricing table are an internal heuristic for quick so
 ### Known Limits
 
 - Codex live quota source: the Codex app-server interface is local and experimental, so session log parsing remains the durable history source.
-- Copilot usage coverage: IDE completions, personal AI-credit allowance, warning thresholds, and subscription quota resets are not exposed through a stable personal local/API source today.
+- Copilot usage coverage: IDE completions, warning thresholds, and exact subscription quota window semantics are not exposed through a stable personal local/API source today. SDK quota snapshots are shown only when the installed CLI returns explicit fields.
 - Consumer subscription counters: ChatGPT, Claude, Copilot, Gemini, and similar consumer-plan usage fields are only shown when local telemetry, statusline capture, admin APIs, or manual entries expose them.
 - Desktop signing: GitHub Actions publishes unsigned prerelease desktop artifacts until macOS notarization and Windows code signing are configured.
 
 ### Open To-Dos
 
-- Copilot quota limits: investigate whether GitHub Copilot CLI exposes personal 5-hour, 7-day, weekly, AI-credit, premium-request, or other quota limits through any stable local or official API. If reliable limit data exists, show those limits in the Copilot card instead of the current empty `5h left` and `Week left` placeholders.
+- Copilot quota windows: map returned Copilot SDK quota snapshot keys or response headers to exact session/5-hour, 7-day/weekly, premium-request, chat, and completion semantics before labeling them as those windows in the UI.
 - Model quality scores: review every model score against current model capabilities, public benchmark signals, real-world usefulness, context/window limits, multimodal/tool strengths, and price/performance tradeoffs; update or remove scores that do not make sense.
 - Desktop signing: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
 - API customer reporting: expand OpenAI and Anthropic admin reporting with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.

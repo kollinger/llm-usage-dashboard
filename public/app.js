@@ -776,13 +776,14 @@ function normalizeCodexSparkProvider(spark) {
 }
 
 function buildQuotaFoot({ todayTokens, since, fiveHour, weekly, updated }) {
-  return [
+  const rows = [
     [t("labels.today"), formatTokens(todayTokens)],
-    [t("labels.since"), formatDate(since)],
-    [t("labels.fiveHourLeft"), formatLimitRemainingPercent(fiveHour)],
-    [t("labels.weekLeft"), formatLimitRemainingPercent(weekly)],
-    [t("labels.updated"), formatTime(updated)]
+    [t("labels.since"), formatDate(since)]
   ];
+  if (fiveHour) rows.push([t("labels.fiveHourLeft"), formatLimitRemainingPercent(fiveHour)]);
+  if (weekly) rows.push([t("labels.weekLeft"), formatLimitRemainingPercent(weekly)]);
+  rows.push([t("labels.updated"), formatTime(updated)]);
+  return rows;
 }
 
 function normalizeLocalProvider(id, provider) {

@@ -40,6 +40,10 @@ const ANTHROPIC_API_CACHE_MS = envMs("ANTHROPIC_API_CACHE_SECONDS", 60);
 const CODEX_LIVE_RATE_LIMITS_ENABLED = parseBoolean(process.env.CODEX_LIVE_RATE_LIMITS ?? "true");
 const CODEX_LIVE_RATE_LIMITS_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS", 15);
 const CODEX_APP_SERVER_TIMEOUT_MS = envMs("CODEX_APP_SERVER_TIMEOUT_SECONDS", 5);
+const COPILOT_LIVE_QUOTA_ENABLED = parseBoolean(process.env.COPILOT_LIVE_QUOTA_ENABLED ?? "true");
+const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30);
+const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS", 12);
+const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("scripts", "copilot-quota-probe.mjs"));
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 
@@ -47,6 +51,7 @@ const app = express();
 let currentDashboardUrl = null;
 const anthropicCache = createTimedCache();
 const codexLiveRateLimitsCache = createTimedCache();
+const copilotLiveQuotaCache = createTimedCache();
 let codexAppServer = null;
 
 app.use(express.json({ limit: "200kb" }));
@@ -99,6 +104,14 @@ function uniquePaths(paths) {
       seen.add(item);
       return true;
     });
+}
+
+function resolvePackagedResourcePath(relativePath) {
+  if (ROOT.endsWith(".asar")) {
+    const unpackedPath = path.join(`${ROOT}.unpacked`, relativePath);
+    if (fs.existsSync(unpackedPath)) return unpackedPath;
+  }
+  return path.join(ROOT, relativePath);
 }
 
 function isProtected() {
@@ -750,6 +763,7 @@ async function readCodexUsage() {
 }
 
 async function readCopilotUsage() {
+  const liveQuotaPromise = readCopilotLiveQuota();
   const files = await listFiles(path.join(COPILOT_HOME, "session-state"), (file) => path.basename(file) === "events.jsonl");
   const usage = createUsageAccumulator();
   const modelMap = new Map();
@@ -802,10 +816,13 @@ async function readCopilotUsage() {
     });
     if (fileEvents) sessionsWithEvents += 1;
   }
+  const liveQuota = await liveQuotaPromise;
+  const limits = copilotLimitsFromQuota(liveQuota);
+  const hasLiveQuota = Boolean(limits?.rows?.length || limits?.fiveHour || limits?.weekly);
 
   return {
     id: "copilot",
-    status: latestEvent ? "live" : "empty",
+    status: latestEvent || hasLiveQuota ? "live" : "empty",
     updatedAt: new Date().toISOString(),
     message: latestEvent ? null : "Keine lokalen Copilot CLI Session-Metriken gefunden.",
     source: {
@@ -816,6 +833,15 @@ async function readCopilotUsage() {
       totalPremiumRequests,
       totalApiDurationMs,
       totalNanoAiu,
+      liveQuota: liveQuota
+        ? {
+            status: liveQuota.status,
+            source: liveQuota.source,
+            updatedAt: liveQuota.updatedAt,
+            snapshotCount: Object.keys(liveQuota.quotaSnapshots || {}).length,
+            message: liveQuota.message || null
+          }
+        : null,
       dataScope: "session.shutdown metrics only; prompt and response content events are ignored"
     },
     latest: latestEvent
@@ -839,13 +865,232 @@ async function readCopilotUsage() {
       totalApiDurationMs,
       totalNanoAiu
     },
-    limits: null,
+    limits,
+    limitSource: hasLiveQuota ? liveQuota.source || "copilot_sdk_account.getQuota" : null,
+    quotaStatus: liveQuota
+      ? {
+          status: liveQuota.status,
+          message: liveQuota.message || null,
+          updatedAt: liveQuota.updatedAt || null
+        }
+      : null,
     byModel: Array.from(modelMap.entries())
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
       .slice(0, 8),
     daily: buildDaily(usage.dailyMap)
   };
+}
+
+async function readCopilotLiveQuota() {
+  if (!COPILOT_LIVE_QUOTA_ENABLED) {
+    return {
+      status: "disabled",
+      message: "Copilot live quota probe disabled.",
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  try {
+    return await readThroughCache(copilotLiveQuotaCache, COPILOT_LIVE_QUOTA_CACHE_MS, async () => {
+      if (!fs.existsSync(COPILOT_QUOTA_PROBE_SCRIPT)) {
+        return {
+          status: "not_configured",
+          message: "Copilot quota probe script missing.",
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      const copilotBinary = resolveCopilotBinary();
+      if (!copilotBinary) {
+        return {
+          status: "not_configured",
+          message: "Copilot CLI not found.",
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      return runCopilotQuotaProbe(copilotBinary);
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      message: error.message,
+      source: "copilot_sdk_account.getQuota",
+      updatedAt: new Date().toISOString()
+    };
+  }
+}
+
+function runCopilotQuotaProbe(copilotBinary) {
+  return new Promise((resolve) => {
+    const probeEnv = {
+      ...process.env,
+      COPILOT_CLI_PATH: copilotBinary,
+      COPILOT_QUOTA_PROBE_TIMEOUT_MS: String(Math.max(1_000, COPILOT_LIVE_QUOTA_TIMEOUT_MS - 1_000))
+    };
+    if (process.versions.electron) {
+      probeEnv.ELECTRON_RUN_AS_NODE = "1";
+    }
+    const child = spawn(process.execPath, [COPILOT_QUOTA_PROBE_SCRIPT], {
+      cwd: ROOT.endsWith(".asar") ? path.dirname(ROOT) : ROOT,
+      env: probeEnv,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, COPILOT_LIVE_QUOTA_TIMEOUT_MS);
+
+    child.stdout.on("data", (chunk) => {
+      stdout = `${stdout}${chunk.toString("utf8")}`.slice(-200_000);
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr = `${stderr}${chunk.toString("utf8")}`.slice(-20_000);
+    });
+
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      resolve({
+        status: "error",
+        message: error.message,
+        source: "copilot_sdk_account.getQuota",
+        updatedAt: new Date().toISOString()
+      });
+    });
+
+    child.on("close", (code, signal) => {
+      clearTimeout(timeout);
+      const parsed = parseLastJsonLine(stdout);
+      if (parsed) {
+        resolve({
+          ...parsed,
+          source: parsed.source || "copilot_sdk_account.getQuota",
+          updatedAt: parsed.updatedAt || new Date().toISOString()
+        });
+        return;
+      }
+
+      resolve({
+        status: timedOut ? "timeout" : "error",
+        message: timedOut
+          ? "Copilot quota probe timed out."
+          : trimmedErrorMessage(stderr) || `Copilot quota probe exited (${code ?? "unknown"}${signal ? `, ${signal}` : ""}).`,
+        source: "copilot_sdk_account.getQuota",
+        updatedAt: new Date().toISOString()
+      });
+    });
+  });
+}
+
+function parseLastJsonLine(text) {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    try {
+      return JSON.parse(lines[index]);
+    } catch {
+      // Skip non-JSON runtime noise.
+    }
+  }
+  return null;
+}
+
+function trimmedErrorMessage(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-3)
+    .join(" ");
+}
+
+function resolveCopilotBinary() {
+  const candidates = [
+    process.env.COPILOT_BIN,
+    process.env.COPILOT_CLI_PATH,
+    "/opt/homebrew/bin/copilot",
+    "/usr/local/bin/copilot"
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) return candidate;
+  }
+
+  const which = spawnSync("which", ["copilot"], { encoding: "utf8" });
+  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
+  return null;
+}
+
+function copilotLimitsFromQuota(quota) {
+  const snapshots = quota?.quotaSnapshots;
+  if (!snapshots || typeof snapshots !== "object") return null;
+
+  const rows = Object.entries(snapshots)
+    .map(([key, snapshot]) => copilotQuotaRow(key, snapshot))
+    .filter(Boolean);
+  if (!rows.length) return null;
+
+  const session = rows.find((row) => /session|five.?hour|5h/i.test(`${row.key} ${row.label}`)) || null;
+  const weekly = rows.find((row) => /week|weekly|seven.?day|7d/i.test(`${row.key} ${row.label}`)) || null;
+  const limits = {
+    fiveHour: session,
+    weekly,
+    currentSession: session,
+    allModels: weekly,
+    rows
+  };
+  return limits;
+}
+
+function copilotQuotaRow(key, snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return null;
+  const remainingPercent = Number(snapshot.remainingPercentage);
+  const entitlementRequests = Number(snapshot.entitlementRequests);
+  const usedRequests = Number(snapshot.usedRequests);
+  const usedPercent = Number.isFinite(remainingPercent)
+    ? Math.max(0, Math.min(100, 100 - remainingPercent))
+    : entitlementRequests > 0 && Number.isFinite(usedRequests)
+      ? Math.max(0, Math.min(100, (usedRequests / entitlementRequests) * 100))
+      : null;
+  if (usedPercent === null && !snapshot.resetDate) return null;
+
+  const valueLabel =
+    entitlementRequests > 0 && Number.isFinite(usedRequests) ? `${usedRequests} / ${entitlementRequests}` : null;
+
+  return {
+    key: `copilot${toPascalCase(key)}`,
+    label: copilotQuotaLabel(key),
+    usedPercent,
+    remainingPercent: Number.isFinite(remainingPercent) ? Math.max(0, Math.min(100, remainingPercent)) : null,
+    resetsAt: normalizeOptionalDate(snapshot.resetDate),
+    valueLabel
+  };
+}
+
+function toPascalCase(value) {
+  return String(value || "")
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join("");
+}
+
+function copilotQuotaLabel(key) {
+  const normalized = String(key || "").toLowerCase();
+  if (normalized === "chat") return "Copilot chat";
+  if (normalized === "completions") return "Completions";
+  if (normalized === "premium_interactions") return "Premium requests";
+  if (normalized === "premium_models") return "Premium models";
+  return String(key || "Copilot quota")
+    .replaceAll(/[_-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function isCodexSparkRateLimit(rateLimits) {
