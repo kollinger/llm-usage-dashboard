@@ -19,6 +19,7 @@ const state = {
 };
 
 const els = {
+  appShell: document.querySelector("main.app-shell"),
   providerGrid: document.getElementById("providerGrid"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
@@ -348,6 +349,7 @@ async function init() {
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
   bindEvents();
+  refreshIcons();
   await loadAuth();
   await loadUsage({ showIndicator: true });
   setInterval(loadUsage, 5_000);
@@ -608,12 +610,37 @@ function setUsageLoading(isLoading, showIndicator = false) {
   if (isLoading && showIndicator) state.refreshIndicator = true;
   if (!isLoading) state.refreshIndicator = false;
   setRefreshIndicator(state.refreshIndicator);
+  const isInitialLoad = isLoading && state.usage === null;
+  els.appShell.toggleAttribute("data-loading", isInitialLoad);
+  if (isInitialLoad) renderSkeletonProviderGrid();
 }
 
 function setRefreshIndicator(isLoading) {
   els.refreshBtn.disabled = isLoading;
   els.refreshBtn.classList.toggle("is-loading", isLoading);
   els.refreshBtn.toggleAttribute("aria-busy", isLoading);
+}
+
+function renderSkeletonProviderGrid() {
+  const card = `
+    <div class="provider-card-skeleton">
+      <div class="sk-head">
+        <div>
+          <div class="skeleton-block sk-eyebrow"></div>
+          <div class="skeleton-block sk-name"></div>
+        </div>
+        <div class="skeleton-block sk-pill"></div>
+      </div>
+      <div class="sk-rings">
+        <div class="skeleton-block sk-ring"></div>
+        <div class="skeleton-block sk-ring"></div>
+      </div>
+      <div class="sk-foot">
+        <div class="skeleton-block sk-foot-item"></div>
+        <div class="skeleton-block sk-foot-item"></div>
+      </div>
+    </div>`;
+  els.providerGrid.innerHTML = card.repeat(4);
 }
 
 function renderLocked() {
