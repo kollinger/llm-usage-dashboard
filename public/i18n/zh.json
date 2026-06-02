@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "刷新",
     "settings": "设置",
-    "close": "关闭",
-    "save": "保存"
+    "close": "关闭"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark 令牌 24h",
       "logTokens24h": "日志令牌 24h",
-      "manualCredits": "已输入额度",
       "missingBackendKey": "缺少 backend key",
       "sevenDays": "7 天",
       "noCodexSparkEvents": "未找到 Codex 5.3 Spark 事件。",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "手动",
     "empty": "空",
     "not_configured": "设置",
     "error": "错误"
@@ -191,25 +188,6 @@
     "heading": "设置",
     "language": {
       "label": "语言"
-    },
-    "fields": {
-      "plan": "计划",
-      "currentSessionUsed": "当前会话已用 (%)",
-      "currentSessionReset": "重置当前会话",
-      "allModelsUsed": "所有模型已用 (%)",
-      "allModelsReset": "重置所有模型",
-      "claudeDesignUsed": "Claude Design 已用 (%)",
-      "claudeDesignReset": "重置 Claude Design",
-      "showCredits": "显示额度",
-      "creditsSpent": "已花费额度 (EUR)",
-      "monthlyLimit": "月度限制 (EUR)",
-      "currentCredit": "当前额度 (EUR)",
-      "creditReset": "重置额度",
-      "autoTopUp": "自动充值",
-      "windowUsed": "窗口已用 (%)",
-      "windowReset": "重置窗口",
-      "weekUsed": "本周已用 (%)",
-      "weekReset": "重置本周"
     },
     "claudeSetup": {
       "title": "Claude live limits",

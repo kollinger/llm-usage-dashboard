@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Obnoviť",
     "settings": "Nastavenia",
-    "close": "Zavrieť",
-    "save": "Uložiť"
+    "close": "Zavrieť"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokeny 24h",
       "logTokens24h": "Log tokeny 24h",
-      "manualCredits": "Kredity zadané",
       "missingBackendKey": "Chýba backend kľúč",
       "sevenDays": "7 dní",
       "noCodexSparkEvents": "Nenašli sa žiadne udalosti Codex 5.3 Spark.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuálne",
     "empty": "Prázdne",
     "not_configured": "Nastavenie",
     "error": "Chyba"
@@ -191,25 +188,6 @@
     "heading": "Nastavenia",
     "language": {
       "label": "Jazyk"
-    },
-    "fields": {
-      "plan": "Plán",
-      "currentSessionUsed": "Aktuálna relácia použitá (%)",
-      "currentSessionReset": "Reset aktuálnej relácie",
-      "allModelsUsed": "Všetky modely použité (%)",
-      "allModelsReset": "Reset všetkých modelov",
-      "claudeDesignUsed": "Claude Design použitý (%)",
-      "claudeDesignReset": "Reset Claude Design",
-      "showCredits": "Zobraziť kredity",
-      "creditsSpent": "Minuté kredity (EUR)",
-      "monthlyLimit": "Mesačný limit (EUR)",
-      "currentCredit": "Aktuálny kredit (EUR)",
-      "creditReset": "Reset kreditu",
-      "autoTopUp": "Automatické dobitie",
-      "windowUsed": "Okno použité (%)",
-      "windowReset": "Reset okna",
-      "weekUsed": "Týždeň použitý (%)",
-      "weekReset": "Reset týždňa"
     },
     "claudeSetup": {
       "title": "Claude live limits",

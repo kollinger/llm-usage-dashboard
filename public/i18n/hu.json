@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Frissítés",
     "settings": "Beállítások",
-    "close": "Bezárás",
-    "save": "Mentés"
+    "close": "Bezárás"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokenek 24h",
       "logTokens24h": "Napló tokenek 24h",
-      "manualCredits": "Kreditek megadva",
       "missingBackendKey": "Hiányzik a backend kulcs",
       "sevenDays": "7 nap",
       "noCodexSparkEvents": "Nem találhatók Codex 5.3 Spark események.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Kézi",
     "empty": "Üres",
     "not_configured": "Beállítás",
     "error": "Hiba"
@@ -191,25 +188,6 @@
     "heading": "Beállítások",
     "language": {
       "label": "Nyelv"
-    },
-    "fields": {
-      "plan": "Csomag",
-      "currentSessionUsed": "Aktuális munkamenet felhasználva (%)",
-      "currentSessionReset": "Aktuális munkamenet visszaállítása",
-      "allModelsUsed": "Minden modell felhasználva (%)",
-      "allModelsReset": "Minden modell visszaállítása",
-      "claudeDesignUsed": "Claude Design felhasználva (%)",
-      "claudeDesignReset": "Claude Design visszaállítása",
-      "showCredits": "Kreditek megjelenítése",
-      "creditsSpent": "Elköltött kreditek (EUR)",
-      "monthlyLimit": "Havi korlát (EUR)",
-      "currentCredit": "Aktuális kredit (EUR)",
-      "creditReset": "Kredit visszaállítása",
-      "autoTopUp": "Automatikus feltöltés",
-      "windowUsed": "Ablak felhasználva (%)",
-      "windowReset": "Ablak visszaállítása",
-      "weekUsed": "Hét felhasználva (%)",
-      "weekReset": "Heti visszaállítás"
     },
     "claudeSetup": {
       "title": "Claude live limits",

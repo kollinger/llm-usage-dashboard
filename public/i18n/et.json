@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Värskenda",
     "settings": "Seaded",
-    "close": "Sulge",
-    "save": "Salvesta"
+    "close": "Sulge"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokenid 24h",
       "logTokens24h": "Logi tokenid 24h",
-      "manualCredits": "Krediidid sisestatud",
       "missingBackendKey": "Backend-võti puudub",
       "sevenDays": "7 päeva",
       "noCodexSparkEvents": "Codex 5.3 Spark sündmusi ei leitud.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Käsitsi",
     "empty": "Tühi",
     "not_configured": "Seadistus",
     "error": "Viga"
@@ -191,25 +188,6 @@
     "heading": "Seaded",
     "language": {
       "label": "Keel"
-    },
-    "fields": {
-      "plan": "Plaan",
-      "currentSessionUsed": "Praegune seanss kasutatud (%)",
-      "currentSessionReset": "Praeguse seansi lähtestus",
-      "allModelsUsed": "Kõik mudelid kasutatud (%)",
-      "allModelsReset": "Kõigi mudelite lähtestus",
-      "claudeDesignUsed": "Claude Design kasutatud (%)",
-      "claudeDesignReset": "Claude Design lähtestus",
-      "showCredits": "Kuva krediidid",
-      "creditsSpent": "Kulutatud krediidid (EUR)",
-      "monthlyLimit": "Kuulimiit (EUR)",
-      "currentCredit": "Praegune krediit (EUR)",
-      "creditReset": "Krediidi lähtestus",
-      "autoTopUp": "Automaatne laadimine",
-      "windowUsed": "Aken kasutatud (%)",
-      "windowReset": "Akna lähtestus",
-      "weekUsed": "Nädal kasutatud (%)",
-      "weekReset": "Nädala lähtestus"
     },
     "claudeSetup": {
       "title": "Claude live limits",

@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Athnuaigh",
     "settings": "Socruithe",
-    "close": "Dún",
-    "save": "Sábháil"
+    "close": "Dún"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokens 24h",
       "logTokens24h": "Tokens loga 24h",
-      "manualCredits": "Creidmheasanna curtha isteach",
       "missingBackendKey": "Eochair backend ar iarraidh",
       "sevenDays": "7 lá",
       "noCodexSparkEvents": "Níor aimsíodh aon imeachtaí Codex 5.3 Spark.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Láimhe",
     "empty": "Folamh",
     "not_configured": "Socrú",
     "error": "Earráid"
@@ -191,25 +188,6 @@
     "heading": "Socruithe",
     "language": {
       "label": "Teanga"
-    },
-    "fields": {
-      "plan": "Plean",
-      "currentSessionUsed": "Seisiún reatha úsáidte (%)",
-      "currentSessionReset": "Athshocrú an tseisiúin reatha",
-      "allModelsUsed": "Gach samhail úsáidte (%)",
-      "allModelsReset": "Athshocrú gach samhail",
-      "claudeDesignUsed": "Claude Design úsáidte (%)",
-      "claudeDesignReset": "Athshocrú Claude Design",
-      "showCredits": "Taispeáin creidmheasanna",
-      "creditsSpent": "Creidmheasanna caite (EUR)",
-      "monthlyLimit": "Teorainn mhíosúil (EUR)",
-      "currentCredit": "Creidmheas reatha (EUR)",
-      "creditReset": "Athshocrú creidmheasa",
-      "autoTopUp": "Breisiú uathoibríoch",
-      "windowUsed": "Fuinneog úsáidte (%)",
-      "windowReset": "Athshocrú fuinneoige",
-      "weekUsed": "Seachtain úsáidte (%)",
-      "weekReset": "Athshocrú seachtaine"
     },
     "claudeSetup": {
       "title": "Claude live limits",

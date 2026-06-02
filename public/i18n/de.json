@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Aktualisieren",
     "settings": "Einstellungen",
-    "close": "Schließen",
-    "save": "Speichern"
+    "close": "Schließen"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark-Tokens 24h",
       "logTokens24h": "Log-Tokens 24h",
-      "manualCredits": "Guthaben erfasst",
       "missingBackendKey": "Backend-Key fehlt",
       "sevenDays": "7 Tage",
       "noCodexSparkEvents": "Keine Codex 5.3 Spark Events gefunden.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuell",
     "empty": "Leer",
     "not_configured": "Setup",
     "error": "Fehler"
@@ -191,25 +188,6 @@
     "heading": "Einstellungen",
     "language": {
       "label": "Sprache"
-    },
-    "fields": {
-      "plan": "Plan",
-      "currentSessionUsed": "Aktuelle Sitzung genutzt (%)",
-      "currentSessionReset": "Reset aktuelle Sitzung",
-      "allModelsUsed": "Alle Modelle genutzt (%)",
-      "allModelsReset": "Reset alle Modelle",
-      "claudeDesignUsed": "Claude Design genutzt (%)",
-      "claudeDesignReset": "Reset Claude Design",
-      "showCredits": "Guthaben anzeigen",
-      "creditsSpent": "Verbrauchtes Guthaben (EUR)",
-      "monthlyLimit": "Monatslimit (EUR)",
-      "currentCredit": "Aktuelles Guthaben (EUR)",
-      "creditReset": "Guthaben-Reset",
-      "autoTopUp": "Automatisch aufladen",
-      "windowUsed": "Fenster genutzt (%)",
-      "windowReset": "Fenster-Reset",
-      "weekUsed": "Woche genutzt (%)",
-      "weekReset": "Wochen-Reset"
     },
     "claudeSetup": {
       "title": "Claude-Live-Limits",

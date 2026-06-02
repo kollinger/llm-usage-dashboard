@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Обновяване",
     "settings": "Настройки",
-    "close": "Затваряне",
-    "save": "Запазване"
+    "close": "Затваряне"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark токени 24h",
       "logTokens24h": "Лог токени 24h",
-      "manualCredits": "Въведени кредити",
       "missingBackendKey": "Липсва backend ключ",
       "sevenDays": "7 дни",
       "noCodexSparkEvents": "Няма намерени Codex 5.3 Spark събития.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Ръчно",
     "empty": "Празно",
     "not_configured": "Настройка",
     "error": "Грешка"
@@ -191,25 +188,6 @@
     "heading": "Настройки",
     "language": {
       "label": "Език"
-    },
-    "fields": {
-      "plan": "План",
-      "currentSessionUsed": "Текуща сесия използвана (%)",
-      "currentSessionReset": "Нулиране на текуща сесия",
-      "allModelsUsed": "Всички модели използвани (%)",
-      "allModelsReset": "Нулиране на всички модели",
-      "claudeDesignUsed": "Claude Design използван (%)",
-      "claudeDesignReset": "Нулиране на Claude Design",
-      "showCredits": "Показвай кредити",
-      "creditsSpent": "Изразходвани кредити (EUR)",
-      "monthlyLimit": "Месечен лимит (EUR)",
-      "currentCredit": "Текущ кредит (EUR)",
-      "creditReset": "Нулиране на кредити",
-      "autoTopUp": "Автоматично зареждане",
-      "windowUsed": "Прозорец използван (%)",
-      "windowReset": "Нулиране на прозореца",
-      "weekUsed": "Седмица използвана (%)",
-      "weekReset": "Нулиране на седмицата"
     },
     "claudeSetup": {
       "title": "Claude live limits",

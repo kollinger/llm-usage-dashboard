@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Ανανέωση",
     "settings": "Ρυθμίσεις",
-    "close": "Κλείσιμο",
-    "save": "Αποθήκευση"
+    "close": "Κλείσιμο"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokens 24h",
       "logTokens24h": "Log tokens 24h",
-      "manualCredits": "Οι πιστώσεις καταχωρίστηκαν",
       "missingBackendKey": "Λείπει backend key",
       "sevenDays": "7 ημέρες",
       "noCodexSparkEvents": "Δεν βρέθηκαν συμβάντα Codex 5.3 Spark.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Χειροκίνητα",
     "empty": "Κενό",
     "not_configured": "Ρύθμιση",
     "error": "Σφάλμα"
@@ -191,25 +188,6 @@
     "heading": "Ρυθμίσεις",
     "language": {
       "label": "Γλώσσα"
-    },
-    "fields": {
-      "plan": "Πλάνο",
-      "currentSessionUsed": "Τρέχουσα συνεδρία χρησιμοποιήθηκε (%)",
-      "currentSessionReset": "Reset τρέχουσας συνεδρίας",
-      "allModelsUsed": "Όλα τα μοντέλα χρησιμοποιήθηκαν (%)",
-      "allModelsReset": "Reset όλων των μοντέλων",
-      "claudeDesignUsed": "Claude Design χρησιμοποιήθηκε (%)",
-      "claudeDesignReset": "Reset Claude Design",
-      "showCredits": "Εμφάνιση πιστώσεων",
-      "creditsSpent": "Πιστώσεις που δαπανήθηκαν (EUR)",
-      "monthlyLimit": "Μηνιαίο όριο (EUR)",
-      "currentCredit": "Τρέχουσα πίστωση (EUR)",
-      "creditReset": "Reset πιστώσεων",
-      "autoTopUp": "Αυτόματη ανανέωση",
-      "windowUsed": "Παράθυρο χρησιμοποιήθηκε (%)",
-      "windowReset": "Reset παραθύρου",
-      "weekUsed": "Εβδομάδα χρησιμοποιήθηκε (%)",
-      "weekReset": "Reset εβδομάδας"
     },
     "claudeSetup": {
       "title": "Claude live limits",

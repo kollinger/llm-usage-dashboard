@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Actualiser",
     "settings": "Paramètres",
-    "close": "Fermer",
-    "save": "Enregistrer"
+    "close": "Fermer"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Jetons Spark 24h",
       "logTokens24h": "Jetons de journaux 24h",
-      "manualCredits": "Crédits saisis",
       "missingBackendKey": "Clé backend manquante",
       "sevenDays": "7 jours",
       "noCodexSparkEvents": "Aucun événement Codex 5.3 Spark trouvé.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuel",
     "empty": "Vide",
     "not_configured": "Configuration",
     "error": "Erreur"
@@ -191,25 +188,6 @@
     "heading": "Paramètres",
     "language": {
       "label": "Langue"
-    },
-    "fields": {
-      "plan": "Forfait",
-      "currentSessionUsed": "Session actuelle utilisée (%)",
-      "currentSessionReset": "Réinitialisation de la session actuelle",
-      "allModelsUsed": "Tous les modèles utilisés (%)",
-      "allModelsReset": "Réinitialisation de tous les modèles",
-      "claudeDesignUsed": "Claude Design utilisé (%)",
-      "claudeDesignReset": "Réinitialisation de Claude Design",
-      "showCredits": "Afficher les crédits",
-      "creditsSpent": "Crédits dépensés (EUR)",
-      "monthlyLimit": "Limite mensuelle (EUR)",
-      "currentCredit": "Crédit actuel (EUR)",
-      "creditReset": "Réinitialisation du crédit",
-      "autoTopUp": "Recharge automatique",
-      "windowUsed": "Fenêtre utilisée (%)",
-      "windowReset": "Réinitialisation de la fenêtre",
-      "weekUsed": "Semaine utilisée (%)",
-      "weekReset": "Réinitialisation hebdomadaire"
     },
     "claudeSetup": {
       "title": "Claude live limits",

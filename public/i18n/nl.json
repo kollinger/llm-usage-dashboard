@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Vernieuwen",
     "settings": "Instellingen",
-    "close": "Sluiten",
-    "save": "Opslaan"
+    "close": "Sluiten"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark-tokens 24h",
       "logTokens24h": "Logtokens 24h",
-      "manualCredits": "Credits ingevoerd",
       "missingBackendKey": "Backend-sleutel ontbreekt",
       "sevenDays": "7 dagen",
       "noCodexSparkEvents": "Geen Codex 5.3 Spark-events gevonden.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Handmatig",
     "empty": "Leeg",
     "not_configured": "Setup",
     "error": "Fout"
@@ -191,25 +188,6 @@
     "heading": "Instellingen",
     "language": {
       "label": "Taal"
-    },
-    "fields": {
-      "plan": "Plan",
-      "currentSessionUsed": "Huidige sessie gebruikt (%)",
-      "currentSessionReset": "Huidige sessie resetten",
-      "allModelsUsed": "Alle modellen gebruikt (%)",
-      "allModelsReset": "Alle modellen resetten",
-      "claudeDesignUsed": "Claude Design gebruikt (%)",
-      "claudeDesignReset": "Claude Design resetten",
-      "showCredits": "Credits tonen",
-      "creditsSpent": "Uitgegeven credits (EUR)",
-      "monthlyLimit": "Maandlimiet (EUR)",
-      "currentCredit": "Huidig credit (EUR)",
-      "creditReset": "Credit resetten",
-      "autoTopUp": "Automatisch opwaarderen",
-      "windowUsed": "Venster gebruikt (%)",
-      "windowReset": "Venster resetten",
-      "weekUsed": "Week gebruikt (%)",
-      "weekReset": "Week resetten"
     },
     "claudeSetup": {
       "title": "Claude live limits",

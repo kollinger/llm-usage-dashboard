@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Uppdatera",
     "settings": "Inställningar",
-    "close": "Stäng",
-    "save": "Spara"
+    "close": "Stäng"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark-tokens 24h",
       "logTokens24h": "Loggtokens 24h",
-      "manualCredits": "Krediter angivna",
       "missingBackendKey": "Backend-nyckel saknas",
       "sevenDays": "7 dagar",
       "noCodexSparkEvents": "Inga Codex 5.3 Spark-händelser hittades.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuell",
     "empty": "Tom",
     "not_configured": "Konfiguration",
     "error": "Fel"
@@ -191,25 +188,6 @@
     "heading": "Inställningar",
     "language": {
       "label": "Språk"
-    },
-    "fields": {
-      "plan": "Plan",
-      "currentSessionUsed": "Aktuell session använd (%)",
-      "currentSessionReset": "Återställ aktuell session",
-      "allModelsUsed": "Alla modeller använda (%)",
-      "allModelsReset": "Återställ alla modeller",
-      "claudeDesignUsed": "Claude Design använt (%)",
-      "claudeDesignReset": "Återställ Claude Design",
-      "showCredits": "Visa krediter",
-      "creditsSpent": "Spenderade krediter (EUR)",
-      "monthlyLimit": "Månadsgräns (EUR)",
-      "currentCredit": "Aktuell kredit (EUR)",
-      "creditReset": "Återställ kredit",
-      "autoTopUp": "Automatisk påfyllning",
-      "windowUsed": "Fönster använt (%)",
-      "windowReset": "Återställ fönster",
-      "weekUsed": "Vecka använd (%)",
-      "weekReset": "Återställ vecka"
     },
     "claudeSetup": {
       "title": "Claude live limits",

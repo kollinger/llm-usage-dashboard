@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Opdater",
     "settings": "Indstillinger",
-    "close": "Luk",
-    "save": "Gem"
+    "close": "Luk"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark-tokens 24h",
       "logTokens24h": "Logtokens 24h",
-      "manualCredits": "Kreditter indtastet",
       "missingBackendKey": "Backendnøgle mangler",
       "sevenDays": "7 dage",
       "noCodexSparkEvents": "Ingen Codex 5.3 Spark-hændelser fundet.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuel",
     "empty": "Tom",
     "not_configured": "Opsætning",
     "error": "Fejl"
@@ -191,25 +188,6 @@
     "heading": "Indstillinger",
     "language": {
       "label": "Sprog"
-    },
-    "fields": {
-      "plan": "Plan",
-      "currentSessionUsed": "Aktuel session brugt (%)",
-      "currentSessionReset": "Nulstil aktuel session",
-      "allModelsUsed": "Alle modeller brugt (%)",
-      "allModelsReset": "Nulstil alle modeller",
-      "claudeDesignUsed": "Claude Design brugt (%)",
-      "claudeDesignReset": "Nulstil Claude Design",
-      "showCredits": "Vis kreditter",
-      "creditsSpent": "Brugte kreditter (EUR)",
-      "monthlyLimit": "Månedlig grænse (EUR)",
-      "currentCredit": "Aktuel kredit (EUR)",
-      "creditReset": "Kreditnulstilling",
-      "autoTopUp": "Automatisk optankning",
-      "windowUsed": "Vindue brugt (%)",
-      "windowReset": "Vinduesnulstilling",
-      "weekUsed": "Uge brugt (%)",
-      "weekReset": "Ugenulstilling"
     },
     "claudeSetup": {
       "title": "Claude live limits",

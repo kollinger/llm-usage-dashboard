@@ -15,7 +15,6 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 - Claude Code plan limit capture from a statusline JSON file when Claude exposes those values.
 - Gemini local usage metadata from known local Gemini telemetry/chat paths when present.
 - Ollama local token capture through the optional built-in proxy logger.
-- Manual quota and credit tracking for Claude, Gemini, and GPT/OpenAI where providers do not expose stable local APIs.
 - Optional OpenAI and Anthropic admin API usage/cost aggregation when admin keys are provided.
 - Token history chart with per-provider color stacking, source totals, and API price comparison estimates for local/non-API usage.
 - Multilingual UI with system-language detection and a settings language selector.
@@ -235,9 +234,7 @@ Fields parsed when present:
 
 `resets_at` values may be Unix epoch seconds, Unix epoch milliseconds, or ISO timestamps. The dashboard normalizes all three forms before display.
 
-The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API. Those can be tracked manually in the dashboard settings.
-
-The `Guthaben anzeigen` setting controls whether a credit block is shown even when every amount is still zero. Any entered credit amount or monthly limit also makes the block visible automatically.
+The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
 
 ### Gemini
 
@@ -250,7 +247,7 @@ Gemini usage is read from local metadata fields such as `usageMetadata` or `usag
 ~/.gemini/telemetry/**
 ```
 
-If Gemini telemetry or local chat logs are unavailable, the Gemini card stays empty unless manual limits are entered.
+If Gemini telemetry or local chat logs are unavailable, the Gemini card stays empty.
 
 ### Ollama
 
@@ -286,7 +283,7 @@ Admin keys stay on the server. The browser receives only aggregated usage/cost d
 
 Anthropic admin keys also enable configured organization rate-limit display through `GET /v1/organizations/rate_limits`. Set `ANTHROPIC_WORKSPACE_ID` to additionally read workspace-level overrides. These rate limits are cached for 60 seconds because they are configured limits, not a per-second live usage counter.
 
-Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not generally available through the same API keys. Use manual quota/credit fields unless a local provider-specific telemetry source exposes it.
+Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not generally available through the same API keys. The dashboard only shows those counters when a stable local provider-specific telemetry source exposes them.
 
 The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs. Provider subscription counters, such as Copilot premium requests or AI credits, are kept out of the API-cost estimate.
 
@@ -308,7 +305,7 @@ Model quality scores in the pricing table are an internal heuristic for quick so
 
 - Codex live quota source: the Codex app-server interface is local and experimental, so session log parsing remains the durable history source.
 - Copilot usage coverage: IDE completions, warning thresholds, and exact subscription quota window semantics are not exposed through a stable personal local/API source today. SDK quota snapshots are shown only when the installed CLI returns explicit fields.
-- Consumer subscription counters: ChatGPT, Claude, Copilot, Gemini, and similar consumer-plan usage fields are only shown when local telemetry, statusline capture, admin APIs, or manual entries expose them.
+- Consumer subscription counters: ChatGPT, Claude, Copilot, Gemini, and similar consumer-plan usage fields are only shown when local telemetry, statusline capture, or admin APIs expose them.
 - Desktop signing: GitHub Actions publishes unsigned prerelease desktop artifacts until macOS notarization and Windows code signing are configured.
 
 ### Open To-Dos

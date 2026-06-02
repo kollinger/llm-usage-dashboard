@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Reîmprospătează",
     "settings": "Setări",
-    "close": "Închide",
-    "save": "Salvează"
+    "close": "Închide"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Tokeni Spark 24h",
       "logTokens24h": "Tokeni din jurnale 24h",
-      "manualCredits": "Credite introduse",
       "missingBackendKey": "Lipsește cheia backend",
       "sevenDays": "7 zile",
       "noCodexSparkEvents": "Nu s-au găsit evenimente Codex 5.3 Spark.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manual",
     "empty": "Gol",
     "not_configured": "Configurare",
     "error": "Eroare"
@@ -191,25 +188,6 @@
     "heading": "Setări",
     "language": {
       "label": "Limbă"
-    },
-    "fields": {
-      "plan": "Plan",
-      "currentSessionUsed": "Sesiune curentă utilizată (%)",
-      "currentSessionReset": "Resetare sesiune curentă",
-      "allModelsUsed": "Toate modelele utilizate (%)",
-      "allModelsReset": "Resetare toate modelele",
-      "claudeDesignUsed": "Claude Design utilizat (%)",
-      "claudeDesignReset": "Resetare Claude Design",
-      "showCredits": "Afișează creditele",
-      "creditsSpent": "Credite cheltuite (EUR)",
-      "monthlyLimit": "Limită lunară (EUR)",
-      "currentCredit": "Credit curent (EUR)",
-      "creditReset": "Resetare credit",
-      "autoTopUp": "Reîncărcare automată",
-      "windowUsed": "Fereastră utilizată (%)",
-      "windowReset": "Resetare fereastră",
-      "weekUsed": "Săptămână utilizată (%)",
-      "weekReset": "Resetare săptămânală"
     },
     "claudeSetup": {
       "title": "Claude live limits",

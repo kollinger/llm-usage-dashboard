@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Päivitä",
     "settings": "Asetukset",
-    "close": "Sulje",
-    "save": "Tallenna"
+    "close": "Sulje"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark-tokenit 24h",
       "logTokens24h": "Lokitokenit 24h",
-      "manualCredits": "Krediitit syötetty",
       "missingBackendKey": "Backend-avain puuttuu",
       "sevenDays": "7 päivää",
       "noCodexSparkEvents": "Codex 5.3 Spark -tapahtumia ei löytynyt.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuaalinen",
     "empty": "Tyhjä",
     "not_configured": "Asetus",
     "error": "Virhe"
@@ -191,25 +188,6 @@
     "heading": "Asetukset",
     "language": {
       "label": "Kieli"
-    },
-    "fields": {
-      "plan": "Tilaukset",
-      "currentSessionUsed": "Nykyinen istunto käytetty (%)",
-      "currentSessionReset": "Nykyisen istunnon nollaus",
-      "allModelsUsed": "Kaikki mallit käytetty (%)",
-      "allModelsReset": "Kaikkien mallien nollaus",
-      "claudeDesignUsed": "Claude Design käytetty (%)",
-      "claudeDesignReset": "Claude Designin nollaus",
-      "showCredits": "Näytä krediitit",
-      "creditsSpent": "Käytetyt krediitit (EUR)",
-      "monthlyLimit": "Kuukausiraja (EUR)",
-      "currentCredit": "Nykyinen krediitti (EUR)",
-      "creditReset": "Krediitin nollaus",
-      "autoTopUp": "Automaattinen lisäys",
-      "windowUsed": "Ikkuna käytetty (%)",
-      "windowReset": "Ikkunan nollaus",
-      "weekUsed": "Viikko käytetty (%)",
-      "weekReset": "Viikon nollaus"
     },
     "claudeSetup": {
       "title": "Claude live limits",

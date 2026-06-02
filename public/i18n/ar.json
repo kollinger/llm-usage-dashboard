@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "تحديث",
     "settings": "الإعدادات",
-    "close": "إغلاق",
-    "save": "حفظ"
+    "close": "إغلاق"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "توكنات Spark خلال 24h",
       "logTokens24h": "توكنات السجل خلال 24h",
-      "manualCredits": "تم إدخال الرصيد",
       "missingBackendKey": "مفتاح backend مفقود",
       "sevenDays": "7 أيام",
       "noCodexSparkEvents": "لم يتم العثور على أحداث Codex 5.3 Spark.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "مباشر",
-    "manual": "يدوي",
     "empty": "فارغ",
     "not_configured": "الإعداد",
     "error": "خطأ"
@@ -191,25 +188,6 @@
     "heading": "الإعدادات",
     "language": {
       "label": "اللغة"
-    },
-    "fields": {
-      "plan": "الخطة",
-      "currentSessionUsed": "الجلسة الحالية مستخدمة (%)",
-      "currentSessionReset": "إعادة ضبط الجلسة الحالية",
-      "allModelsUsed": "كل النماذج مستخدمة (%)",
-      "allModelsReset": "إعادة ضبط كل النماذج",
-      "claudeDesignUsed": "Claude Design مستخدم (%)",
-      "claudeDesignReset": "إعادة ضبط Claude Design",
-      "showCredits": "إظهار الرصيد",
-      "creditsSpent": "الرصيد المصروف (EUR)",
-      "monthlyLimit": "الحد الشهري (EUR)",
-      "currentCredit": "الرصيد الحالي (EUR)",
-      "creditReset": "إعادة ضبط الرصيد",
-      "autoTopUp": "شحن تلقائي",
-      "windowUsed": "النافذة مستخدمة (%)",
-      "windowReset": "إعادة ضبط النافذة",
-      "weekUsed": "الأسبوع مستخدم (%)",
-      "weekReset": "إعادة ضبط الأسبوع"
     },
     "claudeSetup": {
       "title": "Claude live limits",

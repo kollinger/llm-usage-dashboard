@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Osveži",
     "settings": "Nastavitve",
-    "close": "Zapri",
-    "save": "Shrani"
+    "close": "Zapri"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokeni 24h",
       "logTokens24h": "Dnevniški tokeni 24h",
-      "manualCredits": "Krediti vneseni",
       "missingBackendKey": "Manjka backend ključ",
       "sevenDays": "7 dni",
       "noCodexSparkEvents": "Dogodkov Codex 5.3 Spark ni bilo mogoče najti.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Ročno",
     "empty": "Prazno",
     "not_configured": "Nastavitev",
     "error": "Napaka"
@@ -191,25 +188,6 @@
     "heading": "Nastavitve",
     "language": {
       "label": "Jezik"
-    },
-    "fields": {
-      "plan": "Paket",
-      "currentSessionUsed": "Trenutna seja uporabljena (%)",
-      "currentSessionReset": "Ponastavitev trenutne seje",
-      "allModelsUsed": "Vsi modeli uporabljeni (%)",
-      "allModelsReset": "Ponastavitev vseh modelov",
-      "claudeDesignUsed": "Claude Design uporabljen (%)",
-      "claudeDesignReset": "Ponastavitev Claude Design",
-      "showCredits": "Prikaži kredite",
-      "creditsSpent": "Porabljeni krediti (EUR)",
-      "monthlyLimit": "Mesečna omejitev (EUR)",
-      "currentCredit": "Trenutni kredit (EUR)",
-      "creditReset": "Ponastavitev kredita",
-      "autoTopUp": "Samodejno polnjenje",
-      "windowUsed": "Okno uporabljeno (%)",
-      "windowReset": "Ponastavitev okna",
-      "weekUsed": "Teden uporabljen (%)",
-      "weekReset": "Tedenska ponastavitev"
     },
     "claudeSetup": {
       "title": "Claude live limits",

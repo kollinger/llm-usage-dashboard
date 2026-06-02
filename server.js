@@ -13,7 +13,6 @@ const session = require("express-session");
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
-const MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
@@ -222,8 +221,7 @@ app.get("/auth/oidc/callback", async (req, res) => {
 });
 
 app.get("/api/usage", authMiddleware, async (_req, res) => {
-  const [manual, codex, copilot, claudeCode, geminiLocal, ollama, openai, anthropic] = await Promise.all([
-    readManualLimits(),
+  const [codex, copilot, claudeCode, gemini, ollama, openai, anthropic] = await Promise.all([
     readCodexUsage().catch((error) => providerError("codex", error)),
     readCopilotUsage().catch((error) => providerError("copilot", error)),
     readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
@@ -238,26 +236,13 @@ app.get("/api/usage", authMiddleware, async (_req, res) => {
     generatedAt: now,
     codex,
     copilot,
-    claudeCode: mergeManualLimits(claudeCode, manual.claude),
-    gemini: mergeManualLimits(geminiLocal, manual.gemini),
+    claudeCode,
+    gemini,
     ollama,
-    local: buildLocalAggregate([codex, copilot, claudeCode, geminiLocal, ollama]),
-    openai: mergeManualLimits(openai, manual.openai),
-    anthropic,
-    manual
+    local: buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]),
+    openai,
+    anthropic
   });
-});
-
-app.get("/api/manual-limits", authMiddleware, async (_req, res) => {
-  res.json(await readManualLimits());
-});
-
-app.post("/api/manual-limits", authMiddleware, async (req, res) => {
-  const current = await readManualLimits();
-  const next = sanitizeManualLimits({ ...current, ...req.body });
-  await fsp.mkdir(DATA_DIR, { recursive: true });
-  await fsp.writeFile(MANUAL_LIMITS_FILE, `${JSON.stringify(next, null, 2)}\n`);
-  res.json(next);
 });
 
 app.get("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
@@ -348,63 +333,6 @@ async function readThroughCache(cache, ttlMs, loader) {
   return cache.pending;
 }
 
-async function readManualLimits() {
-  try {
-    const text = await fsp.readFile(MANUAL_LIMITS_FILE, "utf8");
-    return sanitizeManualLimits(JSON.parse(text));
-  } catch {
-    return sanitizeManualLimits({});
-  }
-}
-
-function sanitizeManualLimits(raw) {
-  const emptyWindow = (label) => ({ usedPercent: 0, limitLabel: label, resetsAt: null });
-  const clamp = (value) => Math.max(0, Math.min(100, Number(value) || 0));
-  const sanitizeProvider = (id, fallbackLabel) => {
-    const provider = raw[id] || {};
-    const five = provider.fiveHour || {};
-    const week = provider.weekly || {};
-    return {
-      label: String(provider.label || fallbackLabel),
-      fiveHour: {
-        ...emptyWindow("5h limit"),
-        ...five,
-        usedPercent: clamp(five.usedPercent),
-        resetsAt: normalizeOptionalDate(five.resetsAt)
-      },
-      weekly: {
-        ...emptyWindow("Weekly limit"),
-        ...week,
-        usedPercent: clamp(week.usedPercent),
-        resetsAt: normalizeOptionalDate(week.resetsAt)
-      },
-      planType: String(provider.planType || provider.plan || "").trim(),
-      credits: sanitizeUsageCredits(provider.credits || provider.usageCredits || provider.guthaben)
-    };
-  };
-  const claude = sanitizeProvider("claude", "Claude / Anthropic");
-  const claudeRaw = raw.claude || {};
-  claude.planType = String(claudeRaw.planType || claudeRaw.plan || "").trim();
-  claude.currentSession = sanitizeManualWindow(claudeRaw.currentSession || claudeRaw.fiveHour, "Aktuelle Sitzung", 300);
-  claude.allModels = sanitizeManualWindow(claudeRaw.allModels || claudeRaw.weekly, "Alle Modelle", 10080);
-  claude.claudeDesign = sanitizeManualWindow(claudeRaw.claudeDesign, "Claude Design", 10080);
-  return {
-    claude,
-    gemini: sanitizeProvider("gemini", "Gemini"),
-    openai: sanitizeProvider("openai", "OpenAI / GPT")
-  };
-}
-
-function sanitizeManualWindow(window, label, minutes) {
-  const usedPercent = Math.max(0, Math.min(100, Number(window?.usedPercent) || 0));
-  return {
-    usedPercent,
-    limitLabel: String(window?.limitLabel || label),
-    resetsAt: normalizeOptionalDate(window?.resetsAt),
-    windowMinutes: Number(window?.windowMinutes || minutes)
-  };
-}
-
 function sanitizeUsageCredits(raw) {
   const credits = raw || {};
   return {
@@ -472,67 +400,6 @@ function normalizeOptionalDate(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-function buildManualProvider(id, config) {
-  const fiveHour = makeLimitWindow(config.currentSession || config.fiveHour, 300);
-  const weekly = makeLimitWindow(config.allModels || config.weekly, 10080);
-  const limits = {
-    fiveHour,
-    weekly
-  };
-  if (id === "claudeCode") {
-    limits.currentSession = relabelLimitWindow(fiveHour, "Aktuelle Sitzung");
-    limits.allModels = relabelLimitWindow(weekly, "Alle Modelle");
-    limits.claudeDesign = makeLimitWindow(config.claudeDesign, 10080);
-    limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
-  }
-  return {
-    id,
-    status: "manual",
-    updatedAt: new Date().toISOString(),
-    label: config.label,
-    planType: config.planType || null,
-    limits,
-    credits: hasUsageCredits(config.credits) ? config.credits : null,
-    creditRows: buildCreditRows(config.credits)
-  };
-}
-
-function mergeManualLimits(provider, config) {
-  if (!provider || provider.status === "error") return provider;
-  const manual = buildManualProvider(provider.id, config);
-  const hasManualLimits = hasLimitValues(manual.limits);
-  const hasManualCredits = hasUsageCredits(manual.credits);
-  const hasManualValue = Boolean(manual.planType) || hasManualLimits || hasManualCredits;
-  if (!hasManualValue) return provider;
-  const limits = hasManualLimits ? mergeLimitObjects(provider.limits, manual.limits) : provider.limits;
-  const credits = mergeCreditObjects(provider.credits, manual.credits);
-  return {
-    ...provider,
-    status:
-      (provider.status === "empty" || provider.status === "not_configured") && hasManualValue ? "manual" : provider.status,
-    planType: provider.planType || manual.planType || null,
-    limits,
-    credits,
-    creditRows: buildCreditRows(credits),
-    limitSource: provider.limitSource || "manual"
-  };
-}
-
-function hasLimitValues(limits) {
-  return Object.values(limits || {})
-    .filter((value) => value && !Array.isArray(value))
-    .some((limit) => limit.usedPercent > 0 || Boolean(limit.resetsAt || limit.resetLabel));
-}
-
-function mergeCreditObjects(primary, fallback) {
-  if (!primary && !fallback) return null;
-  const merged = {
-    ...(fallback || {}),
-    ...(primary || {})
-  };
-  return hasUsageCredits(merged) ? merged : null;
-}
-
 function buildCreditRows(credits) {
   if (!hasUsageCredits(credits)) return [];
   const currency = normalizeCurrency(credits.currency);
@@ -571,36 +438,6 @@ function buildCreditRows(credits) {
     valueLabel: credits.autoTopUp ? "An" : "Aus"
   });
   return rows;
-}
-
-function makeLimitWindow(window, minutes) {
-  const usedPercent = Math.max(0, Math.min(100, Number(window?.usedPercent) || 0));
-  return {
-    label: window?.limitLabel || `${minutes}m limit`,
-    usedPercent,
-    remainingPercent: 100 - usedPercent,
-    windowMinutes: minutes,
-    resetsAt: window?.resetsAt || null
-  };
-}
-
-function mergeLimitObjects(primary, fallback) {
-  if (!primary) return fallback;
-  const limits = {
-    ...fallback,
-    ...primary,
-    fiveHour: primary.fiveHour || fallback?.fiveHour || null,
-    weekly: primary.weekly || fallback?.weekly || null,
-    currentSession: primary.currentSession || fallback?.currentSession || primary.fiveHour || fallback?.fiveHour || null,
-    allModels: primary.allModels || fallback?.allModels || primary.weekly || fallback?.weekly || null,
-    claudeDesign: primary.claudeDesign || fallback?.claudeDesign || null
-  };
-  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
-  return limits;
-}
-
-function relabelLimitWindow(window, label) {
-  return window ? { ...window, label } : null;
 }
 
 function buildLimitRows(limits, keys) {

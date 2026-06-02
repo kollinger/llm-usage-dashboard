@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Atsvaidzināt",
     "settings": "Iestatījumi",
-    "close": "Aizvērt",
-    "save": "Saglabāt"
+    "close": "Aizvērt"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokeni 24h",
       "logTokens24h": "Žurnāla tokeni 24h",
-      "manualCredits": "Kredīti ievadīti",
       "missingBackendKey": "Trūkst backend atslēgas",
       "sevenDays": "7 dienas",
       "noCodexSparkEvents": "Codex 5.3 Spark notikumi nav atrasti.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manuāli",
     "empty": "Tukšs",
     "not_configured": "Iestatīšana",
     "error": "Kļūda"
@@ -191,25 +188,6 @@
     "heading": "Iestatījumi",
     "language": {
       "label": "Valoda"
-    },
-    "fields": {
-      "plan": "Plāns",
-      "currentSessionUsed": "Pašreizējā sesija izmantota (%)",
-      "currentSessionReset": "Pašreizējās sesijas atiestatīšana",
-      "allModelsUsed": "Visi modeļi izmantoti (%)",
-      "allModelsReset": "Visu modeļu atiestatīšana",
-      "claudeDesignUsed": "Claude Design izmantots (%)",
-      "claudeDesignReset": "Claude Design atiestatīšana",
-      "showCredits": "Rādīt kredītus",
-      "creditsSpent": "Iztērētie kredīti (EUR)",
-      "monthlyLimit": "Mēneša limits (EUR)",
-      "currentCredit": "Pašreizējais kredīts (EUR)",
-      "creditReset": "Kredīta atiestatīšana",
-      "autoTopUp": "Automātiska papildināšana",
-      "windowUsed": "Logs izmantots (%)",
-      "windowReset": "Loga atiestatīšana",
-      "weekUsed": "Nedēļa izmantota (%)",
-      "weekReset": "Nedēļas atiestatīšana"
     },
     "claudeSetup": {
       "title": "Claude live limits",

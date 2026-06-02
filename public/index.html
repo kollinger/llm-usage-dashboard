@@ -123,8 +123,8 @@
       </form>
     </dialog>
 
-    <dialog id="settingsDialog" class="modal wide-modal">
-      <form method="dialog" class="modal-body" id="settingsForm">
+    <dialog id="settingsDialog" class="modal">
+      <div class="modal-body">
         <div class="modal-heading">
           <h2 data-i18n="settings.heading">Einstellungen</h2>
           <button class="icon-button" type="button" id="settingsCloseBtn" aria-label="Schließen" title="Schließen" data-i18n-aria-label="actions.close" data-i18n-title="actions.close">
@@ -137,117 +137,7 @@
             <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>
           </label>
         </div>
-        <div class="settings-grid">
-          <fieldset>
-            <legend>Claude</legend>
-            <label class="field">
-              <span data-i18n="settings.fields.plan">Plan</span>
-              <input type="text" name="claude.planType" placeholder="Pro" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.currentSessionUsed">Aktuelle Sitzung genutzt (%)</span>
-              <input type="number" min="0" max="100" step="1" name="claude.currentSession.usedPercent" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.currentSessionReset">Reset aktuelle Sitzung</span>
-              <input type="datetime-local" name="claude.currentSession.resetsAt" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.allModelsUsed">Alle Modelle genutzt (%)</span>
-              <input type="number" min="0" max="100" step="1" name="claude.allModels.usedPercent" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.allModelsReset">Reset alle Modelle</span>
-              <input type="datetime-local" name="claude.allModels.resetsAt" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.claudeDesignUsed">Claude Design genutzt (%)</span>
-              <input type="number" min="0" max="100" step="1" name="claude.claudeDesign.usedPercent" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.claudeDesignReset">Reset Claude Design</span>
-              <input type="datetime-local" name="claude.claudeDesign.resetsAt" />
-            </label>
-            <label class="field check-field">
-              <span data-i18n="settings.fields.showCredits">Guthaben anzeigen</span>
-              <input type="checkbox" name="claude.credits.enabled" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.creditsSpent">Verbrauchtes Guthaben (EUR)</span>
-              <input type="number" min="0" step="0.01" name="claude.credits.spentAmount" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.monthlyLimit">Monatslimit (EUR)</span>
-              <input type="number" min="0" step="0.01" name="claude.credits.monthlyLimitAmount" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.currentCredit">Aktuelles Guthaben (EUR)</span>
-              <input type="number" min="0" step="0.01" name="claude.credits.currentCreditAmount" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.creditReset">Guthaben-Reset</span>
-              <input type="datetime-local" name="claude.credits.resetsAt" />
-            </label>
-            <label class="field check-field">
-              <span data-i18n="settings.fields.autoTopUp">Automatisch aufladen</span>
-              <input type="checkbox" name="claude.credits.autoTopUp" />
-            </label>
-          </fieldset>
-          <fieldset>
-            <legend>Gemini</legend>
-            <label class="field">
-              <span data-i18n="settings.fields.windowUsed">Fenster genutzt (%)</span>
-              <input type="number" min="0" max="100" step="1" name="gemini.fiveHour.usedPercent" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.windowReset">Fenster-Reset</span>
-              <input type="datetime-local" name="gemini.fiveHour.resetsAt" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.weekUsed">Woche genutzt (%)</span>
-              <input type="number" min="0" max="100" step="1" name="gemini.weekly.usedPercent" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.weekReset">Wochen-Reset</span>
-              <input type="datetime-local" name="gemini.weekly.resetsAt" />
-            </label>
-          </fieldset>
-          <fieldset>
-            <legend>GPT / OpenAI</legend>
-            <label class="field">
-              <span data-i18n="settings.fields.plan">Plan</span>
-              <input type="text" name="openai.planType" placeholder="Pro" />
-            </label>
-            <label class="field check-field">
-              <span data-i18n="settings.fields.showCredits">Guthaben anzeigen</span>
-              <input type="checkbox" name="openai.credits.enabled" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.creditsSpent">Verbrauchtes Guthaben (EUR)</span>
-              <input type="number" min="0" step="0.01" name="openai.credits.spentAmount" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.monthlyLimit">Monatslimit (EUR)</span>
-              <input type="number" min="0" step="0.01" name="openai.credits.monthlyLimitAmount" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.currentCredit">Aktuelles Guthaben (EUR)</span>
-              <input type="number" min="0" step="0.01" name="openai.credits.currentCreditAmount" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.fields.creditReset">Guthaben-Reset</span>
-              <input type="datetime-local" name="openai.credits.resetsAt" />
-            </label>
-            <label class="field check-field">
-              <span data-i18n="settings.fields.autoTopUp">Automatisch aufladen</span>
-              <input type="checkbox" name="openai.credits.autoTopUp" />
-            </label>
-          </fieldset>
-        </div>
-        <div class="modal-actions settings-actions">
-          <button class="text-button" type="submit" data-i18n="actions.save">Speichern</button>
-        </div>
-      </form>
+      </div>
     </dialog>
   </body>
 </html>

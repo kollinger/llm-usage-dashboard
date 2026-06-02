@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Aġġorna",
     "settings": "Settings",
-    "close": "Agħlaq",
-    "save": "Issejvja"
+    "close": "Agħlaq"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark tokens 24h",
       "logTokens24h": "Log tokens 24h",
-      "manualCredits": "Krediti mdaħħla",
       "missingBackendKey": "Backend key nieqsa",
       "sevenDays": "7 ijiem",
       "noCodexSparkEvents": "Ma nstabux avvenimenti Codex 5.3 Spark.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Manwali",
     "empty": "Vojt",
     "not_configured": "Setup",
     "error": "Żball"
@@ -191,25 +188,6 @@
     "heading": "Settings",
     "language": {
       "label": "Lingwa"
-    },
-    "fields": {
-      "plan": "Pjan",
-      "currentSessionUsed": "Sessjoni attwali użata (%)",
-      "currentSessionReset": "Reset tas-sessjoni attwali",
-      "allModelsUsed": "Il-mudelli kollha użati (%)",
-      "allModelsReset": "Reset tal-mudelli kollha",
-      "claudeDesignUsed": "Claude Design użat (%)",
-      "claudeDesignReset": "Reset ta’ Claude Design",
-      "showCredits": "Uri krediti",
-      "creditsSpent": "Krediti minfuqa (EUR)",
-      "monthlyLimit": "Limit fix-xahar (EUR)",
-      "currentCredit": "Kreditu attwali (EUR)",
-      "creditReset": "Reset tal-kreditu",
-      "autoTopUp": "Top-up awtomatiku",
-      "windowUsed": "Tieqa użata (%)",
-      "windowReset": "Reset tat-tieqa",
-      "weekUsed": "Ġimgħa użata (%)",
-      "weekReset": "Reset tal-ġimgħa"
     },
     "claudeSetup": {
       "title": "Claude live limits",

@@ -33,7 +33,6 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
-  settingsForm: document.getElementById("settingsForm"),
   claudeSetupStatus: document.getElementById("claudeSetupStatus"),
   claudeSetupEnableBtn: document.getElementById("claudeSetupEnableBtn"),
   claudeSetupOpenBtn: document.getElementById("claudeSetupOpenBtn"),
@@ -374,7 +373,6 @@ function bindEvents() {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
   });
   els.loginForm.addEventListener("submit", login);
-  els.settingsForm.addEventListener("submit", saveSettings);
 }
 
 async function setLanguage(language) {
@@ -1027,11 +1025,9 @@ function normalizeApiProvider(id, provider) {
     cost: costs?.total,
     currency: costs?.currency,
     message:
-      provider?.status === "manual"
-        ? t("providers.messages.manualCredits")
-        : provider?.status === "not_configured"
-          ? t("providers.messages.missingBackendKey")
-          : provider?.error || "",
+      provider?.status === "not_configured"
+        ? t("providers.messages.missingBackendKey")
+        : provider?.error || "",
     foot
   };
 }
@@ -1700,48 +1696,8 @@ function parseDateOnly(value) {
 
 async function openSettings() {
   if (!state.auth?.authenticated) return els.loginDialog.showModal();
-  const manual = await fetchJson("/api/manual-limits");
-  fillSettings(manual);
   els.settingsDialog.showModal();
   await loadClaudeSetupStatus();
-}
-
-function fillSettings(manual) {
-  for (const element of els.settingsForm.elements) {
-    if (!element.name) continue;
-    const value = getPath(manual, element.name);
-    if (element.type === "checkbox") {
-      element.checked = Boolean(value);
-    } else if (element.type === "datetime-local") {
-      element.value = isoToLocalInput(value);
-    } else {
-      element.value = value ?? "";
-    }
-  }
-}
-
-async function saveSettings(event) {
-  event.preventDefault();
-  const payload = { claude: {}, gemini: {}, openai: {} };
-  for (const element of els.settingsForm.elements) {
-    if (!element.name) continue;
-    const value =
-      element.type === "checkbox"
-        ? element.checked
-        : element.type === "datetime-local"
-        ? localInputToIso(element.value)
-        : element.type === "number"
-          ? Number(element.value || 0)
-          : String(element.value || "").trim();
-    setPath(payload, element.name, value);
-  }
-  await fetchJson("/api/manual-limits", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  els.settingsDialog.close();
-  await loadUsage();
 }
 
 function closeDialogOnBackdrop(event) {
@@ -1895,31 +1851,6 @@ function clearClaudeSetupPoll() {
 
 function getPath(object, dotted) {
   return dotted.split(".").reduce((acc, key) => acc?.[key], object);
-}
-
-function setPath(object, dotted, value) {
-  const parts = dotted.split(".");
-  let cursor = object;
-  while (parts.length > 1) {
-    const key = parts.shift();
-    cursor[key] ||= {};
-    cursor = cursor[key];
-  }
-  cursor[parts[0]] = value;
-}
-
-function isoToLocalInput(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-}
-
-function localInputToIso(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 async function fetchJson(url, options = {}) {
@@ -2081,7 +2012,6 @@ function statusText(status) {
   return (
     {
       live: t("status.live"),
-      manual: t("status.manual"),
       empty: t("status.empty"),
       not_configured: t("status.not_configured"),
       error: t("status.error")

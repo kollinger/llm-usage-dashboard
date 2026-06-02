@@ -7,8 +7,7 @@
   "actions": {
     "refresh": "Atnaujinti",
     "settings": "Nustatymai",
-    "close": "Uždaryti",
-    "save": "Išsaugoti"
+    "close": "Uždaryti"
   },
   "auth": {
     "login": "Login",
@@ -94,7 +93,6 @@
     "messages": {
       "sparkTokens24h": "Spark žetonai 24h",
       "logTokens24h": "Žurnalo žetonai 24h",
-      "manualCredits": "Kreditai įvesti",
       "missingBackendKey": "Trūksta backend rakto",
       "sevenDays": "7 dienos",
       "noCodexSparkEvents": "Codex 5.3 Spark įvykių nerasta.",
@@ -123,7 +121,6 @@
   },
   "status": {
     "live": "Live",
-    "manual": "Rankinis",
     "empty": "Tuščia",
     "not_configured": "Sąranka",
     "error": "Klaida"
@@ -191,25 +188,6 @@
     "heading": "Nustatymai",
     "language": {
       "label": "Kalba"
-    },
-    "fields": {
-      "plan": "Planas",
-      "currentSessionUsed": "Dabartinė sesija panaudota (%)",
-      "currentSessionReset": "Dabartinės sesijos atstatymas",
-      "allModelsUsed": "Visi modeliai panaudoti (%)",
-      "allModelsReset": "Visų modelių atstatymas",
-      "claudeDesignUsed": "Claude Design panaudota (%)",
-      "claudeDesignReset": "Claude Design atstatymas",
-      "showCredits": "Rodyti kreditus",
-      "creditsSpent": "Išleisti kreditai (EUR)",
-      "monthlyLimit": "Mėnesio limitas (EUR)",
-      "currentCredit": "Dabartinis kreditas (EUR)",
-      "creditReset": "Kredito atstatymas",
-      "autoTopUp": "Automatinis papildymas",
-      "windowUsed": "Langas panaudotas (%)",
-      "windowReset": "Lango atstatymas",
-      "weekUsed": "Savaitė panaudota (%)",
-      "weekReset": "Savaitės atstatymas"
     },
     "claudeSetup": {
       "title": "Claude live limits",
