@@ -15,6 +15,7 @@ const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
+const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -54,6 +55,7 @@ const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS"
 const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("scripts", "copilot-quota-probe.mjs"));
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
+const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 
 const app = express();
 let currentDashboardUrl = null;
@@ -133,6 +135,14 @@ function isAuthed(req) {
 function authMiddleware(req, res, next) {
   if (isAuthed(req)) return next();
   return res.status(401).json({ error: "auth_required" });
+}
+
+function electronSyncMiddleware(req, res, next) {
+  if (!ELECTRON_SYNC_TOKEN) return res.status(403).json({ error: "electron_sync_disabled" });
+  if (req.get("x-llm-usage-sync-token") !== ELECTRON_SYNC_TOKEN) {
+    return res.status(401).json({ error: "electron_sync_forbidden" });
+  }
+  return next();
 }
 
 function hasOidcConfig() {
@@ -277,6 +287,15 @@ app.post("/api/claude/open", authMiddleware, async (_req, res) => {
     }));
   } catch (error) {
     sendApiError(res, error, "claude_open_failed");
+  }
+});
+
+app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res) => {
+  try {
+    const snapshot = await saveClaudeBrowserCreditsSnapshot(req.body || {});
+    res.json({ ok: true, snapshot });
+  } catch (error) {
+    sendApiError(res, error, "claude_browser_credits_save_failed");
   }
 });
 
@@ -556,6 +575,7 @@ async function readCodexUsage() {
   const liveRateLimits = await liveRateLimitsPromise;
   const liveCodexLimits = liveRateLimits?.codex ? codexRateLimitsFromLive(liveRateLimits.codex, "Codex") : null;
   const liveSparkLimits = liveRateLimits?.spark ? codexRateLimitsFromLive(liveRateLimits.spark, "Codex 5.3 Spark") : null;
+  const liveCodexCreditRows = codexCreditRowsFromLive(liveRateLimits?.codex);
 
   return {
     id: "codex",
@@ -573,6 +593,8 @@ async function readCodexUsage() {
     },
     liveRateLimits: liveRateLimits?.source || null,
     planType: liveRateLimits?.codex?.planType || null,
+    creditRows: liveCodexCreditRows,
+    creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
       ? {
           timestamp: latestEvent.timestamp,
@@ -1133,15 +1155,18 @@ async function readClaudeCodeUsage() {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
-  const [statusline, authStatus, settingsInfo, scriptInstalled, apiUsage] = await Promise.all([
-    readClaudeStatusline(),
-    readClaudeAuthStatus(),
-    readClaudeSettings(),
-    pathExists(CLAUDE_STATUSLINE_SCRIPT),
-    readClaudeOrgUsageFromApi().catch(() => null)
-  ]);
+  const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, apiUsage] =
+    await Promise.all([
+      readClaudeStatusline(),
+      readClaudeAuthStatus(),
+      readClaudeSettings(),
+      pathExists(CLAUDE_STATUSLINE_SCRIPT),
+      readClaudeBrowserCreditsSnapshot().catch(() => null),
+      readClaudeOrgUsageFromApi().catch(() => null)
+    ]);
   const planType = statusline?.planType || authStatus?.planType || null;
   const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
+  const resolvedCredits = hasUsageCredits(browserCredits?.credits) ? browserCredits.credits : statusline?.credits || null;
   let resolvedLimits = statusline?.limits || null;
   let limitSource = statusline?.limits ? "claude_statusline" : null;
   if (apiUsage) {
@@ -1227,6 +1252,7 @@ async function readClaudeCodeUsage() {
       hasLimits: Boolean(resolvedLimits),
       staleLimits: Boolean(statusline?.staleLimits)
     },
+    browserCredits: summarizeClaudeBrowserCredits(browserCredits),
     latest: latestEvent
       ? {
           timestamp: latestEvent.timestamp,
@@ -1245,10 +1271,11 @@ async function readClaudeCodeUsage() {
     limits: resolvedLimits,
     limitsUpdatedAt: statusline?.updatedAt || null,
     planType,
-    credits: statusline?.credits || null,
-    creditRows: buildCreditRows(statusline?.credits),
+    credits: resolvedCredits,
+    creditRows: buildCreditRows(resolvedCredits),
     limitSource,
     planSource: statusline?.planType ? "claude_statusline" : authStatus?.planType ? "claude_auth_status" : null,
+    creditSource: hasUsageCredits(browserCredits?.credits) ? browserCredits?.source || "browser" : statusline?.credits ? "claude_statusline" : null,
     message: claudeCodeStatusMessage(statusline),
     byModel: Array.from(modelMap.entries())
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
@@ -2402,6 +2429,23 @@ function codexRateLimitsFromLive(snapshot, labelPrefix) {
   };
 }
 
+function codexCreditRowsFromLive(snapshot) {
+  const credits = snapshot?.credits;
+  if (!credits || credits.hasCredits === false) return [];
+  if (credits.unlimited) {
+    return [{ key: "codexCredits", label: "Codex credits", valueLabel: "Unlimited" }];
+  }
+  const balance = Number(credits.balance);
+  if (!Number.isFinite(balance)) return [];
+  return [{ key: "codexCredits", label: "Codex credits", valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
+}
+
+function formatCodexCreditBalance(value) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
 function codexWindowFromLive(window, label) {
   if (!window) return null;
   const usedPercent = Number(window.usedPercent);
@@ -3041,6 +3085,53 @@ function parseJsonObjects(text) {
         }
       });
   }
+}
+
+async function readClaudeBrowserCreditsSnapshot() {
+  try {
+    const text = await fsp.readFile(CLAUDE_BROWSER_CREDITS_FILE, "utf8");
+    const data = JSON.parse(text);
+    return normalizeClaudeBrowserCreditsSnapshot(data);
+  } catch {
+    return null;
+  }
+}
+
+async function saveClaudeBrowserCreditsSnapshot(payload) {
+  const snapshot = normalizeClaudeBrowserCreditsSnapshot(payload);
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(CLAUDE_BROWSER_CREDITS_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+  return snapshot;
+}
+
+function normalizeClaudeBrowserCreditsSnapshot(payload) {
+  const extractedCredits = extractUsageCredits(payload?.credits) || extractUsageCredits(payload?.billingPayload) || payload?.credits || null;
+  const credits = sanitizeUsageCredits(extractedCredits);
+  return {
+    status: normalizeClaudeBrowserCreditsStatus(payload?.status, credits),
+    reason: String(payload?.reason || "").trim() || null,
+    source: String(payload?.source || "").trim() || null,
+    cookieName: String(payload?.cookieName || "").trim() || null,
+    updatedAt: normalizeOptionalDate(payload?.updatedAt) || new Date().toISOString(),
+    credits: hasUsageCredits(credits) ? credits : null
+  };
+}
+
+function normalizeClaudeBrowserCreditsStatus(value, credits) {
+  if (hasUsageCredits(credits)) return "available";
+  const normalized = String(value || "").trim().toLowerCase();
+  if (["available", "missing", "expired", "error", "unsupported"].includes(normalized)) return normalized;
+  return "missing";
+}
+
+function summarizeClaudeBrowserCredits(snapshot) {
+  if (!snapshot) return { status: "missing", reason: "not_synced", source: null, updatedAt: null };
+  return {
+    status: snapshot.status || "missing",
+    reason: snapshot.reason || null,
+    source: snapshot.source || null,
+    updatedAt: snapshot.updatedAt || null
+  };
 }
 
 async function appendOllamaUsageLog(event) {

@@ -104,7 +104,8 @@
       "claudeStatuslineNoQuotas": "Claude is sending data, but not official Pro/Max limit values yet.",
       "claudeStatuslineMissing": "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas.",
       "claudeLiveLimitsMissing": "Claude live limits are not set up yet. Open Settings to enable them once.",
-      "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them."
+      "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them.",
+      "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking."
     },
     "emptyState": {
       "eyebrow": "Provider",

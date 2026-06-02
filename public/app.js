@@ -743,6 +743,7 @@ function normalizeCodexProvider(codex) {
   const allTimeTokens = subtractTokenTotals(codex?.totals?.allTime, codex?.spark?.totals?.allTime);
   const limitRows = normalizeLimitRows(codex?.limits);
   const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
+  const creditRows = normalizeCreditRows(codex?.creditRows, codex?.credits);
   return {
     id: "codex",
     name: meta.name,
@@ -752,7 +753,7 @@ function normalizeCodexProvider(codex) {
     fiveHour: codex?.limits?.fiveHour || null,
     weekly: codex?.limits?.weekly || null,
     limitRows,
-    creditRows: [],
+    creditRows,
     planType: codex?.latest?.planType || codex?.planType || null,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
@@ -832,6 +833,7 @@ function normalizeLocalProvider(id, provider) {
     limitRows,
     creditRows,
     claudeSetup: id === "claudeCode" ? provider?.setup || null : null,
+    claudeBrowserCredits: id === "claudeCode" ? provider?.browserCredits || null : null,
     planType,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
@@ -1110,6 +1112,7 @@ function renderProvider(provider) {
         ? `<p class="provider-note">${escapeHtml(provider.message)}</p>`
         : ""}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
+      ${renderClaudeCreditHint(provider)}
       <div class="provider-foot">
         ${provider.foot
           .map(
@@ -1120,6 +1123,14 @@ function renderProvider(provider) {
       ${renderProviderAction(provider)}
     </article>
   `;
+}
+
+function renderClaudeCreditHint(provider) {
+  if (provider.id !== "claudeCode" || provider.creditRows?.length) return "";
+  const status = provider.claudeBrowserCredits?.status || "missing";
+  if (status === "available") return "";
+  const hint = t("providers.messages.claudeBrowserLoginHint", {}, "Log in to Claude.ai in your browser to enable credit tracking.");
+  return `<p class="provider-note">${escapeHtml(hint)}</p>`;
 }
 
 function renderProviderAction(provider) {

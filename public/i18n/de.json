@@ -104,7 +104,8 @@
       "claudeStatuslineNoQuotas": "Claude liefert Daten, aber noch keine offiziellen Pro/Max-Limitwerte.",
       "claudeStatuslineMissing": "Claude-Statusline nicht eingerichtet. Aktiviere den Dashboard-Statusline-Befehl für Live-Quotas bei Pro/Max.",
       "claudeLiveLimitsMissing": "Claude-Live-Limits sind noch nicht eingerichtet. Öffne die Einstellungen und aktiviere sie einmal.",
-      "claudeLimitsStale": "Claude-Live-Limits sind veraltet. Öffne Claude Code einmal, damit neue Werte geschrieben werden."
+      "claudeLimitsStale": "Claude-Live-Limits sind veraltet. Öffne Claude Code einmal, damit neue Werte geschrieben werden.",
+      "claudeBrowserLoginHint": "Bei Claude.ai im Browser anmelden, um die Guthabenanzeige zu aktivieren."
     },
     "emptyState": {
       "eyebrow": "Anbieter",
