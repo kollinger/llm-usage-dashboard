@@ -2085,15 +2085,17 @@ function findGeminiUsageMetadata(event) {
       object.promptTokenCount !== undefined ||
       object.candidatesTokenCount !== undefined ||
       object.totalTokenCount !== undefined ||
-      object.thoughtsTokenCount !== undefined;
+      object.thoughtsTokenCount !== undefined ||
+      object.tokens?.total !== undefined;
     const hasSnake =
       object.prompt_token_count !== undefined ||
       object.candidates_token_count !== undefined ||
       object.total_token_count !== undefined ||
+      object.tokens?.total !== undefined ||
       object.thoughts_token_count !== undefined;
     return hasCamel || hasSnake || object.usageMetadata !== undefined || object.usage_metadata !== undefined;
   });
-  return wrapper?.usageMetadata || wrapper?.usage_metadata || findFirstObject(event, (object) => {
+  return wrapper?.usageMetadata || wrapper?.usage_metadata || wrapper?.tokens || findFirstObject(event, (object) => {
     return (
       object.promptTokenCount !== undefined ||
       object.candidatesTokenCount !== undefined ||
@@ -2106,16 +2108,20 @@ function findGeminiUsageMetadata(event) {
 }
 
 function normalizeGeminiUsage(usage) {
-  const input = Number(usage.promptTokenCount ?? usage.prompt_token_count ?? 0);
-  const cached = Number(usage.cachedContentTokenCount ?? usage.cached_content_token_count ?? 0);
-  const output = Number(usage.candidatesTokenCount ?? usage.candidates_token_count ?? 0);
-  const thoughts = Number(usage.thoughtsTokenCount ?? usage.thoughts_token_count ?? 0);
+  const tokenStats = usage.tokens || usage;
+  const input = Number(tokenStats.promptTokenCount ?? tokenStats.prompt_token_count ?? tokenStats.prompt ?? tokenStats.input ?? 0);
+  const cached = Number(tokenStats.cachedContentTokenCount ?? tokenStats.cached_content_token_count ?? tokenStats.cached ?? 0);
+  const output = Number(
+    tokenStats.candidatesTokenCount ?? tokenStats.candidates_token_count ?? tokenStats.candidates ?? tokenStats.output ?? 0
+  );
+  const thoughts = Number(tokenStats.thoughtsTokenCount ?? tokenStats.thoughts_token_count ?? tokenStats.thoughts ?? 0);
+  const total = Number(tokenStats.totalTokenCount ?? tokenStats.total_token_count ?? tokenStats.total);
   return {
     input_tokens: input,
     cached_input_tokens: cached,
     output_tokens: output,
     reasoning_output_tokens: thoughts,
-    total_tokens: Number(usage.totalTokenCount ?? usage.total_token_count ?? input + cached + output + thoughts)
+    total_tokens: Number.isFinite(total) && total > 0 ? total : input + cached + output + thoughts
   };
 }
 

@@ -238,7 +238,7 @@ The dashboard does not read Claude prompt text, tool inputs, tool outputs, full 
 
 ### Gemini
 
-Gemini usage is read from local metadata fields such as `usageMetadata` or `usage_metadata` in known Gemini paths:
+Gemini usage is read from local metadata fields such as `usageMetadata`, `usage_metadata`, or Gemini CLI `tokens` stats in known Gemini paths:
 
 ```text
 ~/.gemini/telemetry.log
