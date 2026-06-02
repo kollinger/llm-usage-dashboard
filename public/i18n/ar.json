@@ -157,6 +157,7 @@
     "currentSession": "الجلسة الحالية",
     "allModels": "كل النماذج",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Sonnet فقط",
     "default": "الحد",
     "resetPrefix": "إعادة ضبط {time}",
     "usedValue": "{percent}% مستخدم",

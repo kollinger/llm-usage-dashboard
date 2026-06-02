@@ -157,6 +157,7 @@
     "currentSession": "Sessjoni attwali",
     "allModels": "Il-mudelli kollha",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Biss Sonnet",
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% użat",

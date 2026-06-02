@@ -157,6 +157,7 @@
     "currentSession": "Aktuální relace",
     "allModels": "Všechny modely",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Pouze Sonnet",
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% využito",

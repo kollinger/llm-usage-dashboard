@@ -157,6 +157,7 @@
     "currentSession": "Seisiún reatha",
     "allModels": "Gach samhail",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Sonnet amháin",
     "default": "Teorainn",
     "resetPrefix": "Athshocrú {time}",
     "usedValue": "{percent}% úsáidte",

@@ -157,6 +157,7 @@
     "currentSession": "Nykyinen istunto",
     "allModels": "Kaikki mallit",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Vain Sonnet",
     "default": "Raja",
     "resetPrefix": "Nollaus {time}",
     "usedValue": "{percent}% käytetty",

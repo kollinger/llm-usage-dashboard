@@ -157,6 +157,7 @@
     "currentSession": "Текущая сессия",
     "allModels": "Все модели",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Только Sonnet",
     "default": "Лимит",
     "resetPrefix": "Сброс {time}",
     "usedValue": "{percent}% использовано",

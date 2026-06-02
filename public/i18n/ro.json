@@ -157,6 +157,7 @@
     "currentSession": "Sesiune curentă",
     "allModels": "Toate modelele",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Doar Sonnet",
     "default": "Limită",
     "resetPrefix": "Resetare {time}",
     "usedValue": "{percent}% utilizat",

@@ -157,6 +157,7 @@
     "currentSession": "Dabartinė sesija",
     "allModels": "Visi modeliai",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Tik Sonnet",
     "default": "Limitas",
     "resetPrefix": "Atstatymas {time}",
     "usedValue": "{percent}% panaudota",

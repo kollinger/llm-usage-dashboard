@@ -6,6 +6,7 @@ const path = require("node:path");
 const os = require("node:os");
 const readline = require("node:readline");
 const crypto = require("node:crypto");
+const https = require("node:https");
 const { spawn, spawnSync } = require("node:child_process");
 const express = require("express");
 const session = require("express-session");
@@ -26,6 +27,14 @@ const CLAUDE_HOME = expandHome(process.env.CLAUDE_HOME || path.join(os.homedir()
 const CLAUDE_SETTINGS_FILE = path.join(CLAUDE_HOME, "settings.json");
 const CLAUDE_STATUSLINE_FILE = path.join(CLAUDE_HOME, "usage-dashboard-statusline.json");
 const CLAUDE_STATUSLINE_SCRIPT = path.join(CLAUDE_HOME, "llm-usage-statusline-capture.js");
+const CLAUDE_APP_COOKIES = path.join(
+  os.homedir(),
+  "Library",
+  "Application Support",
+  "Claude",
+  "Cookies"
+);
+const CLAUDE_API_USAGE_TIMEOUT_MS = 5000;
 const DEFAULT_CLAUDE_SETUP_PROMPT =
   "Reply briefly: The LLM Usage setup check was triggered. If this answer is visible, return to the dashboard; the Claude limits should update within a few seconds.";
 const GEMINI_HOME = expandHome(process.env.GEMINI_HOME || path.join(os.homedir(), ".gemini"));
@@ -976,6 +985,106 @@ function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, l
   };
 }
 
+function readClaudeAppCookies() {
+  if (!fs.existsSync(CLAUDE_APP_COOKIES)) return null;
+  const keyResult = spawnSync(
+    "security",
+    ["find-generic-password", "-s", "Claude Safe Storage", "-a", "Claude", "-w"],
+    { encoding: "utf8", timeout: 3000 }
+  );
+  if (keyResult.status !== 0 || !keyResult.stdout.trim()) return null;
+  const keychainPw = keyResult.stdout.trim();
+
+  const sqlResult = spawnSync(
+    "sqlite3",
+    [
+      CLAUDE_APP_COOKIES,
+      'SELECT name, hex(encrypted_value) FROM cookies WHERE name IN ("sessionKey","lastActiveOrg")'
+    ],
+    { encoding: "utf8", timeout: 3000 }
+  );
+  if (sqlResult.status !== 0 || !sqlResult.stdout.trim()) return null;
+
+  const cookies = {};
+  for (const line of sqlResult.stdout.trim().split("\n")) {
+    const sep = line.indexOf("|");
+    if (sep === -1) continue;
+    const name = line.slice(0, sep);
+    const hex = line.slice(sep + 1).trim();
+    if (!hex) continue;
+    try {
+      const encBuf = Buffer.from(hex, "hex");
+      if (encBuf.slice(0, 3).toString() !== "v10") continue;
+      const key = crypto.pbkdf2Sync(keychainPw, "saltysalt", 1003, 16, "sha1");
+      const iv = Buffer.alloc(16, 0x20);
+      const decipher = crypto.createDecipheriv("aes-128-cbc", key, iv);
+      const decrypted = Buffer.concat([decipher.update(encBuf.slice(3)), decipher.final()]);
+      // v10 decrypted output has a 32-byte prefix before the actual cookie value.
+      cookies[name] = decrypted.slice(32).toString("utf8");
+    } catch {
+      // Skip cookies that fail to decrypt.
+    }
+  }
+  return cookies.sessionKey && cookies.lastActiveOrg ? cookies : null;
+}
+
+async function readClaudeOrgUsageFromApi() {
+  try {
+    const cookies = readClaudeAppCookies();
+    if (!cookies) return null;
+    return await new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(null), CLAUDE_API_USAGE_TIMEOUT_MS);
+      const req = https.request(
+        {
+          hostname: "claude.ai",
+          path: `/api/organizations/${cookies.lastActiveOrg}/usage`,
+          method: "GET",
+          headers: {
+            Cookie: `sessionKey=${cookies.sessionKey}`,
+            "User-Agent":
+              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/136.0.0.0 Safari/537.36",
+            Accept: "application/json"
+          }
+        },
+        (res) => {
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+          res.on("end", () => {
+            clearTimeout(timer);
+            if (res.statusCode !== 200) {
+              resolve(null);
+              return;
+            }
+            try {
+              resolve(JSON.parse(data));
+            } catch {
+              resolve(null);
+            }
+          });
+        }
+      );
+      req.on("error", () => {
+        clearTimeout(timer);
+        resolve(null);
+      });
+      req.end();
+    });
+  } catch {
+    return null;
+  }
+}
+
+function claudeApiWindowToLimitWindow(apiWindow, label, windowMinutes) {
+  if (!apiWindow || apiWindow.utilization == null) return null;
+  return claudeLimitWindow(
+    { used_percentage: apiWindow.utilization, resets_at: apiWindow.resets_at },
+    label,
+    windowMinutes
+  );
+}
+
 async function readClaudeCodeUsage() {
   const files = await listJsonlFiles(path.join(CLAUDE_HOME, "projects"));
   const seen = new Set();
@@ -1024,14 +1133,68 @@ async function readClaudeCodeUsage() {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
-  const [statusline, authStatus, settingsInfo, scriptInstalled] = await Promise.all([
+  const [statusline, authStatus, settingsInfo, scriptInstalled, apiUsage] = await Promise.all([
     readClaudeStatusline(),
     readClaudeAuthStatus(),
     readClaudeSettings(),
-    pathExists(CLAUDE_STATUSLINE_SCRIPT)
+    pathExists(CLAUDE_STATUSLINE_SCRIPT),
+    readClaudeOrgUsageFromApi().catch(() => null)
   ]);
   const planType = statusline?.planType || authStatus?.planType || null;
   const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
+  let resolvedLimits = statusline?.limits || null;
+  let limitSource = statusline?.limits ? "claude_statusline" : null;
+  if (apiUsage) {
+    if (resolvedLimits) {
+      const apiFiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
+      const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
+      const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
+      let updated = false;
+      if (apiFiveHour && !apiFiveHour.expired) {
+        resolvedLimits = { ...resolvedLimits, fiveHour: apiFiveHour, currentSession: apiFiveHour };
+        updated = true;
+      }
+      if (apiWeekly && !apiWeekly.expired) {
+        resolvedLimits = { ...resolvedLimits, weekly: apiWeekly, allModels: apiWeekly };
+        updated = true;
+      }
+      if (apiSonnet && !apiSonnet.expired) {
+        resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
+        updated = true;
+      }
+      if (updated) {
+        resolvedLimits.rows = buildLimitRows(resolvedLimits, [
+          "fiveHour",
+          "weekly",
+          "claudeDesign",
+          "sonnetOnly"
+        ]);
+        limitSource = "claude_api";
+      }
+    } else {
+      const fiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
+      const weekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
+      const sonnetOnly = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
+      if (fiveHour || weekly || sonnetOnly) {
+        resolvedLimits = {
+          fiveHour: fiveHour && !fiveHour.expired ? fiveHour : null,
+          weekly: weekly && !weekly.expired ? weekly : null,
+          currentSession: fiveHour && !fiveHour.expired ? fiveHour : null,
+          allModels: weekly && !weekly.expired ? weekly : null,
+          claudeDesign: null,
+          sonnetOnly: sonnetOnly && !sonnetOnly.expired ? sonnetOnly : null
+        };
+        resolvedLimits.rows = buildLimitRows(resolvedLimits, [
+          "fiveHour",
+          "weekly",
+          "claudeDesign",
+          "sonnetOnly"
+        ]);
+        if (hasActiveClaudeLimits(resolvedLimits)) limitSource = "claude_api";
+        else resolvedLimits = null;
+      }
+    }
+  }
   return {
     id: "claudeCode",
     status: latestEvent ? "live" : "empty",
@@ -1061,7 +1224,7 @@ async function readClaudeCodeUsage() {
       settingsError: settingsInfo.error || null,
       scriptInstalled,
       statusFileFound: Boolean(statusline?.found),
-      hasLimits: Boolean(statusline?.limits),
+      hasLimits: Boolean(resolvedLimits),
       staleLimits: Boolean(statusline?.staleLimits)
     },
     latest: latestEvent
@@ -1079,12 +1242,12 @@ async function readClaudeCodeUsage() {
         }
       : null,
     totals: finalizeUsageAccumulator(usage),
-    limits: statusline?.limits || null,
+    limits: resolvedLimits,
     limitsUpdatedAt: statusline?.updatedAt || null,
     planType,
     credits: statusline?.credits || null,
     creditRows: buildCreditRows(statusline?.credits),
-    limitSource: statusline?.limits ? "claude_statusline" : null,
+    limitSource,
     planSource: statusline?.planType ? "claude_statusline" : authStatus?.planType ? "claude_auth_status" : null,
     message: claudeCodeStatusMessage(statusline),
     byModel: Array.from(modelMap.entries())
@@ -1913,9 +2076,10 @@ function extractClaudeRateLimits(rateLimits) {
   if (official) {
     const limits = {
       ...official,
-      claudeDesign: fallback?.claudeDesign || null
+      claudeDesign: fallback?.claudeDesign || null,
+      sonnetOnly: fallback?.sonnetOnly || null
     };
-    limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "claudeDesign"]);
+    limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "claudeDesign", "sonnetOnly"]);
     return limits;
   }
   return fallback;
@@ -1966,10 +2130,17 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     "Claude Design",
     10080
   );
-  const staleWindows = staleClaudeWindows(currentSessionCandidate, allModelsCandidate, claudeDesignCandidate);
+  const sonnetOnlyCandidate = claudeLimitWindow(
+    findClaudeLimit(weeklyRoot, ["sonnet_only", "sonnetOnly", "sonnet", "claude_sonnet", "claudeSonnet", "nur_sonnet"]) ||
+      findClaudeLimit(rateLimits, ["sonnet_only", "sonnetOnly", "sonnet", "claude_sonnet", "claudeSonnet", "nur_sonnet"]),
+    "Nur Sonnet",
+    10080
+  );
+  const staleWindows = staleClaudeWindows(currentSessionCandidate, allModelsCandidate, claudeDesignCandidate, sonnetOnlyCandidate);
   const currentSession = freshClaudeWindow(currentSessionCandidate);
   const allModels = freshClaudeWindow(allModelsCandidate);
   const claudeDesign = freshClaudeWindow(claudeDesignCandidate);
+  const sonnetOnly = freshClaudeWindow(sonnetOnlyCandidate);
   const weeklyCandidate = allModelsCandidate || claudeLimitWindow(findClaudeLimit(rateLimits, ["weekly"]), "Woche", 10080);
   const weekly = freshClaudeWindow(weeklyCandidate);
   if (!allModelsCandidate && weeklyCandidate?.expired) staleWindows.push(weeklyCandidate.label);
@@ -1979,11 +2150,12 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     weekly,
     currentSession,
     allModels,
-    claudeDesign
+    claudeDesign,
+    sonnetOnly
   };
   if (staleWindows.length) limits.staleWindows = staleWindows;
-  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign"]);
-  if (!fiveHour && !weekly && !claudeDesign && !staleWindows.length) return null;
+  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign", "sonnetOnly"]);
+  if (!fiveHour && !weekly && !claudeDesign && !sonnetOnly && !staleWindows.length) return null;
   return limits;
 }
 
@@ -2061,6 +2233,7 @@ function hasActiveClaudeLimits(limits) {
         limits.currentSession ||
         limits.allModels ||
         limits.claudeDesign ||
+        limits.sonnetOnly ||
         limits.rows?.length)
   );
 }

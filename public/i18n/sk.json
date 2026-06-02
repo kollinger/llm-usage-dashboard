@@ -157,6 +157,7 @@
     "currentSession": "Aktuálna relácia",
     "allModels": "Všetky modely",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Iba Sonnet",
     "default": "Limit",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% použité",

@@ -157,6 +157,7 @@
     "currentSession": "Τρέχουσα συνεδρία",
     "allModels": "Όλα τα μοντέλα",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Μόνο Sonnet",
     "default": "Όριο",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% χρησιμοποιήθηκε",

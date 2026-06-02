@@ -157,6 +157,7 @@
     "currentSession": "Trenutačna sesija",
     "allModels": "Svi modeli",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Samo Sonnet",
     "default": "Ograničenje",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% iskorišteno",

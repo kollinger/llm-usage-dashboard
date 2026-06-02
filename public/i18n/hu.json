@@ -157,6 +157,7 @@
     "currentSession": "Aktuális munkamenet",
     "allModels": "Minden modell",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Csak Sonnet",
     "default": "Korlát",
     "resetPrefix": "Visszaállítás {time}",
     "usedValue": "{percent}% felhasználva",

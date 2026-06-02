@@ -157,6 +157,7 @@
     "currentSession": "Trenutna seja",
     "allModels": "Vsi modeli",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Samo Sonnet",
     "default": "Omejitev",
     "resetPrefix": "Ponastavitev {time}",
     "usedValue": "{percent}% uporabljeno",

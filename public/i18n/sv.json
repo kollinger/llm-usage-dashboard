@@ -157,6 +157,7 @@
     "currentSession": "Aktuell session",
     "allModels": "Alla modeller",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Endast Sonnet",
     "default": "Gräns",
     "resetPrefix": "Återställning {time}",
     "usedValue": "{percent}% använt",

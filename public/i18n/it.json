@@ -157,6 +157,7 @@
     "currentSession": "Sessione attuale",
     "allModels": "Tutti i modelli",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Solo Sonnet",
     "default": "Limite",
     "resetPrefix": "Reset {time}",
     "usedValue": "{percent}% usato",

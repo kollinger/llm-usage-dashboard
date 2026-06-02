@@ -157,6 +157,7 @@
     "currentSession": "Pašreizējā sesija",
     "allModels": "Visi modeļi",
     "claudeDesign": "Claude Design",
+    "sonnetOnly": "Tikai Sonnet",
     "default": "Limits",
     "resetPrefix": "Atiestatīšana {time}",
     "usedValue": "{percent}% izmantots",
