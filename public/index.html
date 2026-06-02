@@ -137,6 +137,26 @@
             <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>
           </label>
         </div>
+        <div class="settings-section">
+          <h3 data-i18n="settings.notifications.title">Desktop-Benachrichtigungen</h3>
+          <p class="settings-desc" data-i18n="settings.notifications.description">Warnung, wenn ein Limit-Fenster zu schnell aufgebraucht wird.</p>
+          <label class="field toggle-field">
+            <input type="checkbox" id="notificationsEnabled" />
+            <span data-i18n="settings.notifications.enabled">Benachrichtigungen aktivieren</span>
+          </label>
+          <div id="notificationThresholds" class="notification-thresholds" hidden>
+            <label class="field">
+              <span data-i18n="settings.notifications.pacingLabel">Tempo-Warnung bei projiziertem Verbrauch (%)</span>
+              <input type="number" id="notificationPacingPercent" min="50" max="200" step="5" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.notifications.hardLimitLabel">Harte Grenze bei Verbrauch (%)</span>
+              <input type="number" id="notificationHardLimitPercent" min="50" max="100" step="5" />
+            </label>
+          </div>
+          <button type="button" class="text-button" id="notificationSaveBtn" data-i18n="settings.notifications.save">Speichern</button>
+          <p class="settings-desc" id="notificationSaveStatus" hidden></p>
+        </div>
       </div>
     </dialog>
   </body>

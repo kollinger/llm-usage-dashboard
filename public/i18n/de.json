@@ -103,7 +103,7 @@
       "noCopilotSessionMetrics": "Keine lokalen Copilot-CLI-Session-Metriken gefunden.",
       "claudeStatuslineNoQuotas": "Claude liefert Daten, aber noch keine offiziellen Pro/Max-Limitwerte.",
       "claudeStatuslineMissing": "Claude-Statusline nicht eingerichtet. Aktiviere den Dashboard-Statusline-Befehl für Live-Quotas bei Pro/Max.",
-      "claudeLiveLimitsMissing": "Claude-Live-Limits sind noch nicht eingerichtet. Öffne die Einstellungen und aktiviere sie einmal.",
+      "claudeLiveLimitsMissing": "Claude Live-Limits sind derzeit nicht aus lokaler Telemetrie verfügbar.",
       "claudeLimitsStale": "Claude-Live-Limits sind veraltet. Öffne Claude Code einmal, damit neue Werte geschrieben werden.",
       "claudeBrowserLoginHint": "Bei Claude.ai im Browser anmelden, um die Guthabenanzeige zu aktivieren."
     },
@@ -191,26 +191,15 @@
     "language": {
       "label": "Sprache"
     },
-    "claudeSetup": {
-      "title": "Claude-Live-Limits",
-      "description": "Richtet Claude einmal ein und öffnet Claude Code mit einem kurzen Setup-Check, damit das Dashboard echte Pro/Max-Limits lesen kann.",
-      "statusLoading": "Setup wird geprüft...",
-      "statusNotConfigured": "Noch nicht eingerichtet. Ein Klick richtet es ein und öffnet Claude Code.",
-      "statusConfiguredWaiting": "Eingerichtet. Öffne Claude Code und sende eine kurze Nachricht, damit die Live-Limits erscheinen können.",
-      "statusCapturedNoQuotas": "Claude Code ist offen, aber es ist noch keine Claude-Antwort fertig. Sende den kurzen Setup-Check im Terminal und komm dann hierher zurück.",
-      "statusReady": "Live-Limits sind aktiv.",
-      "statusMissingClaude": "Claude Code wurde auf diesem Mac nicht gefunden.",
-      "statusSettingsInvalid": "Claude settings.json ist kein gültiges JSON. Bitte kurz manuell prüfen.",
-      "statusError": "Setup konnte nicht geprüft oder gespeichert werden.",
-      "enable": "Claude-Limits aktivieren",
-      "openClaude": "Claude Code öffnen",
-      "enabling": "Wird eingerichtet...",
-      "opening": "Claude Code wird geöffnet...",
-      "opened": "Claude Code ist mit einem kurzen Setup-Check geöffnet. Die App kommt gleich automatisch zurück und aktualisiert weiter.",
-      "openError": "Claude Code konnte nicht sicher als geöffnet bestätigt werden. Wenn Terminal trotzdem offen ist, sende dort eine kurze Nachricht und komm hierher zurück.",
-      "prompt": "Antworte kurz auf Deutsch: Der LLM-Usage-Setup-Check wurde ausgelöst. Wenn diese Antwort sichtbar ist, wechsel zurück ins Dashboard; die Claude-Limits sollten in wenigen Sekunden aktualisieren.",
-      "statusStale": "Claude-Limits sind veraltet. Öffne Claude Code kurz, damit frische Werte geschrieben werden.",
-      "refreshClaude": "Claude-Limits aktualisieren"
+    "notifications": {
+      "title": "Desktop-Benachrichtigungen",
+      "description": "Warnung, wenn ein Limit-Fenster bei aktuellem Tempo zu schnell aufgebraucht wird.",
+      "enabled": "Benachrichtigungen aktivieren",
+      "pacingLabel": "Tempo-Warnung bei projiziertem Verbrauch (%)",
+      "hardLimitLabel": "Harte Grenze bei Verbrauch (%)",
+      "save": "Speichern",
+      "saved": "Gespeichert.",
+      "saveError": "Konnte nicht gespeichert werden."
     }
   },
   "errors": {

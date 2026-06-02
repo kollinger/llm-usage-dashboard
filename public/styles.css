@@ -855,6 +855,51 @@ select {
   max-width: 280px;
 }
 
+.settings-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-section h3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.settings-desc {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin: 0 0 12px;
+}
+
+.toggle-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.notification-thresholds {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-thresholds input[type="number"] {
+  max-width: 120px;
+}
+
 .form-error {
   min-height: 1.2em;
   margin: 12px 0 0;
@@ -902,8 +947,7 @@ select {
   }
 
   .provider-grid,
-  .summary-strip,
-  .settings-grid {
+  .summary-strip {
     grid-template-columns: 1fr;
   }
 

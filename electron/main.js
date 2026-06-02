@@ -7,13 +7,17 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, Notification } = require("electron");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
 let mainWindow = null;
 let claudeBrowserSyncPending = null;
 
+// Cooldown tracking: key = windowLabel+type, value = timestamp last notified
+const notificationCooldowns = new Map();
+const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
 const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
@@ -94,6 +98,69 @@ function createWindow(port) {
 function closeServer(server) {
   if (!server?.listening) return;
   server.close();
+}
+
+function alertKey(alert) {
+  return `${alert.windowLabel}:${alert.type}`;
+}
+
+function buildNotificationBody(alert) {
+  if (alert.type === "hard_limit") {
+    return `${Math.round(alert.usedPercent)}% used. Limit nearly exhausted.`;
+  }
+  const parts = [`${Math.round(alert.usedPercent)}% used, pace projects ${alert.projectedPercent}%.`];
+  if (alert.exhaustInMinutes !== null && alert.exhaustInMinutes >= 0) {
+    const h = Math.floor(alert.exhaustInMinutes / 60);
+    const m = alert.exhaustInMinutes % 60;
+    parts.push(`Estimated exhaustion in ${h > 0 ? `${h}h ` : ""}${m}m.`);
+  }
+  return parts.join(" ");
+}
+
+async function checkNotifications(port) {
+  try {
+    const http = require("node:http");
+    const token = process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN;
+    if (!token) return;
+    const data = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: "localhost",
+        port,
+        path: "/api/notifications/check",
+        headers: { [CLAUDE_SYNC_TOKEN_HEADER]: token }
+      };
+      const req = http.get(options, (res) => {
+        let body = "";
+        res.on("data", (chunk) => { body += chunk; });
+        res.on("end", () => {
+          try { resolve(JSON.parse(body)); } catch { resolve(null); }
+        });
+      });
+      req.on("error", reject);
+      req.setTimeout(5000, () => { req.destroy(); reject(new Error("timeout")); });
+    });
+    if (!data?.alerts?.length) {
+      app.setBadgeCount?.(0);
+      return;
+    }
+    const now = Date.now();
+    for (const alert of data.alerts) {
+      const key = alertKey(alert);
+      const lastShown = notificationCooldowns.get(key) || 0;
+      if (now - lastShown < NOTIFICATION_COOLDOWN_MS) continue;
+      notificationCooldowns.set(key, now);
+      if (Notification.isSupported()) {
+        const title = `Limit warning: ${alert.windowLabel}`;
+        const body = buildNotificationBody(alert);
+        const n = new Notification({ title, body, silent: false });
+        n.on("click", () => mainWindow?.show());
+        n.show();
+      }
+    }
+    app.setBadgeCount?.(data.alerts.length);
+  } catch {
+    // Ignore errors silently; the server may not be ready yet.
+  }
 }
 
 async function syncClaudeBrowserCredits(port) {
@@ -630,6 +697,12 @@ app.whenReady().then(async () => {
   createWindow(port);
 
   syncClaudeBrowserCredits(port).catch(() => {});
+
+  // Start notification polling after a short initial delay
+  setTimeout(() => {
+    checkNotifications(port);
+    setInterval(() => checkNotifications(port), NOTIFICATION_POLL_INTERVAL_MS);
+  }, 10000);
   setInterval(() => {
     syncClaudeBrowserCredits(port).catch(() => {});
   }, CLAUDE_SYNC_INTERVAL_MS);

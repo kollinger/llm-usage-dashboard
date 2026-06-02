@@ -8,14 +8,7 @@ const state = {
   pricingSort: null,
   language: "en",
   translations: {},
-  fallbackTranslations: {},
-  claudeSetup: {
-    status: null,
-    loading: false,
-    opening: false,
-    pollTimer: null,
-    pollAttempts: 0
-  }
+  fallbackTranslations: {}
 };
 
 const els = {
@@ -33,9 +26,12 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
-  claudeSetupStatus: document.getElementById("claudeSetupStatus"),
-  claudeSetupEnableBtn: document.getElementById("claudeSetupEnableBtn"),
-  claudeSetupOpenBtn: document.getElementById("claudeSetupOpenBtn"),
+  notificationsEnabled: document.getElementById("notificationsEnabled"),
+  notificationThresholds: document.getElementById("notificationThresholds"),
+  notificationPacingPercent: document.getElementById("notificationPacingPercent"),
+  notificationHardLimitPercent: document.getElementById("notificationHardLimitPercent"),
+  notificationSaveBtn: document.getElementById("notificationSaveBtn"),
+  notificationSaveStatus: document.getElementById("notificationSaveStatus"),
   languageSelect: document.getElementById("languageSelect"),
   fiveHourOpen: document.getElementById("fiveHourOpen"),
   weeklyOpen: document.getElementById("weeklyOpen"),
@@ -361,13 +357,11 @@ function bindEvents() {
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
-  els.providerGrid.addEventListener("click", handleProviderActionClick);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.loginDialog.addEventListener("click", closeDialogOnBackdrop);
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
-  els.settingsDialog.addEventListener("close", clearClaudeSetupPoll);
-  els.claudeSetupEnableBtn?.addEventListener("click", enableClaudeSetup);
-  els.claudeSetupOpenBtn?.addEventListener("click", openClaudeCode);
+  els.notificationsEnabled?.addEventListener("change", onNotificationEnabledChange);
+  els.notificationSaveBtn?.addEventListener("click", saveNotificationSettings);
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
@@ -474,7 +468,6 @@ function rerenderLanguageSensitiveViews() {
   } else {
     updateProviderFilterControl([], []);
   }
-  renderClaudeSetupStatus(state.claudeSetup.status);
   refreshIcons();
 }
 
@@ -515,29 +508,6 @@ function toggleProviderFilter() {
     // Ignore storage failures; the toggle should still work for this session.
   }
   if (state.usage) render();
-}
-
-async function handleProviderActionClick(event) {
-  const button = event.target.closest("[data-provider-action]");
-  if (!button) return;
-  if (button.dataset.providerAction !== "claude-setup") return;
-  button.disabled = true;
-  try {
-    const status = await fetchJson("/api/claude/statusline-setup");
-    state.claudeSetup.status = status;
-    if (status?.configured) {
-      await openClaudeCode({ requireSettingsControls: false });
-    } else {
-      await enableClaudeSetup({ requireSettingsControls: false });
-    }
-  } finally {
-    button.disabled = false;
-    await loadUsage({ showIndicator: true });
-  }
-}
-
-function claudeSetupPrompt() {
-  return t("settings.claudeSetup.prompt");
 }
 
 async function loadAuth() {
@@ -832,7 +802,6 @@ function normalizeLocalProvider(id, provider) {
     weekly: hasLimits ? provider?.limits?.weekly || null : null,
     limitRows,
     creditRows,
-    claudeSetup: id === "claudeCode" ? provider?.setup || null : null,
     claudeBrowserCredits: id === "claudeCode" ? provider?.browserCredits || null : null,
     planType,
     primaryLabel: t("limits.fiveHour"),
@@ -960,7 +929,7 @@ function localizeProviderMessage(message, fallbackKey) {
     "Claude live data received, but no official Pro/Max quota values yet.": "providers.messages.claudeStatuslineNoQuotas",
     "Claude statusline not configured. Enable the dashboard statusline command for Pro/Max live quotas.":
       "providers.messages.claudeStatuslineMissing",
-    "Claude live limits are not set up yet. Open Settings to enable them once.":
+    "Claude live limits are not available from local telemetry yet.":
       "providers.messages.claudeLiveLimitsMissing",
     "Claude live limits are stale. Open Claude Code once to refresh them.":
       "providers.messages.claudeLimitsStale",
@@ -1108,9 +1077,6 @@ function renderProvider(provider) {
         <span class="status-pill ${statusClass}">${statusText(provider.status)}</span>
       </div>
       ${main}
-      ${provider.message && (provider.limitRows?.length || provider.fiveHour || provider.weekly)
-        ? `<p class="provider-note">${escapeHtml(provider.message)}</p>`
-        : ""}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
       <div class="provider-foot">
@@ -1120,7 +1086,6 @@ function renderProvider(provider) {
           )
           .join("")}
       </div>
-      ${renderProviderAction(provider)}
     </article>
   `;
 }
@@ -1129,33 +1094,9 @@ function renderClaudeCreditHint(provider) {
   if (provider.id !== "claudeCode" || provider.creditRows?.length) return "";
   const status = provider.claudeBrowserCredits?.status || "missing";
   if (status === "available") return "";
-  const hint = t("providers.messages.claudeBrowserLoginHint", {}, "Log in to Claude.ai in your browser to enable credit tracking.");
-  return `<p class="provider-note">${escapeHtml(hint)}</p>`;
-}
-
-function renderProviderAction(provider) {
-  if (provider.id !== "claudeCode" || !provider.claudeSetup?.claudeAvailable) return "";
-  const configured = Boolean(provider.claudeSetup.configured);
-  const hasLimits = Boolean(provider.claudeSetup.hasLimits);
-  const staleLimits = Boolean(provider.claudeSetup.staleLimits);
-  if (hasLimits && !staleLimits) return "";
-  const label = staleLimits
-    ? t("settings.claudeSetup.refreshClaude")
-    : configured
-      ? t("settings.claudeSetup.openClaude")
-      : t("settings.claudeSetup.enable");
-  const title = staleLimits
-    ? t("settings.claudeSetup.statusStale")
-    : configured
-      ? t("settings.claudeSetup.statusConfiguredWaiting")
-      : t("settings.claudeSetup.statusNotConfigured");
+  const hint = t("providers.messages.claudeBrowserLoginHint");
   return `
-    <button
-      class="text-button provider-action"
-      type="button"
-      data-provider-action="claude-setup"
-      title="${escapeHtml(title)}"
-    >${escapeHtml(label)}</button>
+    <p class="provider-note">${escapeHtml(hint)}</p>
   `;
 }
 
@@ -1709,7 +1650,50 @@ function parseDateOnly(value) {
 async function openSettings() {
   if (!state.auth?.authenticated) return els.loginDialog.showModal();
   els.settingsDialog.showModal();
-  await loadClaudeSetupStatus();
+  await loadNotificationSettings();
+}
+
+async function loadNotificationSettings() {
+  if (!els.notificationsEnabled) return;
+  try {
+    const settings = await fetchJson("/api/notifications/settings");
+    els.notificationsEnabled.checked = Boolean(settings.enabled);
+    if (els.notificationPacingPercent) els.notificationPacingPercent.value = settings.pacingPercent ?? 100;
+    if (els.notificationHardLimitPercent) els.notificationHardLimitPercent.value = settings.hardLimitPercent ?? 95;
+    if (els.notificationThresholds) els.notificationThresholds.hidden = !settings.enabled;
+  } catch {
+    // Ignore; notification settings are non-critical.
+  }
+}
+
+function onNotificationEnabledChange() {
+  if (els.notificationThresholds) els.notificationThresholds.hidden = !els.notificationsEnabled.checked;
+}
+
+async function saveNotificationSettings() {
+  if (!els.notificationsEnabled) return;
+  const payload = {
+    enabled: els.notificationsEnabled.checked,
+    pacingPercent: Number(els.notificationPacingPercent?.value ?? 100),
+    hardLimitPercent: Number(els.notificationHardLimitPercent?.value ?? 95)
+  };
+  try {
+    await fetchJson("/api/notifications/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (els.notificationSaveStatus) {
+      els.notificationSaveStatus.textContent = t("settings.notifications.saved");
+      els.notificationSaveStatus.hidden = false;
+      setTimeout(() => { if (els.notificationSaveStatus) els.notificationSaveStatus.hidden = true; }, 3000);
+    }
+  } catch {
+    if (els.notificationSaveStatus) {
+      els.notificationSaveStatus.textContent = t("settings.notifications.saveError");
+      els.notificationSaveStatus.hidden = false;
+    }
+  }
 }
 
 function closeDialogOnBackdrop(event) {
@@ -1720,145 +1704,6 @@ function closeDialogOnBackdrop(event) {
   const inside =
     event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
   if (!inside) event.currentTarget.close();
-}
-
-async function loadClaudeSetupStatus({ silent = false } = {}) {
-  if (!els.claudeSetupStatus) return null;
-  if (!silent) setClaudeSetupStatus(t("settings.claudeSetup.statusLoading"), "loading");
-  try {
-    const status = await fetchJson(`/api/claude/statusline-setup?ts=${Date.now()}`);
-    state.claudeSetup.status = status;
-    renderClaudeSetupStatus(status);
-    return status;
-  } catch (error) {
-    state.claudeSetup.status = { error: error.message };
-    setClaudeSetupStatus(t("settings.claudeSetup.statusError"), "error");
-    renderClaudeSetupControls();
-    return null;
-  }
-}
-
-async function enableClaudeSetup({ requireSettingsControls = true } = {}) {
-  if (requireSettingsControls && !els.claudeSetupEnableBtn) return;
-  clearClaudeSetupPoll();
-  state.claudeSetup.loading = true;
-  setClaudeSetupStatus(t("settings.claudeSetup.enabling"), "loading");
-  renderClaudeSetupControls();
-  try {
-    const status = await fetchJson("/api/claude/statusline-setup", { method: "POST" });
-    state.claudeSetup.status = status;
-    renderClaudeSetupStatus(status);
-    await openClaudeCode({ requireSettingsControls });
-    await loadUsage();
-  } catch (error) {
-    state.claudeSetup.status = { ...(state.claudeSetup.status || {}), error: error.message };
-    setClaudeSetupStatus(t("settings.claudeSetup.statusError"), "error");
-  } finally {
-    state.claudeSetup.loading = false;
-    renderClaudeSetupControls();
-  }
-}
-
-async function openClaudeCode({ requireSettingsControls = true } = {}) {
-  if (requireSettingsControls && !els.claudeSetupOpenBtn) return;
-  state.claudeSetup.opening = true;
-  setClaudeSetupStatus(t("settings.claudeSetup.opening"), "loading");
-  renderClaudeSetupControls();
-  try {
-    await fetchJson("/api/claude/open", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt: claudeSetupPrompt(), focusBackDelayMs: 10000 })
-    });
-    setClaudeSetupStatus(t("settings.claudeSetup.opened"), "loading");
-    scheduleClaudeSetupPoll({ requireSettingsOpen: requireSettingsControls });
-  } catch (error) {
-    state.claudeSetup.status = { ...(state.claudeSetup.status || {}), error: error.message };
-    setClaudeSetupStatus(t("settings.claudeSetup.openError"), "error");
-  } finally {
-    state.claudeSetup.opening = false;
-    renderClaudeSetupControls();
-  }
-}
-
-function renderClaudeSetupStatus(status) {
-  if (!els.claudeSetupStatus) return;
-  if (!status) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusLoading"), "loading");
-    renderClaudeSetupControls();
-    return;
-  }
-  if (status.error) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusError"), "error");
-  } else if (status.settingsError) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusSettingsInvalid"), "error");
-  } else if (!status.claudeAvailable) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusMissingClaude"), "error");
-  } else if (status.configured && status.staleLimits) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusStale"), "waiting");
-  } else if (status.configured && status.hasLimits) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusReady"), "ready");
-  } else if (status.configured && status.statusFileFound) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusCapturedNoQuotas"), "waiting");
-  } else if (status.configured) {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusConfiguredWaiting"), "waiting");
-  } else {
-    setClaudeSetupStatus(t("settings.claudeSetup.statusNotConfigured"), "waiting");
-  }
-  renderClaudeSetupControls();
-}
-
-function setClaudeSetupStatus(message, status) {
-  if (!els.claudeSetupStatus) return;
-  els.claudeSetupStatus.textContent = message;
-  els.claudeSetupStatus.dataset.status = status;
-}
-
-function renderClaudeSetupControls() {
-  const busy = state.claudeSetup.loading || state.claudeSetup.opening;
-  const configured = Boolean(state.claudeSetup.status?.configured);
-  if (els.claudeSetupEnableBtn) {
-    els.claudeSetupEnableBtn.hidden = configured && !state.claudeSetup.loading;
-    els.claudeSetupEnableBtn.disabled = busy;
-    els.claudeSetupEnableBtn.textContent = state.claudeSetup.loading
-      ? t("settings.claudeSetup.enabling")
-      : t("settings.claudeSetup.enable");
-  }
-  if (els.claudeSetupOpenBtn) {
-    els.claudeSetupOpenBtn.hidden = !configured && !state.claudeSetup.opening;
-    els.claudeSetupOpenBtn.disabled =
-      busy || !state.claudeSetup.status?.claudeAvailable || !configured;
-    els.claudeSetupOpenBtn.textContent = state.claudeSetup.opening
-      ? t("settings.claudeSetup.opening")
-      : t("settings.claudeSetup.openClaude");
-  }
-}
-
-function scheduleClaudeSetupPoll({ requireSettingsOpen = false } = {}) {
-  clearClaudeSetupPoll();
-  state.claudeSetup.pollAttempts = 0;
-  pollClaudeSetupSoon({ requireSettingsOpen });
-}
-
-function pollClaudeSetupSoon({ requireSettingsOpen = false } = {}) {
-  state.claudeSetup.pollTimer = window.setTimeout(async () => {
-    const status = await loadClaudeSetupStatus({ silent: true });
-    await loadUsage({ showIndicator: false });
-    state.claudeSetup.pollAttempts += 1;
-    const ready = status?.hasLimits && !status?.staleLimits;
-    const shouldContinue =
-      !ready &&
-      state.claudeSetup.pollAttempts < 10 &&
-      (!requireSettingsOpen || els.settingsDialog.open);
-    if (shouldContinue) {
-      pollClaudeSetupSoon({ requireSettingsOpen });
-    }
-  }, 4000);
-}
-
-function clearClaudeSetupPoll() {
-  if (state.claudeSetup.pollTimer) window.clearTimeout(state.claudeSetup.pollTimer);
-  state.claudeSetup.pollTimer = null;
 }
 
 function getPath(object, dotted) {

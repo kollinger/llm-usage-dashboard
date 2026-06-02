@@ -15,6 +15,7 @@ const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
+const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
@@ -296,6 +297,49 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
     res.json({ ok: true, snapshot });
   } catch (error) {
     sendApiError(res, error, "claude_browser_credits_save_failed");
+  }
+});
+
+app.get("/api/notifications/settings", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await readNotificationSettings());
+  } catch (error) {
+    sendApiError(res, error, "notification_settings_read_failed");
+  }
+});
+
+app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const current = await readNotificationSettings();
+    const updated = {
+      enabled: typeof body.enabled === "boolean" ? body.enabled : current.enabled,
+      pacingPercent: Number.isFinite(Number(body.pacingPercent))
+        ? Math.max(50, Math.min(200, Number(body.pacingPercent)))
+        : current.pacingPercent,
+      hardLimitPercent: Number.isFinite(Number(body.hardLimitPercent))
+        ? Math.max(50, Math.min(100, Number(body.hardLimitPercent)))
+        : current.hardLimitPercent
+    };
+    await saveNotificationSettings(updated);
+    res.json(updated);
+  } catch (error) {
+    sendApiError(res, error, "notification_settings_save_failed");
+  }
+});
+
+app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) => {
+  try {
+    const [settings, codex, claudeCode, copilot] = await Promise.all([
+      readNotificationSettings(),
+      readCodexUsage().catch(() => null),
+      readClaudeCodeUsage().catch(() => null),
+      readCopilotUsage().catch(() => null)
+    ]);
+    const alerts = settings.enabled ? buildNotificationAlerts(settings, { codex, claudeCode, copilot }) : [];
+    res.json({ alerts });
+  } catch (error) {
+    sendApiError(res, error, "notification_check_failed");
   }
 });
 
@@ -1289,7 +1333,7 @@ function claudeCodeStatusMessage(statusline) {
   if (statusline?.staleLimits) return "Claude live limits are stale. Open Claude Code once to refresh them.";
   if (statusline?.limits) return null;
   if (statusline?.found) return "Claude live data received, but no official Pro/Max quota values yet.";
-  return "Claude live limits are not set up yet. Open Settings to enable them once.";
+  return "Claude live limits are not available from local telemetry yet.";
 }
 
 async function readGeminiUsage() {
@@ -3087,6 +3131,25 @@ function parseJsonObjects(text) {
   }
 }
 
+async function readNotificationSettings() {
+  try {
+    const text = await fsp.readFile(NOTIFICATION_SETTINGS_FILE, "utf8");
+    const data = JSON.parse(text);
+    return {
+      enabled: typeof data.enabled === "boolean" ? data.enabled : true,
+      pacingPercent: Number.isFinite(Number(data.pacingPercent)) ? Number(data.pacingPercent) : 100,
+      hardLimitPercent: Number.isFinite(Number(data.hardLimitPercent)) ? Number(data.hardLimitPercent) : 95
+    };
+  } catch {
+    return { enabled: true, pacingPercent: 100, hardLimitPercent: 95 };
+  }
+}
+
+async function saveNotificationSettings(settings) {
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(NOTIFICATION_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+}
+
 async function readClaudeBrowserCreditsSnapshot() {
   try {
     const text = await fsp.readFile(CLAUDE_BROWSER_CREDITS_FILE, "utf8");
@@ -3132,6 +3195,91 @@ function summarizeClaudeBrowserCredits(snapshot) {
     source: snapshot.source || null,
     updatedAt: snapshot.updatedAt || null
   };
+}
+
+function buildNotificationAlerts(settings, usageMap) {
+  const alerts = [];
+  const now = Date.now();
+  const windows = collectNotificationWindows(usageMap);
+  for (const win of windows) {
+    const { label, usedPercent, windowMinutes, resetsAt } = win;
+    if (!Number.isFinite(usedPercent) || usedPercent < 0) continue;
+
+    // Hard limit check
+    if (usedPercent >= settings.hardLimitPercent) {
+      alerts.push({
+        type: "hard_limit",
+        windowLabel: label,
+        usedPercent,
+        resetsAt: resetsAt || null
+      });
+      continue;
+    }
+
+    // Pacing check: project current pace to end of window
+    if (resetsAt && Number.isFinite(windowMinutes) && windowMinutes > 0) {
+      const resetMs = Date.parse(resetsAt);
+      if (!Number.isFinite(resetMs) || resetMs <= now) continue;
+      const windowMs = windowMinutes * 60 * 1000;
+      const windowStartMs = resetMs - windowMs;
+      const elapsedMs = now - windowStartMs;
+      if (elapsedMs <= 0) continue;
+      const elapsedRatio = elapsedMs / windowMs;
+      // Require at least 5% of the window to have elapsed before projecting
+      if (elapsedRatio < 0.05) continue;
+      const projectedPercent = usedPercent / elapsedRatio;
+      if (projectedPercent >= settings.pacingPercent) {
+        const remainingMs = resetMs - now;
+        const exhaustMsFromNow = usedPercent < 100
+          ? (((100 - usedPercent) / usedPercent) * elapsedMs)
+          : 0;
+        alerts.push({
+          type: "pacing",
+          windowLabel: label,
+          usedPercent,
+          projectedPercent: Math.round(projectedPercent),
+          remainingMinutes: Math.round(remainingMs / 60000),
+          exhaustInMinutes: exhaustMsFromNow > 0 ? Math.round(exhaustMsFromNow / 60000) : null,
+          resetsAt: resetsAt || null
+        });
+      }
+    }
+  }
+  return alerts;
+}
+
+function collectNotificationWindows(usageMap) {
+  const windows = [];
+  for (const provider of Object.values(usageMap)) {
+    if (!provider || typeof provider !== "object") continue;
+    const candidates = [
+      provider.fiveHour,
+      provider.weekly,
+      provider.currentSession,
+      provider.allModels,
+      provider.limits?.fiveHour,
+      provider.limits?.weekly,
+      provider.limits?.currentSession,
+      provider.limits?.allModels,
+      provider.limits?.claudeDesign,
+      provider.limits?.sonnetOnly,
+      ...(provider.limitRows || []),
+      ...(provider.limits?.rows || []),
+      ...(provider.rows || [])
+    ];
+    for (const win of candidates) {
+      if (!win || typeof win !== "object") continue;
+      const usedPercent =
+        win.usedPercent ?? win.used_percent ?? win.usage_percentage ?? null;
+      const resetsAt = win.resetsAt ?? win.reset_at ?? null;
+      const windowMinutes = win.windowMinutes ?? win.window_minutes ?? null;
+      const label = win.label ?? win.limitLabel ?? win.name ?? win.limitName ?? "Limit";
+      if (usedPercent !== null && Number.isFinite(Number(usedPercent))) {
+        windows.push({ label, usedPercent: Number(usedPercent), windowMinutes: Number(windowMinutes || 0), resetsAt });
+      }
+    }
+  }
+  return windows;
 }
 
 async function appendOllamaUsageLog(event) {
