@@ -188,6 +188,15 @@ a {
   line-height: 1;
 }
 
+.metric-note {
+  display: block;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
 .provider-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

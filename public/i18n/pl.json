@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h dostępne",
     "weeklyOpen": "Tydzień dostępny",
     "tokensToday": "Tokeny zapisane dziś",
-    "tokensTotal": "Łącznie zapisane tokeny"
+    "tokensTotal": "Łącznie zapisane tokeny",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokalne logi",

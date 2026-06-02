@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h frei",
     "weeklyOpen": "Woche frei",
     "tokensToday": "Geloggte Tokens heute",
-    "tokensTotal": "Geloggte Tokens gesamt"
+    "tokensTotal": "Geloggte Tokens gesamt",
+    "recordDay": "Rekord-Tag: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokale Logs",

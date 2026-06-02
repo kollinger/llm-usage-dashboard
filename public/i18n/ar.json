@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h متاحة",
     "weeklyOpen": "الأسبوع متاح",
     "tokensToday": "التوكنات المسجلة اليوم",
-    "tokensTotal": "إجمالي التوكنات المسجلة"
+    "tokensTotal": "إجمالي التوكنات المسجلة",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "السجلات المحلية",

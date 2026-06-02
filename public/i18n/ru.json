@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h доступно",
     "weeklyOpen": "Неделя доступна",
     "tokensToday": "Токены, записанные сегодня",
-    "tokensTotal": "Всего записанных токенов"
+    "tokensTotal": "Всего записанных токенов",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Локальные логи",

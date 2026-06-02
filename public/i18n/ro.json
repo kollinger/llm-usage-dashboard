@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h disponibile",
     "weeklyOpen": "Săptămână disponibilă",
     "tokensToday": "Tokeni înregistrați azi",
-    "tokensTotal": "Total tokeni înregistrați"
+    "tokensTotal": "Total tokeni înregistrați",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Jurnale locale",

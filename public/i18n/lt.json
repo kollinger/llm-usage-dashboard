@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h pasiekiama",
     "weeklyOpen": "Savaitė pasiekiama",
     "tokensToday": "Šiandien įrašyti žetonai",
-    "tokensTotal": "Iš viso įrašyti žetonai"
+    "tokensTotal": "Iš viso įrašyti žetonai",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Vietiniai žurnalai",

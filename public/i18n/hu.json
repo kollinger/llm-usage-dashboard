@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h elérhető",
     "weeklyOpen": "Hét elérhető",
     "tokensToday": "Ma naplózott tokenek",
-    "tokensTotal": "Összes naplózott token"
+    "tokensTotal": "Összes naplózott token",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Helyi naplók",

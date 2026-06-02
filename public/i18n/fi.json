@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h käytettävissä",
     "weeklyOpen": "Viikko käytettävissä",
     "tokensToday": "Tänään lokitetut tokenit",
-    "tokensTotal": "Lokitetut tokenit yhteensä"
+    "tokensTotal": "Lokitetut tokenit yhteensä",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Paikalliset lokit",

@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h disponibles",
     "weeklyOpen": "Semaine disponible",
     "tokensToday": "Jetons enregistrés aujourd’hui",
-    "tokensTotal": "Total des jetons enregistrés"
+    "tokensTotal": "Total des jetons enregistrés",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Journaux locaux",

@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h k dispozici",
     "weeklyOpen": "Týden k dispozici",
     "tokensToday": "Dnes zalogované tokeny",
-    "tokensTotal": "Celkem zalogované tokeny"
+    "tokensTotal": "Celkem zalogované tokeny",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokální logy",

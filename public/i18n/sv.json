@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h tillgängligt",
     "weeklyOpen": "Vecka tillgänglig",
     "tokensToday": "Loggade tokens idag",
-    "tokensTotal": "Totalt loggade tokens"
+    "tokensTotal": "Totalt loggade tokens",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokala loggar",

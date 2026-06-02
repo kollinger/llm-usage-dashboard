@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h saadaval",
     "weeklyOpen": "Nädal saadaval",
     "tokensToday": "Täna logitud tokenid",
-    "tokensTotal": "Logitud tokeneid kokku"
+    "tokensTotal": "Logitud tokeneid kokku",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Kohalikud logid",

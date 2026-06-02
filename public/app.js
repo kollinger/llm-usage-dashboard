@@ -42,6 +42,7 @@ const els = {
   weeklyOpen: document.getElementById("weeklyOpen"),
   tokensToday: document.getElementById("tokensToday"),
   tokensTotal: document.getElementById("tokensTotal"),
+  recordDay: document.getElementById("recordDay"),
   chart: document.getElementById("chart"),
   chartLegend: document.getElementById("chartLegend"),
   sourceTotals: document.getElementById("sourceTotals"),
@@ -649,6 +650,8 @@ function renderLocked() {
   els.weeklyOpen.textContent = "--";
   els.tokensToday.textContent = "--";
   els.tokensTotal.textContent = "--";
+  els.recordDay.textContent = "";
+  els.recordDay.hidden = true;
   els.chart.innerHTML = "";
   els.chartLegend.innerHTML = "";
   els.sourceTotals.textContent = "--";
@@ -1273,6 +1276,28 @@ function renderSummary(providers, codex) {
   els.weeklyOpen.textContent = percentAverage(withWeekly.map((p) => p.weekly.remainingPercent));
   els.tokensToday.textContent = formatTokens(codex?.totals?.last24h?.totalTokens);
   els.tokensTotal.textContent = formatTokens(codex?.totals?.allTime?.totalTokens);
+  renderRecordDay(codex?.daily || []);
+}
+
+function renderRecordDay(daily) {
+  const record = findRecordDay(daily);
+  if (!record) {
+    els.recordDay.textContent = "";
+    els.recordDay.hidden = true;
+    return;
+  }
+  els.recordDay.textContent = t("summary.recordDay", {
+    date: formatFullDate(record.date),
+    tokens: formatTokens(record.totalTokens)
+  });
+  els.recordDay.hidden = false;
+}
+
+function findRecordDay(daily) {
+  return (Array.isArray(daily) ? daily : [])
+    .map((day) => ({ date: day.date, totalTokens: Number(day.totalTokens ?? day.totals?.totalTokens ?? 0) }))
+    .filter((day) => day.date && day.totalTokens > 0)
+    .sort((a, b) => b.totalTokens - a.totalTokens || String(b.date).localeCompare(String(a.date)))[0];
 }
 
 function renderTokenList(totals) {

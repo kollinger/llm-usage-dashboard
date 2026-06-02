@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h disponibbli",
     "weeklyOpen": "Ġimgħa disponibbli",
     "tokensToday": "Tokens illoggjati llum",
-    "tokensTotal": "Tokens illoggjati b’kollox"
+    "tokensTotal": "Tokens illoggjati b’kollox",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Logs lokali",

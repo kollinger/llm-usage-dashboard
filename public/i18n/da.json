@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h tilgængelig",
     "weeklyOpen": "Uge tilgængelig",
     "tokensToday": "Loggede tokens i dag",
-    "tokensTotal": "Loggede tokens i alt"
+    "tokensTotal": "Loggede tokens i alt",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokale logs",

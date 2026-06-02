@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h 可用",
     "weeklyOpen": "本周可用",
     "tokensToday": "今日记录的令牌",
-    "tokensTotal": "记录的令牌总数"
+    "tokensTotal": "记录的令牌总数",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "本地日志",

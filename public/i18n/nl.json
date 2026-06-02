@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h beschikbaar",
     "weeklyOpen": "Week beschikbaar",
     "tokensToday": "Vandaag gelogde tokens",
-    "tokensTotal": "Totaal gelogde tokens"
+    "tokensTotal": "Totaal gelogde tokens",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokale logs",

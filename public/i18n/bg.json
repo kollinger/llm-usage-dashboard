@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h налични",
     "weeklyOpen": "Седмица налична",
     "tokensToday": "Записани токени днес",
-    "tokensTotal": "Общо записани токени"
+    "tokensTotal": "Общо записани токени",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Локални логове",

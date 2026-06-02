@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h ar fáil",
     "weeklyOpen": "Seachtain ar fáil",
     "tokensToday": "Tokens logáilte inniu",
-    "tokensTotal": "Iomlán tokens logáilte"
+    "tokensTotal": "Iomlán tokens logáilte",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Logaí áitiúla",

@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h pieejams",
     "weeklyOpen": "Nedēļa pieejama",
     "tokensToday": "Šodien reģistrētie tokeni",
-    "tokensTotal": "Kopā reģistrētie tokeni"
+    "tokensTotal": "Kopā reģistrētie tokeni",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokālie žurnāli",

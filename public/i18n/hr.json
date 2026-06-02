@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h dostupno",
     "weeklyOpen": "Tjedan dostupan",
     "tokensToday": "Danas zabilježeni tokeni",
-    "tokensTotal": "Ukupno zabilježeni tokeni"
+    "tokensTotal": "Ukupno zabilježeni tokeni",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Lokalni zapisi",

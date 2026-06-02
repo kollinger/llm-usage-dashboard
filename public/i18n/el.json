@@ -29,7 +29,8 @@
     "fiveHourOpen": "5h διαθέσιμο",
     "weeklyOpen": "Εβδομάδα διαθέσιμη",
     "tokensToday": "Καταγεγραμμένα tokens σήμερα",
-    "tokensTotal": "Σύνολο καταγεγραμμένων tokens"
+    "tokensTotal": "Σύνολο καταγεγραμμένων tokens",
+    "recordDay": "Record day: {date} · {tokens}"
   },
   "chart": {
     "eyebrow": "Τοπικά logs",
