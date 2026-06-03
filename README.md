@@ -289,6 +289,14 @@ The pricing section is mainly a comparison view for local or consumer-style usag
 
 Model quality scores in the pricing table are an internal heuristic for quick sorting and visual comparison. They are not an official benchmark, not a provider claim, and should be recalibrated or removed when a better documented scoring method is adopted.
 
+Refresh the curated API price table and latest ECB USD/EUR reference rate with:
+
+```sh
+npm run pricing:update
+```
+
+The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing and model-quality signals before changing the review dates in that script.
+
 ## Implementation Status
 
 ### Implemented

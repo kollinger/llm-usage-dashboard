@@ -58,10 +58,10 @@ const providerMeta = {
   ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
 
-const USD_PER_EUR = 1.1595;
-const FX_DATE = "2026-05-22";
-const PRICING_DATE = "2026-05-29";
-const SCORE_DATE = "2026-05-29";
+const USD_PER_EUR = 1.1614;
+const FX_DATE = "2026-06-03";
+const PRICING_DATE = "2026-06-03";
+const SCORE_DATE = "2026-06-03";
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const LANGUAGE_OPTIONS = [
@@ -149,7 +149,7 @@ const pricingModels = [
   },
   {
     provider: "OpenAI",
-    model: "GPT-5.4-Mini",
+    model: "GPT-5.4 Mini",
     region: "Codex",
     inputUsd: 0.75,
     cachedInputUsd: 0.075,
@@ -165,7 +165,7 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI Codex",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://platform.openai.com/docs/pricing/"
   },
   {
     provider: "OpenAI",
@@ -175,7 +175,7 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI Codex",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/"
   },
   {
     provider: "OpenAI",
@@ -185,11 +185,11 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://platform.openai.com/docs/pricing/"
   },
   {
     provider: "Anthropic",
-    model: "Claude Opus 4.7",
+    model: "Claude Opus 4.8",
     region: "Global",
     inputUsd: 5,
     cacheWriteUsd: 6.25,
@@ -221,6 +221,17 @@ const pricingModels = [
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   {
+    provider: "MiniMax",
+    model: "MiniMax M3",
+    region: "<=512k 7d promo",
+    inputUsd: 0.3,
+    cachedInputUsd: 0.06,
+    outputUsd: 1.2,
+    source: "MiniMax",
+    sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
+    china: true
+  },
+  {
     provider: "Google",
     model: "Gemini 3.1 Pro Preview",
     region: "<=200k",
@@ -232,19 +243,28 @@ const pricingModels = [
   },
   {
     provider: "Google",
-    model: "Gemini 3 Flash Preview",
+    model: "Gemini 3.5 Flash",
     region: "Standard",
-    inputUsd: 0.5,
-    cachedInputUsd: 0.05,
-    outputUsd: 3,
+    inputUsd: 1.5,
+    cachedInputUsd: 0.15,
+    outputUsd: 9,
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing"
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.1 Flash-Lite",
+    region: "Standard",
+    inputUsd: 0.25,
+    cachedInputUsd: 0.025,
+    outputUsd: 1.5,
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing"
   },
   {
     provider: "DeepSeek",
     model: "DeepSeek V4 Pro",
-    region: "API Rabatt",
-    regionKey: "pricing.regions.apiDiscount",
+    region: "API",
     inputUsd: 0.435,
     cachedInputUsd: 0.003625,
     outputUsd: 0.87,
@@ -298,13 +318,24 @@ const pricingModels = [
   },
   {
     provider: "Z.AI",
-    model: "GLM-4.6",
+    model: "GLM-4.7",
     region: "Global",
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "StepFun",
+    model: "step-3.7-flash",
+    region: "API",
+    inputUsd: 0.2,
+    cachedInputUsd: 0.04,
+    outputUsd: 1.15,
+    source: "StepFun",
+    sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
     china: true
   },
   {
@@ -321,23 +352,26 @@ const pricingModels = [
 ];
 
 const modelQualityScores = {
-  "GPT-5.5": 100,
-  "GPT-5.4": 94,
-  "GPT-5.3-Codex": 90,
-  "GPT-5.3-Codex-Spark": 90,
-  "Claude Opus 4.7": 88,
-  "Gemini 3.1 Pro Preview": 87,
+  "Claude Opus 4.8": 100,
+  "GPT-5.5": 97,
+  "Gemini 3.1 Pro Preview": 94,
+  "GLM-5.1": 93,
+  "DeepSeek V4 Pro": 92,
+  "MiniMax M3": 88,
+  "GPT-5.4": 87,
+  "GPT-5.3-Codex": 86,
+  "GPT-5.3-Codex-Spark": 85,
   "Claude Sonnet 4.6": 84,
-  "GPT-5.2": 82,
-  "GPT-5.4-Mini": 76,
-  "GLM-5.1": 87,
-  "DeepSeek V4 Pro": 80,
-  "Qwen3-Max": 78,
-  "Gemini 3 Flash Preview": 74,
-  "GLM-4.6": 72,
-  "Qwen3.5-Plus": 69,
-  "DeepSeek V4 Flash": 66,
+  "Gemini 3.5 Flash": 83,
+  "GPT-5.2": 80,
+  "Qwen3-Max": 79,
+  "GPT-5.4 Mini": 77,
+  "GLM-4.7": 73,
+  "Qwen3.5-Plus": 70,
+  "step-3.7-flash": 68,
+  "DeepSeek V4 Flash": 67,
   "Claude Haiku 4.5": 64,
+  "Gemini 3.1 Flash-Lite": 62,
   "step-3.5-flash": 58
 };
 
