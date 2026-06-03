@@ -55,6 +55,8 @@ const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30
 const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS", 12);
 const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("scripts", "copilot-quota-probe.mjs"));
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
+const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
+const CLAUDE_API_USAGE_STALE_MS = envMs("CLAUDE_API_USAGE_STALE_SECONDS", 600);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 
@@ -63,6 +65,7 @@ let currentDashboardUrl = null;
 const anthropicCache = createTimedCache();
 const codexLiveRateLimitsCache = createTimedCache();
 const copilotLiveQuotaCache = createTimedCache();
+const claudeApiUsageCache = createTimedCache();
 let codexAppServer = null;
 
 app.use(express.json({ limit: "200kb" }));
@@ -1095,6 +1098,70 @@ function readClaudeAppCookies() {
 }
 
 async function readClaudeOrgUsageFromApi() {
+  const now = Date.now();
+  if (claudeApiUsageCache.value && now < claudeApiUsageCache.expiresAt) return claudeApiUsageCache.value;
+  if (claudeApiUsageCache.pending) return claudeApiUsageCache.pending;
+
+  claudeApiUsageCache.pending = Promise.resolve()
+    .then(fetchClaudeOrgUsageFromApi)
+    .then((usage) => {
+      if (usage) {
+        const value = {
+          ...usage,
+          updatedAt: usage.updatedAt || new Date().toISOString(),
+          cache: {
+            ...(usage.cache || {}),
+            stale: false
+          }
+        };
+        claudeApiUsageCache.value = value;
+        claudeApiUsageCache.expiresAt = Date.now() + CLAUDE_API_USAGE_CACHE_MS;
+        return value;
+      }
+      if (isClaudeApiUsageFreshEnoughForFallback(claudeApiUsageCache.value)) {
+        claudeApiUsageCache.value = {
+          ...claudeApiUsageCache.value,
+          cache: {
+            ...(claudeApiUsageCache.value.cache || {}),
+            stale: true,
+            staleReason: "claude_api_unavailable",
+            staleAt: new Date().toISOString()
+          }
+        };
+        claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
+        return claudeApiUsageCache.value;
+      }
+      return null;
+    })
+    .catch((error) => {
+      if (isClaudeApiUsageFreshEnoughForFallback(claudeApiUsageCache.value)) {
+        claudeApiUsageCache.value = {
+          ...claudeApiUsageCache.value,
+          cache: {
+            ...(claudeApiUsageCache.value.cache || {}),
+            stale: true,
+            staleReason: error.message,
+            staleAt: new Date().toISOString()
+          }
+        };
+        claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
+        return claudeApiUsageCache.value;
+      }
+      return null;
+    })
+    .finally(() => {
+      claudeApiUsageCache.pending = null;
+    });
+
+  return claudeApiUsageCache.pending;
+}
+
+function isClaudeApiUsageFreshEnoughForFallback(value) {
+  const updatedAtMs = Date.parse(value?.updatedAt || "");
+  return Number.isFinite(updatedAtMs) && Date.now() - updatedAtMs <= CLAUDE_API_USAGE_STALE_MS;
+}
+
+async function fetchClaudeOrgUsageFromApi() {
   try {
     const cookies = readClaudeAppCookies();
     if (!cookies) return null;
@@ -1124,7 +1191,10 @@ async function readClaudeOrgUsageFromApi() {
               return;
             }
             try {
-              resolve(JSON.parse(data));
+              resolve({
+                ...JSON.parse(data),
+                updatedAt: new Date().toISOString()
+              });
             } catch {
               resolve(null);
             }
@@ -1199,7 +1269,7 @@ async function readClaudeCodeUsage() {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
-  const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, apiUsage] =
+  const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, directApiUsage] =
     await Promise.all([
       readClaudeStatusline(),
       readClaudeAuthStatus(),
@@ -1208,10 +1278,15 @@ async function readClaudeCodeUsage() {
       readClaudeBrowserCreditsSnapshot().catch(() => null),
       readClaudeOrgUsageFromApi().catch(() => null)
     ]);
+  const browserSyncedApiUsage = browserCredits?.usage || null;
+  const apiUsage = directApiUsage || browserSyncedApiUsage;
+  const apiUsageSource = directApiUsage ? "claude_api" : browserSyncedApiUsage ? "claude_browser_sync" : null;
+  const apiUsageUpdatedAt = apiUsage?.updatedAt || null;
   const planType = statusline?.planType || authStatus?.planType || null;
   const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
   const resolvedCredits = hasUsageCredits(browserCredits?.credits) ? browserCredits.credits : statusline?.credits || null;
   let resolvedLimits = statusline?.limits || null;
+  let resolvedLimitsUpdatedAt = statusline?.updatedAt || null;
   let limitSource = statusline?.limits ? "claude_statusline" : null;
   if (apiUsage) {
     if (resolvedLimits) {
@@ -1238,7 +1313,8 @@ async function readClaudeCodeUsage() {
           "claudeDesign",
           "sonnetOnly"
         ]);
-        limitSource = "claude_api";
+        limitSource = apiUsageSource || "claude_api";
+        resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
       }
     } else {
       const fiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
@@ -1259,14 +1335,18 @@ async function readClaudeCodeUsage() {
           "claudeDesign",
           "sonnetOnly"
         ]);
-        if (hasActiveClaudeLimits(resolvedLimits)) limitSource = "claude_api";
-        else resolvedLimits = null;
+        if (hasActiveClaudeLimits(resolvedLimits)) {
+          limitSource = apiUsageSource || "claude_api";
+          resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
+        } else {
+          resolvedLimits = null;
+        }
       }
     }
   }
   return {
     id: "claudeCode",
-    status: latestEvent ? "live" : "empty",
+    status: latestEvent || resolvedLimits ? "live" : "empty",
     updatedAt: new Date().toISOString(),
     source: {
       claudeHome: CLAUDE_HOME,
@@ -1294,7 +1374,7 @@ async function readClaudeCodeUsage() {
       scriptInstalled,
       statusFileFound: Boolean(statusline?.found),
       hasLimits: Boolean(resolvedLimits),
-      staleLimits: Boolean(statusline?.staleLimits)
+      staleLimits: limitSource === "claude_statusline" && Boolean(statusline?.staleLimits)
     },
     browserCredits: summarizeClaudeBrowserCredits(browserCredits),
     latest: latestEvent
@@ -1313,14 +1393,14 @@ async function readClaudeCodeUsage() {
       : null,
     totals: finalizeUsageAccumulator(usage),
     limits: resolvedLimits,
-    limitsUpdatedAt: statusline?.updatedAt || null,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt,
     planType,
     credits: resolvedCredits,
     creditRows: buildCreditRows(resolvedCredits),
     limitSource,
     planSource: statusline?.planType ? "claude_statusline" : authStatus?.planType ? "claude_auth_status" : null,
     creditSource: hasUsageCredits(browserCredits?.credits) ? browserCredits?.source || "browser" : statusline?.credits ? "claude_statusline" : null,
-    message: claudeCodeStatusMessage(statusline),
+    message: claudeCodeStatusMessage(statusline, limitSource),
     byModel: Array.from(modelMap.entries())
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
@@ -1329,7 +1409,8 @@ async function readClaudeCodeUsage() {
   };
 }
 
-function claudeCodeStatusMessage(statusline) {
+function claudeCodeStatusMessage(statusline, limitSource) {
+  if (limitSource && limitSource !== "claude_statusline") return null;
   if (statusline?.staleLimits) return "Claude live limits are stale. Open Claude Code once to refresh them.";
   if (statusline?.limits) return null;
   if (statusline?.found) return "Claude live data received, but no official Pro/Max quota values yet.";
@@ -3170,13 +3251,29 @@ async function saveClaudeBrowserCreditsSnapshot(payload) {
 function normalizeClaudeBrowserCreditsSnapshot(payload) {
   const extractedCredits = extractUsageCredits(payload?.credits) || extractUsageCredits(payload?.billingPayload) || payload?.credits || null;
   const credits = sanitizeUsageCredits(extractedCredits);
+  const updatedAt = normalizeOptionalDate(payload?.updatedAt) || new Date().toISOString();
   return {
     status: normalizeClaudeBrowserCreditsStatus(payload?.status, credits),
     reason: String(payload?.reason || "").trim() || null,
     source: String(payload?.source || "").trim() || null,
     cookieName: String(payload?.cookieName || "").trim() || null,
-    updatedAt: normalizeOptionalDate(payload?.updatedAt) || new Date().toISOString(),
-    credits: hasUsageCredits(credits) ? credits : null
+    updatedAt,
+    credits: hasUsageCredits(credits) ? credits : null,
+    usage: normalizeClaudeBrowserUsageSnapshot(
+      payload?.usage || payload?.usagePayload || payload?.billingPayload?.usage,
+      updatedAt
+    )
+  };
+}
+
+function normalizeClaudeBrowserUsageSnapshot(payload, fallbackUpdatedAt) {
+  if (!payload || typeof payload !== "object") return null;
+  const hasUsageWindows = Boolean(payload.five_hour || payload.seven_day || payload.seven_day_sonnet);
+  if (!hasUsageWindows) return null;
+  return {
+    ...payload,
+    source: "claude_browser_sync",
+    updatedAt: normalizeOptionalDate(payload.updatedAt) || fallbackUpdatedAt
   };
 }
 
@@ -3193,7 +3290,8 @@ function summarizeClaudeBrowserCredits(snapshot) {
     status: snapshot.status || "missing",
     reason: snapshot.reason || null,
     source: snapshot.source || null,
-    updatedAt: snapshot.updatedAt || null
+    updatedAt: snapshot.updatedAt || null,
+    usageUpdatedAt: snapshot.usage?.updatedAt || null
   };
 }
 

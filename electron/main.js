@@ -185,13 +185,20 @@ async function syncClaudeBrowserCredits(port) {
           updatedAt: new Date().toISOString()
         };
       }
-      if (!payload.credits && !payload.billingPayload) {
-        const cachedBilling = await readClaudeAppCacheBillingSnapshot();
-        if (cachedBilling) {
+      const cachedBilling = await readClaudeAppCacheBillingSnapshot();
+      if (cachedBilling) {
+        if (!payload.credits && !payload.billingPayload) {
           payload = {
             ...payload,
             ...cachedBilling,
             cookieName: session.cookieName || payload.cookieName || null
+          };
+        }
+        if (!payload.usage && cachedBilling.usage) {
+          payload = {
+            ...payload,
+            usage: cachedBilling.usage,
+            updatedAt: new Date().toISOString()
           };
         }
       }
@@ -385,9 +392,9 @@ function isPrintableCookieValue(value) {
 
 async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
   const orgEndpoints = orgId ? [
+    `https://claude.ai/api/organizations/${orgId}/usage`,
     `https://claude.ai/api/organizations/${orgId}/overage_spend_limit`,
-    `https://claude.ai/api/organizations/${orgId}/prepaid/credits`,
-    `https://claude.ai/api/organizations/${orgId}/usage`
+    `https://claude.ai/api/organizations/${orgId}/prepaid/credits`
   ] : [];
   const endpoints = [
     ...orgEndpoints,
@@ -416,23 +423,30 @@ async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
       const contentType = response.headers.get("content-type") || "";
       if (contentType.includes("application/json")) {
         const payload = JSON.parse(text || "{}");
+        if (url.includes("/usage")) {
+          billingPayload.usage = {
+            ...payload,
+            updatedAt: new Date().toISOString()
+          };
+          continue;
+        }
         if (url.includes("/overage_spend_limit")) billingPayload.overageLimit = payload;
         if (url.includes("/prepaid/credits")) billingPayload.prepaidCredits = payload;
         const credits = buildClaudeCreditsFromBillingParts(billingPayload);
-        if (credits) return { status: "available", reason: null, credits };
+        if (credits) return { status: "available", reason: null, credits, usage: billingPayload.usage || null };
         if (findUsageCreditsCandidate(payload)) {
-          return { status: "available", reason: null, billingPayload: payload };
+          return { status: "available", reason: null, billingPayload: payload, usage: billingPayload.usage || null };
         }
         continue;
       }
       const credits = extractClaudeCreditsFromHtml(text);
-      if (credits) return { status: "available", reason: null, credits };
+      if (credits) return { status: "available", reason: null, credits, usage: billingPayload.usage || null };
     } catch {
       // Try the next endpoint candidate.
     }
   }
   const credits = buildClaudeCreditsFromBillingParts(billingPayload);
-  if (credits) return { status: "available", reason: null, credits };
+  if (credits || billingPayload.usage) return { status: "available", reason: null, credits: credits || null, usage: billingPayload.usage || null };
   return { status: "missing", reason: "claude_billing_data_unavailable" };
 }
 
@@ -447,7 +461,8 @@ async function readClaudeAppCacheBillingSnapshot() {
 
   const cacheParts = {
     overageLimit: null,
-    prepaidCredits: null
+    prepaidCredits: null,
+    usage: null
   };
   for (const entry of entries) {
     if (!entry.isFile()) continue;
@@ -468,24 +483,40 @@ async function readClaudeAppCacheBillingSnapshot() {
       ) {
         cacheParts.prepaidCredits = cacheEntry;
       }
+      if (endpoint === "usage" && (!cacheParts.usage || stats.mtimeMs >= cacheParts.usage.mtimeMs)) {
+        cacheParts.usage = cacheEntry;
+      }
     } catch {
       // Cache entries are best-effort; skip corrupt or locked files.
     }
   }
 
   const credits = buildClaudeCreditsFromCacheParts(cacheParts);
-  if (!credits) return null;
-  const updatedAtMs = Math.max(cacheParts.overageLimit?.mtimeMs || 0, cacheParts.prepaidCredits?.mtimeMs || 0);
+  const usage = cacheParts.usage
+    ? {
+        ...cacheParts.usage.payload,
+        source: "claude_app_cache",
+        updatedAt: new Date(cacheParts.usage.mtimeMs).toISOString()
+      }
+    : null;
+  if (!credits && !usage) return null;
+  const updatedAtMs = Math.max(
+    cacheParts.overageLimit?.mtimeMs || 0,
+    cacheParts.prepaidCredits?.mtimeMs || 0,
+    cacheParts.usage?.mtimeMs || 0
+  );
   return {
     status: "available",
     reason: null,
     source: "claude_app_cache",
     updatedAt: new Date(updatedAtMs || Date.now()).toISOString(),
-    credits
+    credits: credits || null,
+    usage
   };
 }
 
 function detectClaudeCacheEndpoint(buffer) {
+  if (buffer.includes(Buffer.from("/api/organizations/")) && buffer.includes(Buffer.from("/usage"))) return "usage";
   if (buffer.includes(Buffer.from("/prepaid/credits"))) return "prepaidCredits";
   if (buffer.includes(Buffer.from("/overage_spend_limit"))) return "overageLimit";
   return null;

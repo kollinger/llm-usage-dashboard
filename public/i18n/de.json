@@ -72,7 +72,7 @@
       "kicker": "Codex Spark"
     },
     "claudeCode": {
-      "kicker": "Claude lokal"
+      "kicker": "Claude Code lokal"
     },
     "anthropic": {
       "kicker": "API-Nutzung"
@@ -118,6 +118,15 @@
     },
     "copilot": {
       "kicker": "Copilot CLI"
+    },
+    "updateDelayHints": {
+      "default": "Dieser Anbieter hat seit mehr als {minutes} Minuten kein frisches lokales Signal geliefert. Manche Quellen aktualisieren sich erst, wenn CLI oder App neue Nutzungsdaten schreibt.",
+      "codex": "Codex-Limits aktualisieren sich normalerweise über den lokalen App-Server. Bleibt der Stand alt, ist der App-Server eventuell nicht erreichbar oder Codex liefert gerade keine frischen Live-Limits.",
+      "codexSpark": "Codex-Spark-Limits aktualisieren sich normalerweise über den lokalen Codex-App-Server. Bleibt der Stand alt, werden Spark-Live-Limits eventuell noch nicht geliefert.",
+      "claudeCode": "Diese Claude-Code-Karte kombiniert Statusline, lokale Logs und Claude.ai Billing-/Usage-Daten. Verzögerungen sind möglich, wenn Claude Code geschlossen ist, die Statusline nicht gelaufen ist oder Claude.ai-Cookies/API-Zugriff fehlen.",
+      "copilot": "GitHub-Copilot-CLI-Nutzung wird erst nach Session-Ende geschrieben; Live-Quota hängt vom lokalen Copilot CLI ab. Der Stand kann daher während offener Sessions oder bei fehlgeschlagener Abfrage verzögert sein.",
+      "gemini": "Gemini lokal aktualisiert sich nur, wenn lokale Logdateien neue Nutzungsmetadaten enthalten.",
+      "ollama": "Ollama aktualisiert sich nur, wenn Anfragen über den lokalen Proxy bzw. die Logdatei des Dashboards laufen."
     }
   },
   "status": {
@@ -140,7 +149,8 @@
     "cost": "Kosten",
     "tokens7d": "Tokens 7 Tage",
     "cost7d": "Kosten 7 Tage",
-    "limits": "Limits"
+    "limits": "Limits",
+    "updatedHelp": "Warum dieser Stand verzögert sein kann"
   },
   "credits": {
     "title": "Guthaben",
@@ -166,7 +176,16 @@
     "freeLabel": "{label} frei",
     "remainingShort": "{days}d {hours}h {minutes}m",
     "limitGroups": "{count} Limitgruppen",
-    "noModelLimits": "Keine Modelllimits"
+    "noModelLimits": "Keine Modelllimits",
+    "fullTitle": "Limit voll",
+    "fullDescription": "{limit} ist voll.",
+    "fullTokenDetail": "{tokens} Tokens in {period}",
+    "fullPremiumRequestsDetail": "{requests} Premium Requests aus lokalen Session-Logs",
+    "fullResetDetail": "Reset {time}",
+    "period5h": "5h",
+    "period7d": "7 Tagen",
+    "period24h": "24h",
+    "fullQuotaDetail": "{usage} genutzt"
   },
   "tokens": {
     "input": "Input",

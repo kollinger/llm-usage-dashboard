@@ -72,7 +72,7 @@
       "kicker": "Codex Spark"
     },
     "claudeCode": {
-      "kicker": "Claude local"
+      "kicker": "Claude Code local"
     },
     "anthropic": {
       "kicker": "Utilizare API"
@@ -118,6 +118,15 @@
     },
     "copilot": {
       "kicker": "Copilot CLI"
+    },
+    "updateDelayHints": {
+      "default": "This provider has not produced a fresh local signal for more than {minutes} minutes. Some sources only update when their CLI or app writes new usage data.",
+      "codex": "Codex limits normally update through the local app-server. If this stays old, the app-server may be unavailable or Codex has not produced fresh live limit data.",
+      "codexSpark": "Codex Spark limits normally update through the local Codex app-server. If this stays old, Spark live limit data may not be exposed yet.",
+      "claudeCode": "This Claude Code card combines statusline, local logs, and Claude.ai billing or usage data. Updates can lag when Claude Code is closed, the statusline has not run, or Claude.ai cookies/API access are unavailable.",
+      "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
+      "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
+      "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
     }
   },
   "status": {
@@ -140,7 +149,8 @@
     "cost": "Cost",
     "tokens7d": "Tokeni 7 zile",
     "cost7d": "Cost 7 zile",
-    "limits": "Limite"
+    "limits": "Limite",
+    "updatedHelp": "Why this timestamp may be delayed"
   },
   "credits": {
     "title": "Credite",
@@ -166,7 +176,16 @@
     "freeLabel": "{label} disponibil",
     "limitGroups": "{count} grupuri de limite",
     "noModelLimits": "Fără limite de model",
-    "remainingShort": "{days}d {hours}h {minutes}m"
+    "remainingShort": "{days}d {hours}h {minutes}m",
+    "fullTitle": "Limit full",
+    "fullDescription": "{limit} is full.",
+    "fullTokenDetail": "{tokens} tokens in {period}",
+    "fullPremiumRequestsDetail": "{requests} premium requests from local session logs",
+    "fullResetDetail": "Reset {time}",
+    "period5h": "5h",
+    "period7d": "7d",
+    "period24h": "24h",
+    "fullQuotaDetail": "{usage} used"
   },
   "tokens": {
     "input": "Intrare",

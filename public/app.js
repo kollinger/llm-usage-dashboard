@@ -99,6 +99,7 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
+const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
 const translationCache = new Map();
 const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
 const chartSourceColors = {
@@ -724,6 +725,7 @@ function normalizeCodexProvider(codex) {
     fiveHour: codex?.limits?.fiveHour || null,
     weekly: codex?.limits?.weekly || null,
     limitRows,
+    limitAlert: buildLimitFullAlert({ limitRows, totals: codex?.totals }),
     creditRows,
     planType: codex?.latest?.planType || codex?.planType || null,
     primaryLabel: t("limits.fiveHour"),
@@ -731,6 +733,7 @@ function normalizeCodexProvider(codex) {
     todayTokens: last24hTokens,
     allTimeTokens,
     foot: buildQuotaFoot({
+      providerId: "codex",
       todayTokens: last24hTokens,
       since: codex?.first?.timestamp,
       fiveHour: codex?.limits?.fiveHour,
@@ -757,6 +760,7 @@ function normalizeCodexSparkProvider(spark) {
     fiveHour: spark?.limits?.fiveHour || null,
     weekly: spark?.limits?.weekly || null,
     limitRows,
+    limitAlert: buildLimitFullAlert({ limitRows, totals: spark?.totals }),
     creditRows: [],
     planType: spark?.planType || null,
     primaryLabel: t("limits.fiveHour"),
@@ -766,6 +770,7 @@ function normalizeCodexSparkProvider(spark) {
     apiTokens: spark?.totals?.last24h?.totalTokens,
     message: localizeProviderMessage(spark?.message, "providers.messages.sparkTokens24h"),
     foot: buildQuotaFoot({
+      providerId: "codexSpark",
       todayTokens: spark?.totals?.last24h?.totalTokens,
       since: spark?.first?.timestamp,
       fiveHour: spark?.limits?.fiveHour,
@@ -775,24 +780,51 @@ function normalizeCodexSparkProvider(spark) {
   };
 }
 
-function buildQuotaFoot({ todayTokens, since, fiveHour, weekly, updated }) {
+function buildQuotaFoot({ providerId, todayTokens, since, fiveHour, weekly, updated }) {
   const rows = [
-    [t("labels.today"), formatTokens(todayTokens)],
-    [t("labels.since"), formatDate(since)]
+    footRow(t("labels.today"), formatTokens(todayTokens)),
+    footRow(t("labels.since"), formatDate(since))
   ];
-  if (fiveHour) rows.push([t("labels.fiveHourLeft"), formatLimitRemainingPercent(fiveHour)]);
-  if (weekly) rows.push([t("labels.weekLeft"), formatLimitRemainingPercent(weekly)]);
-  rows.push([t("labels.updated"), formatTime(updated)]);
+  if (fiveHour) rows.push(footRow(t("labels.fiveHourLeft"), formatLimitRemainingPercent(fiveHour)));
+  if (weekly) rows.push(footRow(t("labels.weekLeft"), formatLimitRemainingPercent(weekly)));
+  rows.push(
+    footRow(t("labels.updated"), formatUpdatedAt(updated), {
+      hint: updatedDelayHint(providerId, updated),
+      title: updated ? formatUpdatedAtFull(updated) : null
+    })
+  );
   return rows;
+}
+
+function footRow(label, value, options = {}) {
+  return { label, value, ...options };
 }
 
 function normalizeLocalProvider(id, provider) {
   const meta = providerMeta[id];
   const hasLimits = Boolean(provider?.limits?.fiveHour || provider?.limits?.weekly);
   const limitRows = normalizeLimitRows(provider?.limits);
+  const hasLimitData = hasLimits || Boolean(limitRows.length);
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const planType = provider?.planType || provider?.plan || null;
-  const updatedAt = id === "claudeCode" ? provider?.limitsUpdatedAt || provider?.latest?.timestamp : provider?.latest?.timestamp;
+  const limitsUpdatedAt =
+    id === "claudeCode" ? provider?.limitsUpdatedAt : id === "copilot" && hasLimitData ? provider?.quotaStatus?.updatedAt : null;
+  const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
+  const foot = buildQuotaFoot({
+    providerId: id,
+    todayTokens: provider?.totals?.last24h?.totalTokens,
+    since: provider?.first?.timestamp,
+    fiveHour: provider?.limits?.fiveHour,
+    weekly: provider?.limits?.weekly,
+    updated: updatedAt
+  });
+  const limitUsageFootRows = id === "copilot" ? copilotLimitUsageFootRows(provider, limitRows) : [];
+  if (limitUsageFootRows.length) foot.splice(Math.max(foot.length - 1, 0), 0, ...limitUsageFootRows);
+  const limitAlert = buildLimitFullAlert({
+    limitRows,
+    totals: provider?.totals,
+    usageUnits: provider?.usageUnits
+  });
   return {
     id,
     name: meta.name,
@@ -802,6 +834,7 @@ function normalizeLocalProvider(id, provider) {
     fiveHour: hasLimits ? provider?.limits?.fiveHour || null : null,
     weekly: hasLimits ? provider?.limits?.weekly || null : null,
     limitRows,
+    limitAlert,
     creditRows,
     claudeBrowserCredits: id === "claudeCode" ? provider?.browserCredits || null : null,
     planType,
@@ -814,14 +847,57 @@ function normalizeLocalProvider(id, provider) {
       provider?.message,
       id === "copilot" ? "providers.messages.copilotLogTokens" : "providers.messages.logTokens24h"
     ),
-    foot: buildQuotaFoot({
-      todayTokens: provider?.totals?.last24h?.totalTokens,
-      since: provider?.first?.timestamp,
-      fiveHour: provider?.limits?.fiveHour,
-      weekly: provider?.limits?.weekly,
-      updated: updatedAt
-    })
+    foot
   };
+}
+
+function copilotLimitUsageFootRows(provider, limitRows) {
+  const hasFullLimit = limitRows.some((row) => Number(row.usedPercent || 0) >= 99.5);
+  if (!hasFullLimit) return [];
+  const rows = [];
+  const tokens7d = Number(provider?.totals?.last7d?.totalTokens || 0);
+  if (tokens7d > 0) rows.push(footRow(t("labels.tokens7d"), formatTokens(tokens7d)));
+  const premiumRequests = Number(provider?.usageUnits?.premiumRequests || 0);
+  const premiumLimit = limitRows.find((row) => /premium/i.test(`${row.key || ""} ${row.label || ""}`));
+  if (premiumRequests > 0 && premiumLimit) rows.push(footRow(premiumLimit.label, formatNumber(premiumRequests)));
+  return rows;
+}
+
+function buildLimitFullAlert({ limitRows, totals, usageUnits }) {
+  const fullRows = (limitRows || []).filter((row) => Number(row.usedPercent || 0) >= 99.5);
+  if (!fullRows.length) return null;
+  const details = [];
+  const quotaDetails = fullRows
+    .map((row) => row.valueLabel)
+    .filter(Boolean)
+    .join(", ");
+  if (quotaDetails) details.push(t("limits.fullQuotaDetail", { usage: quotaDetails }));
+  const tokens = limitAlertTokenTotal(fullRows, totals);
+  if (tokens.value > 0) {
+    details.push(t("limits.fullTokenDetail", { tokens: formatTokens(tokens.value), period: tokens.period }));
+  }
+  const premiumRequests = Number(usageUnits?.premiumRequests || 0);
+  const hasPremiumLimit = fullRows.some((row) => /premium/i.test(`${row.key || ""} ${row.label || ""}`));
+  if (premiumRequests > 0 && hasPremiumLimit) {
+    details.push(t("limits.fullPremiumRequestsDetail", { requests: formatNumber(premiumRequests) }));
+  }
+  const resetsAt = fullRows.find((row) => row.resetsAt)?.resetsAt;
+  if (resetsAt) details.push(t("limits.fullResetDetail", { time: formatDateTime(resetsAt) }));
+  return {
+    title: t("limits.fullTitle"),
+    text: [t("limits.fullDescription", { limit: fullRows.map((row) => row.label).join(", ") }), ...details].join(" · ")
+  };
+}
+
+function limitAlertTokenTotal(fullRows, totals) {
+  const labelText = fullRows.map((row) => `${row.key || ""} ${row.label || ""}`).join(" ");
+  if (/5h|five.?hour|session/i.test(labelText)) {
+    return { value: Number(totals?.last5h?.totalTokens || 0), period: t("limits.period5h") };
+  }
+  if (/week|weekly|7d|seven.?day|premium/i.test(labelText)) {
+    return { value: Number(totals?.last7d?.totalTokens || 0), period: t("limits.period7d") };
+  }
+  return { value: Number(totals?.last24h?.totalTokens || 0), period: t("limits.period24h") };
 }
 
 function normalizeCreditRows(rows, credits) {
@@ -989,6 +1065,7 @@ function normalizeApiProvider(id, provider) {
     fiveHour: null,
     weekly: null,
     limitRows,
+    limitAlert: buildLimitFullAlert({ limitRows, totals: provider?.usage?.totals ? { last7d: provider.usage.totals } : null }),
     creditRows,
     planType,
     primaryLabel: "7d",
@@ -1078,16 +1155,39 @@ function renderProvider(provider) {
         <span class="status-pill ${statusClass}">${statusText(provider.status)}</span>
       </div>
       ${main}
+      ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
       <div class="provider-foot">
         ${provider.foot
-          .map(
-            ([label, value]) => `<div class="mini-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`
-          )
+          .map(renderProviderFootRow)
           .join("")}
       </div>
     </article>
+  `;
+}
+
+function renderLimitAlert(provider) {
+  if (!provider.limitAlert) return "";
+  return `
+    <div class="limit-alert" role="status">
+      <strong>${escapeHtml(provider.limitAlert.title)}</strong>
+      <span>${escapeHtml(provider.limitAlert.text)}</span>
+    </div>
+  `;
+}
+
+function renderProviderFootRow(row) {
+  const normalized = Array.isArray(row) ? footRow(row[0], row[1]) : row;
+  const title = normalized.title ? ` title="${escapeHtml(normalized.title)}"` : "";
+  const hint = normalized.hint
+    ? `<button type="button" class="mini-stat-help" aria-label="${escapeHtml(`${t("labels.updatedHelp")}: ${normalized.hint}`)}" title="${escapeHtml(normalized.hint)}">?</button>`
+    : "";
+  return `
+    <div class="mini-stat">
+      <span class="mini-stat-label">${escapeHtml(normalized.label)}${hint}</span>
+      <strong${title}>${escapeHtml(normalized.value)}</strong>
+    </div>
   `;
 }
 
@@ -1889,6 +1989,53 @@ function formatTime(value) {
     minute: "2-digit",
     second: "2-digit"
   }).format(date);
+}
+
+function formatUpdatedAt(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  if (isSameLocalDay(date, new Date())) return formatTime(value);
+  return new Intl.DateTimeFormat(currentLocale(), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).format(date);
+}
+
+function formatUpdatedAtFull(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  return new Intl.DateTimeFormat(currentLocale(), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).format(date);
+}
+
+function isSameLocalDay(left, right) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function updatedDelayHint(providerId, value) {
+  if (!value) return null;
+  const date = new Date(value);
+  const ageMs = Date.now() - date.getTime();
+  if (Number.isNaN(date.getTime()) || ageMs <= UPDATED_STALE_AFTER_MS) return null;
+  const minutes = Math.round(UPDATED_STALE_AFTER_MS / 60_000);
+  const fallback = t("providers.updateDelayHints.default", { minutes });
+  return t(`providers.updateDelayHints.${providerId}`, { minutes }, fallback);
 }
 
 function formatDate(value) {

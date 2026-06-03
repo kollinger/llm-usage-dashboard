@@ -444,6 +444,29 @@ a {
   line-height: 1.35;
 }
 
+.limit-alert {
+  display: grid;
+  gap: 4px;
+  margin: -2px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid #b42318;
+  border-radius: 8px;
+  background: #fff3ed;
+  color: #3f1712;
+  line-height: 1.3;
+}
+
+.limit-alert strong {
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.limit-alert span {
+  color: #70413a;
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
 .empty-message {
   margin: 0;
   align-self: center;
@@ -460,6 +483,33 @@ a {
   color: var(--muted);
   font-size: 0.74rem;
   font-weight: 760;
+}
+
+.mini-stat span.mini-stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mini-stat-help {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  padding: 0;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: help;
+  font-size: 0.7rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.mini-stat-help:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
 }
 
 .mini-stat strong {
