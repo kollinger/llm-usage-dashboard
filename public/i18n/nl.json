@@ -150,7 +150,8 @@
     "tokens7d": "Tokens 7 dagen",
     "cost7d": "Kosten 7 dagen",
     "limits": "Limieten",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "Credits",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lezen / {write} schrijven",
-    "cacheSameAsInput": "zoals invoer"
+    "cacheSameAsInput": "zoals invoer",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "Instellingen",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }

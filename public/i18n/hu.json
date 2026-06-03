@@ -150,7 +150,8 @@
     "tokens7d": "Tokenek 7 nap",
     "cost7d": "Költség 7 nap",
     "limits": "Korlátok",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "Kreditek",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} olvasás / {write} írás",
-    "cacheSameAsInput": "mint a bemenet"
+    "cacheSameAsInput": "mint a bemenet",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "Beállítások",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }

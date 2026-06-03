@@ -17,6 +17,8 @@ const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_D
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
+const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
+const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -59,6 +61,7 @@ const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
 const CLAUDE_API_USAGE_STALE_MS = envMs("CLAUDE_API_USAGE_STALE_SECONDS", 600);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
+const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
 
 const app = express();
 let currentDashboardUrl = null;
@@ -244,7 +247,8 @@ app.get("/auth/oidc/callback", async (req, res) => {
 });
 
 app.get("/api/usage", authMiddleware, async (_req, res) => {
-  const [codex, copilot, claudeCode, gemini, ollama, openai, anthropic] = await Promise.all([
+  const [subscriptions, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollama, openaiRaw, anthropicRaw] = await Promise.all([
+    readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
     readCodexUsage().catch((error) => providerError("codex", error)),
     readCopilotUsage().catch((error) => providerError("copilot", error)),
     readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
@@ -253,6 +257,13 @@ app.get("/api/usage", authMiddleware, async (_req, res) => {
     readOpenAiUsage().catch((error) => providerError("openai", error)),
     readAnthropicUsage().catch((error) => providerError("anthropic", error))
   ]);
+
+  const codex = mergeProviderSubscription(codexRaw, subscriptions.codex);
+  const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot);
+  const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode);
+  const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
+  const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
+  const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
 
   const now = new Date().toISOString();
   res.json({
@@ -300,6 +311,24 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
     res.json({ ok: true, snapshot });
   } catch (error) {
     sendApiError(res, error, "claude_browser_credits_save_failed");
+  }
+});
+
+app.get("/api/subscriptions/settings", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await readSubscriptionSettings());
+  } catch (error) {
+    sendApiError(res, error, "subscription_settings_read_failed");
+  }
+});
+
+app.post("/api/subscriptions/settings", authMiddleware, async (req, res) => {
+  try {
+    const settings = sanitizeSubscriptionSettings(req.body || {});
+    await saveSubscriptionSettings(settings);
+    res.json(settings);
+  } catch (error) {
+    sendApiError(res, error, "subscription_settings_save_failed");
   }
 });
 
@@ -406,6 +435,90 @@ async function readThroughCache(cache, ttlMs, loader) {
     });
 
   return cache.pending;
+}
+
+async function readSubscriptionSettings() {
+  try {
+    const text = await fsp.readFile(SUBSCRIPTION_SETTINGS_FILE, "utf8");
+    return sanitizeSubscriptionSettings(JSON.parse(text));
+  } catch {
+    return readLegacySubscriptionSettings();
+  }
+}
+
+async function readLegacySubscriptionSettings() {
+  try {
+    const text = await fsp.readFile(LEGACY_MANUAL_LIMITS_FILE, "utf8");
+    const legacy = JSON.parse(text);
+    return sanitizeSubscriptionSettings({
+      codex: legacy.codex,
+      claudeCode: legacy.claude,
+      openai: legacy.openai,
+      anthropic: legacy.anthropic,
+      copilot: legacy.copilot,
+      gemini: legacy.gemini
+    });
+  } catch {
+    return sanitizeSubscriptionSettings({});
+  }
+}
+
+async function saveSubscriptionSettings(settings) {
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(SUBSCRIPTION_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+}
+
+function sanitizeSubscriptionSettings(raw) {
+  const source = raw && typeof raw === "object" ? raw : {};
+  const result = {};
+  for (const id of SUBSCRIPTION_PROVIDER_IDS) {
+    result[id] = sanitizeSubscriptionProvider(source[id]);
+  }
+  return result;
+}
+
+function sanitizeSubscriptionProvider(raw) {
+  const provider = raw && typeof raw === "object" ? raw : {};
+  const credits = provider.credits || provider.usageCredits || provider.guthaben || {};
+  return {
+    planType: String(provider.planType || provider.plan || "").trim(),
+    monthlyCost: positiveAmount(
+      provider.monthlyCost ??
+        provider.monthly_cost ??
+        provider.subscriptionCost ??
+        provider.subscription_cost ??
+        provider.monthlyPrice ??
+        provider.monthly_price ??
+        credits.monthlyCost ??
+        credits.monthly_cost ??
+        credits.monthlyLimitAmount ??
+        credits.monthlyLimit
+    ),
+    currency: normalizeCurrency(provider.currency || credits.currency || "EUR")
+  };
+}
+
+function mergeProviderSubscription(provider, subscription) {
+  if (!provider || provider.status === "error") return provider;
+  if (!hasSubscriptionValue(subscription)) return provider;
+  const sourcePlan = String(provider.planType || "").trim();
+  const planType = subscription.planType || sourcePlan || null;
+  const mergedSubscription = {
+    planType,
+    monthlyCost: subscription.monthlyCost || 0,
+    currency: normalizeCurrency(subscription.currency || "EUR"),
+    source: "local_settings"
+  };
+  return {
+    ...provider,
+    planType,
+    planSource: subscription.planType ? "local_settings" : provider.planSource || null,
+    subscription: mergedSubscription
+  };
+}
+
+function hasSubscriptionValue(subscription) {
+  return Boolean(subscription?.planType || subscription?.monthlyCost > 0);
 }
 
 function sanitizeUsageCredits(raw) {

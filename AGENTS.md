@@ -29,6 +29,11 @@ Instructions for agents working on this repository.
 - Install dependencies with `npm install` or `npm ci`.
 - Run the web dashboard with `npm start`.
 - Run the desktop app in development with `npm run electron`.
+- When a requested check only needs the dashboard HTTP server, first check
+  whether the installed desktop app is already listening on a local app port
+  and reuse that port when practical. The web dashboard default is
+  `http://localhost:4177`; the installed desktop app normally uses a dynamic
+  free port.
 - Use existing vanilla JS/CSS patterns unless there is a clear reason to add tooling.
 - Keep frontend changes responsive and verify visually when practical.
 - Keep user-facing frontend text in `public/i18n/*.json`; do not add new hard-coded UI copy unless it is data/provider content that should not be translated.

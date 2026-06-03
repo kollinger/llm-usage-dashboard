@@ -150,7 +150,8 @@
     "tokens7d": "Tokens 7 ημέρες",
     "cost7d": "Κόστος 7 ημέρες",
     "limits": "Όρια",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "Πιστώσεις",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} ανάγνωση / {write} εγγραφή",
-    "cacheSameAsInput": "όπως η είσοδος"
+    "cacheSameAsInput": "όπως η είσοδος",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "Ρυθμίσεις",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }

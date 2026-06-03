@@ -150,7 +150,8 @@
     "tokens7d": "Tokens 7 días",
     "cost7d": "Coste 7 días",
     "limits": "Límites",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "Créditos",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lectura / {write} escritura",
-    "cacheSameAsInput": "como entrada"
+    "cacheSameAsInput": "como entrada",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "Ajustes",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }

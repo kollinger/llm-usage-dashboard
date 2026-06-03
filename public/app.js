@@ -26,6 +26,9 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
+  subscriptionFields: Array.from(document.querySelectorAll("[data-subscription-field]")),
+  subscriptionSaveBtn: document.getElementById("subscriptionSaveBtn"),
+  subscriptionSaveStatus: document.getElementById("subscriptionSaveStatus"),
   notificationsEnabled: document.getElementById("notificationsEnabled"),
   notificationThresholds: document.getElementById("notificationThresholds"),
   notificationPacingPercent: document.getElementById("notificationPacingPercent"),
@@ -397,6 +400,7 @@ function bindEvents() {
   els.loginDialog.addEventListener("click", closeDialogOnBackdrop);
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
   els.notificationsEnabled?.addEventListener("change", onNotificationEnabledChange);
+  els.subscriptionSaveBtn?.addEventListener("click", saveSubscriptionSettings);
   els.notificationSaveBtn?.addEventListener("click", saveNotificationSettings);
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
@@ -672,7 +676,7 @@ function render() {
     normalizeLocalProvider("claudeCode", usage.claudeCode),
     normalizeApiProvider("anthropic", usage.anthropic),
     normalizeCodexProvider(usage.codex),
-    normalizeCodexSparkProvider(usage.codex?.spark),
+    normalizeCodexSparkProvider(usage.codex?.spark, usage.codex?.subscription),
     normalizeLocalProvider("copilot", usage.copilot),
     normalizeLocalProvider("ollama", usage.ollama),
     normalizeApiProvider("openai", usage.openai),
@@ -750,6 +754,16 @@ function normalizeCodexProvider(codex) {
   const limitRows = normalizeLimitRows(codex?.limits);
   const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
   const creditRows = normalizeCreditRows(codex?.creditRows, codex?.credits);
+  const subscription = normalizeSubscription(codex?.subscription);
+  const foot = buildQuotaFoot({
+    providerId: "codex",
+    todayTokens: last24hTokens,
+    since: codex?.first?.timestamp,
+    fiveHour: codex?.limits?.fiveHour,
+    weekly: codex?.limits?.weekly,
+    updated: limitUpdatedAt
+  });
+  insertSubscriptionFoot(foot, subscription);
   return {
     id: "codex",
     name: meta.name,
@@ -761,19 +775,13 @@ function normalizeCodexProvider(codex) {
     limitRows,
     limitAlert: buildLimitFullAlert({ limitRows, totals: codex?.totals }),
     creditRows,
-    planType: codex?.latest?.planType || codex?.planType || null,
+    planType: codex?.planType || codex?.latest?.planType || null,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
     todayTokens: last24hTokens,
     allTimeTokens,
-    foot: buildQuotaFoot({
-      providerId: "codex",
-      todayTokens: last24hTokens,
-      since: codex?.first?.timestamp,
-      fiveHour: codex?.limits?.fiveHour,
-      weekly: codex?.limits?.weekly,
-      updated: limitUpdatedAt
-    })
+    subscription,
+    foot
   };
 }
 
@@ -781,10 +789,11 @@ function subtractTokenTotals(total, subset) {
   return Math.max(0, Number(total?.totalTokens || 0) - Number(subset?.totalTokens || 0));
 }
 
-function normalizeCodexSparkProvider(spark) {
+function normalizeCodexSparkProvider(spark, codexSubscription) {
   const meta = providerMeta.codexSpark;
   const limitRows = normalizeLimitRows(spark?.limits);
   const limitUpdatedAt = spark?.limitsUpdatedAt || spark?.latest?.timestamp;
+  const subscription = normalizeSubscription(codexSubscription);
   return {
     id: "codexSpark",
     name: meta.name,
@@ -796,7 +805,7 @@ function normalizeCodexSparkProvider(spark) {
     limitRows,
     limitAlert: buildLimitFullAlert({ limitRows, totals: spark?.totals }),
     creditRows: [],
-    planType: spark?.planType || null,
+    planType: subscription?.planType || spark?.planType || null,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
     todayTokens: spark?.totals?.last24h?.totalTokens,
@@ -830,8 +839,26 @@ function buildQuotaFoot({ providerId, todayTokens, since, fiveHour, weekly, upda
   return rows;
 }
 
+function insertSubscriptionFoot(rows, subscription) {
+  if (!subscription?.monthlyCost) return;
+  const index = Math.max(rows.length - 1, 0);
+  rows.splice(index, 0, footRow(t("labels.subscription"), formatMonthlyCost(subscription)));
+}
+
 function footRow(label, value, options = {}) {
   return { label, value, ...options };
+}
+
+function normalizeSubscription(subscription) {
+  if (!subscription || typeof subscription !== "object") return null;
+  const monthlyCost = Number(subscription.monthlyCost || 0);
+  const planType = String(subscription.planType || "").trim();
+  if (!planType && !(monthlyCost > 0)) return null;
+  return {
+    planType: planType || null,
+    monthlyCost: monthlyCost > 0 ? monthlyCost : 0,
+    currency: subscription.currency || "EUR"
+  };
 }
 
 function normalizeLocalProvider(id, provider) {
@@ -841,6 +868,7 @@ function normalizeLocalProvider(id, provider) {
   const hasLimitData = hasLimits || Boolean(limitRows.length);
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const planType = provider?.planType || provider?.plan || null;
+  const subscription = normalizeSubscription(provider?.subscription);
   const limitsUpdatedAt =
     id === "claudeCode" ? provider?.limitsUpdatedAt : id === "copilot" && hasLimitData ? provider?.quotaStatus?.updatedAt : null;
   const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
@@ -852,6 +880,7 @@ function normalizeLocalProvider(id, provider) {
     weekly: provider?.limits?.weekly,
     updated: updatedAt
   });
+  insertSubscriptionFoot(foot, subscription);
   const limitUsageFootRows = id === "copilot" ? copilotLimitUsageFootRows(provider, limitRows) : [];
   if (limitUsageFootRows.length) foot.splice(Math.max(foot.length - 1, 0), 0, ...limitUsageFootRows);
   const limitAlert = buildLimitFullAlert({
@@ -877,6 +906,7 @@ function normalizeLocalProvider(id, provider) {
     todayTokens: provider?.totals?.last24h?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
+    subscription,
     message: localizeProviderMessage(
       provider?.message,
       id === "copilot" ? "providers.messages.copilotLogTokens" : "providers.messages.logTokens24h"
@@ -1084,12 +1114,14 @@ function normalizeApiProvider(id, provider) {
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const limitRows = normalizeLimitRows(provider?.limits);
   const planType = provider?.planType || provider?.plan || null;
+  const subscription = normalizeSubscription(provider?.subscription);
   const foot = [
     [t("labels.tokens7d"), formatTokens(totalTokens)],
     [t("labels.cost7d"), formatMoney(costs?.total, costs?.currency)]
   ];
   if (provider?.limits?.summaryLabel) foot.push([t("labels.limits"), limitSummaryLabel(provider.limits)]);
   if (planType) foot.push([t("labels.plan"), planType]);
+  if (subscription?.monthlyCost) foot.push([t("labels.subscription"), formatMonthlyCost(subscription)]);
   return {
     id,
     name: meta.name,
@@ -1108,6 +1140,7 @@ function normalizeApiProvider(id, provider) {
     allTimeTokens: totalTokens,
     cost: costs?.total,
     currency: costs?.currency,
+    subscription,
     message:
       provider?.status === "not_configured"
         ? t("providers.messages.missingBackendKey")
@@ -1123,7 +1156,12 @@ function providerHasUsage(provider) {
     provider.cost
   ].some((value) => Number(value || 0) > 0);
   const hasLimitTelemetry = Boolean(
-    provider.fiveHour || provider.weekly || provider.limitRows?.length || provider.creditRows?.length || provider.planType
+    provider.fiveHour ||
+      provider.weekly ||
+      provider.limitRows?.length ||
+      provider.creditRows?.length ||
+      provider.planType ||
+      provider.subscription?.monthlyCost
   );
   const needsAttention = provider.status === "error";
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
@@ -1833,7 +1871,61 @@ function parseDateOnly(value) {
 async function openSettings() {
   if (!state.auth?.authenticated) return els.loginDialog.showModal();
   els.settingsDialog.showModal();
+  await loadSubscriptionSettings();
   await loadNotificationSettings();
+}
+
+async function loadSubscriptionSettings() {
+  if (!els.subscriptionFields.length) return;
+  setSubscriptionSaveStatus("", "");
+  try {
+    const settings = await fetchJson("/api/subscriptions/settings");
+    fillSubscriptionSettings(settings);
+  } catch {
+    setSubscriptionSaveStatus(t("settings.subscriptions.saveError"), "error");
+  }
+}
+
+function fillSubscriptionSettings(settings) {
+  for (const field of els.subscriptionFields) {
+    const provider = field.dataset.subscriptionProvider;
+    const key = field.dataset.subscriptionField;
+    if (!provider || !key) continue;
+    const value = settings?.[provider]?.[key];
+    field.value = field.type === "number" && Number(value || 0) === 0 ? "" : value ?? "";
+  }
+}
+
+async function saveSubscriptionSettings() {
+  const payload = {};
+  for (const field of els.subscriptionFields) {
+    const provider = field.dataset.subscriptionProvider;
+    const key = field.dataset.subscriptionField;
+    if (!provider || !key) continue;
+    payload[provider] ||= {};
+    payload[provider][key] = field.type === "number" ? Number(field.value || 0) : String(field.value || "").trim();
+    payload[provider].currency ||= "EUR";
+  }
+  setSubscriptionSaveStatus(t("settings.subscriptions.saving"), "loading");
+  try {
+    const settings = await fetchJson("/api/subscriptions/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    fillSubscriptionSettings(settings);
+    setSubscriptionSaveStatus(t("settings.subscriptions.saved"), "ready");
+    await loadUsage();
+  } catch {
+    setSubscriptionSaveStatus(t("settings.subscriptions.saveError"), "error");
+  }
+}
+
+function setSubscriptionSaveStatus(message, status) {
+  if (!els.subscriptionSaveStatus) return;
+  els.subscriptionSaveStatus.textContent = message || "";
+  els.subscriptionSaveStatus.hidden = !message;
+  els.subscriptionSaveStatus.dataset.status = status || "";
 }
 
 async function loadNotificationSettings() {
@@ -2000,6 +2092,12 @@ function formatMoney(value, currency = "usd") {
     style: "currency",
     currency: String(currency || "usd").toUpperCase()
   }).format(Number(value || 0));
+}
+
+function formatMonthlyCost(subscription) {
+  return t("format.perMonth", {
+    amount: formatMoney(subscription.monthlyCost, subscription.currency || "EUR")
+  });
 }
 
 function shortReset(value) {

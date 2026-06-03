@@ -150,7 +150,8 @@
     "tokens7d": "7 天令牌",
     "cost7d": "7 天成本",
     "limits": "限制",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "额度",
@@ -203,7 +204,8 @@
     "lessThanCent": "< EUR 0.01",
     "usdPerMillion": "${value}/M",
     "cacheReadWrite": "{read} 读取 / {write} 写入",
-    "cacheSameAsInput": "同输入"
+    "cacheSameAsInput": "同输入",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "设置",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }

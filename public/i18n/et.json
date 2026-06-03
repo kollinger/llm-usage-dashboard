@@ -150,7 +150,8 @@
     "tokens7d": "Tokenid 7 päeva",
     "cost7d": "Kulu 7 päeva",
     "limits": "Piirangud",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "Krediidid",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lugemine / {write} kirjutamine",
-    "cacheSameAsInput": "nagu sisend"
+    "cacheSameAsInput": "nagu sisend",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "Seaded",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }

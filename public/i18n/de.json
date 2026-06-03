@@ -150,7 +150,8 @@
     "tokens7d": "Tokens 7 Tage",
     "cost7d": "Kosten 7 Tage",
     "limits": "Limits",
-    "updatedHelp": "Warum dieser Stand verzögert sein kann"
+    "updatedHelp": "Warum dieser Stand verzögert sein kann",
+    "subscription": "Abo"
   },
   "credits": {
     "title": "Guthaben",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lesen / {write} schreiben",
-    "cacheSameAsInput": "wie Input"
+    "cacheSameAsInput": "wie Input",
+    "perMonth": "{amount}/Monat"
   },
   "settings": {
     "heading": "Einstellungen",
@@ -217,6 +219,15 @@
       "pacingLabel": "Tempo-Warnung bei projiziertem Verbrauch (%)",
       "hardLimitLabel": "Harte Grenze bei Verbrauch (%)",
       "save": "Speichern",
+      "saved": "Gespeichert.",
+      "saveError": "Konnte nicht gespeichert werden."
+    },
+    "subscriptions": {
+      "title": "Abo-Kosten",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monatskosten (EUR)",
+      "save": "Speichern",
+      "saving": "Wird gespeichert...",
       "saved": "Gespeichert.",
       "saveError": "Konnte nicht gespeichert werden."
     }

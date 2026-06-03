@@ -150,7 +150,8 @@
     "tokens7d": "Tokenit 7 päivää",
     "cost7d": "Kustannus 7 päivää",
     "limits": "Rajat",
-    "updatedHelp": "Why this timestamp may be delayed"
+    "updatedHelp": "Why this timestamp may be delayed",
+    "subscription": "Subscription"
   },
   "credits": {
     "title": "Krediitit",
@@ -203,7 +204,8 @@
     "lessThanCent": "< 0,01 EUR",
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} luku / {write} kirjoitus",
-    "cacheSameAsInput": "kuten syöte"
+    "cacheSameAsInput": "kuten syöte",
+    "perMonth": "{amount}/mo"
   },
   "settings": {
     "heading": "Asetukset",
@@ -217,6 +219,15 @@
       "pacingLabel": "Pacing warning at projected usage (%)",
       "hardLimitLabel": "Hard limit warning at used (%)",
       "save": "Save",
+      "saved": "Saved.",
+      "saveError": "Could not save."
+    },
+    "subscriptions": {
+      "title": "Subscription costs",
+      "planLabel": "Plan",
+      "monthlyCostLabel": "Monthly cost (EUR)",
+      "save": "Save",
+      "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
     }
