@@ -598,6 +598,13 @@ a {
   display: block;
 }
 
+.chart-grid-line {
+  stroke: #dfe5dd;
+  stroke-width: 1;
+  opacity: 0.86;
+  shape-rendering: crispEdges;
+}
+
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

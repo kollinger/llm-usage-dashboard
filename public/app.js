@@ -63,6 +63,7 @@ const FX_DATE = "2026-05-22";
 const PRICING_DATE = "2026-05-29";
 const SCORE_DATE = "2026-05-29";
 const MILLION = 1_000_000;
+const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const LANGUAGE_OPTIONS = [
   { code: "bg", flag: "🇧🇬", label: "Български", locale: "bg-BG" },
   { code: "cs", flag: "🇨🇿", label: "Čeština", locale: "cs-CZ" },
@@ -1441,12 +1442,14 @@ function renderChart(daily) {
 
   const viewportWidth = Math.max(900, els.chart.clientWidth || 900);
   const height = 300;
-  const pad = 38;
+  const pad = 64;
   const chartTop = 28;
   const axisY = height - 64;
   const dateLabelY = height - 42;
+  const chartHeight = axisY - chartTop;
   const sourceIds = chartSourcesInUse(daily);
   const max = Math.max(...daily.map((d) => d.totalTokens), 1);
+  const scale = chartTokenScale(max);
   const visibleDays = Math.min(daily.length, viewportWidth >= 1200 ? 21 : 16);
   const barGap = 8;
   const barWidth = Math.max(
@@ -1464,7 +1467,7 @@ function renderChart(daily) {
       const label = formatChartDate(d.date);
       const fullLabel = formatFullDate(d.date);
       const segments = chartSegmentsForDay(d, sourceIds);
-      const visibleSegments = chartVisibleSegments(segments, max, axisY - chartTop);
+      const visibleSegments = chartVisibleSegments(segments, scale.max, chartHeight);
       let yCursor = axisY;
       const segmentRects = visibleSegments
         .map((segment, segmentIndex) => {
@@ -1499,11 +1502,21 @@ function renderChart(daily) {
       `;
     })
     .join("");
+  const gridLines = scale.ticks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / scale.max;
+      return `
+        <line x1="${pad}" y1="${y}" x2="${width - pad}" y2="${y}" class="chart-grid-line"></line>
+        <text x="${pad - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${formatTokens(tick)}</text>
+        <text x="${width - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${formatTokens(tick)}</text>
+      `;
+    })
+    .join("");
   els.chart.innerHTML = `
     <div class="chart-canvas" style="width: ${width}px">
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.svgAria"))}" style="width: ${width}px">
+      ${gridLines}
       <line x1="${pad}" y1="${axisY}" x2="${width - pad}" y2="${axisY}" stroke="#dfe5dd"></line>
-      <text x="${pad}" y="18" class="axis-label">${formatTokens(max)}</text>
       ${bars}
     </svg>
     </div>
@@ -1528,6 +1541,42 @@ function renderChartLegend(sourceIds) {
       `
     )
     .join("");
+}
+
+function chartTokenScale(maxTokens) {
+  const max = Math.max(1, Number(maxTokens) || 0);
+  if (max > 250_000_000 && max <= 500_000_000) {
+    return {
+      max: 500_000_000,
+      ticks: [100_000_000, 200_000_000, 300_000_000, 400_000_000, 500_000_000]
+    };
+  }
+  if (max > 500_000_000 && max <= 1_000_000_000) {
+    return {
+      max: 1_000_000_000,
+      ticks: [250_000_000, 500_000_000, 750_000_000, 1_000_000_000]
+    };
+  }
+  const step = chartNiceTickStep(max / 4);
+  return chartScaleFromStep(max, step);
+}
+
+function chartScaleFromStep(max, step) {
+  const tickStep = Math.max(1, Number(step) || 1);
+  const scaleMax = Math.max(tickStep, tickStep * Math.ceil(max / tickStep));
+  const ticks = [];
+  for (let tick = tickStep; tick <= scaleMax + tickStep / 2; tick += tickStep) {
+    ticks.push(Math.round(tick));
+  }
+  return { max: scaleMax, ticks };
+}
+
+function chartNiceTickStep(rawStep) {
+  if (!Number.isFinite(rawStep) || rawStep <= 0) return 1;
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalized = rawStep / magnitude;
+  const base = CHART_TICK_BASES.find((candidate) => normalized <= candidate) || 10;
+  return Math.max(1, base * magnitude);
 }
 
 function chartSourcesInUse(daily) {
