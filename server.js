@@ -17,6 +17,7 @@ const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_D
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
+const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
@@ -264,6 +265,7 @@ app.get("/api/usage", authMiddleware, async (_req, res) => {
   const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
   const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
   const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
+  await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
 
   const now = new Date().toISOString();
   res.json({
@@ -311,6 +313,28 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
     res.json({ ok: true, snapshot });
   } catch (error) {
     sendApiError(res, error, "claude_browser_credits_save_failed");
+  }
+});
+
+app.get("/api/quota-history", authMiddleware, async (req, res) => {
+  try {
+    const events = await readQuotaEvents();
+    const provider = String(req.query.provider || "").trim();
+    const windowKey = String(req.query.window || req.query.windowKey || "").trim();
+    const filteredEvents = events.filter((event) => {
+      if (provider && event.provider !== provider) return false;
+      if (windowKey && event.windowKey !== windowKey) return false;
+      return true;
+    });
+    const windows = buildQuotaWindowSummaries(filteredEvents);
+    const limit = Math.max(1, Math.min(5000, Number(req.query.limit || 1000)));
+    res.json({
+      generatedAt: new Date().toISOString(),
+      events: filteredEvents.slice(-limit),
+      windows: windows.slice(-limit)
+    });
+  } catch (error) {
+    sendApiError(res, error, "quota_history_read_failed");
   }
 });
 
@@ -368,6 +392,7 @@ app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) =>
       readClaudeCodeUsage().catch(() => null),
       readCopilotUsage().catch(() => null)
     ]);
+    await recordProviderQuotaSnapshots([codex, claudeCode, copilot]).catch(() => {});
     const alerts = settings.enabled ? buildNotificationAlerts(settings, { codex, claudeCode, copilot }) : [];
     res.json({ alerts });
   } catch (error) {
@@ -3358,6 +3383,7 @@ async function saveClaudeBrowserCreditsSnapshot(payload) {
   const snapshot = normalizeClaudeBrowserCreditsSnapshot(payload);
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.writeFile(CLAUDE_BROWSER_CREDITS_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+  await appendChangedQuotaEvents(buildClaudeBrowserQuotaEvents(snapshot)).catch(() => {});
   return snapshot;
 }
 
@@ -3406,6 +3432,382 @@ function summarizeClaudeBrowserCredits(snapshot) {
     updatedAt: snapshot.updatedAt || null,
     usageUpdatedAt: snapshot.usage?.updatedAt || null
   };
+}
+
+async function recordProviderQuotaSnapshots(providers) {
+  const events = [];
+  for (const provider of providers) {
+    events.push(...buildProviderQuotaEvents(provider));
+  }
+  if (events.length) await appendChangedQuotaEvents(events);
+}
+
+function buildProviderQuotaEvents(provider) {
+  if (!provider || typeof provider !== "object" || !provider.id) return [];
+  const capturedAt = provider.limitsUpdatedAt || provider.updatedAt || new Date().toISOString();
+  const source =
+    provider.limitSource ||
+    provider.liveRateLimits?.name ||
+    provider.liveRateLimits?.source ||
+    provider.source?.liveRateLimits?.name ||
+    provider.source?.liveRateLimits?.source ||
+    null;
+  const events =
+    provider.id === "claudeCode" && provider.browserCredits
+      ? buildStatusQuotaEvent(
+          provider.id,
+          provider.browserCredits.status,
+          provider.browserCredits.reason,
+          provider.browserCredits.source || source,
+          provider.browserCredits.updatedAt || capturedAt
+        )
+      : buildStatusQuotaEvent(provider.id, provider.status, provider.message || null, source, capturedAt);
+  const limitWindows = provider.limits?.rows?.length
+    ? provider.limits.rows
+    : [
+        provider.limits?.fiveHour,
+        provider.limits?.weekly,
+        provider.limits?.currentSession,
+        provider.limits?.allModels,
+        provider.limits?.claudeDesign,
+        provider.limits?.sonnetOnly
+      ];
+  const windows = [
+    provider.fiveHour,
+    provider.weekly,
+    provider.currentSession,
+    provider.allModels,
+    ...(provider.limitRows || []),
+    ...limitWindows,
+    ...(provider.rows || [])
+  ];
+  const seen = new Set();
+  for (const window of windows) {
+    const event = quotaWindowEventFromLimitRow(provider.id, window, capturedAt, source);
+    if (!event) continue;
+    const key = `${event.provider}:${event.windowKey}:${event.resetsAt || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    events.push(event);
+  }
+  for (const credit of provider.creditRows || []) {
+    const event = quotaCreditEventFromRow(provider.id, credit, capturedAt, provider.creditSource || source);
+    if (event) events.push(event);
+  }
+  return events;
+}
+
+function buildClaudeBrowserQuotaEvents(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return [];
+  const capturedAt = snapshot.usage?.updatedAt || snapshot.updatedAt || new Date().toISOString();
+  const source = snapshot.usage?.source || snapshot.source || "claude_browser_sync";
+  const events = buildStatusQuotaEvent("claudeCode", snapshot.status, snapshot.reason, source, capturedAt);
+  const usage = snapshot.usage || {};
+  for (const [windowKey, label, windowMinutes] of [
+    ["five_hour", "5h", 300],
+    ["seven_day", "Woche", 10080],
+    ["seven_day_sonnet", "Nur Sonnet", 10080],
+    ["seven_day_opus", "Opus", 10080],
+    ["seven_day_oauth_apps", "OAuth Apps", 10080],
+    ["seven_day_cowork", "Cowork", 10080],
+    ["seven_day_omelette", "Omelette", 10080]
+  ]) {
+    const event = quotaWindowEventFromClaudeUsage("claudeCode", windowKey, label, windowMinutes, usage[windowKey], capturedAt, source);
+    if (event) events.push(event);
+  }
+  const extraUsage = quotaCreditEventFromClaudeExtraUsage(usage.extra_usage, capturedAt, source);
+  if (extraUsage) events.push(extraUsage);
+  return events;
+}
+
+function buildStatusQuotaEvent(provider, status, reason, source, capturedAt) {
+  const normalizedStatus = String(status || "").trim() || "unknown";
+  if (!normalizedStatus || normalizedStatus === "live") return [];
+  return [
+    finalizeQuotaEvent({
+      type: "quota_status",
+      provider,
+      windowKey: "sync_status",
+      capturedAt,
+      status: normalizedStatus,
+      reason: reason || null,
+      source: source || null
+    })
+  ];
+}
+
+function quotaWindowEventFromClaudeUsage(provider, windowKey, label, windowMinutes, rawWindow, capturedAt, source) {
+  if (!rawWindow || typeof rawWindow !== "object") return null;
+  const usedPercent = numberOrNull(rawWindow.utilization ?? rawWindow.used_percentage ?? rawWindow.usedPercent);
+  if (usedPercent === null) return null;
+  return finalizeQuotaEvent({
+    type: "quota_window",
+    provider,
+    windowKey,
+    label,
+    capturedAt,
+    source: source || null,
+    usedPercent: clampPercent(usedPercent),
+    remainingPercent: clampPercent(100 - usedPercent),
+    resetsAt: normalizeOptionalDate(rawWindow.resets_at ?? rawWindow.resetsAt),
+    windowMinutes
+  });
+}
+
+function quotaWindowEventFromLimitRow(provider, row, capturedAt, source) {
+  if (!row || typeof row !== "object") return null;
+  const usedPercent = numberOrNull(row.usedPercent ?? row.used_percentage ?? row.usage_percentage ?? row.percent_used);
+  if (usedPercent === null) return null;
+  const rawWindowKey = row.key || row.windowKey || row.name || row.label || row.limitName || row.limitLabel || "limit";
+  return finalizeQuotaEvent({
+    type: "quota_window",
+    provider,
+    windowKey: quotaWindowKey(rawWindowKey),
+    label: String(row.label || row.limitLabel || row.name || row.limitName || rawWindowKey),
+    capturedAt,
+    source: source || null,
+    usedPercent: clampPercent(usedPercent),
+    remainingPercent: clampPercent(row.remainingPercent ?? row.remaining_percentage ?? 100 - usedPercent),
+    resetsAt: normalizeOptionalDate(row.resetsAt ?? row.reset_at ?? row.resets_at),
+    windowMinutes: positiveInteger(row.windowMinutes ?? row.window_minutes)
+  });
+}
+
+function quotaCreditEventFromRow(provider, row, capturedAt, source) {
+  if (!row || typeof row !== "object" || row.percent === undefined || row.percent === null) return null;
+  const percent = numberOrNull(row.percent);
+  if (percent === null) return null;
+  return finalizeQuotaEvent({
+    type: "quota_credit",
+    provider,
+    windowKey: quotaWindowKey(row.key || row.label || "credit"),
+    label: String(row.label || row.key || "Credit"),
+    capturedAt,
+    source: source || null,
+    usedPercent: clampPercent(percent),
+    amount: numberOrNull(row.amount),
+    currency: row.currency ? normalizeCurrency(row.currency) : null,
+    resetsAt: normalizeOptionalDate(row.resetsAt)
+  });
+}
+
+function quotaCreditEventFromClaudeExtraUsage(extraUsage, capturedAt, source) {
+  if (!extraUsage || typeof extraUsage !== "object") return null;
+  const usedCredits = numberOrNull(extraUsage.used_credits ?? extraUsage.usedCredits);
+  const monthlyLimit = numberOrNull(extraUsage.monthly_limit ?? extraUsage.monthlyLimit);
+  const utilization = numberOrNull(extraUsage.utilization);
+  if (usedCredits === null && utilization === null) return null;
+  return finalizeQuotaEvent({
+    type: "quota_credit",
+    provider: "claudeCode",
+    windowKey: "extra_usage",
+    label: "Extra usage",
+    capturedAt,
+    source: source || null,
+    usedPercent: utilization === null ? null : clampPercent(utilization),
+    usedCredits,
+    monthlyLimit,
+    currency: extraUsage.currency ? normalizeCurrency(extraUsage.currency) : null,
+    status: parseBoolean(extraUsage.is_enabled) ? "available" : "disabled",
+    reason: extraUsage.disabled_reason || null
+  });
+}
+
+function finalizeQuotaEvent(event) {
+  const capturedAt = normalizeOptionalDate(event.capturedAt) || new Date().toISOString();
+  const normalized = {
+    type: event.type,
+    provider: event.provider,
+    windowKey: quotaWindowKey(event.windowKey),
+    label: event.label || null,
+    capturedAt,
+    source: event.source ? String(event.source) : null,
+    status: event.status ? String(event.status) : null,
+    reason: event.reason || null,
+    usedPercent: event.usedPercent === null || event.usedPercent === undefined ? null : clampPercent(event.usedPercent),
+    remainingPercent:
+      event.remainingPercent === null || event.remainingPercent === undefined ? null : clampPercent(event.remainingPercent),
+    resetsAt: normalizeQuotaResetDate(event.resetsAt),
+    windowMinutes: positiveInteger(event.windowMinutes),
+    amount: numberOrNull(event.amount),
+    usedCredits: numberOrNull(event.usedCredits),
+    monthlyLimit: numberOrNull(event.monthlyLimit),
+    currency: event.currency ? normalizeCurrency(event.currency) : null
+  };
+  for (const key of Object.keys(normalized)) {
+    if (normalized[key] === null || normalized[key] === undefined || normalized[key] === "") delete normalized[key];
+  }
+  normalized.eventKey = quotaEventKey(normalized);
+  normalized.fingerprint = quotaEventFingerprint(normalized);
+  return normalized;
+}
+
+async function appendChangedQuotaEvents(events) {
+  const cleanEvents = events.filter(Boolean);
+  if (!cleanEvents.length) return [];
+  const latestByKey = await readLatestQuotaEventsByKey();
+  const changed = cleanEvents.filter((event) => latestByKey.get(event.eventKey)?.fingerprint !== event.fingerprint);
+  if (!changed.length) return [];
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.appendFile(QUOTA_EVENTS_FILE, changed.map((event) => JSON.stringify(event)).join("\n") + "\n", { mode: 0o600 });
+  return changed;
+}
+
+async function readLatestQuotaEventsByKey() {
+  const events = await readQuotaEvents();
+  const latestByKey = new Map();
+  for (const event of events) {
+    latestByKey.set(event.eventKey || quotaEventKey(event), event);
+  }
+  return latestByKey;
+}
+
+async function readQuotaEvents() {
+  try {
+    const text = await fsp.readFile(QUOTA_EVENTS_FILE, "utf8");
+    const events = [];
+    const seen = new Set();
+    for (const line of text.split(/\r?\n/).filter(Boolean)) {
+      try {
+        const event = normalizeStoredQuotaEvent(JSON.parse(line));
+        if (!event) continue;
+        const key = `${event.eventKey || ""}:${event.capturedAt || ""}:${event.fingerprint || ""}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        events.push(event);
+      } catch {
+        // Ignore corrupt history lines.
+      }
+    }
+    return events;
+  } catch {
+    return [];
+  }
+}
+
+function normalizeStoredQuotaEvent(event) {
+  if (!event || typeof event !== "object" || !event.provider || !event.type || !event.windowKey) return null;
+  const normalized = {
+    ...event,
+    windowKey: quotaWindowKey(event.windowKey),
+    resetsAt: normalizeQuotaResetDate(event.resetsAt)
+  };
+  normalized.eventKey = quotaEventKey(normalized);
+  normalized.fingerprint = quotaEventFingerprint(normalized);
+  return normalized;
+}
+
+function buildQuotaWindowSummaries(events) {
+  const groups = new Map();
+  for (const event of events) {
+    if (event.type !== "quota_window" || !event.resetsAt) continue;
+    const key = `${event.provider}:${event.windowKey}:${event.resetsAt}`;
+    const existing = groups.get(key) || {
+      provider: event.provider,
+      windowKey: event.windowKey,
+      label: event.label || event.windowKey,
+      source: event.source || null,
+      windowMinutes: event.windowMinutes || null,
+      startsAt: quotaWindowStartsAt(event.resetsAt, event.windowMinutes),
+      resetsAt: event.resetsAt,
+      firstCapturedAt: event.capturedAt,
+      lastCapturedAt: event.capturedAt,
+      maxUsedPercent: event.usedPercent,
+      minRemainingPercent: event.remainingPercent,
+      eventCount: 0,
+      complete: Date.parse(event.resetsAt) <= Date.now()
+    };
+    existing.eventCount += 1;
+    if (Date.parse(event.capturedAt) < Date.parse(existing.firstCapturedAt)) existing.firstCapturedAt = event.capturedAt;
+    if (Date.parse(event.capturedAt) > Date.parse(existing.lastCapturedAt)) existing.lastCapturedAt = event.capturedAt;
+    if (event.usedPercent !== undefined) {
+      existing.maxUsedPercent =
+        existing.maxUsedPercent === undefined ? event.usedPercent : Math.max(existing.maxUsedPercent, event.usedPercent);
+    }
+    if (event.remainingPercent !== undefined) {
+      existing.minRemainingPercent =
+        existing.minRemainingPercent === undefined
+          ? event.remainingPercent
+          : Math.min(existing.minRemainingPercent, event.remainingPercent);
+    }
+    groups.set(key, existing);
+  }
+  return Array.from(groups.values()).sort((a, b) => Date.parse(a.resetsAt) - Date.parse(b.resetsAt));
+}
+
+function quotaWindowStartsAt(resetsAt, windowMinutes) {
+  const resetMs = Date.parse(resetsAt || "");
+  const minutes = positiveInteger(windowMinutes);
+  if (!Number.isFinite(resetMs) || !minutes) return null;
+  return new Date(resetMs - minutes * 60 * 1000).toISOString();
+}
+
+function normalizeQuotaResetDate(value) {
+  const iso = normalizeOptionalDate(value);
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (date.getSeconds() >= 30) {
+    date.setMinutes(date.getMinutes() + 1);
+  }
+  date.setSeconds(0, 0);
+  return date.toISOString();
+}
+
+function quotaEventKey(event) {
+  return `${event.provider}:${event.type}:${event.windowKey}`;
+}
+
+function quotaEventFingerprint(event) {
+  return JSON.stringify({
+    status: event.status || null,
+    reason: event.reason || null,
+    usedPercent: event.usedPercent ?? null,
+    remainingPercent: event.remainingPercent ?? null,
+    resetsAt: event.resetsAt || null,
+    windowMinutes: event.windowMinutes || null,
+    amount: event.amount ?? null,
+    usedCredits: event.usedCredits ?? null,
+    monthlyLimit: event.monthlyLimit ?? null,
+    currency: event.currency || null,
+    source: event.source || null
+  });
+}
+
+function quotaWindowKey(value) {
+  const normalized = String(value || "limit")
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase() || "limit";
+  const aliases = {
+    "5h": "five_hour",
+    current_session: "five_hour",
+    aktuelle_sitzung: "five_hour",
+    woche: "weekly",
+    all_models: "weekly",
+    alle_modelle: "weekly",
+    seven_day: "weekly",
+    nur_sonnet: "sonnet_only",
+    seven_day_sonnet: "sonnet_only"
+  };
+  return aliases[normalized] || normalized;
+}
+
+function numberOrNull(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function positiveInteger(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.round(number) : null;
+}
+
+function clampPercent(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : null;
 }
 
 function buildNotificationAlerts(settings, usageMap) {

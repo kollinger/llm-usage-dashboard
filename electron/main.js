@@ -12,6 +12,8 @@ const { app, BrowserWindow, shell, Notification } = require("electron");
 let dashboardServer = null;
 let ollamaProxyServer = null;
 let mainWindow = null;
+let dashboardPort = null;
+let openWindowWhenReady = false;
 let claudeBrowserSyncPending = null;
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
@@ -22,6 +24,8 @@ const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
 const CLAUDE_SYNC_TOKEN_HEADER = "x-llm-usage-sync-token";
+const BACKGROUND_START_ARG = "--background";
+const LINUX_AUTOSTART_ID = "local.llm-usage-dashboard";
 const CLAUDE_COOKIE_CANDIDATE_NAMES = ["sessionKey", "__Secure-next-auth.session-token", "sessionKeyLC"];
 const CLAUDE_CHROME_COOKIE_DB = path.join(
   os.homedir(),
@@ -43,6 +47,20 @@ const CLAUDE_APP_CACHE_DIR = path.join(
 );
 const ZSTD_FRAME_MAGIC = Buffer.from([0x28, 0xb5, 0x2f, 0xfd]);
 const execFileAsync = promisify(execFile);
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, commandLine) => {
+    if (commandLine.includes(BACKGROUND_START_ARG)) return;
+    if (dashboardPort) {
+      showDashboardWindow(dashboardPort);
+    } else {
+      openWindowWhenReady = true;
+    }
+  });
+}
 
 function setDefaultEnv(name, value) {
   if (!process.env[name]) process.env[name] = value;
@@ -93,6 +111,72 @@ function createWindow(port) {
     }
   });
   mainWindow.loadURL(appUrl);
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+}
+
+function showDashboardWindow(port) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+  createWindow(port);
+}
+
+async function configureBackgroundLoginItem() {
+  if (!app.isPackaged) return;
+  if (String(process.env.LLM_USAGE_AUTO_LAUNCH || "true").toLowerCase() === "false") return;
+  try {
+    if (process.platform === "darwin") {
+      app.setLoginItemSettings({ openAtLogin: true, openAsHidden: true });
+    } else if (process.platform === "win32") {
+      app.setLoginItemSettings({ openAtLogin: true, args: [BACKGROUND_START_ARG] });
+    } else if (process.platform === "linux") {
+      await configureLinuxAutostart();
+    }
+  } catch {
+    // Login-item setup is best-effort and should not block the dashboard.
+  }
+}
+
+async function configureLinuxAutostart() {
+  const configHome = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+  const autostartDir = path.join(configHome, "autostart");
+  const autostartFile = path.join(autostartDir, `${LINUX_AUTOSTART_ID}.desktop`);
+  const desktopEntry = [
+    "[Desktop Entry]",
+    "Type=Application",
+    "Version=1.0",
+    "Name=LLM Usage Dashboard",
+    "Comment=Start LLM Usage Dashboard in the background",
+    `Exec=${desktopExecQuote(linuxAutostartExecPath())} ${BACKGROUND_START_ARG}`,
+    "Terminal=false",
+    "X-GNOME-Autostart-enabled=true",
+    ""
+  ].join("\n");
+  await fs.mkdir(autostartDir, { recursive: true });
+  await fs.writeFile(autostartFile, desktopEntry, "utf8");
+}
+
+function linuxAutostartExecPath() {
+  return process.env.APPIMAGE || process.execPath;
+}
+
+function desktopExecQuote(value) {
+  return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function shouldOpenInitialWindow() {
+  if (process.argv.includes(BACKGROUND_START_ARG)) return false;
+  try {
+    const settings = app.getLoginItemSettings();
+    if (settings.wasOpenedAsHidden) return false;
+  } catch {
+    // Fall through to opening a normal window.
+  }
+  return true;
 }
 
 function closeServer(server) {
@@ -153,7 +237,9 @@ async function checkNotifications(port) {
         const title = `Limit warning: ${alert.windowLabel}`;
         const body = buildNotificationBody(alert);
         const n = new Notification({ title, body, silent: false });
-        n.on("click", () => mainWindow?.show());
+        n.on("click", () => {
+          if (dashboardPort) showDashboardWindow(dashboardPort);
+        });
         n.show();
       }
     }
@@ -724,8 +810,11 @@ async function fileExists(filePath) {
 }
 
 app.whenReady().then(async () => {
+  if (!hasSingleInstanceLock) return;
   const port = await startBackend();
-  createWindow(port);
+  dashboardPort = port;
+  await configureBackgroundLoginItem();
+  if (shouldOpenInitialWindow() || openWindowWhenReady) showDashboardWindow(port);
 
   syncClaudeBrowserCredits(port).catch(() => {});
 
@@ -739,12 +828,12 @@ app.whenReady().then(async () => {
   }, CLAUDE_SYNC_INTERVAL_MS);
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow(port);
+    showDashboardWindow(port);
   });
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  // Keep the backend alive for background quota sync; a later app launch reopens the window.
 });
 
 app.on("before-quit", () => {

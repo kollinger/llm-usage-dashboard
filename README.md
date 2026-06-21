@@ -13,13 +13,14 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 - GitHub Copilot CLI session metrics from local shutdown events, without reading prompt/response content into dashboard output.
 - Claude Code local transcript token usage from `~/.claude/projects`.
 - Claude Code plan limit capture from a statusline JSON file when Claude exposes those values.
+- Change-only quota history for provider limit windows, stored locally without raw provider payloads.
 - Gemini local usage metadata from known local Gemini telemetry/chat paths when present.
 - Ollama local token capture through the optional built-in proxy logger.
 - Optional OpenAI and Anthropic admin API usage/cost aggregation when admin keys are provided.
 - Token history chart with per-provider color stacking, source totals, and API price comparison estimates for local/non-API usage.
 - Multilingual UI with system-language detection and a settings language selector.
 - Optional password login and OIDC/SSO.
-- Electron builds for macOS and Linux AppImage.
+- Electron builds for macOS, Linux AppImage, and Windows.
 
 ## Quick Start
 
@@ -42,6 +43,8 @@ By default the dashboard is local-unlocked. Set `DASHBOARD_PASSWORD` if you expo
 Prebuilt desktop downloads are published on the [GitHub Releases page](https://github.com/kollinger/llm-usage-dashboard/releases/latest).
 Current desktop release assets are marked as unsigned prereleases until macOS notarization and Windows code signing are configured.
 
+The installed desktop app starts at login in the background on supported platforms and keeps the local backend running even when the dashboard window is closed. This lets live quota snapshots continue to sync while the machine is awake and online; development runs with `npm run electron` do not install a login item. macOS and Windows use native login-item APIs; Linux packaged builds write an XDG autostart `.desktop` file.
+
 Run the Electron app in development:
 
 ```sh
@@ -59,7 +62,7 @@ npm run dist:win
 Artifacts are written to `dist/`.
 
 - macOS uses the universal DMG/ZIP build.
-- Linux uses the x86_64 AppImage.
+- Linux uses an AppImage for the build architecture; GitHub-hosted release builds produce x86_64 artifacts.
 - Windows uses an x64 NSIS installer and a portable EXE.
 - These artifacts contain OS-specific binaries. Renaming extensions is not enough to move between operating systems.
 
@@ -234,6 +237,14 @@ Fields parsed when present:
 
 `resets_at` values may be Unix epoch seconds, Unix epoch milliseconds, or ISO timestamps. The dashboard normalizes all three forms before display.
 
+When the desktop sync observes quota or credit changes, the dashboard appends a sanitized change event to:
+
+```text
+data/quota-events.jsonl
+```
+
+Events are written only when relevant values change, such as utilization percentage, reset time, sync status, or credit utilization. Each event stores provider, window key, timestamps, percentage, reset time, source label, and similar aggregate metadata. It does not store cookies, raw API responses, prompts, tool payloads, account IDs, or transcript content. Finished window summaries can be derived from these change events through `/api/quota-history`.
+
 The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
 
 ### Gemini
@@ -303,7 +314,7 @@ The script rewrites the pricing metadata, model rows, and internal heuristic sco
 
 - Codex local usage and live quota display: the dashboard reads `token_count` history and tries the local Codex app-server for live rate-limit snapshots when available.
 - Copilot CLI local usage: shutdown metrics are supported without reading prompt, response, hook, or tool payload content into dashboard output. Experimental live quota snapshots are read through the local Copilot SDK when the installed CLI exposes them.
-- Claude Code local usage and live limits: transcript usage, statusline setup, sanitized quota capture, 5-hour and 7-day reset display, stale-limit detection, and app-driven Claude Code launch are supported.
+- Claude Code local usage and live limits: transcript usage, statusline setup, sanitized quota capture, change-only quota history, 5-hour and 7-day reset display, stale-limit detection, and app-driven Claude Code launch are supported.
 - Gemini local usage: known telemetry and chat metadata paths are scanned when present.
 - Ollama local usage: the optional proxy logger can capture Ollama-compatible usage into `data/ollama-usage.jsonl`.
 - OpenAI and Anthropic API reporting: minimal admin-key aggregation is available for usage, cost, and configured Anthropic organization/workspace rate limits.
