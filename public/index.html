@@ -214,6 +214,10 @@
             <input type="checkbox" id="notificationsEnabled" />
             <span data-i18n="settings.notifications.enabled">Benachrichtigungen aktivieren</span>
           </label>
+          <div class="notification-permission-notice" id="notificationPermissionNotice" hidden role="status" aria-live="polite">
+            <strong id="notificationPermissionNoticeTitle" data-i18n="settings.notifications.systemGuideTitle">System notifications need attention</strong>
+            <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Allow notifications for LLM Usage Dashboard in system settings, restart the app if you just changed the setting, then run the test again.</span>
+          </div>
           <div id="notificationThresholds" class="notification-thresholds" hidden>
             <label class="field">
               <span data-i18n="settings.notifications.pacingLabel">Tempo-Warnung bei projiziertem Verbrauch (%)</span>

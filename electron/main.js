@@ -6,7 +6,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const zlib = require("node:zlib");
-const { execFile } = require("node:child_process");
+const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
 const { app, BrowserWindow, shell, Notification } = require("electron");
 
@@ -543,7 +543,46 @@ async function openSystemNotificationSettings() {
     await shell.openExternal("ms-settings:notifications");
     return;
   }
+  if (process.platform === "linux" && openLinuxNotificationSettings()) return;
   await shell.openExternal("https://www.freedesktop.org/wiki/Specifications/desktop-notification-spec/");
+}
+
+function openLinuxNotificationSettings() {
+  const candidates = [
+    ["gnome-control-center", ["notifications"]],
+    ["systemsettings", ["kcm_notifications"]],
+    ["systemsettings6", ["kcm_notifications"]],
+    ["kcmshell6", ["kcm_notifications"]],
+    ["kcmshell5", ["kcm_notifications"]],
+    ["xfce4-notifyd-config", []],
+    ["cinnamon-settings", ["notifications"]]
+  ];
+  for (const [command, args] of candidates) {
+    const executable = findExecutable(command);
+    if (!executable) continue;
+    try {
+      const child = spawn(executable, args, { detached: true, stdio: "ignore" });
+      child.unref();
+      return true;
+    } catch {
+      // Try the next known desktop settings app.
+    }
+  }
+  return false;
+}
+
+function findExecutable(command) {
+  const pathDirs = String(process.env.PATH || "").split(path.delimiter).filter(Boolean);
+  for (const dir of pathDirs) {
+    const candidate = path.join(dir, command);
+    try {
+      fsSync.accessSync(candidate, fsSync.constants.X_OK);
+      return candidate;
+    } catch {
+      // Continue searching PATH.
+    }
+  }
+  return null;
 }
 
 async function checkOpenNotificationSettingsPending(port) {

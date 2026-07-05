@@ -68,6 +68,9 @@ const els = {
   notificationDiagSupported: document.getElementById("notificationDiagSupported"),
   notificationDiagPermission: document.getElementById("notificationDiagPermission"),
   notificationDiagNativeDelivery: document.getElementById("notificationDiagNativeDelivery"),
+  notificationPermissionNotice: document.getElementById("notificationPermissionNotice"),
+  notificationPermissionNoticeTitle: document.getElementById("notificationPermissionNoticeTitle"),
+  notificationPermissionNoticeBody: document.getElementById("notificationPermissionNoticeBody"),
   notificationSettingsBtn: document.getElementById("notificationSettingsBtn"),
   notificationTestBtn: document.getElementById("notificationTestBtn"),
   notificationTestStatus: document.getElementById("notificationTestStatus"),
@@ -2637,7 +2640,8 @@ async function loadNotificationStatus() {
       els.notificationDiagNativeDelivery.className =
         ["ad_hoc", "gatekeeper_rejected", "invalid"].includes(nativeDelivery) ? "diag-error" : "";
     }
-    updateNotificationPermissionDiagnostic();
+    const permission = updateNotificationPermissionDiagnostic();
+    renderNotificationSystemGuidance(status, { permission });
     if (status?.lastTestAt && els.notificationLastTestDetails) {
       els.notificationLastTestDetails.hidden = false;
       if (els.notificationLastTestAt) els.notificationLastTestAt.textContent = formatStatusTime(status.lastTestAt);
@@ -2657,9 +2661,40 @@ function getNotificationPermissionStatus() {
 }
 
 function updateNotificationPermissionDiagnostic() {
-  if (!els.notificationDiagPermission) return;
   const permission = getNotificationPermissionStatus();
-  els.notificationDiagPermission.textContent = t(`settings.notifications.permission_${permission}`, {}, permission);
+  if (els.notificationDiagPermission) {
+    els.notificationDiagPermission.textContent = t(`settings.notifications.permission_${permission}`, {}, permission);
+  }
+  return permission;
+}
+
+function renderNotificationSystemGuidance(status, { permission = getNotificationPermissionStatus(), force = false, bodyKey = "" } = {}) {
+  if (!els.notificationPermissionNotice) return;
+  const guidanceKey = bodyKey || notificationSystemGuidanceKey(status, permission);
+  if (!force && !guidanceKey) {
+    els.notificationPermissionNotice.hidden = true;
+    return;
+  }
+  if (els.notificationPermissionNoticeTitle) {
+    els.notificationPermissionNoticeTitle.textContent = t("settings.notifications.systemGuideTitle");
+  }
+  if (els.notificationPermissionNoticeBody) {
+    els.notificationPermissionNoticeBody.textContent = t(guidanceKey || "settings.notifications.systemGuideDefault");
+  }
+  els.notificationPermissionNotice.hidden = false;
+}
+
+function notificationSystemGuidanceKey(status, permission) {
+  if (permission === "unsupported") return "settings.notifications.systemGuideUnsupported";
+  if (permission && permission !== "granted") return "settings.notifications.systemGuidePermission";
+  const nativeDelivery = status?.macNotificationDiagnostics?.nativeDelivery || "";
+  if (["ad_hoc", "gatekeeper_rejected", "invalid", "unverified"].includes(nativeDelivery)) {
+    return "settings.notifications.systemGuideNativeUnverified";
+  }
+  if (status?.lastTestResult === "error" || String(status?.lastSkippedReason || "").startsWith("notification_failed")) {
+    return "settings.notifications.systemGuideTestFailed";
+  }
+  return "";
 }
 
 async function requestNotificationPermissionForTest() {
@@ -2718,27 +2753,32 @@ function showInAppTestNotification({ status = "ready", bodyKey = "settings.notif
   }, 30_000);
 }
 
-async function openNotificationSettings() {
+async function openNotificationSettings({ silent = false } = {}) {
   if (!els.notificationSettingsBtn) return;
   els.notificationSettingsBtn.disabled = true;
   try {
     await fetchJson("/api/notifications/open-settings", { method: "POST" });
-    if (els.notificationTestStatus) {
+    if (!silent && els.notificationTestStatus) {
       els.notificationTestStatus.textContent = t("settings.notifications.openSettingsQueued");
       els.notificationTestStatus.hidden = false;
     }
-    showInAppTestNotification({
-      bodyKey: "settings.notifications.openSettingsQueued"
-    });
+    renderNotificationSystemGuidance(null, { force: true, bodyKey: "settings.notifications.systemGuideDefault" });
+    if (!silent) {
+      showInAppTestNotification({
+        bodyKey: "settings.notifications.openSettingsQueued"
+      });
+    }
   } catch {
-    if (els.notificationTestStatus) {
+    if (!silent && els.notificationTestStatus) {
       els.notificationTestStatus.textContent = t("settings.notifications.openSettingsError");
       els.notificationTestStatus.hidden = false;
     }
-    showInAppTestNotification({
-      status: "error",
-      bodyKey: "settings.notifications.openSettingsError"
-    });
+    if (!silent) {
+      showInAppTestNotification({
+        status: "error",
+        bodyKey: "settings.notifications.openSettingsError"
+      });
+    }
   } finally {
     els.notificationSettingsBtn.disabled = false;
   }
@@ -2753,10 +2793,15 @@ async function sendTestNotification() {
     const permission = await requestNotificationPermissionForTest();
     updateNotificationPermissionDiagnostic();
     if (permission === "unsupported") {
+      await openNotificationSettings({ silent: true });
       if (els.notificationTestStatus) {
         els.notificationTestStatus.textContent = t("settings.notifications.permissionUnsupported");
         els.notificationTestStatus.hidden = false;
       }
+      renderNotificationSystemGuidance(null, {
+        force: true,
+        bodyKey: "settings.notifications.systemGuideUnsupported"
+      });
       showInAppTestNotification({
         status: "error",
         bodyKey: "settings.notifications.permissionUnsupported"
@@ -2765,10 +2810,15 @@ async function sendTestNotification() {
       return;
     }
     if (permission !== "granted") {
+      await openNotificationSettings({ silent: true });
       if (els.notificationTestStatus) {
         els.notificationTestStatus.textContent = t("settings.notifications.permissionNotGranted");
         els.notificationTestStatus.hidden = false;
       }
+      renderNotificationSystemGuidance(null, {
+        force: true,
+        bodyKey: "settings.notifications.systemGuidePermission"
+      });
       showInAppTestNotification({
         status: "error",
         bodyKey: "settings.notifications.permissionNotGranted"
@@ -2778,6 +2828,10 @@ async function sendTestNotification() {
     }
     const rendererDelivery = showRendererTestNotification();
     await fetchJson("/api/notifications/test", { method: "POST" });
+    renderNotificationSystemGuidance(null, {
+      force: true,
+      bodyKey: "settings.notifications.systemGuideAfterTest"
+    });
     showInAppTestNotification(
       rendererDelivery.result === "error"
         ? {

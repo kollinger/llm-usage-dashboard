@@ -1359,6 +1359,33 @@ select {
   max-width: 120px;
 }
 
+.notification-permission-notice {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--amber) 34%, var(--line));
+  border-left: 4px solid var(--amber);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--amber) 10%, var(--panel));
+  color: var(--ink);
+}
+
+.notification-permission-notice strong,
+.notification-permission-notice span {
+  display: block;
+}
+
+.notification-permission-notice strong {
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.notification-permission-notice span {
+  color: var(--ink-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .notification-diagnostics {
   margin-top: 18px;
   padding-top: 16px;
