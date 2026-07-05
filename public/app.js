@@ -1,10 +1,14 @@
 const state = {
   auth: null,
   usage: null,
+  subscriptionHistory: null,
   loadingUsage: false,
   refreshIndicator: false,
   showAllProviders: false,
   chartRendered: false,
+  chartScrollToLatest: true,
+  chartMode: "tokens",
+  chartTimeFilter: "all",
   pricingSort: null,
   language: "en",
   translations: {},
@@ -41,7 +45,10 @@ const els = {
   tokensToday: document.getElementById("tokensToday"),
   tokensTotal: document.getElementById("tokensTotal"),
   recordDay: document.getElementById("recordDay"),
+  chartTitle: document.getElementById("chartTitle"),
+  chartModeToggle: document.getElementById("chartModeToggle"),
   chart: document.getElementById("chart"),
+  chartFilterBar: document.getElementById("chartFilterBar"),
   chartLegend: document.getElementById("chartLegend"),
   sourceTotals: document.getElementById("sourceTotals"),
   tokenList: document.getElementById("tokenList"),
@@ -354,6 +361,20 @@ const pricingModels = [
   }
 ];
 
+const costPricingModelBySource = {
+  codex: pricingModels.find((price) => price.model === "GPT-5.3-Codex") || null,
+  codexSpark: pricingModels.find((price) => price.model === "GPT-5.3-Codex-Spark") || null,
+  claudeCode: pricingModels.find((price) => price.model === "Claude Sonnet 4.6") || null,
+  gemini: pricingModels.find((price) => price.model === "Gemini 3.5 Flash") || null
+};
+
+const costPricingQualityBySource = {
+  codex: "complete",
+  codexSpark: "complete",
+  claudeCode: "estimated",
+  gemini: "estimated"
+};
+
 const modelQualityScores = {
   "Claude Opus 4.8": 100,
   "GPT-5.5": 97,
@@ -407,6 +428,20 @@ function bindEvents() {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
   });
   els.loginForm.addEventListener("submit", login);
+  els.appShell.addEventListener("click", (e) => {
+    const modeBtn = e.target.closest("[data-chart-mode]");
+    if (modeBtn) {
+      state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
+      state.chartScrollToLatest = true;
+      if (state.usage) render();
+      return;
+    }
+    const btn = e.target.closest("[data-chart-filter]");
+    if (!btn) return;
+    state.chartTimeFilter = btn.dataset.chartFilter;
+    state.chartScrollToLatest = true;
+    if (state.usage) render();
+  });
 }
 
 async function setLanguage(language) {
@@ -600,7 +635,15 @@ async function loadUsage({ showIndicator = false } = {}) {
   }
   setUsageLoading(true, showIndicator);
   try {
-    state.usage = await fetchJson(`/api/usage?ts=${Date.now()}`);
+    const [usage, subscriptionHistory] = await Promise.all([
+      fetchJson(`/api/usage?ts=${Date.now()}`),
+      fetchJson("/api/subscription-history").catch((error) => {
+        if (error.status === 401) throw error;
+        return { version: 1, entries: [] };
+      })
+    ]);
+    state.usage = usage;
+    state.subscriptionHistory = subscriptionHistory;
     render();
   } catch (error) {
     if (error.status === 401) {
@@ -660,8 +703,11 @@ function renderLocked() {
   els.tokensTotal.textContent = "--";
   els.recordDay.textContent = "";
   els.recordDay.hidden = true;
+  if (els.chartTitle) els.chartTitle.textContent = t("chart.heading");
+  if (els.chartModeToggle) els.chartModeToggle.innerHTML = "";
   els.chart.innerHTML = "";
   els.chartLegend.innerHTML = "";
+  els.chartFilterBar.innerHTML = "";
   els.sourceTotals.textContent = "--";
   els.tokenList.innerHTML = "";
   els.priceRows.innerHTML = "";
@@ -689,15 +735,43 @@ function render() {
     : renderNoActiveProviders();
   updateProviderFilterControl(providers, visibleProviders);
   renderSummary(visibleProviders, usage.local);
-  renderChart(usage.local?.daily || []);
+  const allDaily = usage.local?.daily || [];
+  syncChartTimeFilter(allDaily);
+  const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
+  if (els.chartTitle) {
+    els.chartTitle.textContent = state.chartMode === "costs" ? t("chart.headingCosts") : t("chart.heading");
+  }
+  if (els.chartModeToggle) {
+    els.chartModeToggle.innerHTML = renderChartModeToggle();
+  }
+  els.chartFilterBar.innerHTML = renderChartFilterBar(allDaily);
+  if (state.chartMode === "costs") {
+    renderCostChart(filteredDaily);
+    els.sourceTotals.innerHTML = renderCostSummary(filteredDaily, state.subscriptionHistory);
+  } else {
+    renderChart(filteredDaily);
+    els.sourceTotals.innerHTML = renderSourceTotalBars(filteredDaily);
+  }
   renderTokenList(usage.local?.totals?.allTime);
   renderPricing(usage.local);
-  els.sourceTotals.innerHTML = renderSourceTotalBars(usage.local);
   refreshIcons();
 }
 
-function renderSourceTotalBars(local) {
-  const sources = sourceTotalsForWindow(local, "allTime");
+function renderChartModeToggle() {
+  return ["tokens", "costs"]
+    .map((mode) => {
+      const active = state.chartMode === mode;
+      return `
+        <button type="button" class="chart-mode-btn${active ? " active" : ""}" data-chart-mode="${mode}" aria-pressed="${active}">
+          ${escapeHtml(t(`chart.mode.${mode}`))}
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderSourceTotalBars(daily) {
+  const sources = sourceTotalsForDaily(daily);
   if (!sources.length) return "--";
   const max = Math.max(...sources.map((source) => source.totalTokens), 1);
   const total = sources.reduce((sum, source) => sum + source.totalTokens, 0);
@@ -724,18 +798,22 @@ function renderSourceTotalBars(local) {
   `;
 }
 
-function sourceTotalsForWindow(local, windowKey) {
-  const sources = Array.isArray(local?.sources)
-    ? local.sources
-        .map((source) => ({
-          id: source.id,
-          totalTokens: Number(source.totals?.[windowKey]?.totalTokens || 0)
-        }))
-        .filter((source) => source.totalTokens > 0)
-    : [];
+function sourceTotalsForDaily(daily) {
+  const totals = new Map();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    const sources = Array.isArray(day.sources) ? day.sources : [];
+    if (!sources.length && Number(day.totalTokens || 0) > 0) {
+      totals.set("local", Number(totals.get("local") || 0) + Number(day.totalTokens || 0));
+    }
+    for (const source of sources) {
+      const totalTokens = Number(source.totalTokens || 0);
+      if (!totalTokens) continue;
+      totals.set(source.id, Number(totals.get(source.id) || 0) + totalTokens);
+    }
+  }
+  const sources = Array.from(totals.entries()).map(([id, totalTokens]) => ({ id, totalTokens }));
   if (sources.length) return sortSourceTotals(sources);
-  const fallback = Number(local?.totals?.[windowKey]?.totalTokens || 0);
-  return fallback > 0 ? [{ id: "local", totalTokens: fallback }] : [];
+  return [];
 }
 
 function sortSourceTotals(sources) {
@@ -825,7 +903,7 @@ function normalizeCodexSparkProvider(spark, codexSubscription) {
 
 function buildQuotaFoot({ providerId, todayTokens, since, fiveHour, weekly, updated }) {
   const rows = [
-    footRow(t("labels.today"), formatTokens(todayTokens)),
+    footRow(t("labels.last24h"), formatTokens(todayTokens)),
     footRow(t("labels.since"), formatDate(since))
   ];
   if (fiveHour) rows.push(footRow(t("labels.fiveHourLeft"), formatLimitRemainingPercent(fiveHour)));
@@ -1604,6 +1682,64 @@ function estimateCost(usage, price) {
   return { usd, eur: usd / USD_PER_EUR };
 }
 
+const CHART_FILTERS = ["h24", "today", "week", "month", "year", "all"];
+
+function isoDateDaysAgo(n) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+function filterDailyByRange(daily, filter) {
+  const today = new Date().toISOString().slice(0, 10);
+  const cutoffs = {
+    h24: isoDateDaysAgo(1),
+    today: today,
+    week: isoDateDaysAgo(6),
+    month: isoDateDaysAgo(29),
+    year: isoDateDaysAgo(364)
+  };
+  if (filter === "all" || !cutoffs[filter]) return daily;
+  return daily.filter((d) => d.date >= cutoffs[filter]);
+}
+
+function availableChartFilters(daily) {
+  if (!daily.length) return ["all"];
+  const limited = CHART_FILTERS.filter((f) => {
+    if (f === "all") return true;
+    const filtered = filterDailyByRange(daily, f);
+    return filtered.length > 0 && filtered.length < daily.length;
+  });
+  return limited;
+}
+
+function syncChartTimeFilter(daily) {
+  const available = availableChartFilters(daily);
+  if (!available.includes(state.chartTimeFilter)) {
+    state.chartTimeFilter = "all";
+    state.chartScrollToLatest = true;
+  }
+}
+
+function renderChartFilterBar(daily) {
+  const available = availableChartFilters(daily);
+  if (available.length <= 1) return "";
+  const labels = {
+    h24: t("chart.filters.h24"),
+    today: t("chart.filters.today"),
+    week: t("chart.filters.week"),
+    month: t("chart.filters.month"),
+    year: t("chart.filters.year"),
+    all: t("chart.filters.all")
+  };
+  return available
+    .map((f) => {
+      const active = state.chartTimeFilter === f;
+      return `<button type="button" class="time-filter-btn${active ? " active" : ""}" data-chart-filter="${f}" aria-pressed="${active}">${escapeHtml(labels[f] || f)}</button>`;
+    })
+    .join("");
+}
+
 function renderChart(daily) {
   if (!daily.length) {
     els.chart.innerHTML = "";
@@ -1630,8 +1766,7 @@ function renderChart(daily) {
   );
   const width = Math.max(viewportWidth, pad * 2 + daily.length * barWidth + Math.max(0, daily.length - 1) * barGap);
   const previousScrollLeft = els.chart.scrollLeft;
-  const wasPinnedToEnd =
-    !state.chartRendered || els.chart.scrollWidth - els.chart.clientWidth - previousScrollLeft < 24;
+  const wasPinnedToEnd = shouldScrollChartToLatest(previousScrollLeft);
 
   const bars = daily
     .map((d, index) => {
@@ -1694,12 +1829,205 @@ function renderChart(daily) {
     </div>
   `;
   els.chartLegend.innerHTML = renderChartLegend(sourceIds);
+  finishChartRenderScroll(previousScrollLeft, wasPinnedToEnd);
+}
+
+function renderCostChart(daily) {
+  const costDaily = buildCostDaily(daily);
+  const rowsWithCost = costDaily.filter((row) => row.totalEur > 0);
+  if (!rowsWithCost.length) {
+    els.chart.innerHTML = `<div class="chart-empty">${escapeHtml(t("chart.costs.noData"))}</div>`;
+    els.chartLegend.innerHTML = "";
+    state.chartRendered = false;
+    return;
+  }
+
+  const viewportWidth = Math.max(900, els.chart.clientWidth || 900);
+  const height = 300;
+  const pad = 64;
+  const chartTop = 28;
+  const axisY = height - 64;
+  const dateLabelY = height - 42;
+  const chartHeight = axisY - chartTop;
+  const sourceIds = costSourcesInUse(rowsWithCost);
+  const max = Math.max(...rowsWithCost.map((row) => row.totalEur), 0.01);
+  const scale = chartCostScale(max);
+  const visibleDays = Math.min(rowsWithCost.length, viewportWidth >= 1200 ? 21 : 16);
+  const barGap = 8;
+  const barWidth = Math.max(
+    24,
+    (viewportWidth - pad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
+  );
+  const width = Math.max(viewportWidth, pad * 2 + rowsWithCost.length * barWidth + Math.max(0, rowsWithCost.length - 1) * barGap);
+  const previousScrollLeft = els.chart.scrollLeft;
+  const wasPinnedToEnd = shouldScrollChartToLatest(previousScrollLeft);
+
+  const bars = rowsWithCost
+    .map((day, index) => {
+      const x = pad + index * (barWidth + barGap);
+      const label = formatChartDate(day.date);
+      const fullLabel = formatFullDate(day.date);
+      const segments = sourceIds
+        .map((id) => ({ id, totalEur: Number(day.sourcesById.get(id) || 0) }))
+        .filter((segment) => segment.totalEur > 0);
+      const visibleSegments = chartVisibleCostSegments(segments, scale.max, chartHeight);
+      let yCursor = axisY;
+      const segmentRects = visibleSegments
+        .map((segment, segmentIndex) => {
+          const h = segment.height;
+          if (h <= 0) return "";
+          yCursor -= h;
+          const radius = 3;
+          const clipId = `costBarClip-${index}-${segmentIndex}`;
+          const isOnlySegment = visibleSegments.length === 1;
+          const isTopSegment = segmentIndex === visibleSegments.length - 1;
+          const isBottomSegment = segmentIndex === 0;
+          const clipPath = isOnlySegment
+            ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
+            : isTopSegment
+              ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, 0, 0)
+              : isBottomSegment
+                ? roundedRectPath(x, yCursor, barWidth, h, 0, 0, radius, radius)
+                : roundedRectPath(x, yCursor, barWidth, h, 0, 0, 0, 0);
+          return `
+            <clipPath id="${clipId}">
+              <path d="${clipPath}"></path>
+            </clipPath>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSourceColor(segment.id)}">
+              <title>${escapeHtml(`${fullLabel} · ${sourceLabel(segment.id)} · ${formatEuro(segment.totalEur)}`)}</title>
+            </rect>
+          `;
+        })
+        .join("");
+      return `
+        ${segmentRects}
+        <text x="${x + barWidth / 2}" y="${dateLabelY}" text-anchor="middle" class="axis-label">${label}</text>
+      `;
+    })
+    .join("");
+  const gridLines = scale.ticks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / scale.max;
+      return `
+        <line x1="${pad}" y1="${y}" x2="${width - pad}" y2="${y}" class="chart-grid-line"></line>
+        <text x="${pad - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${escapeHtml(formatChartEuro(tick))}</text>
+        <text x="${width - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${escapeHtml(formatChartEuro(tick))}</text>
+      `;
+    })
+    .join("");
+  els.chart.innerHTML = `
+    <div class="chart-canvas" style="width: ${width}px">
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.costs.svgAria"))}" style="width: ${width}px">
+      ${gridLines}
+      <line x1="${pad}" y1="${axisY}" x2="${width - pad}" y2="${axisY}" stroke="#dfe5dd"></line>
+      ${bars}
+    </svg>
+    </div>
+  `;
+  els.chartLegend.innerHTML = renderChartLegend(sourceIds);
+  finishChartRenderScroll(previousScrollLeft, wasPinnedToEnd);
+}
+
+function shouldScrollChartToLatest(previousScrollLeft) {
+  const maxScrollLeft = Math.max(0, els.chart.scrollWidth - els.chart.clientWidth);
+  return state.chartScrollToLatest || !state.chartRendered || maxScrollLeft - previousScrollLeft < 24;
+}
+
+function finishChartRenderScroll(previousScrollLeft, scrollToLatest) {
   window.requestAnimationFrame(() => {
-    els.chart.scrollLeft = wasPinnedToEnd
-      ? els.chart.scrollWidth - els.chart.clientWidth
-      : previousScrollLeft;
+    const maxScrollLeft = Math.max(0, els.chart.scrollWidth - els.chart.clientWidth);
+    els.chart.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
     state.chartRendered = true;
+    state.chartScrollToLatest = false;
   });
+}
+
+function buildCostDaily(daily) {
+  return (Array.isArray(daily) ? daily : []).map((day) => {
+    const sources = Array.isArray(day.sources) ? day.sources : [];
+    const sourcesById = new Map();
+    const estimatedSources = new Set();
+    const unsupportedSources = new Set();
+    if (!sources.length && Number(day.totalTokens || 0) > 0) unsupportedSources.add("local");
+    for (const source of sources) {
+      const totalTokens = Number(source.totalTokens || 0);
+      if (!totalTokens) continue;
+      const price = costPricingModelBySource[source.id];
+      if (!price) {
+        unsupportedSources.add(source.id);
+        continue;
+      }
+      if (costPricingQualityBySource[source.id] === "estimated") estimatedSources.add(source.id);
+      const usage = normalizeBillingTotals(source.id, source);
+      const eur = estimateCost(usage, price).eur;
+      if (eur > 0) {
+        sourcesById.set(source.id, Number(sourcesById.get(source.id) || 0) + eur);
+      }
+    }
+    return {
+      date: day.date,
+      totalEur: Array.from(sourcesById.values()).reduce((sum, value) => sum + value, 0),
+      sourcesById,
+      estimatedSources: Array.from(estimatedSources),
+      unsupportedSources: Array.from(unsupportedSources)
+    };
+  });
+}
+
+function costSourcesInUse(costDaily) {
+  const ids = new Set();
+  for (const day of costDaily) {
+    for (const id of day.sourcesById.keys()) ids.add(id);
+  }
+  return [
+    ...chartSourceOrder.filter((id) => ids.has(id)),
+    ...Array.from(ids).filter((id) => !chartSourceOrder.includes(id)).sort()
+  ];
+}
+
+function chartCostScale(maxCost) {
+  const max = Math.max(0.01, Number(maxCost) || 0.01);
+  const step = chartNiceDecimalStep(max / 4);
+  const scaleMax = Math.max(step, step * Math.ceil(max / step));
+  const ticks = [];
+  for (let tick = step; tick <= scaleMax + step / 2; tick += step) {
+    ticks.push(Number(tick.toFixed(4)));
+  }
+  return { max: scaleMax, ticks };
+}
+
+function chartNiceDecimalStep(rawStep) {
+  if (!Number.isFinite(rawStep) || rawStep <= 0) return 0.01;
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalized = rawStep / magnitude;
+  const base = CHART_TICK_BASES.find((candidate) => normalized <= candidate) || 10;
+  return Number((base * magnitude).toFixed(4));
+}
+
+function chartVisibleCostSegments(segments, max, chartHeight) {
+  const withHeights = segments.map((segment) => ({
+    ...segment,
+    height: (chartHeight * segment.totalEur) / max
+  }));
+  const targetHeight = Math.max(
+    2,
+    withHeights.reduce((sum, segment) => sum + segment.height, 0)
+  );
+  const minHeight = withHeights.length > 1 ? 2 : 0;
+  for (const segment of withHeights) {
+    if (segment.height > 0 && segment.height < minHeight) segment.height = minHeight;
+  }
+  let overflow = withHeights.reduce((sum, segment) => sum + segment.height, 0) - targetHeight;
+  while (overflow > 0.01) {
+    const reducible = withHeights
+      .filter((segment) => segment.height > minHeight)
+      .sort((a, b) => b.height - a.height)[0];
+    if (!reducible) break;
+    const reduction = Math.min(overflow, reducible.height - minHeight);
+    reducible.height -= reduction;
+    overflow -= reduction;
+  }
+  return withHeights;
 }
 
 function renderChartLegend(sourceIds) {
@@ -1713,6 +2041,167 @@ function renderChartLegend(sourceIds) {
       `
     )
     .join("");
+}
+
+function renderCostSummary(daily, subscriptionHistory) {
+  const summary = summarizeCostWindow(daily, subscriptionHistory);
+  const rows = [
+    [t("chart.costSummary.apiEquivalent"), summary.apiEquivalent],
+    [t("chart.costSummary.paid"), summary.paid],
+    [t("chart.costSummary.saved"), summary.saved],
+    [t("chart.costSummary.quote"), summary.quote],
+    [t("chart.costSummary.quality"), summary.qualityLabel]
+  ];
+  return `
+    <div class="source-bars-title">
+      <span>${escapeHtml(t("chart.costSummary.title"))}</span>
+      <strong>${escapeHtml(summary.totalLabel)}</strong>
+    </div>
+    ${rows
+      .map(([label, value]) => {
+        return `
+          <div class="source-bar-row">
+            <span class="source-bar-name">${escapeHtml(label)}</span>
+            <span class="source-bar-track cost-summary-track" aria-hidden="true"></span>
+            <span class="source-bar-value">${escapeHtml(value)}</span>
+          </div>
+        `;
+      })
+      .join("")}
+    ${summary.note ? `<p class="cost-summary-note">${escapeHtml(summary.note)}</p>` : ""}
+  `;
+}
+
+function summarizeCostWindow(daily, subscriptionHistory) {
+  const costDaily = buildCostDaily(daily);
+  const apiEquivalentEur = costDaily.reduce((sum, day) => sum + day.totalEur, 0);
+  const allEstimated = new Set(costDaily.flatMap((day) => day.estimatedSources));
+  const allUnsupported = new Set(costDaily.flatMap((day) => day.unsupportedSources));
+  const range = chartRangeForDaily(daily);
+  const paidResult = range
+    ? calculatePaidSubscriptionCost(subscriptionHistory, range.start, range.end)
+    : { known: false, totalEur: 0, unsupportedCurrencies: [] };
+  const savedEur = paidResult.known ? apiEquivalentEur - paidResult.totalEur : null;
+  const quote = paidResult.known && apiEquivalentEur > 0 ? (savedEur / apiEquivalentEur) * 100 : null;
+  const quality = summarizeCostQuality({
+    apiEquivalentEur,
+    hasRange: Boolean(range),
+    paidKnown: paidResult.known,
+    estimatedSources: Array.from(allEstimated),
+    unsupportedSources: Array.from(allUnsupported),
+    unsupportedCurrencies: paidResult.unsupportedCurrencies
+  });
+
+  return {
+    totalLabel: apiEquivalentEur > 0 ? formatEuro(apiEquivalentEur) : "--",
+    apiEquivalent: apiEquivalentEur > 0 ? formatEuro(apiEquivalentEur) : "--",
+    paid: paidResult.known ? formatEuro(paidResult.totalEur) : "--",
+    saved: savedEur === null ? "--" : formatEuro(savedEur),
+    quote: quote === null ? "--" : formatSharePercent(quote),
+    qualityLabel: quality.label,
+    note: quality.note
+  };
+}
+
+function summarizeCostQuality({ apiEquivalentEur, hasRange, paidKnown, estimatedSources, unsupportedSources, unsupportedCurrencies }) {
+  if (!hasRange || apiEquivalentEur <= 0) {
+    return {
+      label: t("chart.costSummary.qualityUnavailable"),
+      note: t("chart.costs.noData")
+    };
+  }
+  if (!paidKnown) {
+    return {
+      label: t("chart.costSummary.qualityPartial"),
+      note: t("chart.costSummary.missingSubscriptions")
+    };
+  }
+
+  const details = [];
+  if (estimatedSources.length) {
+    details.push(t("chart.costSummary.estimatedSources", { providers: estimatedSources.map(sourceLabel).join(", ") }));
+  }
+  if (unsupportedSources.length) {
+    details.push(t("chart.costSummary.missingSources", { providers: unsupportedSources.map(sourceLabel).join(", ") }));
+  }
+  if (unsupportedCurrencies.length) {
+    details.push(t("chart.costSummary.unsupportedCurrencies", { currencies: unsupportedCurrencies.join(", ") }));
+  }
+  return {
+    label: details.length ? t("chart.costSummary.qualityPartial") : t("chart.costSummary.qualityComplete"),
+    note: details.join(" ")
+  };
+}
+
+function chartRangeForDaily(daily) {
+  const dates = (Array.isArray(daily) ? daily : [])
+    .map((day) => day.date)
+    .filter(Boolean)
+    .sort();
+  if (!dates.length) return null;
+  return { start: dates[0], end: dates[dates.length - 1] };
+}
+
+function calculatePaidSubscriptionCost(subscriptionHistory, startDate, endDate) {
+  const entries = Array.isArray(subscriptionHistory?.entries) ? subscriptionHistory.entries : [];
+  if (!entries.length) {
+    return { known: false, totalEur: 0, unsupportedCurrencies: [] };
+  }
+  let totalEur = 0;
+  let anyOverlap = false;
+  const unsupportedCurrencies = new Set();
+  for (const entry of entries) {
+    const rangeStart = entry.effectiveFrom && entry.effectiveFrom > startDate ? entry.effectiveFrom : startDate;
+    const rangeEnd = entry.effectiveTo && entry.effectiveTo < endDate ? entry.effectiveTo : endDate;
+    if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) continue;
+    anyOverlap = true;
+    const amount = proratedSubscriptionEntryCost(entry, startDate, endDate);
+    if (amount === null) {
+      unsupportedCurrencies.add(String(entry.currency || "").toUpperCase());
+      continue;
+    }
+    totalEur += amount;
+  }
+  if (!anyOverlap) {
+    return { known: false, totalEur: 0, unsupportedCurrencies: [] };
+  }
+  return {
+    known: true,
+    totalEur,
+    unsupportedCurrencies: Array.from(unsupportedCurrencies).filter(Boolean)
+  };
+}
+
+function proratedSubscriptionEntryCost(entry, startDate, endDate) {
+  const rangeStart = entry.effectiveFrom && entry.effectiveFrom > startDate ? entry.effectiveFrom : startDate;
+  const rangeEnd = entry.effectiveTo && entry.effectiveTo < endDate ? entry.effectiveTo : endDate;
+  if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return 0;
+
+  const monthlyCost = Number(entry.monthlyCost || 0);
+  if (!(monthlyCost > 0)) return 0;
+
+  let total = 0;
+  const cursor = parseDateOnly(rangeStart);
+  const end = parseDateOnly(rangeEnd);
+  if (!cursor || !end) return 0;
+
+  while (cursor <= end) {
+    const dailyAmount = convertSubscriptionAmountToEur(monthlyCost, entry.currency, cursor);
+    if (dailyAmount === null) return null;
+    total += dailyAmount;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return total;
+}
+
+function convertSubscriptionAmountToEur(monthlyCost, currency, date) {
+  const normalizedCurrency = String(currency || "EUR").toUpperCase();
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const dailyAmount = monthlyCost / Math.max(daysInMonth, 1);
+  if (normalizedCurrency === "EUR") return dailyAmount;
+  if (normalizedCurrency === "USD") return dailyAmount / USD_PER_EUR;
+  return null;
 }
 
 function chartTokenScale(maxTokens) {
@@ -2083,6 +2572,16 @@ function formatEuro(value) {
   return new Intl.NumberFormat(currentLocale(), {
     style: "currency",
     currency: "EUR"
+  }).format(num);
+}
+
+function formatChartEuro(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "--";
+  return new Intl.NumberFormat(currentLocale(), {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: num < 10 ? 2 : num < 100 ? 1 : 0
   }).format(num);
 }
 

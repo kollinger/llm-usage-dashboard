@@ -37,7 +37,41 @@
     "sourceTotalsAria": "إجمالي الاستخدام حسب المزوّد",
     "legendAria": "وسيلة الإيضاح",
     "sourceTotalTitle": "إجمالي الاستخدام",
-    "svgAria": "سجل التوكنات"
+    "svgAria": "سجل التوكنات",
+    "costSummary": {
+      "title": "Cost summary",
+      "apiEquivalent": "API equivalent",
+      "paid": "Paid",
+      "saved": "Saved",
+      "quote": "Rate",
+      "quality": "Data quality",
+      "qualityComplete": "Covered",
+      "qualityPartial": "Partially estimated",
+      "qualityUnavailable": "Unavailable",
+      "missingSubscriptions": "Subscription history is missing for this range.",
+      "estimatedSources": "Estimated providers: {providers}.",
+      "missingSources": "Not included: {providers}.",
+      "unsupportedCurrencies": "Unsupported currencies: {currencies}."
+    },
+    "costs": {
+      "svgAria": "Cost history",
+      "noData": "No cost data for the selected range."
+    },
+    "filters": {
+      "h24": "Last 24h",
+      "today": "Today",
+      "week": "Week",
+      "month": "Month",
+      "year": "Year",
+      "all": "All"
+    },
+    "headingCosts": "Cost History from Logs",
+    "mode": {
+      "tokens": "Tokens",
+      "costs": "Costs"
+    },
+    "modeToggleAria": "Chart mode",
+    "filterBarAria": "Time range"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -151,7 +185,8 @@
     "cost7d": "تكلفة 7 أيام",
     "limits": "الحدود",
     "updatedHelp": "Why this timestamp may be delayed",
-    "subscription": "Subscription"
+    "subscription": "Subscription",
+    "last24h": "Last 24h"
   },
   "credits": {
     "title": "الرصيد",

@@ -545,9 +545,57 @@ a {
   align-items: flex-start;
 }
 
-.source-bars {
+.chart-heading-main {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.chart-heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.chart-heading-row h2 {
+  margin: 0;
+}
+
+.chart-heading-tools {
   width: min(420px, 42vw);
   min-width: 290px;
+  display: grid;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.chart-mode-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chart-mode-btn {
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 820;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chart-mode-btn.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.source-bars {
   display: grid;
   gap: 5px;
 }
@@ -616,6 +664,48 @@ a {
   background: var(--accent, var(--green));
 }
 
+.cost-summary-track {
+  background: transparent;
+}
+
+.cost-summary-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.chart-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.chart-filter-bar:empty {
+  display: none;
+}
+
+.time-filter-btn {
+  padding: 4px 12px;
+  min-height: 30px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.time-filter-btn.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
 .chart {
   min-height: 300px;
   overflow-x: auto;
@@ -646,6 +736,16 @@ a {
 .chart svg {
   height: 300px;
   display: block;
+}
+
+.chart-empty {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 760;
+  text-align: center;
 }
 
 .chart-grid-line {
@@ -996,7 +1096,12 @@ select {
   }
 
   .source-bars {
+    min-width: 0;
+  }
+
+  .chart-heading-tools {
     width: min(360px, 44vw);
+    min-width: 0;
   }
 }
 
@@ -1035,7 +1140,17 @@ select {
     flex-direction: column;
   }
 
-  .source-bars {
+  .chart-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .chart-mode-toggle {
+    width: 100%;
+  }
+
+  .source-bars,
+  .chart-heading-tools {
     width: 100%;
     min-width: 0;
   }

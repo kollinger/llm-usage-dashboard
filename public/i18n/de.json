@@ -37,7 +37,41 @@
     "sourceTotalsAria": "Gesamtverbrauch nach Anbieter",
     "legendAria": "Legende",
     "sourceTotalTitle": "Gesamtverbrauch",
-    "svgAria": "Token-Verlauf"
+    "svgAria": "Token-Verlauf",
+    "costSummary": {
+      "title": "Kostenübersicht",
+      "apiEquivalent": "API-Äquivalent",
+      "paid": "Bezahlt",
+      "saved": "Gespart",
+      "quote": "Satz",
+      "quality": "Datenqualität",
+      "qualityComplete": "Abgedeckt",
+      "qualityPartial": "Teilweise geschätzt",
+      "qualityUnavailable": "Nicht verfügbar",
+      "missingSubscriptions": "Für diesen Zeitraum fehlt die Abo-Historie.",
+      "estimatedSources": "Geschätzte Anbieter: {providers}.",
+      "missingSources": "Nicht enthalten: {providers}.",
+      "unsupportedCurrencies": "Nicht unterstützte Währungen: {currencies}."
+    },
+    "costs": {
+      "svgAria": "Kostenverlauf",
+      "noData": "Keine Kostendaten für den gewählten Zeitraum."
+    },
+    "filters": {
+      "h24": "Letzte 24h",
+      "today": "Heute",
+      "week": "Woche",
+      "month": "Monat",
+      "year": "Jahr",
+      "all": "Alle"
+    },
+    "headingCosts": "Kostenverlauf aus Logs",
+    "mode": {
+      "tokens": "Tokens",
+      "costs": "Kosten"
+    },
+    "modeToggleAria": "Diagrammmodus",
+    "filterBarAria": "Zeitraum"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -151,7 +185,8 @@
     "cost7d": "Kosten 7 Tage",
     "limits": "Limits",
     "updatedHelp": "Warum dieser Stand verzögert sein kann",
-    "subscription": "Abo"
+    "subscription": "Abo",
+    "last24h": "Letzte 24h"
   },
   "credits": {
     "title": "Guthaben",

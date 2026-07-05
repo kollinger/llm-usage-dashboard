@@ -55,11 +55,17 @@
       <section class="usage-layout">
         <div class="panel chart-panel">
           <div class="panel-heading chart-heading">
-            <div>
+            <div class="chart-heading-main">
               <p class="eyebrow" data-i18n="chart.eyebrow">Lokale Logs</p>
-              <h2 data-i18n="chart.heading">Token-Verlauf aus Logs</h2>
+              <div class="chart-heading-row">
+                <h2 id="chartTitle" data-i18n="chart.heading">Token-Verlauf aus Logs</h2>
+                <nav id="chartModeToggle" class="chart-mode-toggle" aria-label="Ansichtsmodus" data-i18n-aria-label="chart.modeToggleAria"></nav>
+              </div>
             </div>
-            <div id="sourceTotals" class="source-bars" aria-label="Gesamtverbrauch nach Anbieter" data-i18n-aria-label="chart.sourceTotalsAria"></div>
+            <div class="chart-heading-tools">
+              <div id="sourceTotals" class="source-bars" aria-label="Gesamtverbrauch nach Anbieter" data-i18n-aria-label="chart.sourceTotalsAria"></div>
+              <nav id="chartFilterBar" class="chart-filter-bar" aria-label="Zeitraum" data-i18n-aria-label="chart.filterBarAria"></nav>
+            </div>
           </div>
           <div id="chart" class="chart"></div>
           <div id="chartLegend" class="chart-legend" aria-label="Legende" data-i18n-aria-label="chart.legendAria"></div>

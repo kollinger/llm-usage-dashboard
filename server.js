@@ -19,6 +19,7 @@ const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.js
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
+const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
@@ -63,6 +64,7 @@ const CLAUDE_API_USAGE_STALE_MS = envMs("CLAUDE_API_USAGE_STALE_SECONDS", 600);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
+const SUBSCRIPTION_HISTORY_VERSION = 1;
 
 const app = express();
 let currentDashboardUrl = null;
@@ -356,6 +358,25 @@ app.post("/api/subscriptions/settings", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/api/subscription-history", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await readSubscriptionHistory());
+  } catch (error) {
+    sendApiError(res, error, "subscription_history_read_failed");
+  }
+});
+
+app.put("/api/subscription-history", authMiddleware, async (req, res) => {
+  try {
+    const history = sanitizeSubscriptionHistory(req.body || {});
+    validateSubscriptionHistory(history);
+    await saveSubscriptionHistory(history);
+    res.json(history);
+  } catch (error) {
+    sendApiError(res, error, "subscription_history_save_failed");
+  }
+});
+
 app.get("/api/notifications/settings", authMiddleware, async (_req, res) => {
   try {
     res.json(await readNotificationSettings());
@@ -493,6 +514,34 @@ async function saveSubscriptionSettings(settings) {
   await fsp.writeFile(SUBSCRIPTION_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
 }
 
+async function readSubscriptionHistory() {
+  try {
+    const text = await fsp.readFile(SUBSCRIPTION_HISTORY_FILE, "utf8");
+    const history = sanitizeSubscriptionHistory(JSON.parse(text));
+    validateSubscriptionHistory(history);
+    return history;
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+
+  const settings = await readSubscriptionSettings();
+  const history = sanitizeSubscriptionHistory({
+    version: SUBSCRIPTION_HISTORY_VERSION,
+    entries: buildSubscriptionHistoryEntriesFromSettings(settings)
+  });
+  validateSubscriptionHistory(history);
+  await saveSubscriptionHistory(history);
+  return history;
+}
+
+async function saveSubscriptionHistory(history) {
+  const sanitizedHistory = sanitizeSubscriptionHistory(history);
+  validateSubscriptionHistory(sanitizedHistory);
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(SUBSCRIPTION_HISTORY_FILE, `${JSON.stringify(sanitizedHistory, null, 2)}\n`, { mode: 0o600 });
+  await saveSubscriptionSettings(buildCurrentSubscriptionSettingsFromHistory(sanitizedHistory));
+}
+
 function sanitizeSubscriptionSettings(raw) {
   const source = raw && typeof raw === "object" ? raw : {};
   const result = {};
@@ -521,6 +570,156 @@ function sanitizeSubscriptionProvider(raw) {
     ),
     currency: normalizeCurrency(provider.currency || credits.currency || "EUR")
   };
+}
+
+function sanitizeSubscriptionHistory(raw) {
+  const source = Array.isArray(raw) ? { entries: raw } : raw && typeof raw === "object" ? raw : {};
+  return {
+    version: SUBSCRIPTION_HISTORY_VERSION,
+    entries: Array.isArray(source.entries) ? source.entries.map(sanitizeSubscriptionHistoryEntry).filter(Boolean) : []
+  };
+}
+
+function sanitizeSubscriptionHistoryEntry(raw) {
+  if (!raw || typeof raw !== "object") return null;
+
+  const provider = normalizeSubscriptionHistoryProvider(raw.provider ?? raw.id ?? raw.subscriptionProvider);
+  if (!provider) return null;
+
+  const planName = String(raw.planName ?? raw.planType ?? raw.plan ?? "").trim();
+  const monthlyCost = positiveAmount(
+    raw.monthlyCost ??
+      raw.monthly_cost ??
+      raw.subscriptionCost ??
+      raw.subscription_cost ??
+      raw.monthlyPrice ??
+      raw.monthly_price
+  );
+  const currency = normalizeCurrency(raw.currency || "EUR");
+  const effectiveFrom = normalizeDateOnly(raw.effectiveFrom ?? raw.startDate ?? raw.startsAt ?? raw.effective_from);
+  const effectiveTo = normalizeDateOnly(raw.effectiveTo ?? raw.endDate ?? raw.endsAt ?? raw.effective_to);
+  const notes = String(raw.notes ?? raw.note ?? raw.source ?? "").trim();
+
+  return {
+    provider,
+    planName,
+    monthlyCost,
+    currency,
+    effectiveFrom,
+    effectiveTo,
+    notes: notes || null,
+    isActive: effectiveTo === null
+  };
+}
+
+function normalizeSubscriptionHistoryProvider(value) {
+  const provider = String(value || "").trim();
+  return SUBSCRIPTION_PROVIDER_IDS.includes(provider) ? provider : null;
+}
+
+function buildSubscriptionHistoryEntriesFromSettings(settings) {
+  const today = currentIsoDate();
+  const entries = [];
+  for (const provider of SUBSCRIPTION_PROVIDER_IDS) {
+    const subscription = settings?.[provider];
+    if (!hasSubscriptionValue(subscription) || !subscription.planType) continue;
+    entries.push({
+      provider,
+      planName: String(subscription.planType).trim(),
+      monthlyCost: positiveAmount(subscription.monthlyCost),
+      currency: normalizeCurrency(subscription.currency || "EUR"),
+      effectiveFrom: today,
+      effectiveTo: null,
+      notes: "Migrated from subscription settings",
+      isActive: true
+    });
+  }
+  return entries;
+}
+
+function buildCurrentSubscriptionSettingsFromHistory(history) {
+  const settings = sanitizeSubscriptionSettings({});
+  const entries = Array.isArray(history?.entries) ? history.entries : [];
+  for (const provider of SUBSCRIPTION_PROVIDER_IDS) {
+    const activeEntry = entries.find((entry) => entry.provider === provider && entry.effectiveTo === null);
+    if (!activeEntry) continue;
+    settings[provider] = sanitizeSubscriptionProvider({
+      planType: activeEntry.planName,
+      monthlyCost: activeEntry.monthlyCost,
+      currency: activeEntry.currency
+    });
+  }
+  return settings;
+}
+
+function validateSubscriptionHistory(history) {
+  if (!history || typeof history !== "object") {
+    throw createHttpError(400, "subscription_history_invalid", "Subscription history payload must be an object.");
+  }
+
+  const entries = Array.isArray(history.entries) ? history.entries : [];
+  const byProvider = new Map();
+
+  for (const entry of entries) {
+    if (!entry?.provider) {
+      throw createHttpError(400, "subscription_history_provider_required", "Each subscription history entry needs a provider.");
+    }
+    if (!entry.planName) {
+      throw createHttpError(400, "subscription_history_plan_required", `Subscription history entry for ${entry.provider} needs a planName.`);
+    }
+    if (!entry.effectiveFrom) {
+      throw createHttpError(
+        400,
+        "subscription_history_effective_from_required",
+        `Subscription history entry for ${entry.provider} needs an effectiveFrom date.`
+      );
+    }
+    if (entry.effectiveTo && entry.effectiveTo < entry.effectiveFrom) {
+      throw createHttpError(
+        400,
+        "subscription_history_invalid_range",
+        `Subscription history entry for ${entry.provider} has effectiveTo before effectiveFrom.`
+      );
+    }
+
+    if (!byProvider.has(entry.provider)) byProvider.set(entry.provider, []);
+    byProvider.get(entry.provider).push(entry);
+  }
+
+  for (const [provider, providerEntries] of byProvider.entries()) {
+    const sorted = providerEntries
+      .slice()
+      .sort((left, right) => left.effectiveFrom.localeCompare(right.effectiveFrom) || left.planName.localeCompare(right.planName));
+
+    let openIntervals = 0;
+    let previousEnd = null;
+    for (const entry of sorted) {
+      if (entry.effectiveTo === null) openIntervals += 1;
+      if (openIntervals > 1) {
+        throw createHttpError(
+          400,
+          "subscription_history_multiple_active_entries",
+          `Subscription history for ${provider} cannot have more than one active interval.`
+        );
+      }
+      if (previousEnd === null) {
+        if (entry !== sorted[0]) {
+          throw createHttpError(
+            400,
+            "subscription_history_overlap",
+            `Subscription history for ${provider} cannot have intervals after an open-ended entry.`
+          );
+        }
+      } else if (entry.effectiveFrom <= previousEnd) {
+        throw createHttpError(
+          400,
+          "subscription_history_overlap",
+          `Subscription history for ${provider} contains overlapping intervals.`
+        );
+      }
+      previousEnd = entry.effectiveTo;
+    }
+  }
 }
 
 function mergeProviderSubscription(provider, subscription) {
@@ -611,6 +810,24 @@ function normalizeOptionalDate(value) {
       ? new Date(Math.abs(numeric) < 1e12 ? numeric * 1000 : numeric)
       : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function normalizeDateOnly(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+function currentIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function createHttpError(statusCode, code, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
 }
 
 function buildCreditRows(credits) {
