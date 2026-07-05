@@ -270,7 +270,8 @@ async function runClaudeAuthProbe(claudeBin) {
   }
 
   const { spawnSync } = await import("node:child_process");
-  const result = spawnSync(claudeBin, ["auth", "status", "--json"], {
+  const command = await claudeAuthProbeCommand(claudeBin);
+  const result = spawnSync(command.executable, command.args, {
     encoding: "utf8",
     timeout: 5000
   });
@@ -295,6 +296,22 @@ async function runClaudeAuthProbe(claudeBin) {
   } catch {
     return { available: true, status: "invalid_json", loggedIn: null };
   }
+}
+
+async function claudeAuthProbeCommand(claudeBin) {
+  const authArgs = ["auth", "status", "--json"];
+  if (process.platform !== "win32" || path.extname(claudeBin)) {
+    return { executable: claudeBin, args: authArgs };
+  }
+  try {
+    const header = await fs.readFile(claudeBin, { encoding: "utf8" });
+    if (/^#!.*\bnode\b/u.test(header.slice(0, 120))) {
+      return { executable: process.execPath, args: [claudeBin, ...authArgs] };
+    }
+  } catch {
+    // Fall back to the configured executable and let spawn report the error.
+  }
+  return { executable: claudeBin, args: authArgs };
 }
 
 function analyzeProvider({ providerId, fixtureDir, detectedAt, rawSource, normalized }) {
