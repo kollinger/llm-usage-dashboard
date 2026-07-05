@@ -16,6 +16,7 @@ const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
+const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
@@ -75,6 +76,7 @@ const copilotLiveQuotaCache = createTimedCache();
 const claudeApiUsageCache = createTimedCache();
 const usageCache = createTimedCache();
 let codexAppServer = null;
+let pendingTestNotification = false;
 
 app.use(express.json({ limit: "200kb" }));
 app.use(
@@ -431,6 +433,27 @@ app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) =>
   } catch (error) {
     sendApiError(res, error, "notification_check_failed");
   }
+});
+
+app.get("/api/notifications/status", authMiddleware, async (_req, res) => {
+  try {
+    const text = await fsp.readFile(NOTIFICATION_STATUS_FILE, "utf8");
+    res.json(JSON.parse(text));
+  } catch {
+    res.json(null);
+  }
+});
+
+app.post("/api/notifications/test", authMiddleware, (_req, res) => {
+  if (!ELECTRON_SYNC_TOKEN) return res.status(503).json({ error: "not_electron" });
+  pendingTestNotification = true;
+  return res.json({ queued: true });
+});
+
+app.get("/api/notifications/test-pending", electronSyncMiddleware, (_req, res) => {
+  const pending = pendingTestNotification;
+  pendingTestNotification = false;
+  res.json({ pending });
 });
 
 app.get("*", (_req, res) => {

@@ -39,6 +39,19 @@ const els = {
   notificationHardLimitPercent: document.getElementById("notificationHardLimitPercent"),
   notificationSaveBtn: document.getElementById("notificationSaveBtn"),
   notificationSaveStatus: document.getElementById("notificationSaveStatus"),
+  notificationDiagnostics: document.getElementById("notificationDiagnostics"),
+  notificationDiagLastCheck: document.getElementById("notificationDiagLastCheck"),
+  notificationDiagDuration: document.getElementById("notificationDiagDuration"),
+  notificationDiagAlerts: document.getElementById("notificationDiagAlerts"),
+  notificationDiagLastShown: document.getElementById("notificationDiagLastShown"),
+  notificationDiagSkipped: document.getElementById("notificationDiagSkipped"),
+  notificationDiagError: document.getElementById("notificationDiagError"),
+  notificationDiagSupported: document.getElementById("notificationDiagSupported"),
+  notificationTestBtn: document.getElementById("notificationTestBtn"),
+  notificationTestStatus: document.getElementById("notificationTestStatus"),
+  notificationLastTestDetails: document.getElementById("notificationLastTestDetails"),
+  notificationLastTestAt: document.getElementById("notificationLastTestAt"),
+  notificationLastTestResult: document.getElementById("notificationLastTestResult"),
   languageSelect: document.getElementById("languageSelect"),
   fiveHourOpen: document.getElementById("fiveHourOpen"),
   weeklyOpen: document.getElementById("weeklyOpen"),
@@ -429,6 +442,7 @@ function bindEvents() {
   els.notificationsEnabled?.addEventListener("change", onNotificationEnabledChange);
   els.subscriptionSaveBtn?.addEventListener("click", saveSubscriptionSettings);
   els.notificationSaveBtn?.addEventListener("click", saveNotificationSettings);
+  els.notificationTestBtn?.addEventListener("click", sendTestNotification);
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
@@ -2369,6 +2383,7 @@ async function openSettings() {
   els.settingsDialog.showModal();
   await loadSubscriptionSettings();
   await loadNotificationSettings();
+  await loadNotificationStatus();
 }
 
 async function loadSubscriptionSettings() {
@@ -2464,6 +2479,73 @@ async function saveNotificationSettings() {
       els.notificationSaveStatus.textContent = t("settings.notifications.saveError");
       els.notificationSaveStatus.hidden = false;
     }
+  }
+}
+
+async function loadNotificationStatus() {
+  if (!els.notificationDiagLastCheck) return;
+  try {
+    const status = await fetchJson("/api/notifications/status");
+    const none = t("settings.notifications.diagNone");
+    const never = t("settings.notifications.diagNever");
+    const formatStatusTime = (iso) => {
+      if (!iso) return never;
+      try { return new Date(iso).toLocaleString(); } catch { return iso; }
+    };
+    const formatMs = (ms) => (Number.isFinite(ms) ? `${ms} ms` : none);
+
+    if (els.notificationDiagLastCheck) els.notificationDiagLastCheck.textContent = formatStatusTime(status?.lastCheckAt);
+    if (els.notificationDiagDuration) els.notificationDiagDuration.textContent = formatMs(status?.lastCheckDurationMs);
+    if (els.notificationDiagAlerts) {
+      els.notificationDiagAlerts.textContent = status != null ? String(status.lastAlertCount ?? 0) : none;
+    }
+    if (els.notificationDiagLastShown) els.notificationDiagLastShown.textContent = formatStatusTime(status?.lastShownAt);
+    if (els.notificationDiagSkipped) els.notificationDiagSkipped.textContent = status?.lastSkippedReason || none;
+    if (els.notificationDiagError) {
+      const error = status?.lastError;
+      els.notificationDiagError.textContent = error || none;
+      els.notificationDiagError.className = error ? "diag-error" : "";
+    }
+    if (els.notificationDiagSupported) {
+      const supported = status?.notificationSupported;
+      els.notificationDiagSupported.textContent =
+        supported == null ? none :
+        supported ? t("settings.notifications.diagYes") : t("settings.notifications.diagNo");
+    }
+    if (status?.lastTestAt && els.notificationLastTestDetails) {
+      els.notificationLastTestDetails.hidden = false;
+      if (els.notificationLastTestAt) els.notificationLastTestAt.textContent = formatStatusTime(status.lastTestAt);
+      if (els.notificationLastTestResult) {
+        const resultKey = `settings.notifications.testResult_${status.lastTestResult}`;
+        els.notificationLastTestResult.textContent = t(resultKey, {}, status.lastTestResult || none);
+      }
+    }
+  } catch {
+    // Diagnostic info is non-critical; ignore errors silently.
+  }
+}
+
+async function sendTestNotification() {
+  if (!els.notificationTestBtn) return;
+  els.notificationTestBtn.disabled = true;
+  if (els.notificationTestStatus) els.notificationTestStatus.hidden = true;
+  try {
+    await fetchJson("/api/notifications/test", { method: "POST" });
+    if (els.notificationTestStatus) {
+      els.notificationTestStatus.textContent = t("settings.notifications.testQueued");
+      els.notificationTestStatus.hidden = false;
+    }
+    setTimeout(() => loadNotificationStatus().catch(() => {}), 8000);
+  } catch {
+    if (els.notificationTestStatus) {
+      els.notificationTestStatus.textContent = t("settings.notifications.testError");
+      els.notificationTestStatus.hidden = false;
+    }
+  } finally {
+    setTimeout(() => {
+      if (els.notificationTestBtn) els.notificationTestBtn.disabled = false;
+      if (els.notificationTestStatus) els.notificationTestStatus.hidden = true;
+    }, 10000);
   }
 }
 
