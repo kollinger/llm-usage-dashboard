@@ -68,6 +68,7 @@ const els = {
   notificationDiagSupported: document.getElementById("notificationDiagSupported"),
   notificationDiagPermission: document.getElementById("notificationDiagPermission"),
   notificationDiagNativeDelivery: document.getElementById("notificationDiagNativeDelivery"),
+  notificationSettingsBtn: document.getElementById("notificationSettingsBtn"),
   notificationTestBtn: document.getElementById("notificationTestBtn"),
   notificationTestStatus: document.getElementById("notificationTestStatus"),
   notificationTestPreview: document.getElementById("notificationTestPreview"),
@@ -499,6 +500,7 @@ function bindEvents() {
   [els.notificationPacingPercent, els.notificationHardLimitPercent].forEach((field) => {
     field?.addEventListener("input", () => scheduleSettingsAutosave("notifications"));
   });
+  els.notificationSettingsBtn?.addEventListener("click", openNotificationSettings);
   els.notificationTestBtn?.addEventListener("click", sendTestNotification);
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
@@ -2714,6 +2716,32 @@ function showInAppTestNotification({ status = "ready", bodyKey = "settings.notif
   state.notificationPreviewTimer = setTimeout(() => {
     if (els.notificationTestPreview) els.notificationTestPreview.hidden = true;
   }, 30_000);
+}
+
+async function openNotificationSettings() {
+  if (!els.notificationSettingsBtn) return;
+  els.notificationSettingsBtn.disabled = true;
+  try {
+    await fetchJson("/api/notifications/open-settings", { method: "POST" });
+    if (els.notificationTestStatus) {
+      els.notificationTestStatus.textContent = t("settings.notifications.openSettingsQueued");
+      els.notificationTestStatus.hidden = false;
+    }
+    showInAppTestNotification({
+      bodyKey: "settings.notifications.openSettingsQueued"
+    });
+  } catch {
+    if (els.notificationTestStatus) {
+      els.notificationTestStatus.textContent = t("settings.notifications.openSettingsError");
+      els.notificationTestStatus.hidden = false;
+    }
+    showInAppTestNotification({
+      status: "error",
+      bodyKey: "settings.notifications.openSettingsError"
+    });
+  } finally {
+    els.notificationSettingsBtn.disabled = false;
+  }
 }
 
 async function sendTestNotification() {

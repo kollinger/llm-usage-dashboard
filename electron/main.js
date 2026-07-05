@@ -534,6 +534,27 @@ async function checkTestNotificationPending(port) {
   } catch { /* ignore; server may not be ready yet */ }
 }
 
+async function openSystemNotificationSettings() {
+  if (process.platform === "darwin") {
+    await shell.openExternal("x-apple.systempreferences:com.apple.Notifications-Settings.extension");
+    return;
+  }
+  if (process.platform === "win32") {
+    await shell.openExternal("ms-settings:notifications");
+    return;
+  }
+  await shell.openExternal("https://www.freedesktop.org/wiki/Specifications/desktop-notification-spec/");
+}
+
+async function checkOpenNotificationSettingsPending(port) {
+  try {
+    const data = await fetchLocalJson(port, "/api/notifications/open-settings-pending");
+    if (data?.pending) {
+      await openSystemNotificationSettings();
+    }
+  } catch { /* ignore; server may not be ready yet */ }
+}
+
 async function syncClaudeBrowserCredits(port) {
   if (claudeBrowserSyncPending) return claudeBrowserSyncPending;
   claudeBrowserSyncPending = (async () => {
@@ -1109,6 +1130,7 @@ app.whenReady().then(async () => {
     pollNotifications(port);
     setInterval(() => pollNotifications(port), NOTIFICATION_POLL_INTERVAL_MS);
     setInterval(() => checkTestNotificationPending(port), NOTIFICATION_TEST_POLL_INTERVAL_MS);
+    setInterval(() => checkOpenNotificationSettingsPending(port), NOTIFICATION_TEST_POLL_INTERVAL_MS);
   }, 10000);
   setInterval(() => {
     syncClaudeBrowserCredits(port).catch(() => {});

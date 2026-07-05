@@ -299,7 +299,10 @@
       "nativeDelivery_gatekeeper_rejected": "Gatekeeper abgelehnt: native Banner erscheinen eventuell nicht",
       "nativeDelivery_unverified": "Nicht verifiziert",
       "nativeDelivery_not_applicable": "Auf dieser Plattform nicht relevant",
-      "nativeDelivery_unknown": "Unbekannt"
+      "nativeDelivery_unknown": "Unbekannt",
+      "openSettingsBtn": "macOS-Mitteilungen öffnen",
+      "openSettingsQueued": "macOS-Einstellungen geöffnet. Schalte „Mitteilungen erlauben“ für LLM Usage Dashboard ein und starte danach den Test erneut.",
+      "openSettingsError": "Konnte die System-Mitteilungseinstellungen aus dieser Laufzeit nicht öffnen."
     },
     "subscriptions": {
       "title": "Abo-Kosten",

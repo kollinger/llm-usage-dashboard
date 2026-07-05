@@ -87,6 +87,7 @@ const usageCache = createTimedCache();
 const sourceDiagnosticsCache = createTimedCache();
 let codexAppServer = null;
 let pendingTestNotification = false;
+let pendingOpenNotificationSettings = false;
 
 app.use(express.json({ limit: "200kb" }));
 app.use(
@@ -539,6 +540,18 @@ app.post("/api/notifications/test", authMiddleware, (_req, res) => {
 app.get("/api/notifications/test-pending", electronSyncMiddleware, (_req, res) => {
   const pending = pendingTestNotification;
   pendingTestNotification = false;
+  res.json({ pending });
+});
+
+app.post("/api/notifications/open-settings", authMiddleware, (_req, res) => {
+  if (!ELECTRON_SYNC_TOKEN) return res.status(503).json({ error: "not_electron" });
+  pendingOpenNotificationSettings = true;
+  return res.json({ queued: true });
+});
+
+app.get("/api/notifications/open-settings-pending", electronSyncMiddleware, (_req, res) => {
+  const pending = pendingOpenNotificationSettings;
+  pendingOpenNotificationSettings = false;
   res.json({ pending });
 });
 

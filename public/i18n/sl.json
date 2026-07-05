@@ -299,7 +299,10 @@
       "nativeDelivery_gatekeeper_rejected": "Gatekeeper rejected: native banners may not appear",
       "nativeDelivery_unverified": "Unverified",
       "nativeDelivery_not_applicable": "Not applicable on this platform",
-      "nativeDelivery_unknown": "Unknown"
+      "nativeDelivery_unknown": "Unknown",
+      "openSettingsBtn": "Open macOS notification settings",
+      "openSettingsQueued": "macOS settings opened. Turn on Allow notifications for LLM Usage Dashboard, then run the test again.",
+      "openSettingsError": "Could not open system notification settings from this runtime."
     },
     "subscriptions": {
       "title": "Subscription costs",
