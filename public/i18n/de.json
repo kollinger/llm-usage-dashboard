@@ -118,7 +118,8 @@
     },
     "errors": {
       "load": "Live-Systemmetriken konnten nicht geladen werden."
-    }
+    },
+    "tokensPerMinuteHelp": "Aus lokalen Claude-Code-, Codex-, Gemini-, Copilot- und Ollama-Logs im lokalen Aggregat berechnet. Multica-Claude/Codex-Runs sind darüber enthalten; reine OpenAI/Anthropic-Admin-API-Abrechnung bleibt gegen Doppelzählung draußen. Gemini-Agents können fehlen, wenn die Gemini CLI keine Token-Metadaten schreibt."
   },
   "pricing": {
     "eyebrow": "API-Kosten",

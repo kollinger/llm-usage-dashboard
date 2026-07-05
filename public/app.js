@@ -1822,7 +1822,8 @@ function liveGaugeDefinitions(metrics) {
       percent: tokens.value === null || tokens.value === undefined ? 0 : clampUiPercent((Number(tokens.value) / 1_000_000) * 100),
       quality: tokens.quality,
       accent: "#2e6ea6",
-      sub: formatLiveTokenBreakdown(tokens)
+      sub: formatLiveTokenBreakdown(tokens),
+      help: t("liveMetrics.tokensPerMinuteHelp")
     }
   ];
 }
