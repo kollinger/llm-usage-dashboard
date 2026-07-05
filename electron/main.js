@@ -18,6 +18,8 @@ let claudeBrowserSyncPending = null;
 const notificationCooldowns = new Map();
 const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
+const NOTIFICATION_TEST_POLL_INTERVAL_MS = 5 * 1000; // 5 seconds for test-pending checks
+const NOTIFICATION_REQUEST_TIMEOUT_MS = 30 * 1000; // 30 seconds (API can take 9-12s)
 const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
@@ -117,50 +119,145 @@ function buildNotificationBody(alert) {
   return parts.join(" ");
 }
 
-async function checkNotifications(port) {
+function getNotificationStatusFile() {
+  const dataDir = process.env.LLM_USAGE_DATA_DIR || path.join(app.getPath("userData"), "data");
+  return path.join(dataDir, "notification-status.json");
+}
+
+async function writeNotificationStatus(updates) {
+  const filePath = getNotificationStatusFile();
   try {
-    const http = require("node:http");
-    const token = process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN;
-    if (!token) return;
-    const data = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: "localhost",
-        port,
-        path: "/api/notifications/check",
-        headers: { [CLAUDE_SYNC_TOKEN_HEADER]: token }
-      };
-      const req = http.get(options, (res) => {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    let current = {};
+    try { current = JSON.parse(await fs.readFile(filePath, "utf8")); } catch { /* file may not exist yet */ }
+    await fs.writeFile(filePath, `${JSON.stringify({ ...current, ...updates }, null, 2)}\n`, { mode: 0o600 });
+  } catch { /* best-effort; never block polling */ }
+}
+
+async function fetchLocalJson(port, urlPath) {
+  const http = require("node:http");
+  const token = process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN;
+  if (!token) return null;
+  return new Promise((resolve, reject) => {
+    const req = http.get(
+      { hostname: "localhost", port, path: urlPath, headers: { [CLAUDE_SYNC_TOKEN_HEADER]: token } },
+      (res) => {
         let body = "";
         res.on("data", (chunk) => { body += chunk; });
-        res.on("end", () => {
-          try { resolve(JSON.parse(body)); } catch { resolve(null); }
-        });
-      });
-      req.on("error", reject);
-      req.setTimeout(5000, () => { req.destroy(); reject(new Error("timeout")); });
-    });
+        res.on("end", () => { try { resolve(JSON.parse(body)); } catch { resolve(null); } });
+      }
+    );
+    req.on("error", reject);
+    req.setTimeout(NOTIFICATION_REQUEST_TIMEOUT_MS, () => { req.destroy(); reject(new Error("timeout")); });
+  });
+}
+
+async function checkNotifications(port) {
+  const startAt = Date.now();
+  const notificationSupported = Notification.isSupported();
+  let lastError = null;
+  let lastAlertCount = 0;
+  let lastAlerts = [];
+  let lastShownAt = null;
+  let lastShownAlert = null;
+  let lastSkippedReason = null;
+  try {
+    const data = await fetchLocalJson(port, "/api/notifications/check");
+    const durationMs = Date.now() - startAt;
     if (!data?.alerts?.length) {
       app.setBadgeCount?.(0);
+      await writeNotificationStatus({
+        lastCheckAt: new Date(startAt).toISOString(),
+        lastCheckDurationMs: durationMs,
+        lastAlertCount: 0,
+        lastAlerts: [],
+        lastShownAt: null,
+        lastShownAlert: null,
+        lastSkippedReason: null,
+        lastError: null,
+        notificationSupported
+      });
       return;
     }
+    lastAlertCount = data.alerts.length;
+    lastAlerts = data.alerts;
     const now = Date.now();
     for (const alert of data.alerts) {
       const key = alertKey(alert);
       const lastShown = notificationCooldowns.get(key) || 0;
-      if (now - lastShown < NOTIFICATION_COOLDOWN_MS) continue;
+      if (now - lastShown < NOTIFICATION_COOLDOWN_MS) {
+        lastSkippedReason = `cooldown:${key}`;
+        continue;
+      }
       notificationCooldowns.set(key, now);
-      if (Notification.isSupported()) {
+      if (notificationSupported) {
         const title = `Limit warning: ${alert.windowLabel}`;
         const body = buildNotificationBody(alert);
         const n = new Notification({ title, body, silent: false });
         n.on("click", () => mainWindow?.show());
         n.show();
+        lastShownAt = new Date().toISOString();
+        lastShownAlert = alert;
+      } else {
+        lastSkippedReason = "notification_not_supported";
       }
     }
     app.setBadgeCount?.(data.alerts.length);
-  } catch {
-    // Ignore errors silently; the server may not be ready yet.
+    await writeNotificationStatus({
+      lastCheckAt: new Date(startAt).toISOString(),
+      lastCheckDurationMs: durationMs,
+      lastAlertCount,
+      lastAlerts,
+      lastShownAt,
+      lastShownAlert,
+      lastSkippedReason,
+      lastError: null,
+      notificationSupported
+    });
+  } catch (err) {
+    lastError = err.message || String(err);
+    await writeNotificationStatus({
+      lastCheckAt: new Date(startAt).toISOString(),
+      lastCheckDurationMs: Date.now() - startAt,
+      lastAlertCount,
+      lastAlerts,
+      lastShownAt: null,
+      lastShownAlert: null,
+      lastSkippedReason: null,
+      lastError,
+      notificationSupported
+    });
   }
+}
+
+async function fireTestNotification() {
+  const notificationSupported = Notification.isSupported();
+  const lastTestAt = new Date().toISOString();
+  if (!notificationSupported) {
+    await writeNotificationStatus({ lastTestAt, lastTestResult: "not_supported", lastTestError: null });
+    return;
+  }
+  try {
+    const n = new Notification({
+      title: "LLM Usage Dashboard - Test",
+      body: "Desktop notifications are working correctly.",
+      silent: false
+    });
+    n.on("click", () => mainWindow?.show());
+    n.show();
+    await writeNotificationStatus({ lastTestAt, lastTestResult: "shown", lastTestError: null });
+  } catch (err) {
+    await writeNotificationStatus({ lastTestAt, lastTestResult: "error", lastTestError: err.message });
+  }
+}
+
+async function checkTestNotificationPending(port) {
+  try {
+    const data = await fetchLocalJson(port, "/api/notifications/test-pending");
+    if (data?.pending) {
+      await fireTestNotification();
+    }
+  } catch { /* ignore; server may not be ready yet */ }
 }
 
 async function syncClaudeBrowserCredits(port) {
@@ -733,6 +830,7 @@ app.whenReady().then(async () => {
   setTimeout(() => {
     checkNotifications(port);
     setInterval(() => checkNotifications(port), NOTIFICATION_POLL_INTERVAL_MS);
+    setInterval(() => checkTestNotificationPending(port), NOTIFICATION_TEST_POLL_INTERVAL_MS);
   }, 10000);
   setInterval(() => {
     syncClaudeBrowserCredits(port).catch(() => {});

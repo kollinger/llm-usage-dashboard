@@ -979,6 +979,71 @@ select {
   max-width: 120px;
 }
 
+.notification-diagnostics {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-subheading {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.diag-list {
+  display: grid;
+  grid-template-columns: minmax(140px, max-content) minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.diag-list dt {
+  color: var(--ink-muted);
+  font-weight: 760;
+}
+
+.diag-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.diag-error {
+  color: var(--rose);
+  font-weight: 760;
+}
+
+.diag-test-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.diag-test-row .settings-desc {
+  margin: 0;
+}
+
+.diag-last-test {
+  margin-top: 12px;
+  font-size: 0.84rem;
+}
+
+.diag-last-test summary {
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-weight: 760;
+}
+
+.diag-last-test .diag-list {
+  margin-top: 10px;
+}
+
 .form-error {
   min-height: 1.2em;
   margin: 12px 0 0;

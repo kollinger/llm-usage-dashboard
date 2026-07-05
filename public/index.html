@@ -185,6 +185,38 @@
           </div>
           <button type="button" class="text-button" id="notificationSaveBtn" data-i18n="settings.notifications.save">Speichern</button>
           <p class="settings-desc" id="notificationSaveStatus" hidden></p>
+          <div class="notification-diagnostics" id="notificationDiagnostics">
+            <h4 class="settings-subheading" data-i18n="settings.notifications.diagTitle">Notification diagnostics</h4>
+            <dl class="diag-list" id="notificationDiagList">
+              <dt data-i18n="settings.notifications.diagLastCheck">Last check</dt>
+              <dd id="notificationDiagLastCheck">--</dd>
+              <dt data-i18n="settings.notifications.diagDuration">Duration</dt>
+              <dd id="notificationDiagDuration">--</dd>
+              <dt data-i18n="settings.notifications.diagAlerts">Alerts found</dt>
+              <dd id="notificationDiagAlerts">--</dd>
+              <dt data-i18n="settings.notifications.diagLastShown">Last notification shown</dt>
+              <dd id="notificationDiagLastShown">--</dd>
+              <dt data-i18n="settings.notifications.diagSkipped">Skip reason</dt>
+              <dd id="notificationDiagSkipped">--</dd>
+              <dt data-i18n="settings.notifications.diagError">Last error</dt>
+              <dd id="notificationDiagError">--</dd>
+              <dt data-i18n="settings.notifications.diagSupported">Notifications supported</dt>
+              <dd id="notificationDiagSupported">--</dd>
+            </dl>
+            <div class="diag-test-row">
+              <button type="button" class="text-button" id="notificationTestBtn" data-i18n="settings.notifications.testBtn">Send test notification</button>
+              <p class="settings-desc" id="notificationTestStatus" hidden></p>
+            </div>
+            <details class="diag-last-test" id="notificationLastTestDetails" hidden>
+              <summary data-i18n="settings.notifications.testResultLabel">Last test result</summary>
+              <dl class="diag-list">
+                <dt data-i18n="settings.notifications.testResultAt">At</dt>
+                <dd id="notificationLastTestAt">--</dd>
+                <dt data-i18n="settings.notifications.testResultOutcome">Outcome</dt>
+                <dd id="notificationLastTestResult">--</dd>
+              </dl>
+            </details>
+          </div>
         </div>
       </div>
     </dialog>
