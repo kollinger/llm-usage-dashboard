@@ -14,7 +14,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "electron": "electron .",
-    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js && node --check scripts/update-pricing-data.mjs",
+    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js && node --check scripts/update-pricing-data.mjs && node --check scripts/test-usage-cache.mjs",
+    "test:usage-cache": "node scripts/test-usage-cache.mjs",
     "pricing:update": "node scripts/update-pricing-data.mjs",
     "pricing:check": "node scripts/update-pricing-data.mjs --check",
     "dist": "electron-builder",
@@ -45,6 +46,7 @@
     ],
     "files": [
       "electron/**/*",
+      "lib/**/*",
       "public/**/*",
       "scripts/**/*",
       "server.js",

@@ -31,3 +31,8 @@ services:
       - ${HOME}/.copilot:/host/copilot:ro
       - ${HOME}/.claude:/host/claude:ro
       - ${HOME}/.gemini:/host/gemini:ro
+
+# In containerized runtime, local process/user discovery is partially unavailable.
+# Keep source discovery reliable by mounting source folders from the host.
+# Discovery still reads mounted candidate sources and uses those mounts for connected sources;
+# ACL-based sharing across local users is typically handled on the host outside Docker.

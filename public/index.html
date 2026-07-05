@@ -50,6 +50,22 @@
         </div>
       </section>
 
+      <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel">
+        <div class="panel-heading diagnostics-heading">
+          <div>
+            <p class="eyebrow" data-i18n="diagnostics.eyebrow">Lokale Quellen</p>
+            <h2 data-i18n="diagnostics.heading">Diagnose & Verbindung</h2>
+          </div>
+          <button class="text-button ghost" id="diagnosticsRecheckBtn" type="button" data-i18n="diagnostics.recheck">
+            Zugriff erneut prüfen
+          </button>
+        </div>
+        <p class="diagnostics-meta" id="sourceDiagnosticsMeta"></p>
+        <div class="diagnostics-summary" id="sourceDiagnosticsSummary"></div>
+        <div class="diagnostics-status-grid" id="sourceDiagnosticsGrid"></div>
+        <div class="diagnostics-instance-list" id="sourceDiagnosticsInstances"></div>
+      </section>
+
       <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
 
       <section class="usage-layout">
@@ -165,6 +181,27 @@
           </div>
           <button type="button" class="text-button" id="subscriptionSaveBtn" data-i18n="settings.subscriptions.save">Speichern</button>
           <p class="settings-desc" id="subscriptionSaveStatus" hidden></p>
+        </div>
+        <div class="settings-section">
+          <h3 data-i18n="settings.sources.title">Lokale Quellen</h3>
+          <p class="settings-desc" data-i18n="settings.sources.description">Verbundene Quellen verwalten, Zugriff prüfen und ACL-Kommandos kopieren.</p>
+          <div class="settings-section-actions">
+            <button type="button" class="text-button ghost" id="settingsSourcesRecheckBtn" data-i18n="settings.sources.recheck">
+              Zugriff erneut prüfen
+            </button>
+          </div>
+          <p class="settings-desc" id="settingsSourcesStatus"></p>
+          <div class="settings-source-summary" id="settingsSourceSummary"></div>
+          <div class="settings-source-groups">
+            <div class="settings-source-group">
+              <h4 data-i18n="settings.sources.connectedTitle">Verbundene Quellen</h4>
+              <div class="source-list" id="settingsConnectedSources"></div>
+            </div>
+            <div class="settings-source-group">
+              <h4 data-i18n="settings.sources.candidatesTitle">Erkannte Quellen</h4>
+              <div class="source-list" id="settingsCandidateSources"></div>
+            </div>
+          </div>
         </div>
         <div class="settings-section">
           <h3 data-i18n="settings.notifications.title">Desktop-Benachrichtigungen</h3>

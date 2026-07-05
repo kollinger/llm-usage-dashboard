@@ -118,6 +118,37 @@ For Ollama on the Linux host, Compose maps `host.docker.internal` and uses:
 OLLAMA_HOST=http://host.docker.internal:11434
 ```
 
+### Multi-Source Discovery (Phase 3)
+
+The dashboard now groups local usage inputs as **sources**. Discovery results are evaluated in
+`/api/sources/diagnostics` and exposed in the **Settings → Local sources** view.
+
+The diagnostics endpoint evaluates:
+
+- currently detected candidates from local paths, process hints, and service signals (Linux only),
+- already connected sources persisted in `connected-sources.json`,
+- per-source access state (`readable`, `missing`, `denied`, `mixed`),
+- and summary counters for quick health checks.
+
+The endpoint is usually called as an authenticated background refresh in the UI, but it can also
+be used directly for manual diagnostics:
+
+```sh
+curl -H "Cookie: <your-session-cookie>" http://localhost:4177/api/sources/diagnostics
+```
+
+If a candidate belongs to another local user and direct read access is missing, the UI offers generated
+`setfacl` commands for Linux so you can grant and revoke access for the dashboard process owner.
+Typical generated lines are:
+
+```text
+sudo setfacl -m u:<dashboard-user>:--x <path>
+sudo setfacl -R -m u:<dashboard-user>:rX <path>
+sudo find <path> -type d -exec setfacl -d -m u:<dashboard-user>:rX {} +
+```
+
+Those commands are copied from the app so you can run them manually and then recheck source access.
+
 ## Configuration
 
 Copy one of the example files when you need local configuration:
@@ -131,6 +162,8 @@ Important variables:
 ```text
 PORT=4177
 DASHBOARD_PASSWORD=
+LLM_USAGE_DATA_DIR=
+DATA_DIR=
 SESSION_SECRET=
 CODEX_HOME=~/.codex
 LLM_USAGE_CODEX_HOMES=

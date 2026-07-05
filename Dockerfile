@@ -9,6 +9,7 @@ RUN npm ci --omit=dev
 
 COPY public ./public
 COPY scripts ./scripts
+COPY lib ./lib
 COPY server.js README.md ./
 
 EXPOSE 4177 11435

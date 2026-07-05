@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const fsSync = require("node:fs");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
@@ -13,6 +14,7 @@ let dashboardServer = null;
 let ollamaProxyServer = null;
 let mainWindow = null;
 let claudeBrowserSyncPending = null;
+let instanceMarkerPath = null;
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
 const notificationCooldowns = new Map();
@@ -22,6 +24,7 @@ const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
 const CLAUDE_SYNC_TOKEN_HEADER = "x-llm-usage-sync-token";
+const INSTANCE_MARKER_DIR = path.join(os.tmpdir(), "llm-usage-dashboard");
 const CLAUDE_COOKIE_CANDIDATE_NAMES = ["sessionKey", "__Secure-next-auth.session-token", "sessionKeyLC"];
 const CLAUDE_CHROME_COOKIE_DB = path.join(
   os.homedir(),
@@ -64,6 +67,48 @@ async function startBackend() {
   await new Promise((resolve) => dashboardServer.once("listening", resolve));
   const address = dashboardServer.address();
   return typeof address === "object" && address ? address.port : Number(process.env.PORT || 4177);
+}
+
+async function writeInstanceMarker(port) {
+  const uid = typeof process.getuid === "function" ? process.getuid() : os.userInfo().uid;
+  const gid = typeof process.getgid === "function" ? process.getgid() : os.userInfo().gid;
+  const user = os.userInfo().username || process.env.USER || "unknown";
+  const dataDir = process.env.LLM_USAGE_DATA_DIR || "";
+  const version = require("../package.json").version || null;
+  await fs.mkdir(INSTANCE_MARKER_DIR, { recursive: true, mode: 0o755 });
+  instanceMarkerPath = path.join(INSTANCE_MARKER_DIR, `${uid ?? user}.json`);
+  await fs.writeFile(
+    instanceMarkerPath,
+    `${JSON.stringify({
+      app: "llm-usage-dashboard",
+      pid: process.pid,
+      uid,
+      gid,
+      user,
+      port,
+      startedAt: new Date().toISOString(),
+      version,
+      dataDirHash: crypto.createHash("sha256").update(dataDir).digest("hex").slice(0, 24)
+    }, null, 2)}\n`,
+    { mode: 0o600 }
+  );
+}
+
+async function removeInstanceMarker() {
+  if (!instanceMarkerPath) return;
+  const marker = instanceMarkerPath;
+  instanceMarkerPath = null;
+  await fs.rm(marker, { force: true });
+}
+
+function removeInstanceMarkerSync() {
+  if (!instanceMarkerPath) return;
+  try {
+    fsSync.rmSync(instanceMarkerPath, { force: true });
+  } catch {
+    // Best-effort cleanup during process exit.
+  }
+  instanceMarkerPath = null;
 }
 
 function createWindow(port) {
@@ -725,6 +770,7 @@ async function fileExists(filePath) {
 
 app.whenReady().then(async () => {
   const port = await startBackend();
+  await writeInstanceMarker(port).catch(() => {});
   createWindow(port);
 
   syncClaudeBrowserCredits(port).catch(() => {});
@@ -748,6 +794,9 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  removeInstanceMarker().catch(() => {});
   closeServer(dashboardServer);
   closeServer(ollamaProxyServer);
 });
+
+process.on("exit", removeInstanceMarkerSync);

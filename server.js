@@ -10,6 +10,14 @@ const https = require("node:https");
 const { spawn, spawnSync } = require("node:child_process");
 const express = require("express");
 const session = require("express-session");
+const { discoverSources, sourceId } = require("./lib/source-discovery");
+const {
+  connectSource,
+  disableSource,
+  normalizeConnectedSource,
+  readSourceSettings
+} = require("./lib/source-settings");
+const { aggregateUsageEvents, hashEvidencePath } = require("./lib/usage-events");
 
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
@@ -55,6 +63,8 @@ const CODEX_APP_SERVER_TIMEOUT_MS = envMs("CODEX_APP_SERVER_TIMEOUT_SECONDS", 5)
 const COPILOT_LIVE_QUOTA_ENABLED = parseBoolean(process.env.COPILOT_LIVE_QUOTA_ENABLED ?? "true");
 const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30);
 const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS", 12);
+const USAGE_CACHE_MS = envMs("USAGE_CACHE_SECONDS", 120);
+const SOURCE_DIAGNOSTICS_CACHE_MS = envMs("SOURCE_DIAGNOSTICS_CACHE_SECONDS", 30);
 const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("scripts", "copilot-quota-probe.mjs"));
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
@@ -69,6 +79,8 @@ const anthropicCache = createTimedCache();
 const codexLiveRateLimitsCache = createTimedCache();
 const copilotLiveQuotaCache = createTimedCache();
 const claudeApiUsageCache = createTimedCache();
+const usageCache = createTimedCache();
+const sourceDiagnosticsCache = createTimedCache();
 let codexAppServer = null;
 
 app.use(express.json({ limit: "200kb" }));
@@ -246,37 +258,122 @@ app.get("/auth/oidc/callback", async (req, res) => {
   }
 });
 
-app.get("/api/usage", authMiddleware, async (_req, res) => {
-  const [subscriptions, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollama, openaiRaw, anthropicRaw] = await Promise.all([
-    readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
-    readCodexUsage().catch((error) => providerError("codex", error)),
-    readCopilotUsage().catch((error) => providerError("copilot", error)),
-    readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
-    readGeminiUsage().catch((error) => providerError("gemini", error)),
-    readOllamaUsage().catch((error) => providerError("ollama", error)),
-    readOpenAiUsage().catch((error) => providerError("openai", error)),
-    readAnthropicUsage().catch((error) => providerError("anthropic", error))
-  ]);
+app.get("/api/usage", authMiddleware, async (req, res) => {
+  try {
+    res.json(await buildUsageResponse({ force: parseBoolean(req.query.force) }));
+  } catch (error) {
+    sendApiError(res, error, "usage_read_failed");
+  }
+});
 
-  const codex = mergeProviderSubscription(codexRaw, subscriptions.codex);
-  const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot);
-  const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode);
-  const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
-  const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
-  const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
+async function buildUsageResponse(options = {}) {
+  return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
+    const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
+    const localSources = buildReaderSources(connectedSettings.sources || []);
+    const [subscriptions, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollamaRaw, openaiRaw, anthropicRaw] = await Promise.all([
+      readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
+      readCodexUsage({ sources: localSources.codex }).catch((error) => providerError("codex", error)),
+      readCopilotUsage({ sources: localSources.copilot }).catch((error) => providerError("copilot", error)),
+      readClaudeCodeUsage({ sources: localSources.claudeCode }).catch((error) => providerError("claudeCode", error)),
+      readGeminiUsage({ sources: localSources.gemini }).catch((error) => providerError("gemini", error)),
+      readOllamaUsage({ sources: localSources.ollama }).catch((error) => providerError("ollama", error)),
+      readOpenAiUsage().catch((error) => providerError("openai", error)),
+      readAnthropicUsage().catch((error) => providerError("anthropic", error))
+    ]);
 
-  const now = new Date().toISOString();
-  res.json({
-    generatedAt: now,
-    codex,
-    copilot,
-    claudeCode,
-    gemini,
-    ollama,
-    local: buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]),
-    openai,
-    anthropic
-  });
+    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex);
+    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot);
+    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode);
+    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
+    const ollama = ollamaRaw;
+    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
+    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
+    const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]);
+
+    const now = new Date().toISOString();
+    return {
+      generatedAt: now,
+      codex: stripProviderUsageEvents(codex),
+      copilot: stripProviderUsageEvents(copilot),
+      claudeCode: stripProviderUsageEvents(claudeCode),
+      gemini: stripProviderUsageEvents(gemini),
+      ollama: stripProviderUsageEvents(ollama),
+      local,
+      openai,
+      anthropic
+    };
+  }, { force: options.force });
+}
+
+app.get("/api/sources/diagnostics", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await buildSourceDiagnostics());
+  } catch (error) {
+    sendApiError(res, error, "source_diagnostics_failed");
+  }
+});
+
+app.post("/api/sources/recheck", authMiddleware, async (_req, res) => {
+  try {
+    invalidateTimedCache(sourceDiagnosticsCache);
+    res.json({
+      ...(await buildSourceDiagnostics()),
+      rechecked: true
+    });
+  } catch (error) {
+    sendApiError(res, error, "source_recheck_failed");
+  }
+});
+
+app.post("/api/sources/connect", authMiddleware, async (req, res) => {
+  try {
+    const sourceId = String(req.body?.sourceId || req.body?.id || "").trim();
+    if (!sourceId) {
+      const error = new Error("Source id is required.");
+      error.statusCode = 400;
+      error.code = "source_id_required";
+      throw error;
+    }
+    const diagnostics = await buildSourceDiagnostics();
+    const candidate = diagnostics.candidates.find((source) => source.id === sourceId);
+    if (!candidate) {
+      const error = new Error("Source candidate was not found.");
+      error.statusCode = 404;
+      error.code = "source_candidate_not_found";
+      throw error;
+    }
+    if (!["readable", "mixed"].includes(candidate.accessStatus)) {
+      const error = new Error("Source is not readable yet. Grant access, then recheck before connecting.");
+      error.statusCode = 409;
+      error.code = "source_not_readable";
+      throw error;
+    }
+    const settings = await connectSource(DATA_DIR, normalizeConnectedSource(candidate, {
+      enabled: true,
+      label: String(req.body?.label || candidate.label || "").trim() || candidate.label,
+      lastVerifiedAt: new Date().toISOString()
+    }));
+    invalidateTimedCache(usageCache);
+    invalidateTimedCache(sourceDiagnosticsCache);
+    res.json({
+      ok: true,
+      connected: settings.sources.find((source) => source.id === sourceId) || null,
+      settings
+    });
+  } catch (error) {
+    sendApiError(res, error, "source_connect_failed");
+  }
+});
+
+app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
+  try {
+    const settings = await disableSource(DATA_DIR, req.params.id);
+    invalidateTimedCache(usageCache);
+    invalidateTimedCache(sourceDiagnosticsCache);
+    res.json({ ok: true, settings });
+  } catch (error) {
+    sendApiError(res, error, "source_disable_failed");
+  }
 });
 
 app.get("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
@@ -326,6 +423,7 @@ app.post("/api/subscriptions/settings", authMiddleware, async (req, res) => {
   try {
     const settings = sanitizeSubscriptionSettings(req.body || {});
     await saveSubscriptionSettings(settings);
+    invalidateTimedCache(usageCache);
     res.json(settings);
   } catch (error) {
     sendApiError(res, error, "subscription_settings_save_failed");
@@ -396,29 +494,217 @@ function sendApiError(res, error, fallbackCode) {
   });
 }
 
+async function buildSourceDiagnostics() {
+  return readThroughCache(sourceDiagnosticsCache, SOURCE_DIAGNOSTICS_CACHE_MS, async () => {
+    const [settings, discovery] = await Promise.all([
+      readSourceSettings(DATA_DIR).catch(() => ({ version: 1, sources: [] })),
+      discoverSources({
+        dataDir: DATA_DIR,
+        ollamaUsageFile: OLLAMA_USAGE_FILE,
+        codexHomes: CODEX_HOMES
+      })
+    ]);
+    const enabledConnected = (settings.sources || []).filter((source) => source.enabled !== false);
+    const connectedIds = new Set(enabledConnected.map((source) => source.id));
+    const candidates = (discovery.candidates || []).map((source) => ({
+      ...source,
+      connected: connectedIds.has(source.id)
+    }));
+    const connected = enabledConnected.map((source) => ({
+      ...source,
+      currentCandidate: candidates.find((candidate) => candidate.id === source.id) || null
+    }));
+    return {
+      ...discovery,
+      status: deriveSourceDiagnosticsStatus(discovery, candidates, connected),
+      candidates,
+      connected,
+      counts: {
+        ...(discovery.counts || {}),
+        connected: connected.length,
+        connectedEnabled: connected.length,
+        candidates: candidates.length
+      },
+      persistence: {
+        version: settings.version || 1,
+        file: path.join(DATA_DIR, "connected-sources.json")
+      }
+    };
+  });
+}
+
+function deriveSourceDiagnosticsStatus(discovery, candidates, connected) {
+  if (connected.length && candidates.some((source) => source.connected && ["readable", "mixed"].includes(source.accessStatus))) {
+    return "connected_live";
+  }
+  if (discovery.otherDashboardInstances?.some((instance) => instance.pid !== process.pid)) return "other_dashboard_found";
+  if (candidates.some((source) => source.accessStatus === "denied")) return "candidates_denied";
+  if (candidates.some((source) => ["readable", "mixed"].includes(source.accessStatus))) return "candidates_readable_empty";
+  if (discovery.os?.supportLevel === "partial_container" || discovery.os?.supported === false) return "partial_unsupported";
+  if (candidates.some((source) => source.owner?.current)) return "current_user_empty";
+  return "no_tools_found";
+}
+
+function buildReaderSources(connectedSources = []) {
+  const grouped = {
+    codex: defaultCodexSources(),
+    copilot: [defaultHomeSource("copilot", "GitHub Copilot", COPILOT_HOME, [
+      { role: "session_state", path: path.join(COPILOT_HOME, "session-state"), kind: "directory" }
+    ])],
+    claudeCode: [defaultHomeSource("claudeCode", "Claude Code", CLAUDE_HOME, [
+      { role: "projects", path: path.join(CLAUDE_HOME, "projects"), kind: "directory" }
+    ])],
+    gemini: [defaultHomeSource("gemini", "Gemini", GEMINI_HOME, [
+      { role: "telemetry", path: path.join(GEMINI_HOME, "telemetry"), kind: "directory" },
+      { role: "chats", path: path.join(GEMINI_HOME, "chats"), kind: "directory" },
+      { role: "tmp", path: path.join(GEMINI_HOME, "tmp"), kind: "directory" },
+      { role: "home", path: GEMINI_HOME, kind: "directory" }
+    ])],
+    ollama: [defaultFileSource("ollama", "Ollama", OLLAMA_USAGE_FILE, "usage_file")]
+  };
+
+  for (const rawSource of connectedSources) {
+    if (rawSource.enabled === false) continue;
+    let source;
+    try {
+      source = normalizeConnectedSource(rawSource);
+    } catch {
+      continue;
+    }
+    if (!grouped[source.providerId]) grouped[source.providerId] = [];
+    grouped[source.providerId].push(source);
+  }
+
+  for (const providerId of Object.keys(grouped)) {
+    grouped[providerId] = dedupeReaderSources(grouped[providerId]);
+  }
+  return grouped;
+}
+
+function defaultCodexSources() {
+  return CODEX_HOMES.map((home) => defaultHomeSource("codex", "Codex", home, [
+    { role: "sessions", path: path.join(home, "sessions"), kind: "directory" },
+    { role: "archived_sessions", path: path.join(home, "archived_sessions"), kind: "directory" }
+  ]));
+}
+
+function defaultHomeSource(providerId, label, home, paths) {
+  const owner = currentOwner(home);
+  return {
+    id: sourceId(providerId, owner.uid ?? "current", paths.map((entry) => entry.path)),
+    providerId,
+    kind: "usage_dir",
+    label: `${label} - current user`,
+    owner,
+    paths: paths.map((entry) => ({
+      ...entry,
+      exists: false,
+      readable: true,
+      permission: "configured"
+    })),
+    accessStatus: "readable",
+    discovery: {
+      method: "configured-current-user",
+      confidence: "high",
+      checkedAt: new Date().toISOString(),
+      evidence: []
+    },
+    privacy: {
+      scope: "metadata_only",
+      forbidden: ["credentials", "raw_transcripts", "provider_payloads"]
+    }
+  };
+}
+
+function defaultFileSource(providerId, label, file, role) {
+  const owner = currentOwner(path.dirname(file));
+  return {
+    id: sourceId(providerId, owner.uid ?? "current", [file]),
+    providerId,
+    kind: "usage_file",
+    label: `${label} - current data dir`,
+    owner,
+    paths: [{
+      role,
+      path: file,
+      kind: "file",
+      exists: false,
+      readable: true,
+      permission: "configured"
+    }],
+    accessStatus: "readable",
+    discovery: {
+      method: "configured-data-dir",
+      confidence: "high",
+      checkedAt: new Date().toISOString(),
+      evidence: []
+    },
+    privacy: {
+      scope: "metadata_only",
+      forbidden: ["credentials", "raw_transcripts", "provider_payloads"]
+    }
+  };
+}
+
+function currentOwner(home) {
+  const info = os.userInfo();
+  return {
+    uid: typeof process.getuid === "function" ? process.getuid() : info.uid ?? null,
+    gid: typeof process.getgid === "function" ? process.getgid() : info.gid ?? null,
+    name: info.username || process.env.USER || "current",
+    home,
+    current: true
+  };
+}
+
+function dedupeReaderSources(sources) {
+  const seenIds = new Set();
+  const seenPaths = new Set();
+  const result = [];
+  for (const source of sources) {
+    const pathKey = source.paths.map((entry) => path.resolve(entry.path)).sort().join("\n");
+    const key = `${source.providerId}\n${pathKey}`;
+    if (seenIds.has(source.id) || seenPaths.has(key)) continue;
+    seenIds.add(source.id);
+    seenPaths.add(key);
+    result.push(source);
+  }
+  return result;
+}
+
+function stripProviderUsageEvents(provider) {
+  if (!provider || typeof provider !== "object") return provider;
+  const { _usageEvents, ...rest } = provider;
+  return rest;
+}
+
 function createTimedCache() {
   return {
     value: null,
     expiresAt: 0,
-    pending: null
+    pending: null,
+    generation: 0
   };
 }
 
-async function readThroughCache(cache, ttlMs, loader) {
+async function readThroughCache(cache, ttlMs, loader, options = {}) {
   const now = Date.now();
-  if (cache.value && now < cache.expiresAt) return cache.value;
+  if (!options.force && cache.value && now < cache.expiresAt) return cache.value;
   if (cache.pending) return cache.pending;
 
-  cache.pending = Promise.resolve()
+  const generation = cache.generation || 0;
+  const pending = Promise.resolve()
     .then(loader)
     .then((value) => {
-      cache.value = value;
-      cache.expiresAt = Date.now() + ttlMs;
+      if (cache.pending === pending && cache.generation === generation) {
+        cache.value = value;
+        cache.expiresAt = Date.now() + ttlMs;
+      }
       return value;
     })
     .catch((error) => {
       if (!cache.value) throw error;
-      cache.value = {
+      const staleValue = {
         ...cache.value,
         cache: {
           ...(cache.value.cache || {}),
@@ -427,14 +713,26 @@ async function readThroughCache(cache, ttlMs, loader) {
           staleAt: new Date().toISOString()
         }
       };
-      cache.expiresAt = Date.now() + Math.min(ttlMs, 30_000);
-      return cache.value;
+      if (cache.pending === pending && cache.generation === generation) {
+        cache.value = staleValue;
+        cache.expiresAt = Date.now() + Math.min(ttlMs, 30_000);
+      }
+      return staleValue;
     })
     .finally(() => {
-      cache.pending = null;
+      if (cache.pending === pending) cache.pending = null;
     });
 
+  cache.pending = pending;
   return cache.pending;
+}
+
+function invalidateTimedCache(cache) {
+  if (!cache || typeof cache !== "object") return;
+  cache.value = null;
+  cache.expiresAt = 0;
+  cache.pending = null;
+  cache.generation = (cache.generation || 0) + 1;
 }
 
 async function readSubscriptionSettings() {
@@ -509,12 +807,14 @@ function mergeProviderSubscription(provider, subscription) {
     currency: normalizeCurrency(subscription.currency || "EUR"),
     source: "local_settings"
   };
-  return {
+  const merged = {
     ...provider,
     planType,
     planSource: subscription.planType ? "local_settings" : provider.planSource || null,
     subscription: mergedSubscription
   };
+  if (provider._usageEvents) merged._usageEvents = provider._usageEvents;
+  return merged;
 }
 
 function hasSubscriptionValue(subscription) {
@@ -637,9 +937,9 @@ function buildLimitRows(limits, keys) {
     .filter(Boolean);
 }
 
-async function readCodexUsage() {
+async function readCodexUsage(options = {}) {
   const liveRateLimitsPromise = readCodexLiveRateLimits();
-  const { files, roots, duplicatesSkipped } = await listCodexUsageFiles();
+  const { files, roots, duplicatesSkipped } = await listCodexUsageFiles(options.sources || defaultCodexSources());
 
   const aggregates = createUsageTotals();
   const last5h = createUsageTotals();
@@ -656,11 +956,13 @@ async function readCodexUsage() {
   let eventCount = 0;
   let sessionsWithEvents = 0;
   const rateLimitEvents = [];
+  const usageEvents = [];
 
-  for (const file of files) {
+  for (const fileRecord of files) {
+    const file = fileRecord.file;
     let fileEvents = 0;
     let currentModel = null;
-    await readJsonl(file, (event) => {
+    await readJsonl(file, (event, meta) => {
       if (event?.type === "turn_context" && event.payload?.model) {
         currentModel = event.payload.model;
       }
@@ -683,6 +985,24 @@ async function readCodexUsage() {
           rateLimitEvents.push(rateLimitEvent);
         }
       }
+      usageEvents.push({
+        providerId: "codex",
+        sourceId: fileRecord.sourceId,
+        eventId: event.id || event.payload?.id || null,
+        timestampMs,
+        model: currentModel || event.payload.rate_limits?.limit_name || null,
+        usage,
+        evidence: {
+          realpath: fileRecord.realPath,
+          realpathHash: hashEvidencePath(fileRecord.realPath),
+          line: meta?.line,
+          sessionId: fileRecord.sessionId,
+          rolloutSessionId: fileRecord.sessionId
+        },
+        metadata: {
+          sourceGroupId: isCodexSparkModel(currentModel) || isCodexSparkRateLimit(event.payload.rate_limits) ? "codexSpark" : "codex"
+        }
+      });
       addUsage(aggregates, usage);
       if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
       if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(last24h, usage);
@@ -786,13 +1106,18 @@ async function readCodexUsage() {
       liveSparkLimits,
       liveRateLimits?.source?.updatedAt || null
     ),
-    daily
+    daily,
+    _usageEvents: usageEvents
   };
 }
 
-async function readCopilotUsage() {
+async function readCopilotUsage(options = {}) {
   const liveQuotaPromise = readCopilotLiveQuota();
-  const files = await listFiles(path.join(COPILOT_HOME, "session-state"), (file) => path.basename(file) === "events.jsonl");
+  const files = await listFilesForSourcePaths(
+    options.sources || buildReaderSources().copilot,
+    ["session_state"],
+    (file) => path.basename(file) === "events.jsonl"
+  );
   const usage = createUsageAccumulator();
   const modelMap = new Map();
   let firstEvent = null;
@@ -802,10 +1127,12 @@ async function readCopilotUsage() {
   let totalPremiumRequests = 0;
   let totalApiDurationMs = 0;
   let totalNanoAiu = 0;
+  const usageEvents = [];
 
-  for (const file of files) {
+  for (const fileRecord of files) {
+    const file = fileRecord.file;
     let fileEvents = 0;
-    await readJsonl(file, (event) => {
+    await readJsonl(file, (event, meta) => {
       if (event?.type !== "session.shutdown" || !event?.data) return;
       const data = event.data;
       const timestampMs = copilotSessionTimestampMs(data, event.timestamp);
@@ -825,6 +1152,23 @@ async function readCopilotUsage() {
       const premiumRequests = Number(data.totalPremiumRequests || 0);
       if (!sessionUsage.totalTokens && !premiumRequests) return;
 
+      usageEvents.push({
+        providerId: "copilot",
+        sourceId: fileRecord.sourceId,
+        eventId: data.sessionId || data.conversationId || null,
+        timestampMs,
+        model: data.currentModel || Object.keys(modelMetrics)[0] || "copilot",
+        usage: sessionUsage,
+        evidence: {
+          realpath: fileRecord.realPath,
+          realpathHash: hashEvidencePath(fileRecord.realPath),
+          line: meta?.line,
+          sessionStart: data.sessionStartTime || timestampMs
+        },
+        metadata: {
+          sourceGroupId: "copilot"
+        }
+      });
       addUsageEvent(usage, timestampMs, sessionUsage);
       totalPremiumRequests += premiumRequests;
       totalApiDurationMs += Number(data.totalApiDurationMs || 0);
@@ -906,7 +1250,8 @@ async function readCopilotUsage() {
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
       .slice(0, 8),
-    daily: buildDaily(usage.dailyMap)
+    daily: buildDaily(usage.dailyMap),
+    _usageEvents: usageEvents
   };
 }
 
@@ -1334,8 +1679,8 @@ function claudeApiWindowToLimitWindow(apiWindow, label, windowMinutes) {
   );
 }
 
-async function readClaudeCodeUsage() {
-  const files = await listJsonlFiles(path.join(CLAUDE_HOME, "projects"));
+async function readClaudeCodeUsage(options = {}) {
+  const files = await listJsonlFileRecordsForSourcePaths(options.sources || buildReaderSources().claudeCode, ["projects"]);
   const seen = new Set();
   const usage = createUsageAccumulator();
   const modelMap = new Map();
@@ -1343,10 +1688,12 @@ async function readClaudeCodeUsage() {
   let latestEvent = null;
   let responseCount = 0;
   let sessionsWithEvents = 0;
+  const usageEvents = [];
 
-  for (const file of files) {
+  for (const fileRecord of files) {
+    const file = fileRecord.file;
     let fileEvents = 0;
-    await readJsonl(file, (event) => {
+    await readJsonl(file, (event, meta) => {
       if (event?.type !== "assistant" || !event?.message?.usage) return;
       const timestampMs = Date.parse(event.timestamp);
       if (Number.isNaN(timestampMs)) return;
@@ -1355,6 +1702,25 @@ async function readClaudeCodeUsage() {
       seen.add(usageKey);
 
       const normalized = normalizeClaudeUsage(event.message.usage);
+      usageEvents.push({
+        providerId: "claudeCode",
+        sourceId: fileRecord.sourceId,
+        eventId: event.requestId || event.message?.id || event.uuid || null,
+        timestampMs,
+        model: event.message.model || "unknown",
+        usage: normalized,
+        evidence: {
+          realpath: fileRecord.realPath,
+          realpathHash: hashEvidencePath(fileRecord.realPath),
+          line: meta?.line,
+          requestId: event.requestId || null,
+          messageId: event.message?.id || null,
+          uuid: event.uuid || null
+        },
+        metadata: {
+          sourceGroupId: "claudeCode"
+        }
+      });
       addUsageEvent(usage, timestampMs, normalized);
 
       const model = event.message.model || "unknown";
@@ -1518,7 +1884,8 @@ async function readClaudeCodeUsage() {
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
       .slice(0, 8),
-    daily: buildDaily(usage.dailyMap)
+    daily: buildDaily(usage.dailyMap),
+    _usageEvents: usageEvents
   };
 }
 
@@ -1530,23 +1897,42 @@ function claudeCodeStatusMessage(statusline, limitSource) {
   return "Claude live limits are not available from local telemetry yet.";
 }
 
-async function readGeminiUsage() {
-  const candidates = await listGeminiUsageFiles(GEMINI_HOME);
+async function readGeminiUsage(options = {}) {
+  const candidates = await listGeminiUsageFileRecords(options.sources || buildReaderSources().gemini);
   const usage = createUsageAccumulator();
   const modelMap = new Map();
   let firstEvent = null;
   let latestEvent = null;
   let eventCount = 0;
   let filesWithEvents = 0;
+  const usageEvents = [];
 
-  for (const file of candidates) {
+  for (const fileRecord of candidates) {
+    const file = fileRecord.file;
     let fileEvents = 0;
-    await readUsageObjects(file, (event) => {
+    await readUsageObjects(file, (event, meta) => {
       const usageMetadata = findGeminiUsageMetadata(event);
       if (!usageMetadata) return;
       const timestampMs = findTimestampMs(event) || (safeStatMtime(file) ?? Date.now());
       const normalized = normalizeGeminiUsage(usageMetadata);
       if (!normalized.total_tokens) return;
+      usageEvents.push({
+        providerId: "gemini",
+        sourceId: fileRecord.sourceId,
+        eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
+        timestampMs,
+        model: findModelName(event) || "gemini",
+        usage: normalized,
+        evidence: {
+          realpath: fileRecord.realPath,
+          realpathHash: hashEvidencePath(fileRecord.realPath),
+          line: meta?.line,
+          index: meta?.index
+        },
+        metadata: {
+          sourceGroupId: "gemini"
+        }
+      });
       addUsageEvent(usage, timestampMs, normalized);
 
       const model = findModelName(event) || "gemini";
@@ -1605,23 +1991,43 @@ async function readGeminiUsage() {
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
       .slice(0, 8),
-    daily: buildDaily(usage.dailyMap)
+    daily: buildDaily(usage.dailyMap),
+    _usageEvents: usageEvents
   };
 }
 
-async function readOllamaUsage() {
+async function readOllamaUsage(options = {}) {
   const usage = createUsageAccumulator();
   const modelMap = new Map();
   let firstEvent = null;
   let latestEvent = null;
   let eventCount = 0;
+  const usageEvents = [];
+  const files = await ollamaUsageFileRecords(options.sources || buildReaderSources().ollama);
 
-  try {
-    await readJsonl(OLLAMA_USAGE_FILE, (event) => {
+  for (const fileRecord of files) {
+    try {
+      await readJsonl(fileRecord.file, (event, meta) => {
       const timestampMs = Date.parse(event.timestamp);
       if (Number.isNaN(timestampMs)) return;
       const normalized = normalizeUsage(event.usage || {});
       if (!normalized.totalTokens) return;
+      usageEvents.push({
+        providerId: "ollama",
+        sourceId: fileRecord.sourceId,
+        eventId: event.id || null,
+        timestampMs,
+        model: event.model || "ollama",
+        usage: event.usage || {},
+        evidence: {
+          realpath: fileRecord.realPath,
+          realpathHash: hashEvidencePath(fileRecord.realPath),
+          line: meta?.line
+        },
+        metadata: {
+          sourceGroupId: "ollama"
+        }
+      });
       addUsageEvent(usage, timestampMs, event.usage);
 
       const model = event.model || "ollama";
@@ -1645,8 +2051,9 @@ async function readOllamaUsage() {
         };
       }
     });
-  } catch {
-    // Missing log file just means the proxy has not recorded requests yet.
+    } catch {
+      // Missing log files just mean the proxy has not recorded requests yet.
+    }
   }
 
   return {
@@ -1658,6 +2065,7 @@ async function readOllamaUsage() {
       : "Keine lokalen Ollama-Logs gefunden.",
     source: {
       usageFile: OLLAMA_USAGE_FILE,
+      filesScanned: files.length,
       proxyPort: OLLAMA_PROXY_PORT,
       target: OLLAMA_HOST,
       eventCount
@@ -1683,11 +2091,26 @@ async function readOllamaUsage() {
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
       .slice(0, 8),
-    daily: buildDaily(usage.dailyMap)
+    daily: buildDaily(usage.dailyMap),
+    _usageEvents: usageEvents
   };
 }
 
 function buildLocalAggregate(providers) {
+  const usageEvents = providers.flatMap((provider) => provider?._usageEvents || []);
+  if (usageEvents.length) {
+    const aggregate = aggregateUsageEvents(usageEvents, { dailyHistoryDays: DAILY_HISTORY_DAYS });
+    return {
+      id: "local",
+      status: aggregate.totals.allTime.totalTokens > 0 ? "live" : "empty",
+      updatedAt: new Date().toISOString(),
+      totals: aggregate.totals,
+      daily: aggregate.daily,
+      sources: aggregate.sources,
+      eventStats: aggregate.stats
+    };
+  }
+
   const usage = createUsageAccumulator();
   const sources = [];
   const dailySourceMap = new Map();
@@ -1781,18 +2204,15 @@ function subtractUsageTotals(total, subset) {
   return result;
 }
 
-async function listCodexUsageFiles() {
-  const roots = CODEX_HOMES.flatMap((home) => [
-    path.join(home, "sessions"),
-    path.join(home, "archived_sessions")
-  ]);
+async function listCodexUsageFiles(sources = defaultCodexSources()) {
+  const roots = sourcePathEntries(sources, ["sessions", "archived_sessions"]);
   const files = [];
   const seenRealPaths = new Set();
   const seenSessionIds = new Set();
   let duplicatesSkipped = 0;
 
   for (const root of roots) {
-    for (const file of await listJsonlFiles(root)) {
+    for (const file of await listJsonlFiles(root.path)) {
       const realPath = await safeRealpath(file);
       const sessionId = codexSessionId(file);
       if (seenRealPaths.has(realPath) || (sessionId && seenSessionIds.has(sessionId))) {
@@ -1801,11 +2221,21 @@ async function listCodexUsageFiles() {
       }
       seenRealPaths.add(realPath);
       if (sessionId) seenSessionIds.add(sessionId);
-      files.push(file);
+      files.push({ file, sourceId: root.source.id, realPath, sessionId });
     }
   }
 
-  return { files, roots, duplicatesSkipped };
+  return { files, roots: roots.map((entry) => entry.path), duplicatesSkipped };
+}
+
+function sourcePathEntries(sources, roles = null) {
+  const roleSet = roles ? new Set(roles) : null;
+  return (sources || [])
+    .flatMap((source) => {
+      return (source.paths || []).map((entry) => ({ source, ...entry }));
+    })
+    .filter((entry) => !roleSet || roleSet.has(entry.role))
+    .filter((entry) => entry.path);
 }
 
 async function safeRealpath(file) {
@@ -1869,13 +2299,56 @@ async function listFiles(root, predicate) {
   return result;
 }
 
+async function listFilesForSourcePaths(sources, roles, predicate) {
+  const records = [];
+  const seen = new Set();
+  for (const entry of sourcePathEntries(sources, roles)) {
+    for (const file of await listFiles(entry.path, predicate)) {
+      const realPath = await safeRealpath(file);
+      if (seen.has(realPath)) continue;
+      seen.add(realPath);
+      records.push({
+        file,
+        realPath,
+        sourceId: entry.source.id,
+        source: entry.source
+      });
+    }
+  }
+  return records;
+}
+
+async function listJsonlFileRecordsForSourcePaths(sources, roles) {
+  return listFilesForSourcePaths(sources, roles, (file) => path.basename(file).endsWith(".jsonl"));
+}
+
+async function ollamaUsageFileRecords(sources) {
+  const records = [];
+  const seen = new Set();
+  for (const entry of sourcePathEntries(sources, ["usage_file"])) {
+    const file = entry.path;
+    const realPath = await safeRealpath(file);
+    if (seen.has(realPath)) continue;
+    seen.add(realPath);
+    records.push({
+      file,
+      realPath,
+      sourceId: entry.source.id,
+      source: entry.source
+    });
+  }
+  return records;
+}
+
 async function readJsonl(file, onObject) {
   const stream = fs.createReadStream(file, { encoding: "utf8" });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+  let lineNumber = 0;
   for await (const line of rl) {
+    lineNumber += 1;
     if (!line.trim()) continue;
     try {
-      onObject(JSON.parse(line));
+      onObject(JSON.parse(line), { file, line: lineNumber });
     } catch {
       // Corrupt or partial JSONL lines can happen during active writes.
     }
@@ -1889,7 +2362,11 @@ async function readUsageObjects(file, onObject) {
   }
   try {
     const parsed = JSON.parse(await fsp.readFile(file, "utf8"));
-    visitJson(parsed, onObject);
+    let index = 0;
+    visitJson(parsed, (object) => {
+      onObject(object, { file, index });
+      index += 1;
+    });
   } catch {
     // Ignore non-JSON files and partially written logs.
   }
@@ -2515,6 +2992,25 @@ async function listGeminiUsageFiles(root) {
     if (file.includes(`${path.sep}telemetry${path.sep}`) && /\.(json|jsonl|log)$/.test(file)) return true;
     return false;
   });
+}
+
+async function listGeminiUsageFileRecords(sources) {
+  const records = [];
+  const seen = new Set();
+  for (const entry of sourcePathEntries(sources, ["home", "telemetry", "chats", "tmp"])) {
+    for (const file of await listGeminiUsageFiles(entry.path)) {
+      const realPath = await safeRealpath(file);
+      if (seen.has(realPath)) continue;
+      seen.add(realPath);
+      records.push({
+        file,
+        realPath,
+        sourceId: entry.source.id,
+        source: entry.source
+      });
+    }
+  }
+  return records;
 }
 
 function findGeminiUsageMetadata(event) {
@@ -3514,4 +4010,10 @@ if (require.main === module) {
   startDashboard();
 }
 
-module.exports = { app, startDashboard };
+module.exports = {
+  app,
+  createTimedCache,
+  invalidateTimedCache,
+  readThroughCache,
+  startDashboard
+};
