@@ -449,7 +449,7 @@ app.get("/api/subscriptions/settings", authMiddleware, async (_req, res) => {
 
 app.post("/api/subscriptions/settings", authMiddleware, async (req, res) => {
   try {
-    const settings = sanitizeSubscriptionSettings(req.body || {});
+    const settings = mergeSubscriptionSettingsPatch(await readSubscriptionSettings(), req.body || {});
     await saveSubscriptionSettings(settings);
     invalidateTimedCache(usageCache);
     res.json(settings);
@@ -870,6 +870,19 @@ function sanitizeSubscriptionSettings(raw) {
     result[id] = sanitizeSubscriptionProvider(source[id]);
   }
   return result;
+}
+
+function mergeSubscriptionSettingsPatch(current, rawPatch) {
+  const merged = sanitizeSubscriptionSettings(current);
+  const patch = rawPatch && typeof rawPatch === "object" ? rawPatch : {};
+  for (const id of SUBSCRIPTION_PROVIDER_IDS) {
+    if (!Object.prototype.hasOwnProperty.call(patch, id)) continue;
+    merged[id] = sanitizeSubscriptionProvider({
+      ...(merged[id] || {}),
+      ...(patch[id] || {})
+    });
+  }
+  return merged;
 }
 
 function sanitizeSubscriptionProvider(raw) {

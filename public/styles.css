@@ -1193,6 +1193,38 @@ select {
   margin: 0 0 12px;
 }
 
+.settings-toast {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: 24px;
+  width: max-content;
+  max-width: min(520px, calc(100vw - 48px));
+  min-width: min(260px, calc(100vw - 48px));
+  margin: 0;
+  transform: translateX(-50%);
+  border: 1px solid rgba(35, 116, 92, 0.28);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 800;
+  pointer-events: none;
+  text-align: center;
+}
+
+.settings-toast[data-status="error"] {
+  border-color: rgba(185, 78, 92, 0.34);
+  color: var(--rose);
+}
+
+.settings-toast[data-status="loading"] {
+  border-color: rgba(46, 110, 166, 0.3);
+  color: var(--blue);
+}
+
 .settings-source-summary {
   display: flex;
   flex-wrap: wrap;

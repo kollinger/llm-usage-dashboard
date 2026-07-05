@@ -19,7 +19,9 @@ const state = {
   sourceDiagnosticsError: "",
   loadingSourceDiagnostics: false,
   sourceMessage: { text: "", status: "" },
-  sourceOps: {}
+  sourceOps: {},
+  settingsAutosaveTimers: {},
+  settingsToastTimer: null
 };
 
 const els = {
@@ -48,15 +50,12 @@ const els = {
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
   settingsConnectedSources: document.getElementById("settingsConnectedSources"),
   settingsCandidateSources: document.getElementById("settingsCandidateSources"),
+  settingsToast: document.getElementById("settingsToast"),
   subscriptionFields: Array.from(document.querySelectorAll("[data-subscription-field]")),
-  subscriptionSaveBtn: document.getElementById("subscriptionSaveBtn"),
-  subscriptionSaveStatus: document.getElementById("subscriptionSaveStatus"),
   notificationsEnabled: document.getElementById("notificationsEnabled"),
   notificationThresholds: document.getElementById("notificationThresholds"),
   notificationPacingPercent: document.getElementById("notificationPacingPercent"),
   notificationHardLimitPercent: document.getElementById("notificationHardLimitPercent"),
-  notificationSaveBtn: document.getElementById("notificationSaveBtn"),
-  notificationSaveStatus: document.getElementById("notificationSaveStatus"),
   notificationDiagnostics: document.getElementById("notificationDiagnostics"),
   notificationDiagLastCheck: document.getElementById("notificationDiagLastCheck"),
   notificationDiagDuration: document.getElementById("notificationDiagDuration"),
@@ -142,7 +141,11 @@ const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
 const USAGE_POLL_INTERVAL_MS = 60_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
+const SETTINGS_AUTOSAVE_DELAY_MS = 500;
+const SETTINGS_TOAST_MS = 1800;
+const MODAL_BACKDROP_GRACE_MS = 450;
 const translationCache = new Map();
+const dialogOpenedAt = new WeakMap();
 const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
@@ -468,7 +471,7 @@ async function init() {
 
 function bindEvents() {
   els.refreshBtn.addEventListener("click", () => loadUsage({ showIndicator: true, force: true }));
-  els.loginBtn.addEventListener("click", () => els.loginDialog.showModal());
+  els.loginBtn.addEventListener("click", () => openModalDialog(els.loginDialog));
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
@@ -479,9 +482,16 @@ function bindEvents() {
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
   els.sourceDiagnosticsSection?.addEventListener("click", handleSourceActionClick);
   els.settingsDialog?.addEventListener("click", handleSourceActionClick);
-  els.notificationsEnabled?.addEventListener("change", onNotificationEnabledChange);
-  els.subscriptionSaveBtn?.addEventListener("click", saveSubscriptionSettings);
-  els.notificationSaveBtn?.addEventListener("click", saveNotificationSettings);
+  els.subscriptionFields.forEach((field) => {
+    field.addEventListener("input", () => scheduleSettingsAutosave("subscriptions"));
+  });
+  els.notificationsEnabled?.addEventListener("change", () => {
+    onNotificationEnabledChange();
+    scheduleSettingsAutosave("notifications");
+  });
+  [els.notificationPacingPercent, els.notificationHardLimitPercent].forEach((field) => {
+    field?.addEventListener("input", () => scheduleSettingsAutosave("notifications"));
+  });
   els.notificationTestBtn?.addEventListener("click", sendTestNotification);
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
@@ -2479,8 +2489,8 @@ function parseDateOnly(value) {
 }
 
 async function openSettings() {
-  if (!state.auth?.authenticated) return els.loginDialog.showModal();
-  els.settingsDialog.showModal();
+  if (!state.auth?.authenticated) return openModalDialog(els.loginDialog);
+  openModalDialog(els.settingsDialog);
   renderSourceSettings();
   await Promise.all([
     loadSubscriptionSettings(),
@@ -2492,12 +2502,12 @@ async function openSettings() {
 
 async function loadSubscriptionSettings() {
   if (!els.subscriptionFields.length) return;
-  setSubscriptionSaveStatus("", "");
+  hideSettingsToast();
   try {
     const settings = await fetchJson("/api/subscriptions/settings");
     fillSubscriptionSettings(settings);
   } catch {
-    setSubscriptionSaveStatus(t("settings.subscriptions.saveError"), "error");
+    showSettingsToast(t("settings.subscriptions.saveError"), "error");
   }
 }
 
@@ -2521,7 +2531,6 @@ async function saveSubscriptionSettings() {
     payload[provider][key] = field.type === "number" ? Number(field.value || 0) : String(field.value || "").trim();
     payload[provider].currency ||= "EUR";
   }
-  setSubscriptionSaveStatus(t("settings.subscriptions.saving"), "loading");
   try {
     const settings = await fetchJson("/api/subscriptions/settings", {
       method: "POST",
@@ -2529,18 +2538,19 @@ async function saveSubscriptionSettings() {
       body: JSON.stringify(payload)
     });
     fillSubscriptionSettings(settings);
-    setSubscriptionSaveStatus(t("settings.subscriptions.saved"), "ready");
+    showSettingsToast(t("settings.subscriptions.saved"), "ready");
     await loadUsage({ force: true });
   } catch {
-    setSubscriptionSaveStatus(t("settings.subscriptions.saveError"), "error");
+    showSettingsToast(t("settings.subscriptions.saveError"), "error", { persistMs: 5000 });
   }
 }
 
-function setSubscriptionSaveStatus(message, status) {
-  if (!els.subscriptionSaveStatus) return;
-  els.subscriptionSaveStatus.textContent = message || "";
-  els.subscriptionSaveStatus.hidden = !message;
-  els.subscriptionSaveStatus.dataset.status = status || "";
+function scheduleSettingsAutosave(type) {
+  clearTimeout(state.settingsAutosaveTimers[type]);
+  state.settingsAutosaveTimers[type] = setTimeout(() => {
+    if (type === "subscriptions") saveSubscriptionSettings().catch(() => {});
+    if (type === "notifications") saveNotificationSettings().catch(() => {});
+  }, SETTINGS_AUTOSAVE_DELAY_MS);
 }
 
 async function loadNotificationSettings() {
@@ -2573,16 +2583,9 @@ async function saveNotificationSettings() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (els.notificationSaveStatus) {
-      els.notificationSaveStatus.textContent = t("settings.notifications.saved");
-      els.notificationSaveStatus.hidden = false;
-      setTimeout(() => { if (els.notificationSaveStatus) els.notificationSaveStatus.hidden = true; }, 3000);
-    }
+    showSettingsToast(t("settings.notifications.saved"), "ready");
   } catch {
-    if (els.notificationSaveStatus) {
-      els.notificationSaveStatus.textContent = t("settings.notifications.saveError");
-      els.notificationSaveStatus.hidden = false;
-    }
+    showSettingsToast(t("settings.notifications.saveError"), "error", { persistMs: 5000 });
   }
 }
 
@@ -3030,14 +3033,43 @@ function pathRoleLabel(role) {
   return key ? t(key, {}, role || "--") : role || "--";
 }
 
+function openModalDialog(dialog) {
+  if (!dialog) return;
+  if (dialog.open) return;
+  dialogOpenedAt.set(dialog, Date.now());
+  dialog.showModal();
+}
+
 function closeDialogOnBackdrop(event) {
   if (event.target !== event.currentTarget) return;
+  const openedAt = dialogOpenedAt.get(event.currentTarget) || 0;
+  if (Date.now() - openedAt < MODAL_BACKDROP_GRACE_MS) return;
   const body = event.currentTarget.querySelector(".modal-body");
   if (!body) return event.currentTarget.close();
   const rect = body.getBoundingClientRect();
   const inside =
     event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
   if (!inside) event.currentTarget.close();
+}
+
+function showSettingsToast(message, status, { persistMs = SETTINGS_TOAST_MS } = {}) {
+  if (!els.settingsToast) return;
+  clearTimeout(state.settingsToastTimer);
+  els.settingsToast.textContent = message || "";
+  els.settingsToast.hidden = !message;
+  els.settingsToast.dataset.status = status || "";
+  if (message && persistMs > 0) {
+    state.settingsToastTimer = setTimeout(hideSettingsToast, persistMs);
+  }
+}
+
+function hideSettingsToast() {
+  if (!els.settingsToast) return;
+  clearTimeout(state.settingsToastTimer);
+  state.settingsToastTimer = null;
+  els.settingsToast.textContent = "";
+  els.settingsToast.hidden = true;
+  els.settingsToast.dataset.status = "";
 }
 
 function getPath(object, dotted) {

@@ -185,8 +185,6 @@
               </label>
             </fieldset>
           </div>
-          <button type="button" class="text-button" id="subscriptionSaveBtn" data-i18n="settings.subscriptions.save">Speichern</button>
-          <p class="settings-desc" id="subscriptionSaveStatus" hidden></p>
         </div>
         <div class="settings-section">
           <h3 data-i18n="settings.sources.title">Lokale Quellen</h3>
@@ -226,8 +224,6 @@
               <input type="number" id="notificationHardLimitPercent" min="50" max="100" step="5" />
             </label>
           </div>
-          <button type="button" class="text-button" id="notificationSaveBtn" data-i18n="settings.notifications.save">Speichern</button>
-          <p class="settings-desc" id="notificationSaveStatus" hidden></p>
           <div class="notification-diagnostics" id="notificationDiagnostics">
             <h4 class="settings-subheading" data-i18n="settings.notifications.diagTitle">Notification diagnostics</h4>
             <dl class="diag-list" id="notificationDiagList">
@@ -261,6 +257,7 @@
             </details>
           </div>
         </div>
+        <p class="settings-toast" id="settingsToast" hidden aria-live="polite"></p>
       </div>
     </dialog>
   </body>
