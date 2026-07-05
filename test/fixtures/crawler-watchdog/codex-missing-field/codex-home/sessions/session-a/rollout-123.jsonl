@@ -1,0 +1,2 @@
+{"timestamp":"2099-01-01T00:00:00.000Z","type":"turn_context","payload":{"model":"gpt-5-codex"}}
+{"timestamp":"2099-01-01T00:05:00.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":300,"cached_input_tokens":30,"output_tokens":140,"reasoning_output_tokens":10,"total_tokens":480}},"rate_limits":{"plan_type":"codex-pro","primary":{"used_percent":28,"window_minutes":300,"resets_at":4102444800},"secondary":{"used_percent":41,"window_minutes":10080,"resets_at":4102531200}}}}

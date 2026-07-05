@@ -3514,4 +3514,9 @@ if (require.main === module) {
   startDashboard();
 }
 
-module.exports = { app, startDashboard };
+module.exports = {
+  app,
+  startDashboard,
+  readCodexUsage,
+  readClaudeCodeUsage
+};

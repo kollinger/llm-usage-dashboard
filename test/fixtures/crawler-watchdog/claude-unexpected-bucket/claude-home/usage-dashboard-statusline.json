@@ -1,0 +1,32 @@
+{
+  "plan_type": "max",
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 34,
+      "remaining_percentage": 66,
+      "resets_at": "2099-12-31T00:00:00.000Z",
+      "reset_label": "in 4h",
+      "window_minutes": 300
+    },
+    "seven_day": {
+      "used_percentage": 47,
+      "remaining_percentage": 53,
+      "resets_at": "2099-12-31T00:00:00.000Z",
+      "reset_label": "in 5d",
+      "window_minutes": 10080
+    },
+    "bonus_weekend": {
+      "used_percentage": 12,
+      "remaining_percentage": 88,
+      "resets_at": "2099-12-31T00:00:00.000Z",
+      "reset_label": "in 2d",
+      "window_minutes": 2880
+    }
+  },
+  "usage_credits": {
+    "spentAmount": 12.5,
+    "monthlyLimitAmount": 50,
+    "currentCreditAmount": 37.5,
+    "currency": "EUR"
+  }
+}

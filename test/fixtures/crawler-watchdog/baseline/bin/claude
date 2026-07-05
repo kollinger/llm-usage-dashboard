@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+const args = process.argv.slice(2).join(" ");
+if (args === "auth status --json") {
+  process.stdout.write(JSON.stringify({ loggedIn: true, planType: "max" }));
+  process.exit(0);
+}
+process.stderr.write("unsupported fixture command");
+process.exit(1);

@@ -236,6 +236,27 @@ Fields parsed when present:
 
 The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
 
+### Crawler Watchdog
+
+Use the watchdog to verify that the existing Codex and Claude readers still match current local payloads or safe fixtures:
+
+```sh
+node scripts/crawler-watchdog.mjs --fixture test/fixtures/crawler-watchdog/baseline
+node scripts/crawler-watchdog.mjs --live
+node scripts/crawler-watchdog.mjs --fixture test/fixtures/crawler-watchdog/codex-missing-field --print-trigger
+```
+
+Exit codes:
+
+- `0` = `ok`
+- `1` = `needsCrawlerUpdate`
+- `2` = `authMissing`
+- `3` = `notTestable`
+- `4` = `toolError`
+- `5` = `invalidArgs`
+
+The JSON report includes provider, component, drift type, expected vs observed fields, fixture/live source, detection time, exit code, next action, and an optional dedupe-friendly trigger block for later ticket automation.
+
 ### Gemini
 
 Gemini usage is read from local metadata fields such as `usageMetadata`, `usage_metadata`, or Gemini CLI `tokens` stats in known Gemini paths:
