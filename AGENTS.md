@@ -40,6 +40,14 @@ Instructions for agents working on this repository.
 - When changing localized UI text, update every supported language file in `public/i18n/` and keep interpolation placeholders identical across languages.
 - For localization changes, run `npm run check`, verify translation key/placeholder consistency, and visually spot-check long translations and Arabic RTL when practical.
 
+## System Metrics and Cross-Platform Features
+
+- System or live-load features must be safe on macOS, Windows, and Linux.
+- If a metric cannot be read reliably on a platform, return and render it as unavailable instead of inventing a value.
+- Label metric quality visibly: measured, calculated from logs, estimated, or unavailable.
+- Do not expose raw process lists, command lines, prompts, transcripts, raw log lines, provider payloads, or secrets through live-metric APIs or UI.
+- Keep real zero values distinct from unavailable values, especially for token throughput and time-series charts.
+
 ## Verification
 
 Before proposing a commit, run:

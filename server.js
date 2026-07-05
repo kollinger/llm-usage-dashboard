@@ -76,6 +76,15 @@ const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
 const SUBSCRIPTION_HISTORY_VERSION = 1;
+const LIVE_METRICS_SAMPLE_MS = 5000;
+const LIVE_METRICS_HISTORY_POINTS = 90;
+const LIVE_METRICS_TOKEN_MIN_WINDOW_MS = 30_000;
+const LIVE_METRICS_TOKEN_WINDOWS = {
+  oneMinute: 60_000,
+  fiveMinutes: 5 * 60_000,
+  fifteenMinutes: 15 * 60_000
+};
+const LIVE_METRICS_TOKEN_SCALE_PER_MIN = 1_000_000;
 
 const app = express();
 let currentDashboardUrl = null;
@@ -88,6 +97,13 @@ const sourceDiagnosticsCache = createTimedCache();
 let codexAppServer = null;
 let pendingTestNotification = false;
 let pendingOpenNotificationSettings = false;
+let livePreviousCpuSample = sampleCpuTimes();
+let liveLastCpuPercent = null;
+const liveMetricsTokenHistory = [];
+const liveTimeSeries = [];
+
+const liveMetricsTimer = setInterval(refreshCpuSample, LIVE_METRICS_SAMPLE_MS);
+if (typeof liveMetricsTimer.unref === "function") liveMetricsTimer.unref();
 
 app.use(express.json({ limit: "200kb" }));
 app.use(
@@ -272,6 +288,20 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/api/system/live", authMiddleware, async (_req, res) => {
+  try {
+    let localUsage = null;
+    try {
+      localUsage = (await readUsageDashboard()).local || null;
+    } catch {
+      localUsage = null;
+    }
+    res.json(buildSystemLiveMetrics(localUsage));
+  } catch (error) {
+    sendApiError(res, error, "system_live_failed");
+  }
+});
+
 app.get("/api/sources/diagnostics", authMiddleware, async (_req, res) => {
   try {
     res.json(await buildSourceDiagnostics());
@@ -381,6 +411,253 @@ async function readUsageDashboard({ force = false } = {}) {
       anthropic
     };
   }, { force });
+}
+
+function buildSystemLiveMetrics(localUsage) {
+  const timestampMs = Date.now();
+  const timestamp = new Date(timestampMs).toISOString();
+  const cpu = buildLiveCpuMetric();
+  const ram = buildLiveRamMetric();
+  const tokenRates = computeTokensPerMinute(recordLiveMetricsTokenSnapshot(localUsage?.totals?.allTime, timestampMs));
+  const tokensPerMinute = buildTokensPerMinuteMetric(tokenRates);
+  const aiLoadScore = buildAiLoadScore(cpu, ram, tokensPerMinute.value);
+
+  const point = {
+    timestamp,
+    cpuPercent: cpu.usedPercent,
+    ramPercent: ram.usedPercent,
+    aiLoadScore: aiLoadScore.score,
+    tokensPerMinute: {
+      total: tokensPerMinute.value,
+      input: tokensPerMinute.input.value,
+      output: tokensPerMinute.output.value,
+      cached: tokensPerMinute.cached.value
+    }
+  };
+  liveTimeSeries.push(point);
+  while (liveTimeSeries.length > LIVE_METRICS_HISTORY_POINTS) liveTimeSeries.shift();
+
+  return {
+    timestamp,
+    platform: process.platform,
+    sampleIntervalMs: LIVE_METRICS_SAMPLE_MS,
+    cpu,
+    ram,
+    tokensPerMinute,
+    aiLoadScore,
+    timeSeries: liveTimeSeries.slice()
+  };
+}
+
+function buildLiveCpuMetric() {
+  if (liveLastCpuPercent !== null) {
+    return {
+      usedPercent: roundMetric(liveLastCpuPercent),
+      quality: "measured"
+    };
+  }
+  const estimated = estimateCpuPercentFromLoadAverage();
+  return {
+    usedPercent: estimated,
+    quality: estimated === null ? "unavailable" : "estimated"
+  };
+}
+
+function refreshCpuSample() {
+  const next = sampleCpuTimes();
+  if (!next) {
+    livePreviousCpuSample = null;
+    liveLastCpuPercent = null;
+    return;
+  }
+  if (!livePreviousCpuSample) {
+    livePreviousCpuSample = next;
+    liveLastCpuPercent = null;
+    return;
+  }
+  const deltaTotal = next.total - livePreviousCpuSample.total;
+  const deltaIdle = next.idle - livePreviousCpuSample.idle;
+  livePreviousCpuSample = next;
+  if (deltaTotal <= 0 || deltaIdle < 0) {
+    liveLastCpuPercent = null;
+    return;
+  }
+  liveLastCpuPercent = clampPercent(((deltaTotal - deltaIdle) / deltaTotal) * 100);
+}
+
+function sampleCpuTimes() {
+  const cpus = os.cpus();
+  if (!Array.isArray(cpus) || !cpus.length) return null;
+  return cpus.reduce(
+    (total, cpu) => {
+      const times = cpu?.times || {};
+      const idle = Number(times.idle || 0);
+      const sum = Object.values(times).reduce((acc, value) => acc + Number(value || 0), 0);
+      total.idle += idle;
+      total.total += sum;
+      return total;
+    },
+    { idle: 0, total: 0 }
+  );
+}
+
+function estimateCpuPercentFromLoadAverage() {
+  if (process.platform === "win32") return null;
+  const [oneMinuteLoad] = os.loadavg();
+  const cpuCount = os.cpus()?.length || 0;
+  if (!Number.isFinite(oneMinuteLoad) || cpuCount <= 0) return null;
+  return roundMetric(clampPercent((oneMinuteLoad / cpuCount) * 100));
+}
+
+function buildLiveRamMetric() {
+  const totalBytes = os.totalmem();
+  const freeBytes = os.freemem();
+  if (!(totalBytes > 0) || !Number.isFinite(freeBytes)) {
+    return {
+      usedPercent: null,
+      usedGb: null,
+      totalGb: null,
+      quality: "unavailable"
+    };
+  }
+  const usedBytes = Math.max(0, totalBytes - freeBytes);
+  return {
+    usedPercent: roundMetric((usedBytes / totalBytes) * 100),
+    usedGb: roundMetric(usedBytes / 1024 / 1024 / 1024),
+    totalGb: roundMetric(totalBytes / 1024 / 1024 / 1024),
+    quality: "measured"
+  };
+}
+
+function recordLiveMetricsTokenSnapshot(totals, timestampMs = Date.now()) {
+  if (!totals) return liveMetricsTokenHistory;
+  const input = metricNumber(totals.inputTokens);
+  const output = metricNumber(totals.outputTokens) + metricNumber(totals.reasoningOutputTokens);
+  const cached = metricNumber(totals.cachedInputTokens) + metricNumber(totals.cacheCreationInputTokens);
+  const explicitTotal = metricNumber(totals.totalTokens);
+  const total = explicitTotal || input + output + cached;
+  const subAvailable = input > 0 || output > 0 || cached > 0;
+  liveMetricsTokenHistory.push({ ts: timestampMs, total, input, output, cached, subAvailable });
+
+  const oldestAllowed = timestampMs - LIVE_METRICS_TOKEN_WINDOWS.fifteenMinutes;
+  while (
+    liveMetricsTokenHistory.length > LIVE_METRICS_HISTORY_POINTS ||
+    (liveMetricsTokenHistory[0] && liveMetricsTokenHistory[0].ts < oldestAllowed)
+  ) {
+    liveMetricsTokenHistory.shift();
+  }
+  return liveMetricsTokenHistory;
+}
+
+function computeTokensPerMinute(history) {
+  return {
+    total: computeTokenRate(history, "total", LIVE_METRICS_TOKEN_WINDOWS.oneMinute),
+    input: computeTokenSubRate(history, "input", LIVE_METRICS_TOKEN_WINDOWS.oneMinute),
+    output: computeTokenSubRate(history, "output", LIVE_METRICS_TOKEN_WINDOWS.oneMinute),
+    cached: computeTokenSubRate(history, "cached", LIVE_METRICS_TOKEN_WINDOWS.oneMinute),
+    windows: {
+      oneMinute: computeTokenRate(history, "total", LIVE_METRICS_TOKEN_WINDOWS.oneMinute),
+      fiveMinutes: computeTokenRate(history, "total", LIVE_METRICS_TOKEN_WINDOWS.fiveMinutes),
+      fifteenMinutes: computeTokenRate(history, "total", LIVE_METRICS_TOKEN_WINDOWS.fifteenMinutes)
+    }
+  };
+}
+
+function computeTokenRate(history, key, windowMs) {
+  const pair = tokenRateWindow(history, windowMs, (snapshot) => snapshot);
+  return pair ? tokenRateFromPair(pair.oldest, pair.newest, key) : null;
+}
+
+function computeTokenSubRate(history, key, windowMs) {
+  const pair = tokenRateWindow(history, windowMs, (snapshot) => (snapshot.subAvailable ? snapshot : null));
+  return pair ? tokenRateFromPair(pair.oldest, pair.newest, key) : null;
+}
+
+function tokenRateWindow(history, windowMs, selector) {
+  if (!Array.isArray(history) || history.length < 2) return null;
+  const newest = selector(history[history.length - 1]);
+  if (!newest) return null;
+  const earliestTs = newest.ts - windowMs;
+  let oldest = null;
+  for (const snapshot of history) {
+    const selected = selector(snapshot);
+    if (!selected || selected.ts < earliestTs) continue;
+    oldest = selected;
+    break;
+  }
+  if (!oldest || newest.ts - oldest.ts < LIVE_METRICS_TOKEN_MIN_WINDOW_MS) return null;
+  return { oldest, newest };
+}
+
+function tokenRateFromPair(oldest, newest, key) {
+  const deltaMs = newest.ts - oldest.ts;
+  const deltaTokens = newest[key] - oldest[key];
+  if (deltaMs < LIVE_METRICS_TOKEN_MIN_WINDOW_MS || deltaTokens < 0) return null;
+  return Math.round((deltaTokens / deltaMs) * 60_000);
+}
+
+function buildTokensPerMinuteMetric(tokenRates) {
+  const total = liveRateValue(tokenRates.total);
+  return {
+    value: total.value,
+    quality: total.quality,
+    input: liveRateValue(tokenRates.input),
+    output: liveRateValue(tokenRates.output),
+    cached: liveRateValue(tokenRates.cached),
+    windows: {
+      oneMinute: liveRateValue(tokenRates.windows.oneMinute),
+      fiveMinutes: liveRateValue(tokenRates.windows.fiveMinutes),
+      fifteenMinutes: liveRateValue(tokenRates.windows.fifteenMinutes)
+    },
+    windowSeconds: LIVE_METRICS_TOKEN_WINDOWS.oneMinute / 1000
+  };
+}
+
+function liveRateValue(value) {
+  return value === null || value === undefined
+    ? { value: null, quality: "unavailable" }
+    : { value: Math.max(0, Math.round(value)), quality: "calculated" };
+}
+
+function buildAiLoadScore(cpu, ram, tokensPerMinute) {
+  const tokenPercent =
+    tokensPerMinute === null || tokensPerMinute === undefined
+      ? null
+      : clampPercent((Number(tokensPerMinute) / LIVE_METRICS_TOKEN_SCALE_PER_MIN) * 100);
+  const factors = {
+    cpu: cpu.usedPercent,
+    ram: ram.usedPercent,
+    tokens: tokenPercent
+  };
+  const weighted = [
+    { value: factors.cpu, weight: 0.4 },
+    { value: factors.ram, weight: 0.35 },
+    { value: factors.tokens, weight: 0.25 }
+  ].filter((item) => item.value !== null && item.value !== undefined && Number.isFinite(Number(item.value)));
+  if (!weighted.length) {
+    return {
+      score: null,
+      quality: "unavailable",
+      factors
+    };
+  }
+  const weightTotal = weighted.reduce((sum, item) => sum + item.weight, 0);
+  const score = weighted.reduce((sum, item) => sum + item.value * item.weight, 0) / weightTotal;
+  return {
+    score: roundMetric(clampPercent(score)),
+    quality: "estimated",
+    factors
+  };
+}
+
+function metricNumber(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function roundMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 10) / 10 : null;
 }
 
 app.get("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {

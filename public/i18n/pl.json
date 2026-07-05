@@ -77,6 +77,49 @@
     "eyebrow": "Token Mix",
     "heading": "Zapisane przetwarzanie tokenów"
   },
+  "liveMetrics": {
+    "ariaLabel": "Live system usage",
+    "eyebrow": "Live",
+    "heading": "Live Load",
+    "updated": "Updated {time}",
+    "notAvailable": "Not available",
+    "error": "Error",
+    "unavailable": "Not available",
+    "unavailableShort": "N/A",
+    "percentScale": "0-100%",
+    "cpu": "CPU",
+    "ram": "Memory",
+    "ramSub": "{used}/{total} GB used",
+    "aiLoad": "AI Load",
+    "aiLoadSub": "Heuristic",
+    "aiLoadHelp": "Estimated from CPU, memory, and token throughput. Not an exact measurement.",
+    "tokensPerMinute": "Tokens/min",
+    "noTokenWindow": "No measured window yet",
+    "noTokenBreakdown": "No reliable breakdown",
+    "historyHeading": "Trend",
+    "historyAria": "Live load trend",
+    "legendAria": "Live trend legend",
+    "historyLoading": "Collecting live data...",
+    "historyNoSeries": "No active series.",
+    "quality": {
+      "measured": "Measured",
+      "calculated": "From logs",
+      "estimated": "Estimated",
+      "unavailable": "Not available"
+    },
+    "series": {
+      "cpu": "CPU",
+      "ram": "Memory",
+      "aiLoad": "AI Load",
+      "tokensTotal": "Tokens/min",
+      "tokensInput": "Input",
+      "tokensOutput": "Output",
+      "tokensCached": "Cached"
+    },
+    "errors": {
+      "load": "Could not load live system metrics."
+    }
+  },
   "pricing": {
     "eyebrow": "Koszty API",
     "heading": "Ile kosztowałyby twoje tokeny przez API",

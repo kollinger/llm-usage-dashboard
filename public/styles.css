@@ -943,6 +943,228 @@ a {
   margin-top: 14px;
 }
 
+.live-gauges-panel {
+  margin-top: 14px;
+}
+
+.live-gauges-heading {
+  align-items: flex-start;
+}
+
+.live-gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.live-gauge-card {
+  display: grid;
+  min-width: 0;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+
+.live-gauge-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.live-gauge-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.live-gauge-help {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+
+.live-gauge-help svg {
+  width: 13px;
+  height: 13px;
+}
+
+.live-gauge-ring {
+  --percent: 0;
+  display: grid;
+  place-items: center;
+  width: 130px;
+  aspect-ratio: 1;
+  justify-self: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #fff 0 58%, transparent 59%),
+    conic-gradient(var(--accent, var(--green)) calc(var(--percent) * 1%), #e9eee9 0);
+}
+
+.live-gauge-ring strong {
+  max-width: 86px;
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.live-gauge-ring[data-value-len="7"] strong,
+.live-gauge-ring[data-value-len="8"] strong,
+.live-gauge-ring[data-value-len="9"] strong,
+.live-gauge-ring[data-value-len="10"] strong {
+  font-size: 0.88rem;
+}
+
+.live-gauge-ring[data-value-len="11"] strong,
+.live-gauge-ring[data-value-len="12"] strong,
+.live-gauge-ring[data-value-len="13"] strong {
+  font-size: 0.78rem;
+}
+
+.live-gauge-sub {
+  min-height: 2.45em;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.live-quality-badge {
+  justify-self: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.live-quality-measured {
+  background: #e1f3ec;
+  color: var(--green);
+}
+
+.live-quality-calculated {
+  background: #e4eef8;
+  color: var(--blue);
+}
+
+.live-quality-estimated {
+  background: #fff0df;
+  color: var(--amber);
+}
+
+.live-quality-unavailable {
+  background: #f7e6e8;
+  color: var(--rose);
+}
+
+.live-history {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.live-history-head h3 {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+}
+
+.live-history-chart-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+.live-history-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.live-history-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+.live-history-legend-item.active {
+  border-color: color-mix(in srgb, var(--series-color, var(--ink)) 32%, var(--line));
+  color: var(--ink);
+}
+
+.live-history-legend-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--series-color, var(--muted));
+}
+
+.live-history-legend-swatch.dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--series-color, var(--muted)) 0 6px,
+    transparent 6px 10px
+  );
+}
+
+.live-history-chart {
+  min-height: 260px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: #aab5ad #eef2ef;
+  scrollbar-width: thin;
+}
+
+.live-history-chart::-webkit-scrollbar {
+  height: 10px;
+}
+
+.live-history-chart::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: #eef2ef;
+}
+
+.live-history-chart::-webkit-scrollbar-thumb {
+  border: 2px solid #eef2ef;
+  border-radius: 999px;
+  background: #aab5ad;
+}
+
+.live-history-canvas {
+  min-width: 100%;
+}
+
+.live-history-chart svg {
+  display: block;
+  height: 260px;
+}
+
 .price-table-wrap {
   width: 100%;
   max-width: 100%;
@@ -1497,6 +1719,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .live-gauge-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .usage-layout {
     grid-template-columns: 1fr;
   }
@@ -1537,7 +1763,8 @@ select {
   }
 
   .provider-grid,
-  .summary-strip {
+  .summary-strip,
+  .live-gauge-grid {
     grid-template-columns: 1fr;
   }
 

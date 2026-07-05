@@ -96,6 +96,26 @@
         </div>
       </section>
 
+      <section class="panel live-gauges-panel" id="liveGaugesSection" aria-label="Live-Auslastung" data-i18n-aria-label="liveMetrics.ariaLabel">
+        <div class="panel-heading live-gauges-heading">
+          <div>
+            <p class="eyebrow" data-i18n="liveMetrics.eyebrow">Live</p>
+            <h2 data-i18n="liveMetrics.heading">Live-Auslastung</h2>
+          </div>
+          <span id="liveMetricsUpdated" class="soft-label">--</span>
+        </div>
+        <div class="live-gauge-grid" id="liveGaugeGrid"></div>
+        <div class="live-history">
+          <div class="live-history-head">
+            <h3 data-i18n="liveMetrics.historyHeading">Verlauf</h3>
+          </div>
+          <div class="live-history-chart-wrap" id="liveHistoryChartWrap">
+            <div class="live-history-chart-legend" id="liveHistoryLegend" aria-label="Live-Legende" data-i18n-aria-label="liveMetrics.legendAria"></div>
+            <div class="live-history-chart" id="liveHistoryChart" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="panel price-panel">
         <div class="panel-heading">
           <div>

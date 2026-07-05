@@ -16,9 +16,13 @@ const state = {
   translations: {},
   fallbackTranslations: {},
   sourceDiagnostics: null,
+  systemMetrics: null,
+  systemMetricsError: "",
   sourceDiagnosticsError: "",
   loadingSourceDiagnostics: false,
+  loadingSystemMetrics: false,
   sourceMessage: { text: "", status: "" },
+  liveSeriesVisibility: {},
   sourceOps: {},
   settingsAutosaveTimers: {},
   settingsToastTimer: null,
@@ -92,6 +96,11 @@ const els = {
   chartFilterBar: document.getElementById("chartFilterBar"),
   chartLegend: document.getElementById("chartLegend"),
   sourceTotals: document.getElementById("sourceTotals"),
+  liveGaugesSection: document.getElementById("liveGaugesSection"),
+  liveMetricsUpdated: document.getElementById("liveMetricsUpdated"),
+  liveGaugeGrid: document.getElementById("liveGaugeGrid"),
+  liveHistoryChart: document.getElementById("liveHistoryChart"),
+  liveHistoryLegend: document.getElementById("liveHistoryLegend"),
   tokenList: document.getElementById("tokenList"),
   priceRows: document.getElementById("priceRows"),
   pricingMeta: document.getElementById("pricingMeta"),
@@ -151,6 +160,7 @@ const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
 const USAGE_POLL_INTERVAL_MS = 60_000;
+const SYSTEM_LIVE_POLL_INTERVAL_MS = 5_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
 const SETTINGS_AUTOSAVE_DELAY_MS = 500;
 const SETTINGS_TOAST_MS = 1800;
@@ -169,6 +179,41 @@ const chartSourceColors = {
   anthropic: providerMeta.anthropic.accent,
   local: "#23745c"
 };
+const liveHistorySeries = [
+  { id: "cpu", labelKey: "liveMetrics.series.cpu", kind: "percent", color: "#23745c", value: (point) => point.cpuPercent },
+  { id: "ram", labelKey: "liveMetrics.series.ram", kind: "percent", color: "#d55e00", value: (point) => point.ramPercent },
+  { id: "aiLoad", labelKey: "liveMetrics.series.aiLoad", kind: "percent", color: "#b94e5c", value: (point) => point.aiLoadScore },
+  {
+    id: "tokensTotal",
+    labelKey: "liveMetrics.series.tokensTotal",
+    kind: "tokens",
+    color: "#2e6ea6",
+    value: (point) => point.tokensPerMinute?.total
+  },
+  {
+    id: "tokensInput",
+    labelKey: "liveMetrics.series.tokensInput",
+    kind: "tokens",
+    color: "#6f42c1",
+    value: (point) => point.tokensPerMinute?.input
+  },
+  {
+    id: "tokensOutput",
+    labelKey: "liveMetrics.series.tokensOutput",
+    kind: "tokens",
+    color: "#2e6ea6",
+    dashed: true,
+    value: (point) => point.tokensPerMinute?.output
+  },
+  {
+    id: "tokensCached",
+    labelKey: "liveMetrics.series.tokensCached",
+    kind: "tokens",
+    color: "#66716b",
+    dashed: true,
+    value: (point) => point.tokensPerMinute?.cached
+  }
+];
 const pricingSortDefaults = {
   model: "asc",
   score: "desc",
@@ -473,10 +518,14 @@ async function init() {
   bindEvents();
   refreshIcons();
   await loadAuth();
-  await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics()]);
+  await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics(), loadSystemMetrics()]);
   setInterval(pollUsage, USAGE_POLL_INTERVAL_MS);
+  setInterval(pollSystemMetrics, SYSTEM_LIVE_POLL_INTERVAL_MS);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) pollUsage();
+    if (!document.hidden) {
+      pollUsage();
+      pollSystemMetrics();
+    }
   });
 }
 
@@ -493,6 +542,14 @@ function bindEvents() {
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
   els.sourceDiagnosticsSection?.addEventListener("click", handleSourceActionClick);
   els.settingsDialog?.addEventListener("click", handleSourceActionClick);
+  els.liveHistoryLegend?.addEventListener("click", handleLiveHistoryLegendToggle);
+  els.liveHistoryLegend?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const button = event.target.closest("[data-live-series]");
+    if (!button) return;
+    event.preventDefault();
+    handleLiveHistoryLegendToggle(event);
+  });
   els.subscriptionFields.forEach((field) => {
     field.addEventListener("input", () => scheduleSettingsAutosave("subscriptions"));
   });
@@ -625,6 +682,7 @@ function rerenderLanguageSensitiveViews() {
   } else {
     updateProviderFilterControl([], []);
     renderSourceDiagnostics();
+    renderLiveGauges(state.systemMetrics);
     renderSourceSettings();
   }
   refreshIcons();
@@ -707,6 +765,36 @@ async function loadSourceDiagnostics() {
   }
 }
 
+async function loadSystemMetrics() {
+  if (state.loadingSystemMetrics) return state.systemMetrics;
+  if (state.auth && !state.auth.authenticated) {
+    state.systemMetrics = null;
+    state.systemMetricsError = "";
+    renderLiveGauges(null);
+    return null;
+  }
+
+  state.loadingSystemMetrics = true;
+  try {
+    state.systemMetrics = await fetchJson(`/api/system/live?ts=${Date.now()}`);
+    state.systemMetricsError = "";
+    renderLiveGauges(state.systemMetrics);
+    return state.systemMetrics;
+  } catch (error) {
+    if (error.status === 401) {
+      await loadAuth();
+      state.systemMetricsError = "";
+    } else {
+      state.systemMetricsError = error.message || t("liveMetrics.errors.load");
+    }
+    state.systemMetrics = null;
+    renderLiveGauges(null);
+    return null;
+  } finally {
+    state.loadingSystemMetrics = false;
+  }
+}
+
 function renderAuth() {
   const authed = state.auth?.authenticated;
   els.loginBtn.hidden = authed;
@@ -726,7 +814,7 @@ async function login(event) {
     els.loginDialog.close();
     els.passwordInput.value = "";
     await loadAuth();
-    await Promise.all([loadUsage(), loadSourceDiagnostics()]);
+    await Promise.all([loadUsage(), loadSourceDiagnostics(), loadSystemMetrics()]);
   } catch {
     els.loginError.textContent = t("auth.loginFailed");
   }
@@ -741,6 +829,11 @@ async function logout() {
 async function pollUsage() {
   if (document.hidden) return;
   await loadUsage();
+}
+
+async function pollSystemMetrics() {
+  if (document.hidden) return;
+  await loadSystemMetrics();
 }
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
@@ -848,6 +941,7 @@ function renderLocked() {
   els.chartLegend.innerHTML = "";
   els.chartFilterBar.innerHTML = "";
   els.sourceTotals.textContent = "--";
+  renderLiveGauges(null);
   els.tokenList.innerHTML = "";
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
@@ -894,6 +988,7 @@ function render() {
     els.sourceTotals.innerHTML = renderSourceTotalBars(filteredDaily);
   }
   renderTokenList(usage.local?.totals?.allTime);
+  renderLiveGauges(state.systemMetrics);
   renderPricing(usage.local);
   renderSourceDiagnostics();
   renderSourceSettings();
@@ -1655,6 +1750,294 @@ function renderTokenList(totals) {
   els.tokenList.innerHTML = rows
     .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${formatTokens(value)}</dd></div>`)
     .join("");
+}
+
+function renderLiveGauges(metrics) {
+  if (!els.liveGaugeGrid) return;
+  const live = metrics || unavailableLiveMetrics();
+  els.liveMetricsUpdated.textContent = metrics?.timestamp
+    ? t("liveMetrics.updated", { time: formatUpdatedAt(metrics.timestamp) })
+    : state.systemMetricsError
+      ? t("liveMetrics.error")
+      : t("liveMetrics.notAvailable");
+  els.liveGaugeGrid.innerHTML = liveGaugeDefinitions(live).map(renderLiveGaugeCard).join("");
+  renderLiveHistory(metrics);
+  refreshIcons();
+}
+
+function unavailableLiveMetrics() {
+  return {
+    cpu: { usedPercent: null, quality: "unavailable" },
+    ram: { usedPercent: null, usedGb: null, totalGb: null, quality: "unavailable" },
+    aiLoadScore: { score: null, quality: "unavailable", factors: {} },
+    tokensPerMinute: {
+      value: null,
+      quality: "unavailable",
+      input: { value: null, quality: "unavailable" },
+      output: { value: null, quality: "unavailable" },
+      cached: { value: null, quality: "unavailable" }
+    },
+    timeSeries: []
+  };
+}
+
+function liveGaugeDefinitions(metrics) {
+  const tokens = metrics.tokensPerMinute || {};
+  return [
+    {
+      id: "cpu",
+      label: t("liveMetrics.cpu"),
+      value: formatLivePercent(metrics.cpu?.usedPercent),
+      percent: metrics.cpu?.usedPercent,
+      quality: metrics.cpu?.quality,
+      accent: "#23745c",
+      sub: t("liveMetrics.percentScale")
+    },
+    {
+      id: "ram",
+      label: t("liveMetrics.ram"),
+      value: formatLivePercent(metrics.ram?.usedPercent),
+      percent: metrics.ram?.usedPercent,
+      quality: metrics.ram?.quality,
+      accent: "#d55e00",
+      sub:
+        metrics.ram?.usedGb !== null && metrics.ram?.totalGb !== null
+          ? t("liveMetrics.ramSub", { used: formatGb(metrics.ram.usedGb), total: formatGb(metrics.ram.totalGb) })
+          : t("liveMetrics.unavailable")
+    },
+    {
+      id: "aiLoad",
+      label: t("liveMetrics.aiLoad"),
+      value: formatLivePercent(metrics.aiLoadScore?.score),
+      percent: metrics.aiLoadScore?.score,
+      quality: metrics.aiLoadScore?.quality,
+      accent: "#b94e5c",
+      sub: t("liveMetrics.aiLoadSub"),
+      help: t("liveMetrics.aiLoadHelp")
+    },
+    {
+      id: "tokensPerMin",
+      label: t("liveMetrics.tokensPerMinute"),
+      value: formatTokensPerMin(tokens.value),
+      percent: tokens.value === null || tokens.value === undefined ? 0 : clampUiPercent((Number(tokens.value) / 1_000_000) * 100),
+      quality: tokens.quality,
+      accent: "#2e6ea6",
+      sub: formatLiveTokenBreakdown(tokens)
+    }
+  ];
+}
+
+function renderLiveGaugeCard(gauge) {
+  const percent = clampUiPercent(gauge.percent || 0);
+  const quality = gauge.quality || "unavailable";
+  const valueLen = String(gauge.value || "").length;
+  return `
+    <article class="live-gauge-card">
+      <div class="live-gauge-top">
+        <span class="live-gauge-label">${escapeHtml(gauge.label)}</span>
+        ${gauge.help ? `<button type="button" class="mini-stat-help live-gauge-help" aria-label="${escapeHtml(gauge.help)}" title="${escapeHtml(gauge.help)}"><i data-lucide="info"></i></button>` : ""}
+      </div>
+      <div class="live-gauge-ring" style="--percent: ${percent}; --accent: ${gauge.accent}" data-value-len="${valueLen}">
+        <strong>${escapeHtml(gauge.value)}</strong>
+      </div>
+      <span class="live-gauge-sub">${escapeHtml(gauge.sub || "")}</span>
+      <span class="live-quality-badge live-quality-${escapeHtml(quality)}">${escapeHtml(liveQualityLabel(quality))}</span>
+    </article>
+  `;
+}
+
+function renderLiveHistory(metrics) {
+  if (!els.liveHistoryChart || !els.liveHistoryLegend) return;
+  const points = Array.isArray(metrics?.timeSeries) ? metrics.timeSeries : [];
+  const availableSeries = liveHistorySeries.filter((series) => points.some((point) => liveSeriesHasValue(series, point)));
+  for (const series of availableSeries) {
+    if (state.liveSeriesVisibility[series.id] === undefined) state.liveSeriesVisibility[series.id] = true;
+  }
+  els.liveHistoryLegend.innerHTML = renderLiveHistoryLegend(availableSeries);
+
+  if (!metrics) {
+    els.liveHistoryChart.innerHTML = `<div class="chart-empty">${escapeHtml(state.systemMetricsError || t("liveMetrics.notAvailable"))}</div>`;
+    return;
+  }
+  if (points.length < 2 || !availableSeries.length) {
+    els.liveHistoryChart.innerHTML = `<div class="chart-empty">${escapeHtml(t("liveMetrics.historyLoading"))}</div>`;
+    return;
+  }
+
+  const activeSeries = availableSeries.filter((series) => state.liveSeriesVisibility[series.id] !== false);
+  if (!activeSeries.length) {
+    els.liveHistoryChart.innerHTML = `<div class="chart-empty">${escapeHtml(t("liveMetrics.historyNoSeries"))}</div>`;
+    return;
+  }
+
+  const viewportWidth = Math.max(620, els.liveHistoryChart.clientWidth || 760);
+  const height = 260;
+  const padLeft = 52;
+  const padRight = 76;
+  const chartTop = 24;
+  const axisY = height - 48;
+  const dateLabelY = height - 24;
+  const chartHeight = axisY - chartTop;
+  const width = Math.max(viewportWidth, 620);
+  const tokenValues = activeSeries
+    .filter((series) => series.kind === "tokens")
+    .flatMap((series) => points.map((point) => normalizeLiveSeriesValue(series.value(point))))
+    .filter((value) => value !== null);
+  const tokenScale = chartTokenScale(Math.max(...tokenValues, 1));
+  const percentTicks = [25, 50, 75, 100];
+
+  const gridLines = percentTicks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / 100;
+      return `
+        <line x1="${padLeft}" y1="${y}" x2="${width - padRight}" y2="${y}" class="chart-grid-line"></line>
+        <text x="${padLeft - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${tick}%</text>
+      `;
+    })
+    .join("");
+  const tokenAxis = tokenScale.ticks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / tokenScale.max;
+      return `<text x="${width - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${escapeHtml(formatTokensPerMinTick(tick))}</text>`;
+    })
+    .join("");
+  const lines = activeSeries.map((series) => renderLiveSeriesLine(series, points, {
+    width,
+    padLeft,
+    padRight,
+    chartTop,
+    axisY,
+    chartHeight,
+    tokenScale
+  })).join("");
+  const first = points[0]?.timestamp;
+  const last = points[points.length - 1]?.timestamp;
+
+  els.liveHistoryChart.innerHTML = `
+    <div class="live-history-canvas" style="width: ${width}px">
+      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("liveMetrics.historyAria"))}" style="width: ${width}px">
+        ${gridLines}
+        ${tokenAxis}
+        <line x1="${padLeft}" y1="${axisY}" x2="${width - padRight}" y2="${axisY}" stroke="#dfe5dd"></line>
+        ${lines}
+        <text x="${padLeft}" y="${dateLabelY}" text-anchor="start" class="axis-label">${escapeHtml(formatTime(first))}</text>
+        <text x="${width - padRight}" y="${dateLabelY}" text-anchor="end" class="axis-label">${escapeHtml(formatTime(last))}</text>
+      </svg>
+    </div>
+  `;
+}
+
+function renderLiveHistoryLegend(seriesList) {
+  return seriesList
+    .map((series) => {
+      const active = state.liveSeriesVisibility[series.id] !== false;
+      return `
+        <button type="button" class="live-history-legend-item${active ? " active" : ""}" data-live-series="${escapeHtml(series.id)}" aria-pressed="${active}" style="--series-color: ${series.color}">
+          <span class="live-history-legend-swatch${series.dashed ? " dashed" : ""}" style="--series-color: ${series.color}"></span>
+          <span>${escapeHtml(t(series.labelKey))}</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function handleLiveHistoryLegendToggle(event) {
+  const button = event.target.closest("[data-live-series]");
+  if (!button) return;
+  const id = button.dataset.liveSeries;
+  state.liveSeriesVisibility[id] = !(state.liveSeriesVisibility[id] !== false);
+  renderLiveHistory(state.systemMetrics);
+}
+
+function renderLiveSeriesLine(series, points, dims) {
+  const denominator = Math.max(points.length - 1, 1);
+  const plotWidth = dims.width - dims.padLeft - dims.padRight;
+  const segments = [];
+  let current = [];
+  points.forEach((point, index) => {
+    const raw = normalizeLiveSeriesValue(series.value(point));
+    if (raw === null) {
+      if (current.length > 1) segments.push(current);
+      current = [];
+      return;
+    }
+    const x = dims.padLeft + (plotWidth * index) / denominator;
+    const y = series.kind === "tokens"
+      ? dims.axisY - (dims.chartHeight * Math.min(raw, dims.tokenScale.max)) / dims.tokenScale.max
+      : dims.axisY - (dims.chartHeight * clampUiPercent(raw)) / 100;
+    current.push(`${roundSvg(x)},${roundSvg(y)}`);
+  });
+  if (current.length > 1) segments.push(current);
+  if (!segments.length) return "";
+  return segments
+    .map((segment) => `
+      <polyline
+        points="${segment.join(" ")}"
+        fill="none"
+        stroke="${series.color}"
+        stroke-width="2.4"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        ${series.dashed ? 'stroke-dasharray="6 5"' : ""}
+      ></polyline>
+    `)
+    .join("");
+}
+
+function liveSeriesHasValue(series, point) {
+  return normalizeLiveSeriesValue(series.value(point)) !== null;
+}
+
+function normalizeLiveSeriesValue(value) {
+  if (value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function formatLivePercent(value) {
+  return value === null || value === undefined ? t("liveMetrics.unavailableShort") : formatPercent(value);
+}
+
+function formatGb(value) {
+  return new Intl.NumberFormat(currentLocale(), {
+    maximumFractionDigits: 1
+  }).format(Number(value || 0));
+}
+
+function formatLiveTokenBreakdown(tokens) {
+  const rows = [
+    [t("tokens.input"), tokens.input?.value],
+    [t("tokens.output"), tokens.output?.value],
+    [t("tokens.cachedInput"), tokens.cached?.value]
+  ].filter(([, value]) => value !== null && value !== undefined);
+  if (!rows.length) return tokens.value === null || tokens.value === undefined ? t("liveMetrics.noTokenWindow") : t("liveMetrics.noTokenBreakdown");
+  return rows.map(([label, value]) => `${label} ${formatTokensPerMin(value)}`).join(" · ");
+}
+
+function formatTokensPerMin(value) {
+  if (value === null || value === undefined) return t("liveMetrics.unavailableShort");
+  const num = Math.max(0, Number(value) || 0);
+  if (num >= 100_000) return `${formatNumber(Math.round(num / 1000))}${t("format.thousand")}/min`;
+  if (num >= 1000) return `${formatCompact(num / 1000)}${t("format.thousand")}/min`;
+  return `${formatNumber(Math.round(num))}/min`;
+}
+
+function formatTokensPerMinTick(value) {
+  if (!value) return "0/min";
+  return formatTokensPerMin(value);
+}
+
+function liveQualityLabel(quality) {
+  return t(`liveMetrics.quality.${quality || "unavailable"}`, {}, quality || "unavailable");
+}
+
+function clampUiPercent(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : 0;
+}
+
+function roundSvg(value) {
+  return Math.round(Number(value) * 10) / 10;
 }
 
 function renderPricing(local) {
