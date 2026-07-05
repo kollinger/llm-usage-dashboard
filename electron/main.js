@@ -8,7 +8,7 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
-const { app, BrowserWindow, shell, Notification } = require("electron");
+const { app, BrowserWindow, shell, Notification, dialog } = require("electron");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -19,6 +19,9 @@ let claudeBrowserSyncPending = null;
 let instanceMarkerPath = null;
 let macNotificationDiagnosticsPending = null;
 let notificationCheckPending = null;
+let updateCheckPending = null;
+let autoUpdaterRef = null;
+let autoUpdaterReady = false;
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
 const notificationCooldowns = new Map();
@@ -27,6 +30,8 @@ const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
 const NOTIFICATION_TEST_POLL_INTERVAL_MS = 5 * 1000; // 5 seconds for test-pending checks
 const NOTIFICATION_REQUEST_TIMEOUT_MS = 90 * 1000; // Local usage scans can take 25-30s on real data.
+const UPDATE_POLL_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const UPDATE_REQUEST_POLL_INTERVAL_MS = 5 * 1000;
 const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
@@ -410,6 +415,226 @@ async function fetchLocalJson(port, urlPath) {
     req.on("error", reject);
     req.setTimeout(NOTIFICATION_REQUEST_TIMEOUT_MS, () => { req.destroy(); reject(new Error("timeout")); });
   });
+}
+
+function getUpdateSettingsFile() {
+  const dataDir = process.env.LLM_USAGE_DATA_DIR || path.join(app.getPath("userData"), "data");
+  return path.join(dataDir, "update-settings.json");
+}
+
+function getUpdateStatusFile() {
+  const dataDir = process.env.LLM_USAGE_DATA_DIR || path.join(app.getPath("userData"), "data");
+  return path.join(dataDir, "update-status.json");
+}
+
+function sanitizeUpdateSettings(settings) {
+  return {
+    enabled: typeof settings?.enabled === "boolean" ? settings.enabled : true,
+    allowPrerelease: typeof settings?.allowPrerelease === "boolean" ? settings.allowPrerelease : true
+  };
+}
+
+async function readUpdateSettings() {
+  try {
+    const data = JSON.parse(await fs.readFile(getUpdateSettingsFile(), "utf8"));
+    return sanitizeUpdateSettings(data);
+  } catch {
+    return sanitizeUpdateSettings({});
+  }
+}
+
+async function writeUpdateStatus(updates) {
+  const filePath = getUpdateStatusFile();
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    let current = {};
+    try { current = JSON.parse(await fs.readFile(filePath, "utf8")); } catch { /* file may not exist yet */ }
+    await fs.writeFile(
+      filePath,
+      `${JSON.stringify({
+        ...current,
+        ...updates,
+        isElectron: true,
+        platform: process.platform,
+        appVersion: app.getVersion(),
+        updatedAt: new Date().toISOString()
+      }, null, 2)}\n`,
+      { mode: 0o600 }
+    );
+  } catch {
+    // Best-effort diagnostics; updater behavior should not depend on status writes.
+  }
+}
+
+async function getAutoUpdateSupport() {
+  if (!app.isPackaged) {
+    return { supported: false, supportStatus: "development_build", macDiagnostics: null };
+  }
+  if (process.platform === "darwin") {
+    const macDiagnostics = await getMacNotificationDiagnostics();
+    if (macDiagnostics.codeSignature !== "signed") {
+      return { supported: false, supportStatus: "macos_signing_required", macDiagnostics };
+    }
+    return {
+      supported: true,
+      supportStatus: macDiagnostics.gatekeeper === "accepted" ? "ready" : "macos_gatekeeper_warning",
+      macDiagnostics
+    };
+  }
+  if (process.platform === "win32" || process.platform === "linux") {
+    return { supported: true, supportStatus: "ready", macDiagnostics: null };
+  }
+  return { supported: false, supportStatus: "unsupported_platform", macDiagnostics: null };
+}
+
+function registerAutoUpdaterEvents(autoUpdater) {
+  autoUpdater.on("checking-for-update", () => {
+    writeUpdateStatus({
+      state: "checking",
+      lastCheckAt: new Date().toISOString(),
+      downloadPercent: null,
+      lastError: null
+    }).catch(() => {});
+  });
+  autoUpdater.on("update-available", (info) => {
+    writeUpdateStatus({
+      state: "available",
+      availableVersion: info?.version || null,
+      releaseName: info?.releaseName || null,
+      releaseDate: info?.releaseDate || null,
+      lastError: null
+    }).catch(() => {});
+  });
+  autoUpdater.on("download-progress", (progress) => {
+    writeUpdateStatus({
+      state: "downloading",
+      downloadPercent: Number.isFinite(Number(progress?.percent)) ? Math.round(Number(progress.percent)) : null
+    }).catch(() => {});
+  });
+  autoUpdater.on("update-not-available", () => {
+    writeUpdateStatus({
+      state: "up_to_date",
+      availableVersion: null,
+      downloadedVersion: null,
+      downloadPercent: null,
+      lastError: null
+    }).catch(() => {});
+  });
+  autoUpdater.on("update-downloaded", (info) => {
+    writeUpdateStatus({
+      state: "downloaded",
+      downloadedVersion: info?.version || null,
+      releaseName: info?.releaseName || null,
+      releaseDate: info?.releaseDate || null,
+      lastError: null
+    }).catch(() => {});
+    showUpdateReadyDialog(info).catch(() => {});
+  });
+  autoUpdater.on("error", (error) => {
+    writeUpdateStatus({
+      state: "error",
+      lastError: error?.message || String(error || "update_error")
+    }).catch(() => {});
+  });
+}
+
+async function ensureAutoUpdater() {
+  const settings = await readUpdateSettings();
+  const support = await getAutoUpdateSupport();
+  const setupStatus = {
+    enabled: settings.enabled,
+    allowPrerelease: settings.allowPrerelease,
+    supported: support.supported,
+    supportStatus: support.supportStatus,
+    macDiagnostics: support.macDiagnostics
+  };
+  if (!settings.enabled) setupStatus.state = "disabled";
+  else if (!support.supported) setupStatus.state = support.supportStatus;
+  await writeUpdateStatus(setupStatus);
+  if (!settings.enabled) return { ok: false, reason: "disabled" };
+  if (!support.supported) return { ok: false, reason: support.supportStatus };
+  if (!autoUpdaterRef) {
+    let autoUpdater;
+    try {
+      ({ autoUpdater } = require("electron-updater"));
+    } catch (error) {
+      await writeUpdateStatus({ state: "error", lastError: error?.message || "electron_updater_missing" });
+      return { ok: false, reason: "electron_updater_missing" };
+    }
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.logger = null;
+    registerAutoUpdaterEvents(autoUpdater);
+    autoUpdaterRef = autoUpdater;
+  }
+  autoUpdaterRef.allowPrerelease = settings.allowPrerelease;
+  autoUpdaterReady = true;
+  return { ok: true, autoUpdater: autoUpdaterRef };
+}
+
+async function checkForUpdates(reason = "scheduled") {
+  if (updateCheckPending) return updateCheckPending;
+  updateCheckPending = (async () => {
+    const ready = await ensureAutoUpdater();
+    if (!ready.ok) {
+      await writeUpdateStatus({ state: ready.reason, lastCheckReason: reason });
+      return;
+    }
+    await writeUpdateStatus({
+      state: "checking",
+      lastCheckAt: new Date().toISOString(),
+      lastCheckReason: reason,
+      downloadPercent: null,
+      lastError: null
+    });
+    await ready.autoUpdater.checkForUpdates();
+  })().catch((error) => {
+    return writeUpdateStatus({
+      state: "error",
+      lastError: error?.message || String(error || "update_check_failed")
+    });
+  }).finally(() => {
+    updateCheckPending = null;
+  });
+  return updateCheckPending;
+}
+
+async function showUpdateReadyDialog(info) {
+  const version = info?.version || "new";
+  const targetWindow = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+  const options = {
+    type: "info",
+    title: "Update ready",
+    message: `Version ${version} is ready to install.`,
+    detail: "Restart LLM Usage Dashboard to apply the update.",
+    buttons: ["Restart", "Later"],
+    defaultId: 0,
+    cancelId: 1
+  };
+  const result = targetWindow
+    ? await dialog.showMessageBox(targetWindow, options)
+    : await dialog.showMessageBox(options);
+  if (result.response === 0 && autoUpdaterRef) {
+    autoUpdaterRef.quitAndInstall();
+  }
+}
+
+async function startAutoUpdatePolling(port) {
+  await ensureAutoUpdater();
+  setTimeout(() => checkForUpdates("startup").catch(() => {}), 10000);
+  setInterval(() => checkForUpdates("scheduled").catch(() => {}), UPDATE_POLL_INTERVAL_MS);
+  setInterval(() => checkUpdateCheckPending(port), UPDATE_REQUEST_POLL_INTERVAL_MS);
+}
+
+async function checkUpdateCheckPending(port) {
+  try {
+    const data = await fetchLocalJson(port, "/api/updates/check-pending");
+    if (data?.pending) {
+      await checkForUpdates("manual");
+    } else if (!autoUpdaterReady) {
+      await ensureAutoUpdater();
+    }
+  } catch { /* ignore; server may not be ready yet */ }
 }
 
 async function checkNotifications(port) {
@@ -1162,6 +1387,7 @@ app.whenReady().then(async () => {
   await configureBackgroundLoginItem();
   if (shouldOpenInitialWindow() || openWindowWhenReady) showDashboardWindow(port);
 
+  startAutoUpdatePolling(port).catch(() => {});
   syncClaudeBrowserCredits(port).catch(() => {});
 
   // Start notification polling after a short initial delay

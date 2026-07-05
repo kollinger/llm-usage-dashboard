@@ -213,6 +213,43 @@
             </fieldset>
           </div>
         </div>
+        <div class="settings-section" id="updateSettingsSection" hidden>
+          <h3 data-i18n="settings.updates.title">App-Updates</h3>
+          <p class="settings-desc" data-i18n="settings.updates.description">Prüft installierte Desktop-Versionen gegen GitHub Releases.</p>
+          <label class="field toggle-field">
+            <input type="checkbox" id="updateChecksEnabled" />
+            <span data-i18n="settings.updates.enabled">Automatische Update-Prüfung aktivieren</span>
+          </label>
+          <label class="field toggle-field">
+            <input type="checkbox" id="allowPrereleaseUpdates" />
+            <span data-i18n="settings.updates.allowPrerelease">Preview-Releases einschließen</span>
+          </label>
+          <div class="update-diagnostics" id="updateDiagnostics">
+            <h4 class="settings-subheading" data-i18n="settings.updates.diagTitle">Update diagnostics</h4>
+            <dl class="diag-list">
+              <dt data-i18n="settings.updates.diagState">State</dt>
+              <dd id="updateDiagState">--</dd>
+              <dt data-i18n="settings.updates.diagSupport">Support</dt>
+              <dd id="updateDiagSupport">--</dd>
+              <dt data-i18n="settings.updates.diagLastCheck">Last check</dt>
+              <dd id="updateDiagLastCheck">--</dd>
+              <dt data-i18n="settings.updates.diagVersion">App version</dt>
+              <dd id="updateDiagVersion">--</dd>
+              <dt data-i18n="settings.updates.diagAvailable">Available version</dt>
+              <dd id="updateDiagAvailable">--</dd>
+              <dt data-i18n="settings.updates.diagError">Last error</dt>
+              <dd id="updateDiagError">--</dd>
+            </dl>
+            <div class="diag-test-row">
+              <button type="button" class="text-button" id="updateCheckBtn" data-i18n="settings.updates.checkNow">Check now</button>
+              <p class="settings-desc" id="updateCheckStatus" hidden></p>
+            </div>
+            <div class="notification-permission-notice" id="updateNotice" hidden role="status" aria-live="polite">
+              <strong data-i18n="settings.updates.noticeTitle">Update attention needed</strong>
+              <span id="updateNoticeBody"></span>
+            </div>
+          </div>
+        </div>
         <div class="settings-section">
           <h3 data-i18n="settings.sources.title">Lokale Quellen</h3>
           <p class="settings-desc" data-i18n="settings.sources.description">Verbundene Quellen verwalten, Zugriff prüfen und ACL-Kommandos kopieren.</p>

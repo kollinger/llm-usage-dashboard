@@ -25,6 +25,8 @@ const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_D
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json");
+const UPDATE_SETTINGS_FILE = path.join(DATA_DIR, "update-settings.json");
+const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
@@ -97,6 +99,7 @@ const sourceDiagnosticsCache = createTimedCache();
 let codexAppServer = null;
 let pendingTestNotification = false;
 let pendingOpenNotificationSettings = false;
+let pendingUpdateCheck = false;
 let livePreviousCpuSample = sampleCpuTimes();
 let liveLastCpuPercent = null;
 const liveMetricsTokenHistory = [];
@@ -753,6 +756,48 @@ app.put("/api/subscription-history", authMiddleware, async (req, res) => {
   } catch (error) {
     sendApiError(res, error, "subscription_history_save_failed");
   }
+});
+
+app.get("/api/updates/settings", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await readUpdateSettings());
+  } catch (error) {
+    sendApiError(res, error, "update_settings_read_failed");
+  }
+});
+
+app.post("/api/updates/settings", authMiddleware, async (req, res) => {
+  try {
+    const settings = mergeUpdateSettingsPatch(await readUpdateSettings(), req.body || {});
+    await saveUpdateSettings(settings);
+    res.json(settings);
+  } catch (error) {
+    sendApiError(res, error, "update_settings_save_failed");
+  }
+});
+
+app.get("/api/updates/status", authMiddleware, async (_req, res) => {
+  try {
+    const text = await fsp.readFile(UPDATE_STATUS_FILE, "utf8");
+    res.json({
+      isElectron: Boolean(ELECTRON_SYNC_TOKEN),
+      ...JSON.parse(text)
+    });
+  } catch {
+    res.json({ isElectron: Boolean(ELECTRON_SYNC_TOKEN), state: ELECTRON_SYNC_TOKEN ? "unknown" : "not_electron" });
+  }
+});
+
+app.post("/api/updates/check", authMiddleware, (_req, res) => {
+  if (!ELECTRON_SYNC_TOKEN) return res.status(503).json({ error: "not_electron" });
+  pendingUpdateCheck = true;
+  return res.json({ queued: true });
+});
+
+app.get("/api/updates/check-pending", electronSyncMiddleware, (_req, res) => {
+  const pending = pendingUpdateCheck;
+  pendingUpdateCheck = false;
+  res.json({ pending });
 });
 
 app.get("/api/notifications/settings", authMiddleware, async (_req, res) => {
@@ -4406,6 +4451,35 @@ async function readNotificationSettings() {
 async function saveNotificationSettings(settings) {
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.writeFile(NOTIFICATION_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+}
+
+async function readUpdateSettings() {
+  try {
+    const text = await fsp.readFile(UPDATE_SETTINGS_FILE, "utf8");
+    return sanitizeUpdateSettings(JSON.parse(text));
+  } catch {
+    return sanitizeUpdateSettings({});
+  }
+}
+
+function sanitizeUpdateSettings(settings) {
+  return {
+    enabled: typeof settings?.enabled === "boolean" ? settings.enabled : true,
+    allowPrerelease: typeof settings?.allowPrerelease === "boolean" ? settings.allowPrerelease : true
+  };
+}
+
+function mergeUpdateSettingsPatch(current, patch) {
+  return sanitizeUpdateSettings({
+    ...current,
+    enabled: typeof patch?.enabled === "boolean" ? patch.enabled : current.enabled,
+    allowPrerelease: typeof patch?.allowPrerelease === "boolean" ? patch.allowPrerelease : current.allowPrerelease
+  });
+}
+
+async function saveUpdateSettings(settings) {
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(UPDATE_SETTINGS_FILE, `${JSON.stringify(sanitizeUpdateSettings(settings), null, 2)}\n`, { mode: 0o600 });
 }
 
 async function readClaudeBrowserCreditsSnapshot() {

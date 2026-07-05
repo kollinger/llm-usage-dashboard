@@ -67,6 +67,19 @@ const els = {
   settingsCandidateSources: document.getElementById("settingsCandidateSources"),
   settingsToast: document.getElementById("settingsToast"),
   subscriptionFields: Array.from(document.querySelectorAll("[data-subscription-field]")),
+  updateSettingsSection: document.getElementById("updateSettingsSection"),
+  updateChecksEnabled: document.getElementById("updateChecksEnabled"),
+  allowPrereleaseUpdates: document.getElementById("allowPrereleaseUpdates"),
+  updateDiagState: document.getElementById("updateDiagState"),
+  updateDiagSupport: document.getElementById("updateDiagSupport"),
+  updateDiagLastCheck: document.getElementById("updateDiagLastCheck"),
+  updateDiagVersion: document.getElementById("updateDiagVersion"),
+  updateDiagAvailable: document.getElementById("updateDiagAvailable"),
+  updateDiagError: document.getElementById("updateDiagError"),
+  updateCheckBtn: document.getElementById("updateCheckBtn"),
+  updateCheckStatus: document.getElementById("updateCheckStatus"),
+  updateNotice: document.getElementById("updateNotice"),
+  updateNoticeBody: document.getElementById("updateNoticeBody"),
   notificationsEnabled: document.getElementById("notificationsEnabled"),
   notificationThresholds: document.getElementById("notificationThresholds"),
   notificationPacingPercent: document.getElementById("notificationPacingPercent"),
@@ -575,6 +588,10 @@ function bindEvents() {
   els.subscriptionFields.forEach((field) => {
     field.addEventListener("input", () => scheduleSettingsAutosave("subscriptions"));
   });
+  [els.updateChecksEnabled, els.allowPrereleaseUpdates].forEach((field) => {
+    field?.addEventListener("change", () => scheduleSettingsAutosave("updates"));
+  });
+  els.updateCheckBtn?.addEventListener("click", requestUpdateCheck);
   els.notificationsEnabled?.addEventListener("change", () => {
     onNotificationEnabledChange();
     scheduleSettingsAutosave("notifications");
@@ -3319,6 +3336,7 @@ async function openSettings() {
   renderSourceSettings();
   await Promise.all([
     loadSubscriptionSettings(),
+    loadUpdateSettingsAndStatus(),
     loadNotificationSettings(),
     loadNotificationStatus(),
     loadSourceDiagnostics()
@@ -3370,11 +3388,148 @@ async function saveSubscriptionSettings() {
   }
 }
 
+async function loadUpdateSettings() {
+  if (!els.updateSettingsSection) return;
+  try {
+    const settings = await fetchJson("/api/updates/settings");
+    if (els.updateChecksEnabled) els.updateChecksEnabled.checked = Boolean(settings.enabled);
+    if (els.allowPrereleaseUpdates) els.allowPrereleaseUpdates.checked = Boolean(settings.allowPrerelease);
+  } catch {
+    // Ignore; update settings are only useful in the desktop shell.
+  }
+}
+
+async function loadUpdateSettingsAndStatus() {
+  await loadUpdateSettings();
+  await loadUpdateStatus();
+}
+
+async function saveUpdateSettings() {
+  if (!els.updateSettingsSection) return;
+  const payload = {
+    enabled: Boolean(els.updateChecksEnabled?.checked),
+    allowPrerelease: Boolean(els.allowPrereleaseUpdates?.checked)
+  };
+  try {
+    const settings = await fetchJson("/api/updates/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (els.updateChecksEnabled) els.updateChecksEnabled.checked = Boolean(settings.enabled);
+    if (els.allowPrereleaseUpdates) els.allowPrereleaseUpdates.checked = Boolean(settings.allowPrerelease);
+    showSettingsToast(t("settings.updates.saved"), "ready");
+    await loadUpdateStatus();
+  } catch {
+    showSettingsToast(t("settings.updates.saveError"), "error", { persistMs: 5000 });
+  }
+}
+
+async function loadUpdateStatus() {
+  if (!els.updateSettingsSection) return;
+  try {
+    const status = await fetchJson("/api/updates/status");
+    if (!status?.isElectron) {
+      els.updateSettingsSection.hidden = true;
+      return;
+    }
+    els.updateSettingsSection.hidden = false;
+    renderUpdateStatus(status);
+  } catch {
+    els.updateSettingsSection.hidden = true;
+  }
+}
+
+function renderUpdateStatus(status) {
+  const none = t("settings.updates.diagNone");
+  const state = status?.state || "unknown";
+  const support = status?.supportStatus || (status?.supported ? "ready" : "unknown");
+  if (els.updateDiagState) {
+    const key = `settings.updates.state_${state}`;
+    const text = t(key, { percent: status?.downloadPercent ?? "" }, state);
+    els.updateDiagState.textContent = status?.downloadPercent && state === "downloading"
+      ? `${text} (${status.downloadPercent}%)`
+      : text;
+    els.updateDiagState.className = ["error", "macos_signing_required", "unsupported_platform"].includes(state)
+      ? "diag-error"
+      : "";
+  }
+  if (els.updateDiagSupport) {
+    els.updateDiagSupport.textContent = t(`settings.updates.support_${support}`, {}, support || none);
+    els.updateDiagSupport.className = status?.supported === false ? "diag-error" : "";
+  }
+  if (els.updateDiagLastCheck) els.updateDiagLastCheck.textContent = formatUpdateTime(status?.lastCheckAt, none);
+  if (els.updateDiagVersion) els.updateDiagVersion.textContent = status?.appVersion || none;
+  if (els.updateDiagAvailable) {
+    els.updateDiagAvailable.textContent = status?.downloadedVersion || status?.availableVersion || none;
+  }
+  if (els.updateDiagError) {
+    els.updateDiagError.textContent = status?.lastError || none;
+    els.updateDiagError.className = status?.lastError ? "diag-error" : "";
+  }
+  if (els.updateCheckBtn) {
+    els.updateCheckBtn.disabled = status?.supported === false || !els.updateChecksEnabled?.checked;
+  }
+  renderUpdateNotice(status);
+}
+
+function formatUpdateTime(iso, fallback) {
+  if (!iso) return fallback;
+  try { return new Date(iso).toLocaleString(); } catch { return iso; }
+}
+
+function renderUpdateNotice(status) {
+  if (!els.updateNotice || !els.updateNoticeBody) return;
+  const key = updateNoticeKey(status);
+  if (!key) {
+    els.updateNotice.hidden = true;
+    return;
+  }
+  els.updateNoticeBody.textContent = t(key);
+  els.updateNotice.hidden = false;
+}
+
+function updateNoticeKey(status) {
+  if (!status?.isElectron) return "";
+  if (status.supportStatus === "macos_signing_required") return "settings.updates.noticeMacSigning";
+  if (status.supportStatus === "development_build") return "settings.updates.noticeDevelopment";
+  if (status.supportStatus === "unsupported_platform") return "settings.updates.noticeUnsupported";
+  if (status.supportStatus === "macos_gatekeeper_warning") return "settings.updates.noticeGatekeeper";
+  if (status.state === "downloaded") return "settings.updates.noticeDownloaded";
+  if (status.state === "error") return "settings.updates.noticeError";
+  return "";
+}
+
+async function requestUpdateCheck() {
+  if (!els.updateCheckBtn) return;
+  els.updateCheckBtn.disabled = true;
+  try {
+    await fetchJson("/api/updates/check", { method: "POST" });
+    if (els.updateCheckStatus) {
+      els.updateCheckStatus.textContent = t("settings.updates.checkQueued");
+      els.updateCheckStatus.hidden = false;
+    }
+    setTimeout(() => loadUpdateStatus().catch(() => {}), 2000);
+    setTimeout(() => loadUpdateStatus().catch(() => {}), 8000);
+  } catch {
+    if (els.updateCheckStatus) {
+      els.updateCheckStatus.textContent = t("settings.updates.checkError");
+      els.updateCheckStatus.hidden = false;
+    }
+  } finally {
+    setTimeout(() => {
+      if (els.updateCheckStatus) els.updateCheckStatus.hidden = true;
+      loadUpdateStatus().catch(() => {});
+    }, 12000);
+  }
+}
+
 function scheduleSettingsAutosave(type) {
   clearTimeout(state.settingsAutosaveTimers[type]);
   state.settingsAutosaveTimers[type] = setTimeout(() => {
     if (type === "subscriptions") saveSubscriptionSettings().catch(() => {});
     if (type === "notifications") saveNotificationSettings().catch(() => {});
+    if (type === "updates") saveUpdateSettings().catch(() => {});
   }, SETTINGS_AUTOSAVE_DELAY_MS);
 }
 

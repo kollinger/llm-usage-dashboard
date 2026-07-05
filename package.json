@@ -26,6 +26,7 @@
     "dist:dir": "electron-builder --dir"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "express": "^4.19.2",
     "express-session": "^1.18.1",
     "openid-client": "^5.7.1"
@@ -37,6 +38,12 @@
   "build": {
     "appId": "local.llm-usage-dashboard",
     "productName": "LLM Usage Dashboard",
+    "publish": {
+      "provider": "github",
+      "owner": "kollinger",
+      "repo": "llm-usage-dashboard",
+      "releaseType": "prerelease"
+    },
     "directories": {
       "output": "dist"
     },

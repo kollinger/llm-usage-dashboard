@@ -1696,7 +1696,8 @@ select {
   line-height: 1.45;
 }
 
-.notification-diagnostics {
+.notification-diagnostics,
+.update-diagnostics {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
