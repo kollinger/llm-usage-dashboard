@@ -18,6 +18,7 @@ let openWindowWhenReady = false;
 let claudeBrowserSyncPending = null;
 let instanceMarkerPath = null;
 let macNotificationDiagnosticsPending = null;
+let notificationCheckPending = null;
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
 const notificationCooldowns = new Map();
@@ -25,7 +26,7 @@ const activeNotifications = new Set();
 const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
 const NOTIFICATION_TEST_POLL_INTERVAL_MS = 5 * 1000; // 5 seconds for test-pending checks
-const NOTIFICATION_REQUEST_TIMEOUT_MS = 30 * 1000; // 30 seconds (API can take 9-12s)
+const NOTIFICATION_REQUEST_TIMEOUT_MS = 90 * 1000; // Local usage scans can take 25-30s on real data.
 const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
@@ -483,15 +484,18 @@ async function checkNotifications(port) {
     await writeNotificationStatus({
       lastCheckAt: new Date(startAt).toISOString(),
       lastCheckDurationMs: Date.now() - startAt,
-      lastAlertCount,
-      lastAlerts,
-      lastShownAt: null,
-      lastShownAlert: null,
-      lastSkippedReason: null,
       lastError,
       notificationSupported
     });
   }
+}
+
+function pollNotifications(port) {
+  if (notificationCheckPending) return notificationCheckPending;
+  notificationCheckPending = checkNotifications(port).finally(() => {
+    notificationCheckPending = null;
+  });
+  return notificationCheckPending;
 }
 
 async function fireTestNotification() {
@@ -1102,8 +1106,8 @@ app.whenReady().then(async () => {
 
   // Start notification polling after a short initial delay
   setTimeout(() => {
-    checkNotifications(port);
-    setInterval(() => checkNotifications(port), NOTIFICATION_POLL_INTERVAL_MS);
+    pollNotifications(port);
+    setInterval(() => pollNotifications(port), NOTIFICATION_POLL_INTERVAL_MS);
     setInterval(() => checkTestNotificationPending(port), NOTIFICATION_TEST_POLL_INTERVAL_MS);
   }, 10000);
   setInterval(() => {
