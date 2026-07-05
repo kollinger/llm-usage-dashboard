@@ -109,6 +109,7 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
+const USAGE_POLL_INTERVAL_MS = 60_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
 const translationCache = new Map();
 const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
@@ -408,11 +409,16 @@ async function init() {
   refreshIcons();
   await loadAuth();
   await loadUsage({ showIndicator: true });
-  setInterval(loadUsage, 5_000);
+  setInterval(() => {
+    if (!document.hidden) loadUsage();
+  }, USAGE_POLL_INTERVAL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadUsage();
+  });
 }
 
 function bindEvents() {
-  els.refreshBtn.addEventListener("click", () => loadUsage({ showIndicator: true }));
+  els.refreshBtn.addEventListener("click", () => loadUsage({ showIndicator: true, force: true }));
   els.loginBtn.addEventListener("click", () => els.loginDialog.showModal());
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
@@ -621,7 +627,7 @@ async function logout() {
   renderLocked();
 }
 
-async function loadUsage({ showIndicator = false } = {}) {
+async function loadUsage({ showIndicator = false, force = false } = {}) {
   if (state.loadingUsage) {
     if (showIndicator) {
       state.refreshIndicator = true;
@@ -635,8 +641,9 @@ async function loadUsage({ showIndicator = false } = {}) {
   }
   setUsageLoading(true, showIndicator);
   try {
+    const usageUrl = `/api/usage?ts=${Date.now()}${force ? "&force=1" : ""}`;
     const [usage, subscriptionHistory] = await Promise.all([
-      fetchJson(`/api/usage?ts=${Date.now()}`),
+      fetchJson(usageUrl),
       fetchJson("/api/subscription-history").catch((error) => {
         if (error.status === 401) throw error;
         return { version: 1, entries: [] };

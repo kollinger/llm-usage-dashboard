@@ -49,6 +49,7 @@ const OLLAMA_PROXY_PORT = Number(process.env.OLLAMA_PROXY_PORT || 11435);
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
 const PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const DAILY_HISTORY_DAYS = Number(process.env.DAILY_HISTORY_DAYS || 180);
+const USAGE_CACHE_MS = envMs("USAGE_CACHE_SECONDS", 120);
 const EXTERNAL_FETCH_TIMEOUT_MS = envMs("EXTERNAL_FETCH_TIMEOUT_SECONDS", 8);
 const ANTHROPIC_API_CACHE_MS = envMs("ANTHROPIC_API_CACHE_SECONDS", 60);
 const CODEX_LIVE_RATE_LIMITS_ENABLED = parseBoolean(process.env.CODEX_LIVE_RATE_LIMITS ?? "true");
@@ -72,6 +73,7 @@ const anthropicCache = createTimedCache();
 const codexLiveRateLimitsCache = createTimedCache();
 const copilotLiveQuotaCache = createTimedCache();
 const claudeApiUsageCache = createTimedCache();
+const usageCache = createTimedCache();
 let codexAppServer = null;
 
 app.use(express.json({ limit: "200kb" }));
@@ -249,39 +251,49 @@ app.get("/auth/oidc/callback", async (req, res) => {
   }
 });
 
-app.get("/api/usage", authMiddleware, async (_req, res) => {
-  const [subscriptions, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollama, openaiRaw, anthropicRaw] = await Promise.all([
-    readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
-    readCodexUsage().catch((error) => providerError("codex", error)),
-    readCopilotUsage().catch((error) => providerError("copilot", error)),
-    readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
-    readGeminiUsage().catch((error) => providerError("gemini", error)),
-    readOllamaUsage().catch((error) => providerError("ollama", error)),
-    readOpenAiUsage().catch((error) => providerError("openai", error)),
-    readAnthropicUsage().catch((error) => providerError("anthropic", error))
-  ]);
-
-  const codex = mergeProviderSubscription(codexRaw, subscriptions.codex);
-  const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot);
-  const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode);
-  const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
-  const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
-  const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
-  await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
-
-  const now = new Date().toISOString();
-  res.json({
-    generatedAt: now,
-    codex,
-    copilot,
-    claudeCode,
-    gemini,
-    ollama,
-    local: buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]),
-    openai,
-    anthropic
-  });
+app.get("/api/usage", authMiddleware, async (req, res) => {
+  try {
+    res.json(await readUsageDashboard({ force: parseBoolean(req.query.force) }));
+  } catch (error) {
+    sendApiError(res, error, "usage_read_failed");
+  }
 });
+
+async function readUsageDashboard({ force = false } = {}) {
+  return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
+    const [subscriptions, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollama, openaiRaw, anthropicRaw] = await Promise.all([
+      readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
+      readCodexUsage().catch((error) => providerError("codex", error)),
+      readCopilotUsage().catch((error) => providerError("copilot", error)),
+      readClaudeCodeUsage().catch((error) => providerError("claudeCode", error)),
+      readGeminiUsage().catch((error) => providerError("gemini", error)),
+      readOllamaUsage().catch((error) => providerError("ollama", error)),
+      readOpenAiUsage().catch((error) => providerError("openai", error)),
+      readAnthropicUsage().catch((error) => providerError("anthropic", error))
+    ]);
+
+    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex);
+    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot);
+    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode);
+    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
+    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
+    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
+    await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
+
+    const now = new Date().toISOString();
+    return {
+      generatedAt: now,
+      codex,
+      copilot,
+      claudeCode,
+      gemini,
+      ollama,
+      local: buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]),
+      openai,
+      anthropic
+    };
+  }, { force });
+}
 
 app.get("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
   try {
@@ -450,9 +462,9 @@ function createTimedCache() {
   };
 }
 
-async function readThroughCache(cache, ttlMs, loader) {
+async function readThroughCache(cache, ttlMs, loader, { force = false } = {}) {
   const now = Date.now();
-  if (cache.value && now < cache.expiresAt) return cache.value;
+  if (!force && cache.value && now < cache.expiresAt) return cache.value;
   if (cache.pending) return cache.pending;
 
   cache.pending = Promise.resolve()
