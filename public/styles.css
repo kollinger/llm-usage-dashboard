@@ -125,6 +125,10 @@ a {
   min-width: 118px;
 }
 
+.layout-reset-btn {
+  min-width: 132px;
+}
+
 .icon-button:disabled,
 .text-button:disabled {
   cursor: default;
@@ -318,12 +322,96 @@ a {
   gap: 14px;
 }
 
+.layout-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .provider-card {
+  position: relative;
   min-height: 270px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 120ms ease;
+}
+
+.layout-edit-mode .provider-card {
+  border-style: dashed;
+  border-color: rgba(35, 116, 92, 0.34);
+  padding-top: 54px;
+}
+
+.provider-card.is-dragging {
+  opacity: 0.52;
+}
+
+.provider-card.is-drop-target {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(35, 116, 92, 0.14);
+}
+
+.provider-card.is-drop-before {
+  transform: translateY(-2px);
+}
+
+.provider-card.is-drop-after {
+  transform: translateY(2px);
+}
+
+.provider-drag-handle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: grab;
+  touch-action: none;
+}
+
+.provider-drag-handle:active,
+.provider-drag-handle.is-active {
+  cursor: grabbing;
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 0 3px rgba(35, 116, 92, 0.12);
+}
+
+.provider-drag-handle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.provider-position {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.provider-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.82;
+  box-shadow: var(--shadow);
+  transform-origin: top left;
 }
 
 .provider-head {
@@ -1796,6 +1884,15 @@ select {
     min-height: 240px;
   }
 
+  .layout-edit-mode .provider-card {
+    padding-top: 58px;
+  }
+
+  .provider-drag-handle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .ring-row {
     grid-template-columns: 1fr;
   }
@@ -1805,6 +1902,21 @@ select {
   .source-command-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .provider-card,
+  .diagnostic-state-card,
+  .source-card,
+  .icon-button.is-loading svg {
+    animation: none;
+    transition: none;
+  }
+
+  .provider-card.is-drop-before,
+  .provider-card.is-drop-after {
+    transform: none;
   }
 }
 

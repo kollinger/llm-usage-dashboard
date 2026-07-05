@@ -7,6 +7,12 @@ const state = {
   queuedUsageIndicator: false,
   refreshIndicator: false,
   showAllProviders: false,
+  layoutEditMode: false,
+  providerOrder: [],
+  keyboardDragProviderId: null,
+  keyboardOriginalProviderOrder: null,
+  draggingProviderId: null,
+  pointerDrag: null,
   chartRendered: false,
   chartScrollToLatest: true,
   chartMode: "tokens",
@@ -41,6 +47,9 @@ const els = {
   diagnosticsRecheckBtn: document.getElementById("diagnosticsRecheckBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
+  layoutEditBtn: document.getElementById("layoutEditBtn"),
+  layoutResetBtn: document.getElementById("layoutResetBtn"),
+  layoutLiveRegion: document.getElementById("layoutLiveRegion"),
   providerFilterBtn: document.getElementById("providerFilterBtn"),
   loginBtn: document.getElementById("loginBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
@@ -124,6 +133,7 @@ const PRICING_DATE = "2026-06-03";
 const SCORE_DATE = "2026-06-03";
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
+const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
 const LANGUAGE_OPTIONS = [
   { code: "bg", flag: "🇧🇬", label: "Български", locale: "bg-BG" },
   { code: "cs", flag: "🇨🇿", label: "Čeština", locale: "cs-CZ" },
@@ -515,6 +525,7 @@ init();
 async function init() {
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
+  loadProviderOrderPreference();
   bindEvents();
   refreshIcons();
   await loadAuth();
@@ -534,6 +545,8 @@ function bindEvents() {
   els.loginBtn.addEventListener("click", () => openModalDialog(els.loginDialog));
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
+  els.layoutEditBtn?.addEventListener("click", toggleLayoutEditMode);
+  els.layoutResetBtn?.addEventListener("click", resetProviderOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
@@ -542,6 +555,15 @@ function bindEvents() {
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
   els.sourceDiagnosticsSection?.addEventListener("click", handleSourceActionClick);
   els.settingsDialog?.addEventListener("click", handleSourceActionClick);
+  els.providerGrid?.addEventListener("dragstart", handleProviderDragStart);
+  els.providerGrid?.addEventListener("dragover", handleProviderDragOver);
+  els.providerGrid?.addEventListener("drop", handleProviderDrop);
+  els.providerGrid?.addEventListener("dragend", endProviderDrag);
+  els.providerGrid?.addEventListener("pointerdown", handleProviderPointerDown);
+  els.providerGrid?.addEventListener("pointermove", handleProviderPointerMove);
+  els.providerGrid?.addEventListener("pointerup", handleProviderPointerUp);
+  els.providerGrid?.addEventListener("pointercancel", cancelProviderPointerDrag);
+  els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
   els.liveHistoryLegend?.addEventListener("click", handleLiveHistoryLegendToggle);
   els.liveHistoryLegend?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -681,6 +703,7 @@ function rerenderLanguageSensitiveViews() {
     renderLocked();
   } else {
     updateProviderFilterControl([], []);
+    updateLayoutControls([], []);
     renderSourceDiagnostics();
     renderLiveGauges(state.systemMetrics);
     renderSourceSettings();
@@ -717,6 +740,15 @@ function loadProviderFilterPreference() {
   }
 }
 
+function loadProviderOrderPreference() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PROVIDER_ORDER_STORAGE_KEY) || "[]");
+    state.providerOrder = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+  } catch {
+    state.providerOrder = [];
+  }
+}
+
 function toggleProviderFilter() {
   state.showAllProviders = !state.showAllProviders;
   try {
@@ -725,6 +757,361 @@ function toggleProviderFilter() {
     // Ignore storage failures; the toggle should still work for this session.
   }
   if (state.usage) render();
+}
+
+function toggleLayoutEditMode() {
+  state.layoutEditMode = !state.layoutEditMode;
+  state.keyboardDragProviderId = null;
+  state.keyboardOriginalProviderOrder = null;
+  clearProviderDropTarget();
+  removeProviderDragGhost();
+  if (state.usage) render();
+  else updateLayoutControls([], []);
+}
+
+function resetProviderOrder() {
+  const providers = state.usage ? buildProviders(state.usage) : [];
+  state.keyboardDragProviderId = null;
+  state.keyboardOriginalProviderOrder = null;
+  state.providerOrder = providers.map((provider) => provider.id);
+  saveProviderOrder();
+  announceLayoutChange(t("layout.resetDone"));
+  if (state.usage) render();
+}
+
+function normalizeProviderOrder(order, providerIds) {
+  const validIds = new Set(providerIds);
+  const normalized = [];
+  for (const id of Array.isArray(order) ? order : []) {
+    if (validIds.has(id) && !normalized.includes(id)) normalized.push(id);
+  }
+  for (const id of providerIds) {
+    if (!normalized.includes(id)) normalized.push(id);
+  }
+  return normalized;
+}
+
+function saveProviderOrder() {
+  try {
+    localStorage.setItem(PROVIDER_ORDER_STORAGE_KEY, JSON.stringify(state.providerOrder));
+  } catch {
+    // Keep the edited order for this session if storage is unavailable.
+  }
+}
+
+function applyProviderOrder(nextOrder) {
+  const providerIds = state.usage ? buildProviders(state.usage).map((provider) => provider.id) : [];
+  state.providerOrder = normalizeProviderOrder(nextOrder, providerIds);
+  saveProviderOrder();
+}
+
+function orderProviders(providers) {
+  const providerIds = providers.map((provider) => provider.id);
+  const normalizedOrder = normalizeProviderOrder(state.providerOrder, providerIds);
+  state.providerOrder = normalizedOrder;
+  const indexById = new Map(normalizedOrder.map((id, index) => [id, index]));
+  return providers.slice().sort((a, b) => (indexById.get(a.id) ?? 0) - (indexById.get(b.id) ?? 0));
+}
+
+function currentVisibleProviderIds() {
+  if (!state.usage) return [];
+  const providers = orderProviders(buildProviders(state.usage));
+  return (state.showAllProviders ? providers : providers.filter(providerHasUsage)).map((provider) => provider.id);
+}
+
+function moveProviderRelativeToTarget(draggedId, targetId, afterTarget = false) {
+  if (!state.usage || draggedId === targetId) return false;
+  const providerIds = buildProviders(state.usage).map((provider) => provider.id);
+  const nextOrder = normalizeProviderOrder(state.providerOrder, providerIds);
+  const fromIndex = nextOrder.indexOf(draggedId);
+  const targetIndex = nextOrder.indexOf(targetId);
+  if (fromIndex === -1 || targetIndex === -1) return false;
+  let insertIndex = targetIndex + (afterTarget ? 1 : 0);
+  nextOrder.splice(fromIndex, 1);
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  nextOrder.splice(Math.max(0, Math.min(insertIndex, nextOrder.length)), 0, draggedId);
+  applyProviderOrder(nextOrder);
+  return true;
+}
+
+function moveProviderByVisibleDelta(providerId, delta) {
+  const visibleIds = currentVisibleProviderIds();
+  const fromIndex = visibleIds.indexOf(providerId);
+  const toIndex = fromIndex + delta;
+  if (fromIndex === -1 || toIndex < 0 || toIndex >= visibleIds.length) return false;
+  return moveProviderRelativeToTarget(providerId, visibleIds[toIndex], delta > 0);
+}
+
+function providerCardFromEvent(event) {
+  return event.target?.closest?.(".provider-card[data-provider-id]");
+}
+
+function providerHandleFromEvent(event) {
+  return event.target?.closest?.("[data-provider-drag-handle]");
+}
+
+function providerName(providerId) {
+  if (!state.usage) return providerId;
+  return buildProviders(state.usage).find((provider) => provider.id === providerId)?.name || providerId;
+}
+
+function providerPosition(providerId) {
+  const visibleIds = currentVisibleProviderIds();
+  const index = visibleIds.indexOf(providerId);
+  return { position: index + 1, total: visibleIds.length };
+}
+
+function announceProviderMove(providerId, key = "layout.moved") {
+  const { position, total } = providerPosition(providerId);
+  announceLayoutChange(t(key, { name: providerName(providerId), position, total }));
+}
+
+function announceLayoutChange(message) {
+  if (!els.layoutLiveRegion) return;
+  els.layoutLiveRegion.textContent = "";
+  window.requestAnimationFrame(() => {
+    els.layoutLiveRegion.textContent = message;
+  });
+}
+
+function focusProviderHandle(providerId) {
+  window.requestAnimationFrame(() => {
+    const selector = `[data-provider-drag-handle][data-provider-id="${escapeSelectorValue(providerId)}"]`;
+    els.providerGrid?.querySelector(selector)?.focus();
+  });
+}
+
+function escapeSelectorValue(value) {
+  return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+}
+
+function handleProviderDragStart(event) {
+  if (!state.layoutEditMode) return;
+  const handle = providerHandleFromEvent(event);
+  const card = providerCardFromEvent(event);
+  if (!handle || !card) {
+    event.preventDefault();
+    return;
+  }
+  state.draggingProviderId = card.dataset.providerId;
+  card.classList.add("is-dragging");
+  try {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", state.draggingProviderId);
+  } catch {
+    // Drag data is advisory; state.draggingProviderId is the source of truth.
+  }
+}
+
+function handleProviderDragOver(event) {
+  if (!state.layoutEditMode || !state.draggingProviderId) return;
+  const card = providerCardFromEvent(event);
+  if (!card || card.dataset.providerId === state.draggingProviderId) {
+    clearProviderDropTarget();
+    return;
+  }
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+  const placement = resolveDropPlacement(card, event.clientX, event.clientY);
+  setProviderDropTarget(card, placement.after);
+}
+
+function handleProviderDrop(event) {
+  if (!state.layoutEditMode) return;
+  const card = providerCardFromEvent(event);
+  const draggedId = state.draggingProviderId || event.dataTransfer?.getData("text/plain");
+  if (!card || !draggedId || card.dataset.providerId === draggedId) {
+    endProviderDrag();
+    return;
+  }
+  event.preventDefault();
+  const placement = resolveDropPlacement(card, event.clientX, event.clientY);
+  const moved = moveProviderRelativeToTarget(draggedId, card.dataset.providerId, placement.after);
+  endProviderDrag();
+  if (moved) {
+    render();
+    announceProviderMove(draggedId, "layout.dropped");
+    focusProviderHandle(draggedId);
+  }
+}
+
+function endProviderDrag() {
+  state.draggingProviderId = null;
+  els.providerGrid?.querySelectorAll(".is-dragging").forEach((card) => card.classList.remove("is-dragging"));
+  clearProviderDropTarget();
+}
+
+function resolveDropPlacement(card, clientX, clientY) {
+  const rect = card.getBoundingClientRect();
+  const horizontal = rect.width > rect.height * 1.15;
+  const after = horizontal ? clientX > rect.left + rect.width / 2 : clientY > rect.top + rect.height / 2;
+  return { after };
+}
+
+function setProviderDropTarget(card, after) {
+  clearProviderDropTarget(card);
+  card.classList.add("is-drop-target", after ? "is-drop-after" : "is-drop-before");
+}
+
+function clearProviderDropTarget(exceptCard = null) {
+  els.providerGrid?.querySelectorAll(".is-drop-target").forEach((card) => {
+    if (card === exceptCard) return;
+    card.classList.remove("is-drop-target", "is-drop-before", "is-drop-after");
+  });
+}
+
+function handleProviderPointerDown(event) {
+  if (!state.layoutEditMode) return;
+  const handle = providerHandleFromEvent(event);
+  const card = providerCardFromEvent(event);
+  if (!handle || !card) return;
+  if (event.pointerType !== "mouse") event.preventDefault();
+  state.pointerDrag = {
+    id: card.dataset.providerId,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    targetId: null,
+    after: false,
+    active: false,
+    handle
+  };
+  try {
+    handle.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is best effort; document.elementFromPoint still drives the drop target.
+  }
+}
+
+function handleProviderPointerMove(event) {
+  const drag = state.pointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  if (!drag.active && Math.hypot(dx, dy) < 6) return;
+  event.preventDefault();
+  if (!drag.active) {
+    drag.active = true;
+    createProviderDragGhost(drag.id, event.clientX, event.clientY);
+    const sourceCard = providerCardById(drag.id);
+    sourceCard?.classList.add("is-dragging");
+  }
+  moveProviderDragGhost(event.clientX, event.clientY);
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.(".provider-card[data-provider-id]");
+  if (!target || target.dataset.providerId === drag.id) {
+    clearProviderDropTarget();
+    drag.targetId = null;
+    return;
+  }
+  const placement = resolveDropPlacement(target, event.clientX, event.clientY);
+  drag.targetId = target.dataset.providerId;
+  drag.after = placement.after;
+  setProviderDropTarget(target, placement.after);
+}
+
+function handleProviderPointerUp(event) {
+  const drag = state.pointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const moved = drag.active && drag.targetId ? moveProviderRelativeToTarget(drag.id, drag.targetId, drag.after) : false;
+  cleanupProviderPointerDrag();
+  if (moved) {
+    render();
+    announceProviderMove(drag.id, "layout.dropped");
+    focusProviderHandle(drag.id);
+  }
+}
+
+function cancelProviderPointerDrag(event) {
+  if (event && state.pointerDrag?.pointerId !== event.pointerId) return;
+  cleanupProviderPointerDrag();
+}
+
+function cleanupProviderPointerDrag() {
+  removeProviderDragGhost();
+  state.pointerDrag = null;
+  endProviderDrag();
+}
+
+function providerCardById(providerId) {
+  const selector = `.provider-card[data-provider-id="${escapeSelectorValue(providerId)}"]`;
+  return els.providerGrid?.querySelector(selector);
+}
+
+function createProviderDragGhost(providerId, clientX, clientY) {
+  removeProviderDragGhost();
+  const card = providerCardById(providerId);
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+  const ghost = card.cloneNode(true);
+  ghost.classList.add("provider-drag-ghost");
+  ghost.style.width = `${rect.width}px`;
+  document.body.appendChild(ghost);
+  state.pointerDrag.ghost = ghost;
+  moveProviderDragGhost(clientX, clientY);
+}
+
+function moveProviderDragGhost(clientX, clientY) {
+  const ghost = state.pointerDrag?.ghost;
+  if (!ghost) return;
+  ghost.style.transform = `translate(${clientX + 12}px, ${clientY + 12}px)`;
+}
+
+function removeProviderDragGhost() {
+  if (!state.pointerDrag?.ghost) return;
+  state.pointerDrag.ghost.remove();
+  state.pointerDrag.ghost = null;
+}
+
+function handleProviderKeyboardReorder(event) {
+  if (!state.layoutEditMode) return;
+  const handle = providerHandleFromEvent(event);
+  if (!handle) return;
+  const providerId = handle.dataset.providerId;
+  const isGrabbed = state.keyboardDragProviderId === providerId;
+
+  if (!isGrabbed && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    state.keyboardDragProviderId = providerId;
+    state.keyboardOriginalProviderOrder = state.providerOrder.slice();
+    announceProviderMove(providerId, "layout.grabbed");
+    render();
+    focusProviderHandle(providerId);
+    return;
+  }
+
+  if (!isGrabbed) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (state.keyboardOriginalProviderOrder) applyProviderOrder(state.keyboardOriginalProviderOrder);
+    state.keyboardDragProviderId = null;
+    state.keyboardOriginalProviderOrder = null;
+    announceLayoutChange(t("layout.cancelled"));
+    render();
+    focusProviderHandle(providerId);
+    return;
+  }
+
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    state.keyboardDragProviderId = null;
+    state.keyboardOriginalProviderOrder = null;
+    announceProviderMove(providerId, "layout.dropped");
+    render();
+    focusProviderHandle(providerId);
+    return;
+  }
+
+  const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+  if (!direction) return;
+  event.preventDefault();
+  const moved = moveProviderByVisibleDelta(providerId, direction);
+  if (moved) {
+    announceProviderMove(providerId);
+    render();
+    focusProviderHandle(providerId);
+  }
 }
 
 async function loadAuth() {
@@ -946,29 +1333,26 @@ function renderLocked() {
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
   state.chartRendered = false;
+  state.layoutEditMode = false;
+  els.providerGrid.classList.remove("layout-edit-mode");
   updateProviderFilterControl([], []);
+  updateLayoutControls([], []);
   renderSourceDiagnostics();
   renderSourceSettings();
 }
 
 function render() {
   const usage = state.usage;
-  const providers = [
-    normalizeLocalProvider("claudeCode", usage.claudeCode),
-    normalizeApiProvider("anthropic", usage.anthropic),
-    normalizeCodexProvider(usage.codex),
-    normalizeCodexSparkProvider(usage.codex?.spark, usage.codex?.subscription),
-    normalizeLocalProvider("copilot", usage.copilot),
-    normalizeLocalProvider("ollama", usage.ollama),
-    normalizeApiProvider("openai", usage.openai),
-    normalizeLocalProvider("gemini", usage.gemini)
-  ];
+  const providers = orderProviders(buildProviders(usage));
   const visibleProviders = state.showAllProviders ? providers : providers.filter(providerHasUsage);
 
+  els.providerGrid.classList.toggle("layout-edit-mode", state.layoutEditMode);
+  els.providerGrid.setAttribute("role", visibleProviders.length ? "list" : "group");
   els.providerGrid.innerHTML = visibleProviders.length
-    ? visibleProviders.map(renderProvider).join("")
+    ? visibleProviders.map((provider, index) => renderProvider(provider, index, visibleProviders.length)).join("")
     : renderNoActiveProviders();
   updateProviderFilterControl(providers, visibleProviders);
+  updateLayoutControls(providers, visibleProviders);
   renderSummary(visibleProviders, usage.local);
   const allDaily = usage.local?.daily || [];
   syncChartTimeFilter(allDaily);
@@ -993,6 +1377,19 @@ function render() {
   renderSourceDiagnostics();
   renderSourceSettings();
   refreshIcons();
+}
+
+function buildProviders(usage) {
+  return [
+    normalizeLocalProvider("claudeCode", usage.claudeCode),
+    normalizeApiProvider("anthropic", usage.anthropic),
+    normalizeCodexProvider(usage.codex),
+    normalizeCodexSparkProvider(usage.codex?.spark, usage.codex?.subscription),
+    normalizeLocalProvider("copilot", usage.copilot),
+    normalizeLocalProvider("ollama", usage.ollama),
+    normalizeApiProvider("openai", usage.openai),
+    normalizeLocalProvider("gemini", usage.gemini)
+  ];
 }
 
 function renderChartModeToggle() {
@@ -1496,6 +1893,19 @@ function updateProviderFilterControl(providers, visibleProviders) {
   els.providerFilterBtn.setAttribute("aria-pressed", String(state.showAllProviders));
 }
 
+function updateLayoutControls(providers, visibleProviders) {
+  if (!els.layoutEditBtn) return;
+  const label = state.layoutEditMode ? t("layout.done") : t("layout.edit");
+  els.layoutEditBtn.disabled = !providers.length;
+  els.layoutEditBtn.setAttribute("aria-label", label);
+  els.layoutEditBtn.setAttribute("title", label);
+  els.layoutEditBtn.setAttribute("aria-pressed", String(state.layoutEditMode));
+  if (els.layoutResetBtn) {
+    els.layoutResetBtn.hidden = !state.layoutEditMode || !visibleProviders.length;
+    els.layoutResetBtn.textContent = t("layout.reset");
+  }
+}
+
 function renderNoActiveProviders() {
   return `
     <article class="provider-card provider-empty-state">
@@ -1515,7 +1925,7 @@ function renderNoActiveProviders() {
   `;
 }
 
-function renderProvider(provider) {
+function renderProvider(provider, index = 0, total = 1) {
   const statusClass = `status-${provider.status}`;
   const hasConfiguredLimitRows = provider.limitRows?.some((row) => row.valueLabel);
   const showLimitBars = hasConfiguredLimitRows || provider.limitRows?.length > 2 || Boolean(provider.planType);
@@ -1531,7 +1941,8 @@ function renderProvider(provider) {
       </div>`;
 
   return `
-    <article class="provider-card">
+    <article class="provider-card" data-provider-id="${escapeHtml(provider.id)}" role="listitem" draggable="${state.layoutEditMode ? "true" : "false"}">
+      ${state.layoutEditMode ? renderProviderDragHandle(provider, index, total) : ""}
       <div class="provider-head">
         <div>
           <p class="eyebrow">${escapeHtml(provider.kicker || provider.id)}</p>
@@ -1552,6 +1963,24 @@ function renderProvider(provider) {
           .join("")}
       </div>
     </article>
+  `;
+}
+
+function renderProviderDragHandle(provider, index, total) {
+  const active = state.keyboardDragProviderId === provider.id;
+  return `
+    <button
+      type="button"
+      class="provider-drag-handle${active ? " is-active" : ""}"
+      data-provider-drag-handle
+      data-provider-id="${escapeHtml(provider.id)}"
+      aria-label="${escapeHtml(t("layout.dragHandle", { name: provider.name }))}"
+      aria-pressed="${active}"
+      title="${escapeHtml(t("layout.dragHandle", { name: provider.name }))}"
+    >
+      <i data-lucide="grip-vertical"></i>
+      <span class="provider-position">${escapeHtml(`${index + 1}/${total}`)}</span>
+    </button>
   `;
 }
 

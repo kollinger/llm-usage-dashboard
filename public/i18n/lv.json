@@ -23,6 +23,17 @@
     "showInactiveCount": "Rādīt {count} neaktīvus pakalpojumu sniedzējus",
     "allVisible": "Visi pakalpojumu sniedzēji ir redzami"
   },
+  "layout": {
+    "edit": "Edit layout",
+    "done": "Done",
+    "reset": "Default order",
+    "resetDone": "Default provider order restored.",
+    "dragHandle": "Move {name}",
+    "grabbed": "Moving {name}. Use arrow keys to move, Enter or Space to drop, Escape to cancel.",
+    "moved": "{name} moved to position {position} of {total}.",
+    "dropped": "{name} dropped at position {position} of {total}.",
+    "cancelled": "Move cancelled."
+  },
   "summary": {
     "ariaLabel": "Pārskats",
     "fiveHourOpen": "5h pieejams",

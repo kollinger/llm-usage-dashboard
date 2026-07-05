@@ -22,6 +22,12 @@
           <button class="icon-button" id="settingsBtn" aria-label="Einstellungen" title="Einstellungen" data-i18n-aria-label="actions.settings" data-i18n-title="actions.settings">
             <i data-lucide="sliders-horizontal"></i>
           </button>
+          <button class="icon-button" id="layoutEditBtn" type="button" aria-label="Layout bearbeiten" title="Layout bearbeiten" aria-pressed="false" data-i18n-aria-label="layout.edit" data-i18n-title="layout.edit">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button class="text-button ghost layout-reset-btn" id="layoutResetBtn" type="button" hidden data-i18n="layout.reset">
+            Standardreihenfolge
+          </button>
           <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false" data-i18n="filter.showAll">
             Alle anzeigen
           </button>
@@ -67,6 +73,7 @@
       </section>
 
       <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
+      <p class="layout-live-region" id="layoutLiveRegion" aria-live="polite" aria-atomic="true"></p>
 
       <section class="usage-layout">
         <div class="panel chart-panel">

@@ -23,6 +23,17 @@
     "showInactiveCount": "{count} inaktive Anbieter anzeigen",
     "allVisible": "Alle Anbieter sind sichtbar"
   },
+  "layout": {
+    "edit": "Layout bearbeiten",
+    "done": "Fertig",
+    "reset": "Standardreihenfolge",
+    "resetDone": "Standardreihenfolge der Anbieter wiederhergestellt.",
+    "dragHandle": "{name} verschieben",
+    "grabbed": "{name} wird verschoben. Mit Pfeiltasten bewegen, mit Enter oder Leertaste ablegen, mit Escape abbrechen.",
+    "moved": "{name} auf Position {position} von {total} verschoben.",
+    "dropped": "{name} auf Position {position} von {total} abgelegt.",
+    "cancelled": "Verschieben abgebrochen."
+  },
   "summary": {
     "ariaLabel": "Übersicht",
     "fiveHourOpen": "5h frei",
