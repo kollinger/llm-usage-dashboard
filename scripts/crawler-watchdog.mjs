@@ -7,6 +7,7 @@ import path from "node:path";
 import process from "node:process";
 import readline from "node:readline";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import {
   EXIT_CODES,
   PROVIDER_CONTRACTS,
@@ -17,7 +18,7 @@ import {
 } from "./crawler-contracts.mjs";
 
 const require = createRequire(import.meta.url);
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
