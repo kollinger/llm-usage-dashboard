@@ -286,9 +286,129 @@
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert.",
       "saveError": "Konnte nicht gespeichert werden."
+    },
+    "sources": {
+      "title": "Lokale Quellen",
+      "description": "Verbundene Quellen verwalten, Zugriff neu prüfen und ACL-Kommandos für andere lokale Benutzer kopieren.",
+      "recheck": "Zugriff erneut prüfen",
+      "recheckOne": "Zugriff erneut prüfen",
+      "recheckPending": "Prüfe...",
+      "rechecked": "Quellen-Diagnose wurde aktualisiert.",
+      "recheckError": "Quellen-Diagnose konnte nicht aktualisiert werden.",
+      "currentUser": "aktueller Benutzer",
+      "summaryStatus": "Status: {status}",
+      "summaryCounts": "{connected} verbunden · {candidates} Kandidaten",
+      "connectedTitle": "Verbundene Quellen",
+      "candidatesTitle": "Erkannte Quellen",
+      "connectedEmpty": "Noch keine Quellen verbunden.",
+      "candidatesEmpty": "Aktuell wurden keine zusätzlichen Quellen-Kandidaten erkannt.",
+      "owner": "Besitzer: {owner}",
+      "discovery": "Discovery: {method} · Vertrauen {confidence}",
+      "access": {
+        "readable": "Lesbar",
+        "mixed": "Teilweise lesbar",
+        "denied": "Zugriff verweigert",
+        "missing": "Fehlt",
+        "process_only": "Nur Prozess",
+        "service_only": "Nur Service"
+      },
+      "permissions": {
+        "readable": "Lesbar",
+        "denied": "Verweigert",
+        "missing": "Fehlt",
+        "unknown": "Unbekannt"
+      },
+      "roles": {
+        "sessions": "Sessions",
+        "archived_sessions": "Archivierte Sessions",
+        "projects": "Projekte",
+        "session_state": "Session-Status",
+        "telemetry": "Telemetry",
+        "chats": "Chats",
+        "tmp": "Temporäre Dateien",
+        "usage_file": "Usage-Datei",
+        "home": "Home"
+      },
+      "noPaths": "Kein direkter Dateisystempfad verfügbar.",
+      "connect": "Verbinden",
+      "connectPending": "Verbinde...",
+      "connectSuccess": "Quelle verbunden. Neue Diagnose wird jetzt ausgeführt.",
+      "connectError": "Quelle konnte nicht verbunden werden.",
+      "disable": "Deaktivieren",
+      "disablePending": "Deaktiviere...",
+      "disableSuccess": "Quelle deaktiviert. Usage-Summen wurden aktualisiert.",
+      "disableError": "Quelle konnte nicht deaktiviert werden.",
+      "grantCommands": "Freigabe-Kommandos",
+      "revokeCommands": "Revoke-Kommandos",
+      "copyGrant": "Freigabe-Kommandos kopieren",
+      "copyRevoke": "Revoke-Kommandos kopieren",
+      "copyGrantSuccess": "Freigabe-Kommandos wurden in die Zwischenablage kopiert.",
+      "copyRevokeSuccess": "Revoke-Kommandos wurden in die Zwischenablage kopiert.",
+      "copyError": "Kommandos konnten nicht in die Zwischenablage kopiert werden."
     }
   },
   "errors": {
     "loadUsage": "Fehler"
+  },
+  "diagnostics": {
+    "ariaLabel": "Quellen-Diagnose",
+    "eyebrow": "Lokale Quellen",
+    "heading": "Diagnose & Verbindung",
+    "recheck": "Zugriff erneut prüfen",
+    "loading": "Quellen-Diagnose wird geladen...",
+    "meta": "Benutzer {user} · Home {home} · Geprüft {checkedAt} · {platform} · {support}",
+    "support": {
+      "full": "volle Discovery",
+      "partial_container": "eingeschränkte Container-Discovery",
+      "stub": "teilweise Plattform-Vorbereitung",
+      "unsupported": "nicht unterstützte Plattform"
+    },
+    "summary": {
+      "connected": "{count} verbunden",
+      "readable": "{count} lesbar",
+      "denied": "{count} verweigert",
+      "processOnly": "{count} nur Prozess-Hinweis"
+    },
+    "errors": {
+      "load": "Quellen-Diagnose konnte nicht geladen werden: {message}"
+    },
+    "statuses": {
+      "connected_live": {
+        "title": "Verbunden und aktiv",
+        "body": "Mindestens eine lesbare Quelle ist bereits verbunden und kann lokale Nutzungsdaten beitragen."
+      },
+      "current_user_empty": {
+        "title": "Aktueller Benutzer leer",
+        "body": "Der aktuelle Desktop-Benutzer wurde erfolgreich geprüft, aber es wurden noch keine lokalen Usage-Dateien mit Daten gefunden."
+      },
+      "candidates_readable_empty": {
+        "title": "Lesbare Kandidaten gefunden",
+        "body": "Bekannte Tool-Ordner sind lesbar, wirken aktuell aber leer oder enthalten keine tokenhaltigen Events."
+      },
+      "candidates_denied": {
+        "title": "Zugriff verweigert",
+        "body": "Plausible Quellordner wurden bei einem anderen lokalen Benutzer gefunden, sind für diese App aber noch nicht lesbar."
+      },
+      "no_tools_found": {
+        "title": "Keine Tools gefunden",
+        "body": "Auf diesem Rechner wurden keine unterstützten lokalen Tool-Ordner, passenden Prozesse oder Service-Hinweise erkannt."
+      },
+      "other_dashboard_found": {
+        "title": "Andere Dashboard-Instanz gefunden",
+        "body": "Eine andere lokale LLM-Usage-Dashboard-Instanz läuft bereits und hat eventuell schon Zugriff auf Nutzungsdaten."
+      },
+      "partial_unsupported": {
+        "title": "Teilweise unterstützt",
+        "body": "Diese Laufzeit kann Quellen nur eingeschränkt erkennen; manche Benutzer, Services oder Homes bleiben daher unsichtbar."
+      },
+      "discovery_error": {
+        "title": "Discovery-Fehler",
+        "body": "Die Quellen-Discovery konnte nicht sauber abgeschlossen werden. Zugriff erneut prüfen oder Backend-Fehlerzustand kontrollieren."
+      }
+    },
+    "instances": {
+      "title": "Andere Dashboard-Instanzen",
+      "item": "{user} auf Port {port} (PID {pid})"
+    }
   }
 }

@@ -3,6 +3,8 @@ const state = {
   usage: null,
   subscriptionHistory: null,
   loadingUsage: false,
+  queuedUsageForce: false,
+  queuedUsageIndicator: false,
   refreshIndicator: false,
   showAllProviders: false,
   chartRendered: false,
@@ -12,12 +14,23 @@ const state = {
   pricingSort: null,
   language: "en",
   translations: {},
-  fallbackTranslations: {}
+  fallbackTranslations: {},
+  sourceDiagnostics: null,
+  sourceDiagnosticsError: "",
+  loadingSourceDiagnostics: false,
+  sourceMessage: { text: "", status: "" },
+  sourceOps: {}
 };
 
 const els = {
   appShell: document.querySelector("main.app-shell"),
   providerGrid: document.getElementById("providerGrid"),
+  sourceDiagnosticsSection: document.getElementById("sourceDiagnosticsSection"),
+  sourceDiagnosticsMeta: document.getElementById("sourceDiagnosticsMeta"),
+  sourceDiagnosticsSummary: document.getElementById("sourceDiagnosticsSummary"),
+  sourceDiagnosticsGrid: document.getElementById("sourceDiagnosticsGrid"),
+  sourceDiagnosticsInstances: document.getElementById("sourceDiagnosticsInstances"),
+  diagnosticsRecheckBtn: document.getElementById("diagnosticsRecheckBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
   providerFilterBtn: document.getElementById("providerFilterBtn"),
@@ -30,6 +43,11 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
+  settingsSourcesRecheckBtn: document.getElementById("settingsSourcesRecheckBtn"),
+  settingsSourcesStatus: document.getElementById("settingsSourcesStatus"),
+  settingsSourceSummary: document.getElementById("settingsSourceSummary"),
+  settingsConnectedSources: document.getElementById("settingsConnectedSources"),
+  settingsCandidateSources: document.getElementById("settingsCandidateSources"),
   subscriptionFields: Array.from(document.querySelectorAll("[data-subscription-field]")),
   subscriptionSaveBtn: document.getElementById("subscriptionSaveBtn"),
   subscriptionSaveStatus: document.getElementById("subscriptionSaveStatus"),
@@ -149,6 +167,26 @@ const pricingSortDefaults = {
   source: "asc"
 };
 const pricingExcludedSourceIds = new Set(["copilot"]);
+const DIAGNOSTIC_STATUS_ORDER = [
+  "connected_live",
+  "current_user_empty",
+  "candidates_readable_empty",
+  "candidates_denied",
+  "no_tools_found",
+  "other_dashboard_found",
+  "partial_unsupported",
+  "discovery_error"
+];
+const DIAGNOSTIC_STATUS_ICONS = {
+  connected_live: "plug-zap",
+  current_user_empty: "scan-search",
+  candidates_readable_empty: "folder-search-2",
+  candidates_denied: "shield-alert",
+  no_tools_found: "search-x",
+  other_dashboard_found: "monitor-smartphone",
+  partial_unsupported: "triangle-alert",
+  discovery_error: "octagon-alert"
+};
 
 const pricingModels = [
   {
@@ -421,12 +459,10 @@ async function init() {
   bindEvents();
   refreshIcons();
   await loadAuth();
-  await loadUsage({ showIndicator: true });
-  setInterval(() => {
-    if (!document.hidden) loadUsage();
-  }, USAGE_POLL_INTERVAL_MS);
+  await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics()]);
+  setInterval(pollUsage, USAGE_POLL_INTERVAL_MS);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) loadUsage();
+    if (!document.hidden) pollUsage();
   });
 }
 
@@ -437,8 +473,12 @@ function bindEvents() {
   els.settingsBtn.addEventListener("click", openSettings);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
+  els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
+  els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.loginDialog.addEventListener("click", closeDialogOnBackdrop);
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
+  els.sourceDiagnosticsSection?.addEventListener("click", handleSourceActionClick);
+  els.settingsDialog?.addEventListener("click", handleSourceActionClick);
   els.notificationsEnabled?.addEventListener("change", onNotificationEnabledChange);
   els.subscriptionSaveBtn?.addEventListener("click", saveSubscriptionSettings);
   els.notificationSaveBtn?.addEventListener("click", saveNotificationSettings);
@@ -562,6 +602,8 @@ function rerenderLanguageSensitiveViews() {
     renderLocked();
   } else {
     updateProviderFilterControl([], []);
+    renderSourceDiagnostics();
+    renderSourceSettings();
   }
   refreshIcons();
 }
@@ -610,6 +652,39 @@ async function loadAuth() {
   renderAuth();
 }
 
+async function loadSourceDiagnostics() {
+  if (state.loadingSourceDiagnostics) return state.sourceDiagnostics;
+  if (state.auth && !state.auth.authenticated) {
+    state.sourceDiagnostics = null;
+    state.sourceDiagnosticsError = "";
+    renderSourceDiagnostics();
+    renderSourceSettings();
+    return null;
+  }
+
+  state.loadingSourceDiagnostics = true;
+  try {
+    state.sourceDiagnostics = await fetchJson(`/api/sources/diagnostics?ts=${Date.now()}`);
+    state.sourceDiagnosticsError = "";
+    renderSourceDiagnostics();
+    renderSourceSettings();
+    return state.sourceDiagnostics;
+  } catch (error) {
+    if (error.status === 401) {
+      await loadAuth();
+      state.sourceDiagnostics = null;
+      state.sourceDiagnosticsError = "";
+    } else {
+      state.sourceDiagnosticsError = error.message || t("diagnostics.errors.load");
+    }
+    renderSourceDiagnostics();
+    renderSourceSettings();
+    return null;
+  } finally {
+    state.loadingSourceDiagnostics = false;
+  }
+}
+
 function renderAuth() {
   const authed = state.auth?.authenticated;
   els.loginBtn.hidden = authed;
@@ -629,7 +704,7 @@ async function login(event) {
     els.loginDialog.close();
     els.passwordInput.value = "";
     await loadAuth();
-    await loadUsage();
+    await Promise.all([loadUsage(), loadSourceDiagnostics()]);
   } catch {
     els.loginError.textContent = t("auth.loginFailed");
   }
@@ -641,8 +716,17 @@ async function logout() {
   renderLocked();
 }
 
+async function pollUsage() {
+  if (document.hidden) return;
+  await loadUsage();
+}
+
 async function loadUsage({ showIndicator = false, force = false } = {}) {
   if (state.loadingUsage) {
+    if (force) {
+      state.queuedUsageForce = true;
+      state.queuedUsageIndicator ||= showIndicator;
+    }
     if (showIndicator) {
       state.refreshIndicator = true;
       setRefreshIndicator(true);
@@ -655,9 +739,10 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   }
   setUsageLoading(true, showIndicator);
   try {
-    const usageUrl = `/api/usage?ts=${Date.now()}${force ? "&force=1" : ""}`;
+    const params = new URLSearchParams({ ts: String(Date.now()) });
+    if (force) params.set("force", "1");
     const [usage, subscriptionHistory] = await Promise.all([
-      fetchJson(usageUrl),
+      fetchJson(`/api/usage?${params.toString()}`),
       fetchJson("/api/subscription-history").catch((error) => {
         if (error.status === 401) throw error;
         return { version: 1, entries: [] };
@@ -675,6 +760,15 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     els.providerGrid.innerHTML = `<article class="provider-card"><h2>${escapeHtml(t("errors.loadUsage"))}</h2><p>${escapeHtml(error.message)}</p></article>`;
   } finally {
     setUsageLoading(false);
+    if (state.queuedUsageForce) {
+      const shouldRunQueuedUsage = !state.auth || state.auth.authenticated;
+      const queuedShowIndicator = state.queuedUsageIndicator;
+      state.queuedUsageForce = false;
+      state.queuedUsageIndicator = false;
+      if (shouldRunQueuedUsage) {
+        await loadUsage({ showIndicator: queuedShowIndicator, force: true });
+      }
+    }
   }
 }
 
@@ -717,6 +811,8 @@ function renderSkeletonProviderGrid() {
 }
 
 function renderLocked() {
+  state.sourceDiagnostics = null;
+  state.sourceDiagnosticsError = "";
   els.providerGrid.innerHTML = "";
   els.fiveHourOpen.textContent = "--";
   els.weeklyOpen.textContent = "--";
@@ -735,6 +831,8 @@ function renderLocked() {
   els.pricingMeta.textContent = "--";
   state.chartRendered = false;
   updateProviderFilterControl([], []);
+  renderSourceDiagnostics();
+  renderSourceSettings();
 }
 
 function render() {
@@ -775,6 +873,8 @@ function render() {
   }
   renderTokenList(usage.local?.totals?.allTime);
   renderPricing(usage.local);
+  renderSourceDiagnostics();
+  renderSourceSettings();
   refreshIcons();
 }
 
@@ -2381,9 +2481,13 @@ function parseDateOnly(value) {
 async function openSettings() {
   if (!state.auth?.authenticated) return els.loginDialog.showModal();
   els.settingsDialog.showModal();
-  await loadSubscriptionSettings();
-  await loadNotificationSettings();
-  await loadNotificationStatus();
+  renderSourceSettings();
+  await Promise.all([
+    loadSubscriptionSettings(),
+    loadNotificationSettings(),
+    loadNotificationStatus(),
+    loadSourceDiagnostics()
+  ]);
 }
 
 async function loadSubscriptionSettings() {
@@ -2426,7 +2530,7 @@ async function saveSubscriptionSettings() {
     });
     fillSubscriptionSettings(settings);
     setSubscriptionSaveStatus(t("settings.subscriptions.saved"), "ready");
-    await loadUsage();
+    await loadUsage({ force: true });
   } catch {
     setSubscriptionSaveStatus(t("settings.subscriptions.saveError"), "error");
   }
@@ -2547,6 +2651,383 @@ async function sendTestNotification() {
       if (els.notificationTestStatus) els.notificationTestStatus.hidden = true;
     }, 10000);
   }
+}
+
+function renderSourceDiagnostics() {
+  if (!els.sourceDiagnosticsSection) return;
+  const authed = state.auth?.authenticated;
+  els.sourceDiagnosticsSection.hidden = !authed;
+  if (!authed) return;
+
+  const diagnostics = state.sourceDiagnostics;
+  const status = state.sourceDiagnosticsError ? "discovery_error" : diagnostics?.status || "current_user_empty";
+  const currentUser = diagnostics?.currentUser || {};
+  const generatedAt = diagnostics?.generatedAt ? formatUpdatedAt(diagnostics.generatedAt) : "--";
+  const supportLevel = diagnostics?.os?.supportLevel || "full";
+
+  els.sourceDiagnosticsMeta.textContent = t("diagnostics.meta", {
+    user: currentUser.name || "--",
+    home: currentUser.home || "--",
+    checkedAt: generatedAt,
+    platform: diagnostics?.os?.platform || navigator.platform || "--",
+    support: t(`diagnostics.support.${supportLevel}`, {}, supportLevel)
+  });
+  els.sourceDiagnosticsSummary.innerHTML = renderDiagnosticsSummary(diagnostics);
+  els.sourceDiagnosticsGrid.innerHTML = DIAGNOSTIC_STATUS_ORDER.map((entry) => renderDiagnosticStatusCard(entry, status)).join("");
+  els.sourceDiagnosticsInstances.innerHTML = renderOtherDashboardInstances(diagnostics?.otherDashboardInstances || []);
+  els.diagnosticsRecheckBtn.disabled = isSourceOpPending("recheck", "global");
+}
+
+function renderDiagnosticsSummary(diagnostics) {
+  if (state.sourceDiagnosticsError) {
+    return `<div class="diagnostics-summary-card diagnostics-summary-error">${escapeHtml(
+      t("diagnostics.errors.load", { message: state.sourceDiagnosticsError }, state.sourceDiagnosticsError)
+    )}</div>`;
+  }
+  if (!diagnostics) {
+    return `<div class="diagnostics-summary-card">${escapeHtml(t("diagnostics.loading"))}</div>`;
+  }
+  const counts = diagnostics.counts || {};
+  const bits = [
+    t("diagnostics.summary.connected", { count: formatNumber(counts.connected || 0) }),
+    t("diagnostics.summary.readable", { count: formatNumber(counts.readable || 0) }),
+    t("diagnostics.summary.denied", { count: formatNumber(counts.denied || 0) }),
+    t("diagnostics.summary.processOnly", { count: formatNumber(counts.processOnly || 0) })
+  ];
+  return `
+    <div class="diagnostics-summary-card">
+      <strong>${escapeHtml(t(`diagnostics.statuses.${diagnostics.status}.title`))}</strong>
+      <span>${escapeHtml(bits.join(" · "))}</span>
+    </div>
+  `;
+}
+
+function renderDiagnosticStatusCard(statusId, activeStatus) {
+  const active = statusId === activeStatus;
+  return `
+    <article class="diagnostic-state-card${active ? " is-active" : ""}">
+      <div class="diagnostic-state-head">
+        <i data-lucide="${escapeHtml(DIAGNOSTIC_STATUS_ICONS[statusId] || "circle")}"></i>
+        <strong>${escapeHtml(t(`diagnostics.statuses.${statusId}.title`))}</strong>
+      </div>
+      <p>${escapeHtml(t(`diagnostics.statuses.${statusId}.body`))}</p>
+    </article>
+  `;
+}
+
+function renderOtherDashboardInstances(instances) {
+  if (!Array.isArray(instances) || !instances.length) return "";
+  return `
+    <div class="diagnostics-instances-card">
+      <strong>${escapeHtml(t("diagnostics.instances.title"))}</strong>
+      ${instances
+        .map((instance) => {
+          return `
+            <div class="diagnostics-instance-row">
+              <span>${escapeHtml(t("diagnostics.instances.item", {
+                user: instance.user || "--",
+                port: formatNumber(instance.port || 0),
+                pid: formatNumber(instance.pid || 0)
+              }))}</span>
+              <strong>${escapeHtml(instance.url || "--")}</strong>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderSourceSettings() {
+  if (!els.settingsConnectedSources || !els.settingsCandidateSources || !els.settingsSourceSummary) return;
+  const diagnostics = state.sourceDiagnostics;
+  const connected = Array.isArray(diagnostics?.connected) ? diagnostics.connected : [];
+  const candidates = Array.isArray(diagnostics?.candidates) ? diagnostics.candidates : [];
+  const availableCandidates = candidates.filter((source) => !source.connected);
+
+  if (els.settingsSourcesStatus) {
+    const fallback = state.sourceDiagnosticsError ? t("diagnostics.errors.load", { message: state.sourceDiagnosticsError }) : "";
+    const message = state.sourceMessage.text || fallback;
+    els.settingsSourcesStatus.textContent = message;
+    els.settingsSourcesStatus.hidden = !message;
+    els.settingsSourcesStatus.dataset.status = state.sourceMessage.text ? state.sourceMessage.status || "" : "error";
+  }
+
+  els.settingsSourcesRecheckBtn.disabled = isSourceOpPending("recheck", "global");
+  els.settingsSourceSummary.innerHTML = diagnostics
+    ? `
+        <div class="settings-source-pill">${escapeHtml(t("settings.sources.summaryStatus", {
+          status: t(`diagnostics.statuses.${diagnostics.status}.title`)
+        }))}</div>
+        <div class="settings-source-pill">${escapeHtml(t("settings.sources.summaryCounts", {
+          connected: formatNumber(connected.length),
+          candidates: formatNumber(candidates.length)
+        }))}</div>
+      `
+    : `<div class="settings-source-pill">${escapeHtml(t("diagnostics.loading"))}</div>`;
+  els.settingsConnectedSources.innerHTML = connected.length
+    ? connected.map((source) => renderSourceCard(source, { mode: "connected" })).join("")
+    : `<p class="source-list-empty">${escapeHtml(t("settings.sources.connectedEmpty"))}</p>`;
+  els.settingsCandidateSources.innerHTML = availableCandidates.length
+    ? availableCandidates.map((source) => renderSourceCard(source, { mode: "candidate" })).join("")
+    : `<p class="source-list-empty">${escapeHtml(t("settings.sources.candidatesEmpty"))}</p>`;
+  refreshIcons();
+}
+
+function renderSourceCard(source, { mode }) {
+  const provider = providerName(source.providerId);
+  const owner = source.owner?.current ? t("settings.sources.currentUser") : source.owner?.name || "--";
+  const access = t(`settings.sources.access.${source.accessStatus}`, {}, source.accessStatus || "--");
+  const paths = Array.isArray(source.paths) ? source.paths : [];
+  const grantCommands = source.suggestedAction?.commands || [];
+  const revokeCommands = source.suggestedAction?.revokeCommands || [];
+  const canConnect = mode === "candidate" && ["readable", "mixed"].includes(source.accessStatus);
+  const canDisable = mode === "connected";
+  const pathMarkup = paths.length
+    ? paths
+        .map((entry) => {
+          return `
+            <li>
+              <strong>${escapeHtml(pathRoleLabel(entry.role))}</strong>
+              <span>${escapeHtml(entry.path || "--")}</span>
+              <em>${escapeHtml(t(`settings.sources.permissions.${entry.permission}`, {}, entry.permission || "--"))}</em>
+            </li>
+          `;
+        })
+        .join("")
+    : `<li><span>${escapeHtml(t("settings.sources.noPaths"))}</span></li>`;
+
+  return `
+    <article class="source-card">
+      <div class="source-card-head">
+        <div>
+          <p class="eyebrow">${escapeHtml(provider)}</p>
+          <h5>${escapeHtml(source.label || provider)}</h5>
+        </div>
+        <span class="status-pill status-${escapeHtml(source.accessStatus || "empty")}">${escapeHtml(access)}</span>
+      </div>
+      <div class="source-card-meta">
+        <span>${escapeHtml(t("settings.sources.owner", { owner }))}</span>
+        <span>${escapeHtml(t("settings.sources.discovery", {
+          method: source.discovery?.method || "--",
+          confidence: source.discovery?.confidence || "--"
+        }))}</span>
+      </div>
+      <ul class="source-path-list">${pathMarkup}</ul>
+      <div class="source-card-actions">
+        ${canConnect ? renderSourceActionButton("connect", source.id, "settings.sources.connect") : ""}
+        ${canDisable ? renderSourceActionButton("disable", source.id, "settings.sources.disable") : ""}
+        ${renderSourceActionButton("recheck", source.id, "settings.sources.recheckOne", "ghost")}
+      </div>
+      ${
+        grantCommands.length
+          ? renderCommandBlock(source.id, "grant", "settings.sources.grantCommands", grantCommands, "settings.sources.copyGrant")
+          : ""
+      }
+      ${
+        revokeCommands.length
+          ? renderCommandBlock(source.id, "revoke", "settings.sources.revokeCommands", revokeCommands, "settings.sources.copyRevoke")
+          : ""
+      }
+    </article>
+  `;
+}
+
+function renderSourceActionButton(action, sourceId, labelKey, variant = "primary") {
+  const pending = isSourceOpPending(action, action === "recheck" ? "global" : sourceId);
+  const pendingKey = `settings.sources.${action}Pending`;
+  const classes = variant === "ghost" ? "text-button ghost" : "text-button";
+  return `
+    <button type="button" class="${classes}" data-source-action="${escapeHtml(action)}" data-source-id="${escapeHtml(sourceId)}" ${
+      pending ? "disabled" : ""
+    }>
+      ${escapeHtml(pending ? t(pendingKey) : t(labelKey))}
+    </button>
+  `;
+}
+
+function renderCommandBlock(sourceId, commandType, titleKey, commands, copyKey) {
+  return `
+    <div class="source-command-block">
+      <div class="source-command-head">
+        <strong>${escapeHtml(t(titleKey))}</strong>
+        <button
+          type="button"
+          class="text-button ghost"
+          data-source-action="copy"
+          data-source-id="${escapeHtml(sourceId)}"
+          data-command-type="${escapeHtml(commandType)}"
+        >
+          ${escapeHtml(t(copyKey))}
+        </button>
+      </div>
+      <pre>${escapeHtml(commands.join("\n"))}</pre>
+    </div>
+  `;
+}
+
+async function handleSourceActionClick(event) {
+  const button = event.target.closest("[data-source-action]");
+  if (!button) return;
+  const action = button.dataset.sourceAction;
+  const sourceId = button.dataset.sourceId || "global";
+  if (action === "connect") await connectCandidateSource(sourceId);
+  if (action === "disable") await disableConnectedSource(sourceId);
+  if (action === "recheck") await recheckSources();
+  if (action === "copy") await copySourceCommands(sourceId, button.dataset.commandType);
+}
+
+async function recheckSources() {
+  const opKey = "global";
+  setSourceOpPending("recheck", opKey, true);
+  renderSourceDiagnostics();
+  renderSourceSettings();
+  setSourceMessage("", "");
+  try {
+    state.sourceDiagnostics = await fetchJson("/api/sources/recheck", { method: "POST" });
+    state.sourceDiagnosticsError = "";
+    setSourceMessage(t("settings.sources.rechecked"), "ready");
+  } catch (error) {
+    setSourceMessage(error.message || t("settings.sources.recheckError"), "error");
+  } finally {
+    setSourceOpPending("recheck", opKey, false);
+    renderSourceDiagnostics();
+    renderSourceSettings();
+  }
+}
+
+async function connectCandidateSource(sourceId) {
+  const previous = cloneJson(state.sourceDiagnostics);
+  setSourceOpPending("connect", sourceId, true);
+  setSourceMessage("", "");
+  applyOptimisticSourceConnection(sourceId);
+  try {
+    await fetchJson("/api/sources/connect", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sourceId })
+    });
+    setSourceMessage(t("settings.sources.connectSuccess"), "ready");
+    await Promise.all([loadSourceDiagnostics(), loadUsage()]);
+  } catch (error) {
+    state.sourceDiagnostics = previous;
+    setSourceMessage(error.message || t("settings.sources.connectError"), "error");
+    renderSourceDiagnostics();
+    renderSourceSettings();
+  } finally {
+    setSourceOpPending("connect", sourceId, false);
+  }
+}
+
+async function disableConnectedSource(sourceId) {
+  const previous = cloneJson(state.sourceDiagnostics);
+  setSourceOpPending("disable", sourceId, true);
+  setSourceMessage("", "");
+  applyOptimisticSourceDisable(sourceId);
+  try {
+    await fetchJson(`/api/sources/${encodeURIComponent(sourceId)}/disable`, { method: "POST" });
+    setSourceMessage(t("settings.sources.disableSuccess"), "ready");
+    await Promise.all([loadSourceDiagnostics(), loadUsage()]);
+  } catch (error) {
+    state.sourceDiagnostics = previous;
+    setSourceMessage(error.message || t("settings.sources.disableError"), "error");
+    renderSourceDiagnostics();
+    renderSourceSettings();
+  } finally {
+    setSourceOpPending("disable", sourceId, false);
+  }
+}
+
+async function copySourceCommands(sourceId, commandType) {
+  const source = findSourceDiagnosticsCandidate(sourceId);
+  const commands = commandType === "revoke" ? source?.suggestedAction?.revokeCommands : source?.suggestedAction?.commands;
+  if (!commands?.length) return;
+  try {
+    await navigator.clipboard.writeText(commands.join("\n"));
+    setSourceMessage(t(commandType === "revoke" ? "settings.sources.copyRevokeSuccess" : "settings.sources.copyGrantSuccess"), "ready");
+  } catch {
+    setSourceMessage(t("settings.sources.copyError"), "error");
+  }
+  renderSourceSettings();
+}
+
+function findSourceDiagnosticsCandidate(sourceId) {
+  return (
+    state.sourceDiagnostics?.candidates?.find((source) => source.id === sourceId) ||
+    state.sourceDiagnostics?.connected?.find((source) => source.id === sourceId) ||
+    null
+  );
+}
+
+function applyOptimisticSourceConnection(sourceId) {
+  if (!state.sourceDiagnostics) return;
+  const diagnostics = cloneJson(state.sourceDiagnostics);
+  const candidate = diagnostics.candidates?.find((entry) => entry.id === sourceId);
+  if (!candidate) return;
+  candidate.connected = true;
+  diagnostics.connected ||= [];
+  if (!diagnostics.connected.some((entry) => entry.id === sourceId)) {
+    diagnostics.connected.push({ ...candidate, currentCandidate: candidate });
+  }
+  diagnostics.status = deriveUiDiagnosticsStatus(diagnostics);
+  state.sourceDiagnostics = diagnostics;
+  renderSourceDiagnostics();
+  renderSourceSettings();
+}
+
+function applyOptimisticSourceDisable(sourceId) {
+  if (!state.sourceDiagnostics) return;
+  const diagnostics = cloneJson(state.sourceDiagnostics);
+  diagnostics.connected = (diagnostics.connected || []).filter((entry) => entry.id !== sourceId);
+  diagnostics.candidates = (diagnostics.candidates || []).map((entry) =>
+    entry.id === sourceId ? { ...entry, connected: false } : entry
+  );
+  diagnostics.status = deriveUiDiagnosticsStatus(diagnostics);
+  state.sourceDiagnostics = diagnostics;
+  renderSourceDiagnostics();
+  renderSourceSettings();
+}
+
+function deriveUiDiagnosticsStatus(diagnostics) {
+  if (!diagnostics) return "current_user_empty";
+  const connected = diagnostics.connected || [];
+  const candidates = diagnostics.candidates || [];
+  if (connected.length && candidates.some((source) => source.connected && ["readable", "mixed"].includes(source.accessStatus))) {
+    return "connected_live";
+  }
+  if ((diagnostics.otherDashboardInstances || []).length) return "other_dashboard_found";
+  if (candidates.some((source) => source.accessStatus === "denied")) return "candidates_denied";
+  if (candidates.some((source) => ["readable", "mixed"].includes(source.accessStatus))) return "candidates_readable_empty";
+  if (diagnostics.os?.supportLevel === "partial_container" || diagnostics.os?.supported === false) return "partial_unsupported";
+  if (candidates.some((source) => source.owner?.current)) return "current_user_empty";
+  return "no_tools_found";
+}
+
+function setSourceMessage(text, status) {
+  state.sourceMessage = { text: text || "", status: status || "" };
+}
+
+function setSourceOpPending(action, sourceId, pending) {
+  const key = `${action}:${sourceId}`;
+  state.sourceOps[key] = pending;
+}
+
+function isSourceOpPending(action, sourceId) {
+  return Boolean(state.sourceOps[`${action}:${sourceId}`]);
+}
+
+function cloneJson(value) {
+  if (value === null || value === undefined) return value;
+  return JSON.parse(JSON.stringify(value));
+}
+
+function providerName(providerId) {
+  return providerMeta[providerId]?.name || providerId;
+}
+
+function pathRoleLabel(role) {
+  const key = role ? `settings.sources.roles.${role}` : "";
+  return key ? t(key, {}, role || "--") : role || "--";
 }
 
 function closeDialogOnBackdrop(event) {

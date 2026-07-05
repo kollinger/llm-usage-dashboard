@@ -286,9 +286,129 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save."
+    },
+    "sources": {
+      "title": "Local sources",
+      "description": "Manage connected sources, recheck access, and copy ACL commands for other local users.",
+      "recheck": "Recheck access",
+      "recheckOne": "Recheck access",
+      "recheckPending": "Checking...",
+      "rechecked": "Source diagnostics refreshed.",
+      "recheckError": "Could not refresh source diagnostics.",
+      "currentUser": "current user",
+      "summaryStatus": "Status: {status}",
+      "summaryCounts": "{connected} connected · {candidates} candidates",
+      "connectedTitle": "Connected sources",
+      "candidatesTitle": "Detected sources",
+      "connectedEmpty": "No connected sources yet.",
+      "candidatesEmpty": "No additional source candidates detected right now.",
+      "owner": "Owner: {owner}",
+      "discovery": "Discovery: {method} · confidence {confidence}",
+      "access": {
+        "readable": "Readable",
+        "mixed": "Partially readable",
+        "denied": "Access denied",
+        "missing": "Missing",
+        "process_only": "Process only",
+        "service_only": "Service only"
+      },
+      "permissions": {
+        "readable": "Readable",
+        "denied": "Denied",
+        "missing": "Missing",
+        "unknown": "Unknown"
+      },
+      "roles": {
+        "sessions": "Sessions",
+        "archived_sessions": "Archived sessions",
+        "projects": "Projects",
+        "session_state": "Session state",
+        "telemetry": "Telemetry",
+        "chats": "Chats",
+        "tmp": "Temporary files",
+        "usage_file": "Usage file",
+        "home": "Home"
+      },
+      "noPaths": "No direct filesystem path available.",
+      "connect": "Connect",
+      "connectPending": "Connecting...",
+      "connectSuccess": "Source connected. Running a fresh diagnostics pass now.",
+      "connectError": "Could not connect source.",
+      "disable": "Disable",
+      "disablePending": "Disabling...",
+      "disableSuccess": "Source disabled. Usage totals were refreshed.",
+      "disableError": "Could not disable source.",
+      "grantCommands": "Grant commands",
+      "revokeCommands": "Revoke commands",
+      "copyGrant": "Copy grant commands",
+      "copyRevoke": "Copy revoke commands",
+      "copyGrantSuccess": "Grant commands copied to the clipboard.",
+      "copyRevokeSuccess": "Revoke commands copied to the clipboard.",
+      "copyError": "Could not copy commands to the clipboard."
     }
   },
   "errors": {
     "loadUsage": "Żball"
+  },
+  "diagnostics": {
+    "ariaLabel": "Source diagnostics",
+    "eyebrow": "Local sources",
+    "heading": "Diagnostics & connection",
+    "recheck": "Recheck access",
+    "loading": "Loading source diagnostics...",
+    "meta": "User {user} · Home {home} · Checked {checkedAt} · {platform} · {support}",
+    "support": {
+      "full": "full discovery",
+      "partial_container": "limited container discovery",
+      "stub": "partial platform stub",
+      "unsupported": "unsupported platform"
+    },
+    "summary": {
+      "connected": "{count} connected",
+      "readable": "{count} readable",
+      "denied": "{count} denied",
+      "processOnly": "{count} process-only"
+    },
+    "errors": {
+      "load": "Could not load source diagnostics: {message}"
+    },
+    "statuses": {
+      "connected_live": {
+        "title": "Connected and live",
+        "body": "At least one readable source is already connected and can contribute local usage data."
+      },
+      "current_user_empty": {
+        "title": "Current user empty",
+        "body": "The app scanned the current desktop user successfully, but no local usage files with data were found yet."
+      },
+      "candidates_readable_empty": {
+        "title": "Readable candidates found",
+        "body": "Known tool folders are readable, but they currently look empty or have no token-bearing events."
+      },
+      "candidates_denied": {
+        "title": "Access denied",
+        "body": "Plausible source folders were found under another local user, but this app cannot read them yet."
+      },
+      "no_tools_found": {
+        "title": "No tools found",
+        "body": "No supported local tool folders, related processes, or service hints were detected on this machine."
+      },
+      "other_dashboard_found": {
+        "title": "Other dashboard found",
+        "body": "Another local LLM Usage Dashboard instance is running and may already have access to usage data."
+      },
+      "partial_unsupported": {
+        "title": "Partially supported",
+        "body": "This runtime can only do limited source discovery, so some users, services, or homes may stay invisible."
+      },
+      "discovery_error": {
+        "title": "Discovery error",
+        "body": "Source discovery did not finish cleanly. Recheck access or inspect the backend error state."
+      }
+    },
+    "instances": {
+      "title": "Other dashboard instances",
+      "item": "{user} on port {port} (PID {pid})"
+    }
   }
 }
