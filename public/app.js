@@ -21,7 +21,9 @@ const state = {
   sourceMessage: { text: "", status: "" },
   sourceOps: {},
   settingsAutosaveTimers: {},
-  settingsToastTimer: null
+  settingsToastTimer: null,
+  activeRendererNotifications: new Set(),
+  notificationPreviewTimer: null
 };
 
 const els = {
@@ -64,8 +66,12 @@ const els = {
   notificationDiagSkipped: document.getElementById("notificationDiagSkipped"),
   notificationDiagError: document.getElementById("notificationDiagError"),
   notificationDiagSupported: document.getElementById("notificationDiagSupported"),
+  notificationDiagPermission: document.getElementById("notificationDiagPermission"),
   notificationTestBtn: document.getElementById("notificationTestBtn"),
   notificationTestStatus: document.getElementById("notificationTestStatus"),
+  notificationTestPreview: document.getElementById("notificationTestPreview"),
+  notificationTestPreviewTitle: document.getElementById("notificationTestPreviewTitle"),
+  notificationTestPreviewBody: document.getElementById("notificationTestPreviewBody"),
   notificationLastTestDetails: document.getElementById("notificationLastTestDetails"),
   notificationLastTestAt: document.getElementById("notificationLastTestAt"),
   notificationLastTestResult: document.getElementById("notificationLastTestResult"),
@@ -2619,6 +2625,7 @@ async function loadNotificationStatus() {
         supported == null ? none :
         supported ? t("settings.notifications.diagYes") : t("settings.notifications.diagNo");
     }
+    updateNotificationPermissionDiagnostic();
     if (status?.lastTestAt && els.notificationLastTestDetails) {
       els.notificationLastTestDetails.hidden = false;
       if (els.notificationLastTestAt) els.notificationLastTestAt.textContent = formatStatusTime(status.lastTestAt);
@@ -2632,14 +2639,120 @@ async function loadNotificationStatus() {
   }
 }
 
+function getNotificationPermissionStatus() {
+  if (typeof window.Notification !== "function") return "unsupported";
+  return window.Notification.permission || "unknown";
+}
+
+function updateNotificationPermissionDiagnostic() {
+  if (!els.notificationDiagPermission) return;
+  const permission = getNotificationPermissionStatus();
+  els.notificationDiagPermission.textContent = t(`settings.notifications.permission_${permission}`, {}, permission);
+}
+
+async function requestNotificationPermissionForTest() {
+  if (typeof window.Notification !== "function") return "unsupported";
+  const current = window.Notification.permission || "unknown";
+  if (current !== "default") return current;
+  if (typeof window.Notification.requestPermission !== "function") return current;
+  try {
+    return await window.Notification.requestPermission();
+  } catch {
+    return "error";
+  }
+}
+
+function showRendererTestNotification() {
+  if (typeof window.Notification !== "function") return { result: "unsupported", error: null };
+  if (window.Notification.permission !== "granted") {
+    return { result: "permission_denied", error: null };
+  }
+  try {
+    const notification = new window.Notification(t("settings.notifications.testTitle"), {
+      body: t("settings.notifications.testBody"),
+      tag: "llm-usage-dashboard-test",
+      silent: false
+    });
+    state.activeRendererNotifications.add(notification);
+    const release = () => state.activeRendererNotifications.delete(notification);
+    notification.onclick = () => {
+      window.focus();
+      release();
+    };
+    notification.onclose = release;
+    notification.onerror = release;
+    setTimeout(release, 60_000);
+    return { result: "sent", error: null };
+  } catch (error) {
+    return { result: "error", error: error?.message || String(error) };
+  }
+}
+
+function showInAppTestNotification({ status = "ready", bodyKey = "settings.notifications.inAppTestBody", bodyValues = {} } = {}) {
+  if (!els.notificationTestPreview) return;
+  clearTimeout(state.notificationPreviewTimer);
+  els.notificationTestPreview.hidden = false;
+  els.notificationTestPreview.dataset.status = status;
+  if (els.notificationTestPreviewTitle) {
+    els.notificationTestPreviewTitle.textContent = status === "error"
+      ? t("settings.notifications.inAppTestErrorTitle")
+      : t("settings.notifications.inAppTestTitle");
+  }
+  if (els.notificationTestPreviewBody) {
+    els.notificationTestPreviewBody.textContent = t(bodyKey, bodyValues);
+  }
+  state.notificationPreviewTimer = setTimeout(() => {
+    if (els.notificationTestPreview) els.notificationTestPreview.hidden = true;
+  }, 30_000);
+}
+
 async function sendTestNotification() {
   if (!els.notificationTestBtn) return;
   els.notificationTestBtn.disabled = true;
   if (els.notificationTestStatus) els.notificationTestStatus.hidden = true;
+  let hideStatus = true;
   try {
+    const permission = await requestNotificationPermissionForTest();
+    updateNotificationPermissionDiagnostic();
+    if (permission === "unsupported") {
+      if (els.notificationTestStatus) {
+        els.notificationTestStatus.textContent = t("settings.notifications.permissionUnsupported");
+        els.notificationTestStatus.hidden = false;
+      }
+      showInAppTestNotification({
+        status: "error",
+        bodyKey: "settings.notifications.permissionUnsupported"
+      });
+      hideStatus = false;
+      return;
+    }
+    if (permission !== "granted") {
+      if (els.notificationTestStatus) {
+        els.notificationTestStatus.textContent = t("settings.notifications.permissionNotGranted");
+        els.notificationTestStatus.hidden = false;
+      }
+      showInAppTestNotification({
+        status: "error",
+        bodyKey: "settings.notifications.permissionNotGranted"
+      });
+      hideStatus = false;
+      return;
+    }
+    const rendererDelivery = showRendererTestNotification();
     await fetchJson("/api/notifications/test", { method: "POST" });
+    showInAppTestNotification(
+      rendererDelivery.result === "error"
+        ? {
+            status: "error",
+            bodyKey: "settings.notifications.testQueuedRendererError",
+            bodyValues: { error: rendererDelivery.error || "" }
+          }
+        : {}
+    );
     if (els.notificationTestStatus) {
-      els.notificationTestStatus.textContent = t("settings.notifications.testQueued");
+      els.notificationTestStatus.textContent = rendererDelivery.result === "error"
+        ? t("settings.notifications.testQueuedRendererError", { error: rendererDelivery.error || "" })
+        : t("settings.notifications.testQueued");
       els.notificationTestStatus.hidden = false;
     }
     setTimeout(() => loadNotificationStatus().catch(() => {}), 8000);
@@ -2648,11 +2761,18 @@ async function sendTestNotification() {
       els.notificationTestStatus.textContent = t("settings.notifications.testError");
       els.notificationTestStatus.hidden = false;
     }
+    showInAppTestNotification({
+      status: "error",
+      bodyKey: "settings.notifications.testError"
+    });
+    hideStatus = false;
   } finally {
-    setTimeout(() => {
-      if (els.notificationTestBtn) els.notificationTestBtn.disabled = false;
-      if (els.notificationTestStatus) els.notificationTestStatus.hidden = true;
-    }, 10000);
+    if (els.notificationTestBtn) els.notificationTestBtn.disabled = false;
+    if (hideStatus) {
+      setTimeout(() => {
+        if (els.notificationTestStatus) els.notificationTestStatus.hidden = true;
+      }, 10000);
+    }
   }
 }
 

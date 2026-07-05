@@ -1365,6 +1365,36 @@ select {
   border-top: 1px solid var(--line);
 }
 
+.notification-test-preview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--green) 35%, var(--line));
+  border-left: 4px solid var(--green);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--green) 8%, var(--panel));
+  color: var(--ink);
+}
+
+.notification-test-preview strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.notification-test-preview span {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.notification-test-preview[data-status="error"] {
+  border-color: color-mix(in srgb, var(--rose) 38%, var(--line));
+  border-left-color: var(--rose);
+  background: color-mix(in srgb, var(--rose) 8%, var(--panel));
+}
+
 .settings-subheading {
   margin: 0 0 10px;
   color: var(--ink);

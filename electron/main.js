@@ -20,6 +20,7 @@ let instanceMarkerPath = null;
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
 const notificationCooldowns = new Map();
+const activeNotifications = new Set();
 const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
 const NOTIFICATION_TEST_POLL_INTERVAL_MS = 5 * 1000; // 5 seconds for test-pending checks
@@ -263,6 +264,55 @@ async function writeNotificationStatus(updates) {
   } catch { /* best-effort; never block polling */ }
 }
 
+function requestNotificationAttention() {
+  try {
+    if (process.platform === "darwin" && app.dock?.bounce) {
+      app.dock.bounce("informational");
+    } else {
+      mainWindow?.flashFrame?.(true);
+      setTimeout(() => mainWindow?.flashFrame?.(false), 5000).unref?.();
+    }
+  } catch {
+    // Best-effort fallback only.
+  }
+}
+
+function showNativeNotification(options, onClick) {
+  if (!Notification.isSupported()) return Promise.resolve({ result: "not_supported", error: null });
+  return new Promise((resolve) => {
+    let notification = null;
+    let settled = false;
+    let timeout = null;
+    let releaseTimer = null;
+    const settle = (result, error = null) => {
+      if (settled) return;
+      settled = true;
+      if (timeout) clearTimeout(timeout);
+      resolve({ result, error });
+    };
+    try {
+      notification = new Notification(options);
+      activeNotifications.add(notification);
+      releaseTimer = setTimeout(() => activeNotifications.delete(notification), 60 * 1000);
+      releaseTimer.unref?.();
+      notification.once("show", () => settle("sent"));
+      notification.once("failed", (_event, error) => settle("error", error || "notification_failed"));
+      notification.once("close", () => {
+        if (releaseTimer) clearTimeout(releaseTimer);
+        activeNotifications.delete(notification);
+      });
+      if (onClick) notification.on("click", onClick);
+      timeout = setTimeout(() => settle("sent"), 2500);
+      timeout.unref?.();
+      notification.show();
+    } catch (err) {
+      if (releaseTimer) clearTimeout(releaseTimer);
+      if (notification) activeNotifications.delete(notification);
+      settle("error", err.message || String(err));
+    }
+  });
+}
+
 async function fetchLocalJson(port, urlPath) {
   const http = require("node:http");
   const token = process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN;
@@ -322,13 +372,16 @@ async function checkNotifications(port) {
       if (notificationSupported) {
         const title = `Limit warning: ${alert.windowLabel}`;
         const body = buildNotificationBody(alert);
-        const n = new Notification({ title, body, silent: false });
-        n.on("click", () => {
+        const delivery = await showNativeNotification({ title, body, silent: false }, () => {
           if (dashboardPort) showDashboardWindow(dashboardPort);
         });
-        n.show();
-        lastShownAt = new Date().toISOString();
-        lastShownAlert = alert;
+        if (delivery.result === "error") {
+          lastSkippedReason = `notification_failed:${delivery.error}`;
+        } else {
+          requestNotificationAttention();
+          lastShownAt = new Date().toISOString();
+          lastShownAlert = alert;
+        }
       } else {
         lastSkippedReason = "notification_not_supported";
       }
@@ -369,14 +422,20 @@ async function fireTestNotification() {
     return;
   }
   try {
-    const n = new Notification({
+    const delivery = await showNativeNotification({
       title: "LLM Usage Dashboard - Test",
       body: "Desktop notifications are working correctly.",
       silent: false
+    }, () => {
+      if (dashboardPort) showDashboardWindow(dashboardPort);
+      else mainWindow?.show();
     });
-    n.on("click", () => mainWindow?.show());
-    n.show();
-    await writeNotificationStatus({ lastTestAt, lastTestResult: "shown", lastTestError: null });
+    if (delivery.result !== "error") requestNotificationAttention();
+    await writeNotificationStatus({
+      lastTestAt,
+      lastTestResult: delivery.result === "error" ? "error" : delivery.result,
+      lastTestError: delivery.error
+    });
   } catch (err) {
     await writeNotificationStatus({ lastTestAt, lastTestResult: "error", lastTestError: err.message });
   }

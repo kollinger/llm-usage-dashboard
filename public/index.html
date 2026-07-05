@@ -241,10 +241,16 @@
               <dd id="notificationDiagError">--</dd>
               <dt data-i18n="settings.notifications.diagSupported">Notifications supported</dt>
               <dd id="notificationDiagSupported">--</dd>
+              <dt data-i18n="settings.notifications.diagPermission">Browser permission</dt>
+              <dd id="notificationDiagPermission">--</dd>
             </dl>
             <div class="diag-test-row">
               <button type="button" class="text-button" id="notificationTestBtn" data-i18n="settings.notifications.testBtn">Send test notification</button>
               <p class="settings-desc" id="notificationTestStatus" hidden></p>
+            </div>
+            <div class="notification-test-preview" id="notificationTestPreview" hidden role="status" aria-live="polite">
+              <strong id="notificationTestPreviewTitle" data-i18n="settings.notifications.inAppTestTitle">In-app test notification</strong>
+              <span id="notificationTestPreviewBody" data-i18n="settings.notifications.inAppTestBody">This confirms the button can show an in-app fallback.</span>
             </div>
             <details class="diag-last-test" id="notificationLastTestDetails" hidden>
               <summary data-i18n="settings.notifications.testResultLabel">Last test result</summary>

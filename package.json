@@ -56,6 +56,9 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
+      "extendInfo": {
+        "NSUserNotificationAlertStyle": "banner"
+      },
       "target": [
         "dmg",
         "zip"
