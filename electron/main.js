@@ -17,6 +17,7 @@ let dashboardPort = null;
 let openWindowWhenReady = false;
 let claudeBrowserSyncPending = null;
 let instanceMarkerPath = null;
+let macNotificationDiagnosticsPending = null;
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
 const notificationCooldowns = new Map();
@@ -260,8 +261,87 @@ async function writeNotificationStatus(updates) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     let current = {};
     try { current = JSON.parse(await fs.readFile(filePath, "utf8")); } catch { /* file may not exist yet */ }
-    await fs.writeFile(filePath, `${JSON.stringify({ ...current, ...updates }, null, 2)}\n`, { mode: 0o600 });
+    const macNotificationDiagnostics = await getMacNotificationDiagnostics();
+    await fs.writeFile(filePath, `${JSON.stringify({ ...current, ...updates, macNotificationDiagnostics }, null, 2)}\n`, { mode: 0o600 });
   } catch { /* best-effort; never block polling */ }
+}
+
+async function getMacNotificationDiagnostics() {
+  if (process.platform !== "darwin") {
+    return {
+      platform: process.platform,
+      nativeDelivery: "not_applicable",
+      bundleId: null,
+      codeSignature: null,
+      gatekeeper: null
+    };
+  }
+  if (!macNotificationDiagnosticsPending) {
+    macNotificationDiagnosticsPending = (async () => {
+      let bundleId = null;
+      let codeSignature = "unknown";
+      let gatekeeper = "unknown";
+      try {
+        const { stdout, stderr } = await execFileAsync("/usr/bin/codesign", ["-dv", "--verbose=4", process.execPath], { timeout: 5000 });
+        const output = `${stdout || ""}\n${stderr || ""}`;
+        const identifierMatch = output.match(/^Identifier=(.+)$/m);
+        if (identifierMatch) bundleId = identifierMatch[1].trim();
+        if (/Signature=adhoc/.test(output) || /TeamIdentifier=not set/.test(output)) {
+          codeSignature = "adhoc";
+        } else if (/TeamIdentifier=/.test(output)) {
+          codeSignature = "signed";
+        }
+      } catch (error) {
+        const output = `${error?.stdout || ""}\n${error?.stderr || ""}`;
+        const identifierMatch = output.match(/^Identifier=(.+)$/m);
+        if (identifierMatch) bundleId = identifierMatch[1].trim();
+        if (/Signature=adhoc/.test(output) || /TeamIdentifier=not set/.test(output)) {
+          codeSignature = "adhoc";
+        } else {
+          codeSignature = "invalid";
+        }
+      }
+
+      try {
+        const bundlePath = path.resolve(path.dirname(process.execPath), "..", "..");
+        await execFileAsync("/usr/sbin/spctl", ["--assess", "--type", "execute", "--verbose=4", bundlePath], { timeout: 5000 });
+        gatekeeper = "accepted";
+      } catch (error) {
+        const output = `${error?.stdout || ""}\n${error?.stderr || ""}`;
+        gatekeeper = /rejected/i.test(output) ? "rejected" : "unknown";
+      }
+
+      let nativeDelivery = "unverified";
+      if (gatekeeper === "rejected") {
+        nativeDelivery = "gatekeeper_rejected";
+      } else if (codeSignature === "adhoc" || codeSignature === "invalid") {
+        nativeDelivery = "ad_hoc";
+      } else if (codeSignature === "signed" && gatekeeper === "accepted") {
+        nativeDelivery = "ready";
+      }
+
+      return {
+        platform: "darwin",
+        nativeDelivery,
+        bundleId,
+        appName: app.getName(),
+        codeSignature,
+        gatekeeper
+      };
+    })();
+  }
+  try {
+    return await macNotificationDiagnosticsPending;
+  } catch {
+    return {
+      platform: "darwin",
+      nativeDelivery: "unverified",
+      bundleId: null,
+      appName: app.getName(),
+      codeSignature: "unknown",
+      gatekeeper: "unknown"
+    };
+  }
 }
 
 function requestNotificationAttention() {

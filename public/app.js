@@ -67,6 +67,7 @@ const els = {
   notificationDiagError: document.getElementById("notificationDiagError"),
   notificationDiagSupported: document.getElementById("notificationDiagSupported"),
   notificationDiagPermission: document.getElementById("notificationDiagPermission"),
+  notificationDiagNativeDelivery: document.getElementById("notificationDiagNativeDelivery"),
   notificationTestBtn: document.getElementById("notificationTestBtn"),
   notificationTestStatus: document.getElementById("notificationTestStatus"),
   notificationTestPreview: document.getElementById("notificationTestPreview"),
@@ -2624,6 +2625,15 @@ async function loadNotificationStatus() {
       els.notificationDiagSupported.textContent =
         supported == null ? none :
         supported ? t("settings.notifications.diagYes") : t("settings.notifications.diagNo");
+    }
+    if (els.notificationDiagNativeDelivery) {
+      const nativeDelivery = status?.macNotificationDiagnostics?.nativeDelivery || "unknown";
+      els.notificationDiagNativeDelivery.textContent =
+        status?.macNotificationDiagnostics == null
+          ? none
+          : t(`settings.notifications.nativeDelivery_${nativeDelivery}`, {}, nativeDelivery);
+      els.notificationDiagNativeDelivery.className =
+        ["ad_hoc", "gatekeeper_rejected", "invalid"].includes(nativeDelivery) ? "diag-error" : "";
     }
     updateNotificationPermissionDiagnostic();
     if (status?.lastTestAt && els.notificationLastTestDetails) {
