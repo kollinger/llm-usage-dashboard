@@ -125,12 +125,37 @@
       "tokensTotal": "Tokens/min",
       "tokensInput": "Input",
       "tokensOutput": "Output",
-      "tokensCached": "Cached"
+      "tokensCached": "Cached",
+      "aiCpu": "AI-CPU",
+      "aiMemory": "AI-Speicher",
+      "swap": "Swap"
     },
     "errors": {
       "load": "Live-Systemmetriken konnten nicht geladen werden."
     },
-    "tokensPerMinuteHelp": "Aus lokalen Claude-Code-, Codex-, Gemini-, Copilot- und Ollama-Logs im lokalen Aggregat berechnet. Multica-Claude/Codex-Runs sind darüber enthalten; reine OpenAI/Anthropic-Admin-API-Abrechnung bleibt gegen Doppelzählung draußen. Gemini-Agents können fehlen, wenn die Gemini CLI keine Token-Metadaten schreibt."
+    "tokensPerMinuteHelp": "Aus lokalen Claude-Code-, Codex-, Gemini-, Copilot- und Ollama-Logs im lokalen Aggregat berechnet. Multica-Claude/Codex-Runs sind darüber enthalten; reine OpenAI/Anthropic-Admin-API-Abrechnung bleibt gegen Doppelzählung draußen. Gemini-Agents können fehlen, wenn die Gemini CLI keine Token-Metadaten schreibt.",
+    "systemCpu": "System-CPU",
+    "systemRam": "Systemspeicher",
+    "aiCpu": "AI-CPU",
+    "aiCpuSub": "{count} AI-Prozesse",
+    "aiCpuHelp": "Aggregierter CPU-Anteil erkannter lokaler AI-Prozessgruppen. Kommandos und Pfade werden nicht ausgegeben.",
+    "aiMemory": "AI-Speicher",
+    "aiMemorySub": "{used} GB RSS",
+    "aiMemoryHelp": "Aggregierter Resident-Speicher erkannter lokaler AI-Prozessgruppen. Geteilter Electron-/Browser-Speicher ist nur näherungsweise trennbar.",
+    "swap": "Swap",
+    "swapSub": "{used}/{total} GB genutzt",
+    "swapHelp": "System-Swap. Hoher Swap kann den Mac bremsen, auch wenn AI-Prozessspeicher nur ein Teil der Gesamtlast ist.",
+    "noAiProcesses": "Keine AI-Prozessgruppe gefunden",
+    "processBreakdownHeading": "AI-Prozessgruppen",
+    "processBreakdownHelp": "Sichere Aggregatansicht: nur Gruppe, CPU, Speicher und Prozessanzahl. Keine Kommandozeilen, Prompts oder Pfade.",
+    "processBreakdownUnavailable": "Prozessgruppen sind auf dieser Plattform/Laufzeit nicht verfügbar.",
+    "processBreakdownEmpty": "Gerade ist keine erkannte AI-Prozessgruppe für das Dashboard sichtbar.",
+    "processColumns": {
+      "group": "Gruppe",
+      "cpu": "CPU",
+      "memory": "Speicher",
+      "count": "Prozesse"
+    }
   },
   "pricing": {
     "eyebrow": "API-Kosten",

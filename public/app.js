@@ -121,6 +121,7 @@ const els = {
   liveGaugesSection: document.getElementById("liveGaugesSection"),
   liveMetricsUpdated: document.getElementById("liveMetricsUpdated"),
   liveGaugeGrid: document.getElementById("liveGaugeGrid"),
+  liveProcessBreakdown: document.getElementById("liveProcessBreakdown"),
   liveHistoryChart: document.getElementById("liveHistoryChart"),
   liveHistoryLegend: document.getElementById("liveHistoryLegend"),
   tokenList: document.getElementById("tokenList"),
@@ -204,7 +205,10 @@ const chartSourceColors = {
 };
 const liveHistorySeries = [
   { id: "cpu", labelKey: "liveMetrics.series.cpu", kind: "percent", color: "#23745c", value: (point) => point.cpuPercent },
+  { id: "aiCpu", labelKey: "liveMetrics.series.aiCpu", kind: "percent", color: "#6f42c1", value: (point) => point.aiCpuPercent },
   { id: "ram", labelKey: "liveMetrics.series.ram", kind: "percent", color: "#d55e00", value: (point) => point.ramPercent },
+  { id: "aiMemory", labelKey: "liveMetrics.series.aiMemory", kind: "percent", color: "#8b5a2b", value: (point) => point.aiRamPercent },
+  { id: "swap", labelKey: "liveMetrics.series.swap", kind: "percent", color: "#c05a1b", dashed: true, value: (point) => point.swapUsedPercent },
   { id: "aiLoad", labelKey: "liveMetrics.series.aiLoad", kind: "percent", color: "#b94e5c", value: (point) => point.aiLoadScore },
   {
     id: "tokensTotal",
@@ -2412,6 +2416,7 @@ function renderLiveGauges(metrics) {
       ? t("liveMetrics.error")
       : t("liveMetrics.notAvailable");
   els.liveGaugeGrid.innerHTML = liveGaugeDefinitions(live).map(renderLiveGaugeCard).join("");
+  renderLiveProcessBreakdown(metrics);
   renderLiveHistory(metrics);
   refreshIcons();
 }
@@ -2420,6 +2425,12 @@ function unavailableLiveMetrics() {
   return {
     cpu: { usedPercent: null, quality: "unavailable" },
     ram: { usedPercent: null, usedGb: null, totalGb: null, quality: "unavailable" },
+    swap: { usedPercent: null, usedGb: null, totalGb: null, freeGb: null, quality: "unavailable" },
+    processes: {
+      quality: "unavailable",
+      ai: { cpuPercent: null, rssGb: null, memorySharePercent: null, processCount: 0, groupCount: 0 },
+      groups: []
+    },
     aiLoadScore: { score: null, quality: "unavailable", factors: {} },
     tokensPerMinute: {
       value: null,
@@ -2434,10 +2445,11 @@ function unavailableLiveMetrics() {
 
 function liveGaugeDefinitions(metrics) {
   const tokens = metrics.tokensPerMinute || {};
+  const ai = metrics.processes?.ai || {};
   return [
     {
       id: "cpu",
-      label: t("liveMetrics.cpu"),
+      label: t("liveMetrics.systemCpu"),
       value: formatLivePercent(metrics.cpu?.usedPercent),
       percent: metrics.cpu?.usedPercent,
       quality: metrics.cpu?.quality,
@@ -2446,7 +2458,7 @@ function liveGaugeDefinitions(metrics) {
     },
     {
       id: "ram",
-      label: t("liveMetrics.ram"),
+      label: t("liveMetrics.systemRam"),
       value: formatLivePercent(metrics.ram?.usedPercent),
       percent: metrics.ram?.usedPercent,
       quality: metrics.ram?.quality,
@@ -2455,6 +2467,41 @@ function liveGaugeDefinitions(metrics) {
         metrics.ram?.usedGb !== null && metrics.ram?.totalGb !== null
           ? t("liveMetrics.ramSub", { used: formatGb(metrics.ram.usedGb), total: formatGb(metrics.ram.totalGb) })
           : t("liveMetrics.unavailable")
+    },
+    {
+      id: "aiCpu",
+      label: t("liveMetrics.aiCpu"),
+      value: formatLivePercent(ai.cpuPercent),
+      percent: ai.cpuPercent,
+      quality: metrics.processes?.quality,
+      accent: "#6f42c1",
+      sub: ai.processCount ? t("liveMetrics.aiCpuSub", { count: formatNumber(ai.processCount) }) : t("liveMetrics.noAiProcesses"),
+      help: t("liveMetrics.aiCpuHelp")
+    },
+    {
+      id: "aiMemory",
+      label: t("liveMetrics.aiMemory"),
+      value: formatLivePercent(ai.memorySharePercent),
+      percent: ai.memorySharePercent,
+      quality: metrics.processes?.quality,
+      accent: "#8b5a2b",
+      sub: ai.rssGb !== null && ai.rssGb !== undefined
+        ? t("liveMetrics.aiMemorySub", { used: formatGb(ai.rssGb) })
+        : t("liveMetrics.unavailable"),
+      help: t("liveMetrics.aiMemoryHelp")
+    },
+    {
+      id: "swap",
+      label: t("liveMetrics.swap"),
+      value: formatLivePercent(metrics.swap?.usedPercent),
+      percent: metrics.swap?.usedPercent,
+      quality: metrics.swap?.quality,
+      accent: "#c05a1b",
+      sub:
+        metrics.swap?.usedGb !== null && metrics.swap?.totalGb !== null
+          ? t("liveMetrics.swapSub", { used: formatGb(metrics.swap.usedGb), total: formatGb(metrics.swap.totalGb) })
+          : t("liveMetrics.unavailable"),
+      help: t("liveMetrics.swapHelp")
     },
     {
       id: "aiLoad",
@@ -2495,6 +2542,66 @@ function renderLiveGaugeCard(gauge) {
       <span class="live-gauge-sub">${escapeHtml(gauge.sub || "")}</span>
       <span class="live-quality-badge live-quality-${escapeHtml(quality)}">${escapeHtml(liveQualityLabel(quality))}</span>
     </article>
+  `;
+}
+
+function renderLiveProcessBreakdown(metrics) {
+  if (!els.liveProcessBreakdown) return;
+  const processes = metrics?.processes;
+  const groups = Array.isArray(processes?.groups) ? processes.groups : [];
+  if (!metrics || processes?.quality === "unavailable") {
+    els.liveProcessBreakdown.innerHTML = `
+      <section class="live-process-breakdown-card">
+        <div class="live-process-breakdown-head">
+          <h3>${escapeHtml(t("liveMetrics.processBreakdownHeading"))}</h3>
+          <span class="live-quality-badge live-quality-unavailable">${escapeHtml(liveQualityLabel("unavailable"))}</span>
+        </div>
+        <p>${escapeHtml(t("liveMetrics.processBreakdownUnavailable"))}</p>
+      </section>
+    `;
+    return;
+  }
+  if (!groups.length) {
+    els.liveProcessBreakdown.innerHTML = `
+      <section class="live-process-breakdown-card">
+        <div class="live-process-breakdown-head">
+          <h3>${escapeHtml(t("liveMetrics.processBreakdownHeading"))}</h3>
+          <span class="live-quality-badge live-quality-measured">${escapeHtml(liveQualityLabel("measured"))}</span>
+        </div>
+        <p>${escapeHtml(t("liveMetrics.processBreakdownEmpty"))}</p>
+      </section>
+    `;
+    return;
+  }
+  const rows = groups.slice(0, 8).map((group) => `
+    <tr>
+      <th scope="row">${escapeHtml(group.label)}</th>
+      <td>${escapeHtml(formatLivePercent(group.cpuPercent))}</td>
+      <td>${escapeHtml(group.rssGb !== null && group.rssGb !== undefined ? `${formatGb(group.rssGb)} GB` : t("liveMetrics.unavailableShort"))}</td>
+      <td>${escapeHtml(formatNumber(group.processCount || 0))}</td>
+    </tr>
+  `).join("");
+  els.liveProcessBreakdown.innerHTML = `
+    <section class="live-process-breakdown-card">
+      <div class="live-process-breakdown-head">
+        <h3>${escapeHtml(t("liveMetrics.processBreakdownHeading"))}</h3>
+        <span class="live-quality-badge live-quality-measured">${escapeHtml(liveQualityLabel("measured"))}</span>
+      </div>
+      <p>${escapeHtml(t("liveMetrics.processBreakdownHelp"))}</p>
+      <div class="live-process-table-wrap">
+        <table class="live-process-table">
+          <thead>
+            <tr>
+              <th scope="col">${escapeHtml(t("liveMetrics.processColumns.group"))}</th>
+              <th scope="col">${escapeHtml(t("liveMetrics.processColumns.cpu"))}</th>
+              <th scope="col">${escapeHtml(t("liveMetrics.processColumns.memory"))}</th>
+              <th scope="col">${escapeHtml(t("liveMetrics.processColumns.count"))}</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>
   `;
 }
 

@@ -87,6 +87,13 @@ const LIVE_METRICS_TOKEN_WINDOWS = {
   fifteenMinutes: 15 * 60_000
 };
 const LIVE_METRICS_TOKEN_SCALE_PER_MIN = 1_000_000;
+const LIVE_METRICS_PROCESS_GROUPS = [
+  { id: "codex", label: "Codex", patterns: [/codex/i] },
+  { id: "claude", label: "Claude", patterns: [/claude/i] },
+  { id: "multica", label: "Multica", patterns: [/multica/i] },
+  { id: "dashboard", label: "LLM Usage Dashboard", patterns: [/llm\s*usage\s*dashboard/i] },
+  { id: "ollama", label: "Ollama", patterns: [/ollama/i] }
+];
 
 const app = express();
 let currentDashboardUrl = null;
@@ -421,14 +428,19 @@ function buildSystemLiveMetrics(localUsage) {
   const timestamp = new Date(timestampMs).toISOString();
   const cpu = buildLiveCpuMetric();
   const ram = buildLiveRamMetric();
+  const swap = buildLiveSwapMetric();
+  const processes = buildLiveProcessMetrics();
   const tokenRates = computeTokensPerMinute(recordLiveMetricsTokenSnapshot(localUsage?.totals?.allTime, timestampMs));
   const tokensPerMinute = buildTokensPerMinuteMetric(tokenRates);
-  const aiLoadScore = buildAiLoadScore(cpu, ram, tokensPerMinute.value);
+  const aiLoadScore = buildAiLoadScore(cpu, ram, tokensPerMinute.value, { processes, swap });
 
   const point = {
     timestamp,
     cpuPercent: cpu.usedPercent,
     ramPercent: ram.usedPercent,
+    aiCpuPercent: processes.ai.cpuPercent,
+    aiRamPercent: processes.ai.memorySharePercent,
+    swapUsedPercent: swap.usedPercent,
     aiLoadScore: aiLoadScore.score,
     tokensPerMinute: {
       total: tokensPerMinute.value,
@@ -446,6 +458,8 @@ function buildSystemLiveMetrics(localUsage) {
     sampleIntervalMs: LIVE_METRICS_SAMPLE_MS,
     cpu,
     ram,
+    swap,
+    processes,
     tokensPerMinute,
     aiLoadScore,
     timeSeries: liveTimeSeries.slice()
@@ -530,6 +544,202 @@ function buildLiveRamMetric() {
     totalGb: roundMetric(totalBytes / 1024 / 1024 / 1024),
     quality: "measured"
   };
+}
+
+function buildLiveSwapMetric() {
+  if (process.platform === "darwin") {
+    const result = spawnSync("sysctl", ["-n", "vm.swapusage"], {
+      encoding: "utf8",
+      timeout: 1000,
+      maxBuffer: 32 * 1024
+    });
+    if (result.status !== 0 && result.error) return unavailableSwapMetric();
+    return parseDarwinSwapUsage(result.stdout);
+  }
+  if (process.platform === "linux") {
+    try {
+      return parseLinuxMeminfoSwap(fs.readFileSync("/proc/meminfo", "utf8"));
+    } catch {
+      return unavailableSwapMetric();
+    }
+  }
+  return unavailableSwapMetric();
+}
+
+function unavailableSwapMetric() {
+  return {
+    usedPercent: null,
+    usedGb: null,
+    totalGb: null,
+    freeGb: null,
+    quality: "unavailable"
+  };
+}
+
+function parseDarwinSwapUsage(output) {
+  const match = String(output || "").match(/total\s*=\s*([\d.]+)M\s+used\s*=\s*([\d.]+)M\s+free\s*=\s*([\d.]+)M/i);
+  if (!match) return unavailableSwapMetric();
+  return buildSwapMetricFromMb(Number(match[2]), Number(match[1]), Number(match[3]));
+}
+
+function parseLinuxMeminfoSwap(output) {
+  const fields = {};
+  for (const line of String(output || "").split(/\r?\n/)) {
+    const match = line.match(/^(SwapTotal|SwapFree):\s+(\d+)\s+kB/i);
+    if (match) fields[match[1]] = Number(match[2]) / 1024;
+  }
+  if (!Number.isFinite(fields.SwapTotal) || !Number.isFinite(fields.SwapFree)) return unavailableSwapMetric();
+  return buildSwapMetricFromMb(Math.max(0, fields.SwapTotal - fields.SwapFree), fields.SwapTotal, fields.SwapFree);
+}
+
+function buildSwapMetricFromMb(usedMb, totalMb, freeMb) {
+  if (!Number.isFinite(totalMb) || totalMb < 0 || !Number.isFinite(usedMb) || !Number.isFinite(freeMb)) {
+    return unavailableSwapMetric();
+  }
+  const usedPercent = totalMb > 0 ? (Math.max(0, usedMb) / totalMb) * 100 : 0;
+  return {
+    usedPercent: roundMetric(clampPercent(usedPercent)),
+    usedGb: roundMetric(Math.max(0, usedMb) / 1024),
+    totalGb: roundMetric(totalMb / 1024),
+    freeGb: roundMetric(Math.max(0, freeMb) / 1024),
+    quality: "measured"
+  };
+}
+
+function buildLiveProcessMetrics(options = {}) {
+  const fallback = unavailableProcessMetrics();
+  if (process.platform === "win32") return fallback;
+  const output = options.psOutput ?? readProcessSnapshot();
+  if (output === null) return fallback;
+  const rows = parseProcessRows(output);
+  const groups = aggregateAiProcessMetrics(rows);
+  const totalRssMb = groups.reduce((sum, group) => sum + metricNumber(group.rssMb), 0);
+  const totalCpu = groups.reduce((sum, group) => sum + metricNumber(group.cpuPercent), 0);
+  const processCount = groups.reduce((sum, group) => sum + metricNumber(group.processCount), 0);
+  const totalMemMb = os.totalmem() / 1024 / 1024;
+  return {
+    quality: "measured",
+    ai: {
+      cpuPercent: roundMetric(clampPercent(totalCpu)),
+      rssGb: roundMetric(totalRssMb / 1024),
+      memorySharePercent: totalMemMb > 0 ? roundMetric(clampPercent((totalRssMb / totalMemMb) * 100)) : null,
+      processCount,
+      groupCount: groups.length
+    },
+    groups
+  };
+}
+
+function unavailableProcessMetrics() {
+  return {
+    quality: "unavailable",
+    ai: {
+      cpuPercent: null,
+      rssGb: null,
+      memorySharePercent: null,
+      processCount: 0,
+      groupCount: 0
+    },
+    groups: []
+  };
+}
+
+function readProcessSnapshot() {
+  const result = spawnSync("ps", ["-axo", "pid=,ppid=,pcpu=,rss=,comm="], {
+    encoding: "utf8",
+    timeout: 1000,
+    maxBuffer: 512 * 1024
+  });
+  if (result.status !== 0 || result.error) return null;
+  return result.stdout;
+}
+
+function parseProcessRows(output) {
+  return String(output || "")
+    .split(/\r?\n/)
+    .map((line) => {
+      const match = line.trim().match(/^(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(.+)$/);
+      if (!match) return null;
+      return {
+        pid: Number(match[1]),
+        ppid: Number(match[2]),
+        cpuPercentRaw: Number(match[3]),
+        rssMb: Number(match[4]) / 1024,
+        command: match[5]
+      };
+    })
+    .filter((row) =>
+      row &&
+      Number.isFinite(row.pid) &&
+      Number.isFinite(row.ppid) &&
+      Number.isFinite(row.cpuPercentRaw) &&
+      Number.isFinite(row.rssMb)
+    );
+}
+
+function aggregateAiProcessMetrics(rows) {
+  const cpuCount = Math.max(1, os.cpus()?.length || 1);
+  const byPid = new Map(rows.map((row) => [row.pid, row]));
+  const directGroups = new Map();
+  for (const row of rows) {
+    const direct = classifyAiProcess(row.command);
+    if (direct) directGroups.set(row.pid, direct);
+  }
+  const resolvedGroups = new Map(directGroups);
+  for (const row of rows) {
+    if (resolvedGroups.has(row.pid)) continue;
+    const inherited = inheritProcessGroup(row, byPid, directGroups);
+    if (inherited) resolvedGroups.set(row.pid, inherited);
+  }
+
+  const groups = new Map();
+  for (const row of rows) {
+    const group = resolvedGroups.get(row.pid);
+    if (!group) continue;
+    const current = groups.get(group.id) || {
+      id: group.id,
+      label: group.label,
+      cpuPercent: 0,
+      rssMb: 0,
+      processCount: 0,
+      quality: "measured"
+    };
+    current.cpuPercent += Math.max(0, row.cpuPercentRaw) / cpuCount;
+    current.rssMb += Math.max(0, row.rssMb);
+    current.processCount += 1;
+    groups.set(group.id, current);
+  }
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      cpuPercent: roundMetric(clampPercent(group.cpuPercent)),
+      rssMb: roundMetric(group.rssMb),
+      rssGb: roundMetric(group.rssMb / 1024)
+    }))
+    .sort((a, b) => b.cpuPercent - a.cpuPercent || b.rssMb - a.rssMb || a.label.localeCompare(b.label));
+}
+
+function classifyAiProcess(command) {
+  const normalized = String(command || "");
+  for (const group of LIVE_METRICS_PROCESS_GROUPS) {
+    if (group.patterns.some((pattern) => pattern.test(normalized))) {
+      return { id: group.id, label: group.label };
+    }
+  }
+  return null;
+}
+
+function inheritProcessGroup(row, byPid, directGroups) {
+  let current = row;
+  const visited = new Set([row.pid]);
+  for (let depth = 0; depth < 4; depth += 1) {
+    current = byPid.get(current.ppid);
+    if (!current || visited.has(current.pid)) return null;
+    visited.add(current.pid);
+    const group = directGroups.get(current.pid);
+    if (group) return group;
+  }
+  return null;
 }
 
 function recordLiveMetricsTokenSnapshot(totals, timestampMs = Date.now()) {
@@ -622,21 +832,27 @@ function liveRateValue(value) {
     : { value: Math.max(0, Math.round(value)), quality: "calculated" };
 }
 
-function buildAiLoadScore(cpu, ram, tokensPerMinute) {
+function buildAiLoadScore(cpu, ram, tokensPerMinute, context = {}) {
   const tokenPercent =
     tokensPerMinute === null || tokensPerMinute === undefined
       ? null
       : clampPercent((Number(tokensPerMinute) / LIVE_METRICS_TOKEN_SCALE_PER_MIN) * 100);
   const factors = {
-    cpu: cpu.usedPercent,
-    ram: ram.usedPercent,
+    systemCpu: cpu.usedPercent,
+    systemRam: ram.usedPercent,
+    aiCpu: context.processes?.ai?.cpuPercent ?? null,
+    aiRam: context.processes?.ai?.memorySharePercent ?? null,
+    swap: context.swap?.usedPercent ?? null,
     tokens: tokenPercent
   };
   const weighted = [
-    { value: factors.cpu, weight: 0.4 },
-    { value: factors.ram, weight: 0.35 },
-    { value: factors.tokens, weight: 0.25 }
-  ].filter((item) => item.value !== null && item.value !== undefined && Number.isFinite(Number(item.value)));
+    { value: factors.aiCpu, weight: 0.35 },
+    { value: factors.aiRam, weight: 0.2 },
+    { value: factors.tokens, weight: 0.2 },
+    { value: factors.systemCpu, weight: 0.15 },
+    { value: factors.swap, weight: 0.1 },
+    { value: factors.systemRam, weight: context.processes?.quality === "measured" ? 0 : 0.25 }
+  ].filter((item) => item.weight > 0 && item.value !== null && item.value !== undefined && Number.isFinite(Number(item.value)));
   if (!weighted.length) {
     return {
       score: null,
@@ -5115,6 +5331,13 @@ module.exports = {
   readThroughCache,
   _test: {
     copilotLimitsFromQuota,
-    readGeminiUsage
+    readGeminiUsage,
+    parseDarwinSwapUsage,
+    parseLinuxMeminfoSwap,
+    parseProcessRows,
+    classifyAiProcess,
+    aggregateAiProcessMetrics,
+    buildLiveProcessMetrics,
+    buildAiLoadScore
   }
 };

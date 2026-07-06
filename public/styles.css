@@ -1041,7 +1041,7 @@ a {
 
 .live-gauge-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
 }
 
@@ -1160,6 +1160,77 @@ a {
 .live-quality-unavailable {
   background: #f7e6e8;
   color: var(--rose);
+}
+
+.live-process-breakdown {
+  margin-top: 12px;
+}
+
+.live-process-breakdown-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+
+.live-process-breakdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-process-breakdown-head h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.live-process-breakdown-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.live-process-table-wrap {
+  overflow-x: auto;
+}
+
+.live-process-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.live-process-table th,
+.live-process-table td {
+  border-top: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.live-process-table th:first-child,
+.live-process-table td:first-child {
+  text-align: left;
+}
+
+.live-process-table thead th {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.live-process-table tbody th {
+  color: var(--ink);
+  font-weight: 850;
 }
 
 .live-history {
