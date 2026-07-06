@@ -1984,6 +1984,7 @@ function localizeProviderMessage(message, fallbackKey) {
       "providers.messages.claudeLimitsStale",
     "Keine lokalen Copilot CLI Session-Metriken gefunden.": "providers.messages.noCopilotSessionMetrics",
     "Keine lokalen Gemini Usage-Logs gefunden.": "providers.messages.noGeminiLogs",
+    "Gemini local usage updates only when local log files contain new usage metadata.": "providers.updateDelayHints.gemini",
     "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
     "Keine lokalen Ollama-Logs gefunden.": "providers.messages.noOllamaLogs"
   };

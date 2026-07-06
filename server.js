@@ -2538,6 +2538,8 @@ function claudeCodeStatusMessage(statusline, limitSource) {
   return "Claude live limits are not available from local telemetry yet.";
 }
 
+const GEMINI_STALE_LOCAL_LOGS_MESSAGE = "Gemini local usage updates only when local log files contain new usage metadata.";
+
 async function readGeminiUsage(options = {}) {
   const candidates = await listGeminiUsageFileRecords(options.sources || buildReaderSources().gemini);
   const usage = createUsageAccumulator();
@@ -2601,16 +2603,26 @@ async function readGeminiUsage(options = {}) {
     if (fileEvents) filesWithEvents += 1;
   }
 
+  const hasRecentUsage = Number(usage.last7d.totalTokens || 0) > 0;
+  const staleLocalLogs = Boolean(latestEvent && !hasRecentUsage);
+
   return {
     id: "gemini",
     status: latestEvent ? "live" : "empty",
     updatedAt: new Date().toISOString(),
-    message: latestEvent ? null : "Keine lokalen Gemini Usage-Logs gefunden.",
+    message: latestEvent
+      ? staleLocalLogs
+        ? GEMINI_STALE_LOCAL_LOGS_MESSAGE
+        : null
+      : "Keine lokalen Gemini Usage-Logs gefunden.",
     source: {
       geminiHome: GEMINI_HOME,
       filesScanned: candidates.length,
       filesWithEvents,
-      eventCount
+      eventCount,
+      latestUsageAt: latestEvent?.timestamp || null,
+      recentWindowDays: 7,
+      staleLocalLogs
     },
     latest: latestEvent
       ? {
@@ -5094,6 +5106,7 @@ module.exports = {
   invalidateTimedCache,
   readThroughCache,
   _test: {
-    copilotLimitsFromQuota
+    copilotLimitsFromQuota,
+    readGeminiUsage
   }
 };
