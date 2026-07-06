@@ -259,6 +259,7 @@
     "currentSession": "Текуща сесия",
     "allModels": "Всички модели",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Само Sonnet",
     "default": "Лимит",
     "resetPrefix": "Нулиране {time}",

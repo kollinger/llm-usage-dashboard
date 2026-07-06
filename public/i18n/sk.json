@@ -259,6 +259,7 @@
     "currentSession": "Aktuálna relácia",
     "allModels": "Všetky modely",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Iba Sonnet",
     "default": "Limit",
     "resetPrefix": "Reset {time}",

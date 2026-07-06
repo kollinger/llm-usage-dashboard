@@ -4,9 +4,12 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_REVIEW_DATE = "2026-06-03";
-const SCORE_REVIEW_DATE = "2026-06-03";
+const PRICING_REVIEW_DATE = "2026-07-05";
+const SCORE_REVIEW_DATE = "2026-07-05";
 
+// Pricing reviewed 2026-07-05 from official provider pricing pages.
+// Z.AI lists cached-input storage as "Limited-time Free"; this table tracks
+// input, cached input/read, and output token rates only.
 const pricingModels = [
   {
     provider: "OpenAI",
@@ -16,7 +19,7 @@ const pricingModels = [
     cachedInputUsd: 0.5,
     outputUsd: 30,
     source: "OpenAI",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -26,7 +29,7 @@ const pricingModels = [
     cachedInputUsd: 0.25,
     outputUsd: 15,
     source: "OpenAI",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -36,7 +39,7 @@ const pricingModels = [
     cachedInputUsd: 0.075,
     outputUsd: 4.5,
     source: "OpenAI Codex",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -46,7 +49,7 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI Codex",
-    sourceUrl: "https://platform.openai.com/docs/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -66,7 +69,18 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI",
-    sourceUrl: "https://platform.openai.com/docs/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+  },
+  {
+    provider: "Anthropic",
+    model: "Claude Fable 5",
+    region: "Global",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    source: "Anthropic",
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   {
     provider: "Anthropic",
@@ -188,6 +202,17 @@ const pricingModels = [
   },
   {
     provider: "Z.AI",
+    model: "GLM-5.2",
+    region: "Global",
+    inputUsd: 1.4,
+    cachedInputUsd: 0.26,
+    outputUsd: 4.4,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
     model: "GLM-5.1",
     region: "Global",
     inputUsd: 1.4,
@@ -199,11 +224,132 @@ const pricingModels = [
   },
   {
     provider: "Z.AI",
+    model: "GLM-5",
+    region: "Global",
+    inputUsd: 1,
+    cachedInputUsd: 0.2,
+    outputUsd: 3.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-5-Turbo",
+    region: "Global",
+    inputUsd: 1.2,
+    cachedInputUsd: 0.24,
+    outputUsd: 4,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
     model: "GLM-4.7",
     region: "Global",
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.7-FlashX",
+    region: "Global",
+    inputUsd: 0.07,
+    cachedInputUsd: 0.01,
+    outputUsd: 0.4,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.7-Flash",
+    region: "Global free tier",
+    inputUsd: 0,
+    cachedInputUsd: 0,
+    outputUsd: 0,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.6",
+    region: "Global",
+    inputUsd: 0.6,
+    cachedInputUsd: 0.11,
+    outputUsd: 2.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5",
+    region: "Global",
+    inputUsd: 0.6,
+    cachedInputUsd: 0.11,
+    outputUsd: 2.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-X",
+    region: "Global",
+    inputUsd: 2.2,
+    cachedInputUsd: 0.45,
+    outputUsd: 8.9,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-Air",
+    region: "Global",
+    inputUsd: 0.2,
+    cachedInputUsd: 0.03,
+    outputUsd: 1.1,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-AirX",
+    region: "Global",
+    inputUsd: 1.1,
+    cachedInputUsd: 0.22,
+    outputUsd: 4.5,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-Flash",
+    region: "Global free tier",
+    inputUsd: 0,
+    cachedInputUsd: 0,
+    outputUsd: 0,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4-32B-0414-128K",
+    region: "Global",
+    inputUsd: 0.1,
+    cachedInputUsd: 0.1,
+    outputUsd: 0.1,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -233,8 +379,10 @@ const pricingModels = [
 ];
 
 const modelQualityScores = {
-  "Claude Opus 4.8": 100,
+  "Claude Fable 5": 100,
+  "Claude Opus 4.8": 98,
   "GPT-5.5": 97,
+  "GLM-5.2": 95,
   "Gemini 3.1 Pro Preview": 94,
   "GLM-5.1": 93,
   "DeepSeek V4 Pro": 92,
@@ -244,16 +392,27 @@ const modelQualityScores = {
   "GPT-5.3-Codex-Spark": 85,
   "Claude Sonnet 4.6": 84,
   "Gemini 3.5 Flash": 83,
+  "GLM-5-Turbo": 82,
+  "GLM-5": 81,
   "GPT-5.2": 80,
   "Qwen3-Max": 79,
   "GPT-5.4 Mini": 77,
+  "GLM-4.6": 74,
   "GLM-4.7": 73,
+  "GLM-4.5-X": 72,
+  "GLM-4.5-AirX": 71,
   "Qwen3.5-Plus": 70,
+  "GLM-4.5": 69,
   "step-3.7-flash": 68,
   "DeepSeek V4 Flash": 67,
+  "GLM-4.5-Air": 66,
   "Claude Haiku 4.5": 64,
   "Gemini 3.1 Flash-Lite": 62,
-  "step-3.5-flash": 58
+  "GLM-4.7-FlashX": 61,
+  "step-3.5-flash": 58,
+  "GLM-4-32B-0414-128K": 56,
+  "GLM-4.7-Flash": 55,
+  "GLM-4.5-Flash": 55
 };
 
 const args = new Set(process.argv.slice(2));
@@ -298,29 +457,31 @@ async function fetchUsdPerEur() {
 function updateAppJs(source, { rate, date }) {
   const metaPattern =
     /const USD_PER_EUR = [\d.]+;\nconst FX_DATE = "[^"]+";\nconst PRICING_DATE = "[^"]+";\nconst SCORE_DATE = "[^"]+";/;
-  const dataPattern =
-    /const pricingModels = \[[\s\S]*?\];\n\nconst modelQualityScores = \{[\s\S]*?\};/;
+  const pricingPattern = /const pricingModels = \[[\s\S]*?\];/;
+  const scoresPattern = /const modelQualityScores = \{[\s\S]*?\};/;
 
   const metaReplacement =
     `const USD_PER_EUR = ${rate};\n` +
     `const FX_DATE = "${date}";\n` +
     `const PRICING_DATE = "${PRICING_REVIEW_DATE}";\n` +
     `const SCORE_DATE = "${SCORE_REVIEW_DATE}";`;
-  const dataReplacement =
-    `const pricingModels = ${formatValue(pricingModels, 0)};\n\n` +
-    `const modelQualityScores = ${formatValue(modelQualityScores, 0)};`;
+  const pricingReplacement = `const pricingModels = ${formatValue(pricingModels, 0)};`;
+  const scoresReplacement = `const modelQualityScores = ${formatValue(modelQualityScores, 0)};`;
 
   if (!metaPattern.test(source)) {
     throw new Error("Could not find pricing metadata in public/app.js.");
   }
   const withMeta = source.replace(metaPattern, metaReplacement);
 
-  if (!dataPattern.test(withMeta)) {
+  if (!pricingPattern.test(withMeta)) {
     throw new Error("Could not find pricing model data in public/app.js.");
   }
-  const withData = withMeta.replace(dataPattern, dataReplacement);
+  const withPricing = withMeta.replace(pricingPattern, pricingReplacement);
 
-  return withData;
+  if (!scoresPattern.test(withPricing)) {
+    throw new Error("Could not find model quality scores in public/app.js.");
+  }
+  return withPricing.replace(scoresPattern, scoresReplacement);
 }
 
 function validatePricingData() {

@@ -259,6 +259,7 @@
     "currentSession": "当前会话",
     "allModels": "所有模型",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "仅 Sonnet",
     "default": "限制",
     "resetPrefix": "重置 {time}",

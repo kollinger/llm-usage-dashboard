@@ -259,6 +259,7 @@
     "currentSession": "Trenutačna sesija",
     "allModels": "Svi modeli",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Samo Sonnet",
     "default": "Ograničenje",
     "resetPrefix": "Reset {time}",

@@ -259,6 +259,7 @@
     "currentSession": "Trenutna seja",
     "allModels": "Vsi modeli",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Samo Sonnet",
     "default": "Omejitev",
     "resetPrefix": "Ponastavitev {time}",

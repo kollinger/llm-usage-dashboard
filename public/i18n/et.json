@@ -259,6 +259,7 @@
     "currentSession": "Praegune seanss",
     "allModels": "Kõik mudelid",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Ainult Sonnet",
     "default": "Piirang",
     "resetPrefix": "Lähtestus {time}",

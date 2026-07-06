@@ -15,6 +15,13 @@
       "reset_label": "in 5d",
       "window_minutes": 10080
     },
+    "fable": {
+      "used_percentage": 29,
+      "remaining_percentage": 71,
+      "resets_at": "2099-12-31T00:00:00.000Z",
+      "reset_label": "in 5d",
+      "window_minutes": 10080
+    },
     "sonnet_only": {
       "used_percentage": 52,
       "remaining_percentage": 48,

@@ -259,6 +259,7 @@
     "currentSession": "Sesiune curentă",
     "allModels": "Toate modelele",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Doar Sonnet",
     "default": "Limită",
     "resetPrefix": "Resetare {time}",

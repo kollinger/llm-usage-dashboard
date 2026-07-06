@@ -2384,6 +2384,7 @@ async function readClaudeCodeUsage(options = {}) {
     if (resolvedLimits) {
       const apiFiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
       const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
+      const apiFable = claudeApiWindowToLimitWindow(apiUsage.seven_day_fable, "Fable", 10080);
       const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
       let updated = false;
       if (apiFiveHour && !apiFiveHour.expired) {
@@ -2394,6 +2395,10 @@ async function readClaudeCodeUsage(options = {}) {
         resolvedLimits = { ...resolvedLimits, weekly: apiWeekly, allModels: apiWeekly };
         updated = true;
       }
+      if (apiFable && !apiFable.expired) {
+        resolvedLimits = { ...resolvedLimits, fable: apiFable };
+        updated = true;
+      }
       if (apiSonnet && !apiSonnet.expired) {
         resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
         updated = true;
@@ -2402,6 +2407,7 @@ async function readClaudeCodeUsage(options = {}) {
         resolvedLimits.rows = buildLimitRows(resolvedLimits, [
           "fiveHour",
           "weekly",
+          "fable",
           "claudeDesign",
           "sonnetOnly"
         ]);
@@ -2411,19 +2417,22 @@ async function readClaudeCodeUsage(options = {}) {
     } else {
       const fiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
       const weekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
+      const fable = claudeApiWindowToLimitWindow(apiUsage.seven_day_fable, "Fable", 10080);
       const sonnetOnly = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
-      if (fiveHour || weekly || sonnetOnly) {
+      if (fiveHour || weekly || fable || sonnetOnly) {
         resolvedLimits = {
           fiveHour: fiveHour && !fiveHour.expired ? fiveHour : null,
           weekly: weekly && !weekly.expired ? weekly : null,
           currentSession: fiveHour && !fiveHour.expired ? fiveHour : null,
           allModels: weekly && !weekly.expired ? weekly : null,
+          fable: fable && !fable.expired ? fable : null,
           claudeDesign: null,
           sonnetOnly: sonnetOnly && !sonnetOnly.expired ? sonnetOnly : null
         };
         resolvedLimits.rows = buildLimitRows(resolvedLimits, [
           "fiveHour",
           "weekly",
+          "fable",
           "claudeDesign",
           "sonnetOnly"
         ]);
@@ -3431,10 +3440,11 @@ function extractClaudeRateLimits(rateLimits) {
   if (official) {
     const limits = {
       ...official,
+      fable: fallback?.fable || null,
       claudeDesign: fallback?.claudeDesign || null,
       sonnetOnly: fallback?.sonnetOnly || null
     };
-    limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "claudeDesign", "sonnetOnly"]);
+    limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "fable", "claudeDesign", "sonnetOnly"]);
     return limits;
   }
   return fallback;
@@ -3451,18 +3461,25 @@ function extractOfficialClaudeRateLimits(rateLimits) {
     "Woche",
     10080
   );
-  const staleWindows = staleClaudeWindows(fiveHourCandidate, weeklyCandidate);
+  const fableCandidate = claudeLimitWindow(
+    findClaudeLimit(rateLimits, ["seven_day_fable", "sevenDayFable", "fable", "claude_fable", "claudeFable"]),
+    "Fable",
+    10080
+  );
+  const staleWindows = staleClaudeWindows(fiveHourCandidate, weeklyCandidate, fableCandidate);
   const fiveHour = freshClaudeWindow(fiveHourCandidate);
   const weekly = freshClaudeWindow(weeklyCandidate);
-  if (!fiveHour && !weekly && !staleWindows.length) return null;
+  const fable = freshClaudeWindow(fableCandidate);
+  if (!fiveHour && !weekly && !fable && !staleWindows.length) return null;
   const limits = {
     fiveHour,
     weekly,
+    fable,
     currentSession: fiveHour,
     allModels: weekly
   };
   if (staleWindows.length) limits.staleWindows = staleWindows;
-  limits.rows = buildLimitRows(limits, ["fiveHour", "weekly"]);
+  limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "fable"]);
   return limits;
 }
 
@@ -3485,16 +3502,29 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     "Claude Design",
     10080
   );
+  const fableCandidate = claudeLimitWindow(
+    findClaudeLimit(weeklyRoot, ["fable", "claude_fable", "claudeFable", "seven_day_fable", "sevenDayFable"]) ||
+      findClaudeLimit(rateLimits, ["fable", "claude_fable", "claudeFable", "seven_day_fable", "sevenDayFable"]),
+    "Fable",
+    10080
+  );
   const sonnetOnlyCandidate = claudeLimitWindow(
     findClaudeLimit(weeklyRoot, ["sonnet_only", "sonnetOnly", "sonnet", "claude_sonnet", "claudeSonnet", "nur_sonnet"]) ||
       findClaudeLimit(rateLimits, ["sonnet_only", "sonnetOnly", "sonnet", "claude_sonnet", "claudeSonnet", "nur_sonnet"]),
     "Nur Sonnet",
     10080
   );
-  const staleWindows = staleClaudeWindows(currentSessionCandidate, allModelsCandidate, claudeDesignCandidate, sonnetOnlyCandidate);
+  const staleWindows = staleClaudeWindows(
+    currentSessionCandidate,
+    allModelsCandidate,
+    claudeDesignCandidate,
+    fableCandidate,
+    sonnetOnlyCandidate
+  );
   const currentSession = freshClaudeWindow(currentSessionCandidate);
   const allModels = freshClaudeWindow(allModelsCandidate);
   const claudeDesign = freshClaudeWindow(claudeDesignCandidate);
+  const fable = freshClaudeWindow(fableCandidate);
   const sonnetOnly = freshClaudeWindow(sonnetOnlyCandidate);
   const weeklyCandidate = allModelsCandidate || claudeLimitWindow(findClaudeLimit(rateLimits, ["weekly"]), "Woche", 10080);
   const weekly = freshClaudeWindow(weeklyCandidate);
@@ -3506,11 +3536,12 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     currentSession,
     allModels,
     claudeDesign,
+    fable,
     sonnetOnly
   };
   if (staleWindows.length) limits.staleWindows = staleWindows;
-  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign", "sonnetOnly"]);
-  if (!fiveHour && !weekly && !claudeDesign && !sonnetOnly && !staleWindows.length) return null;
+  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign", "fable", "sonnetOnly"]);
+  if (!fiveHour && !weekly && !claudeDesign && !fable && !sonnetOnly && !staleWindows.length) return null;
   return limits;
 }
 
@@ -3588,6 +3619,7 @@ function hasActiveClaudeLimits(limits) {
         limits.currentSession ||
         limits.allModels ||
         limits.claudeDesign ||
+        limits.fable ||
         limits.sonnetOnly ||
         limits.rows?.length)
   );
@@ -4583,6 +4615,7 @@ function buildProviderQuotaEvents(provider) {
         provider.limits?.currentSession,
         provider.limits?.allModels,
         provider.limits?.claudeDesign,
+        provider.limits?.fable,
         provider.limits?.sonnetOnly
       ];
   const windows = [
@@ -4619,6 +4652,7 @@ function buildClaudeBrowserQuotaEvents(snapshot) {
   for (const [windowKey, label, windowMinutes] of [
     ["five_hour", "5h", 300],
     ["seven_day", "Woche", 10080],
+    ["seven_day_fable", "Fable", 10080],
     ["seven_day_sonnet", "Nur Sonnet", 10080],
     ["seven_day_opus", "Opus", 10080],
     ["seven_day_oauth_apps", "OAuth Apps", 10080],
@@ -4901,6 +4935,8 @@ function quotaWindowKey(value) {
     all_models: "weekly",
     alle_modelle: "weekly",
     seven_day: "weekly",
+    claude_fable: "fable",
+    seven_day_fable: "fable",
     nur_sonnet: "sonnet_only",
     seven_day_sonnet: "sonnet_only"
   };
@@ -4988,6 +5024,7 @@ function collectNotificationWindows(usageMap) {
       provider.limits?.currentSession,
       provider.limits?.allModels,
       provider.limits?.claudeDesign,
+      provider.limits?.fable,
       provider.limits?.sonnetOnly,
       ...(provider.limitRows || []),
       ...(provider.limits?.rows || []),

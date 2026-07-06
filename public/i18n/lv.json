@@ -259,6 +259,7 @@
     "currentSession": "Pašreizējā sesija",
     "allModels": "Visi modeļi",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Tikai Sonnet",
     "default": "Limits",
     "resetPrefix": "Atiestatīšana {time}",

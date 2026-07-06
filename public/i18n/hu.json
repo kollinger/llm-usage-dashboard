@@ -259,6 +259,7 @@
     "currentSession": "Aktuális munkamenet",
     "allModels": "Minden modell",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Csak Sonnet",
     "default": "Korlát",
     "resetPrefix": "Visszaállítás {time}",

@@ -262,6 +262,7 @@ Example `~/.claude/settings.json`:
 Fields parsed when present:
 
 - official Claude Code statusline quota windows: `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, and `rate_limits.seven_day.resets_at`
+- optional Claude model quota buckets exposed by local telemetry, including `rate_limits.fable` / `rate_limits.seven_day_fable` and `rate_limits.sonnet_only`
 - plan type from the sanitized statusline data, or from the read-only `claude auth status --json` `subscriptionType` field
 - best-effort fallback aliases for older local statusline helpers
 - best-effort Claude Design usage when a local statusline helper exposes it
@@ -278,7 +279,7 @@ data/quota-events.jsonl
 
 Events are written only when relevant values change, such as utilization percentage, reset time, sync status, or credit utilization. Each event stores provider, window key, timestamps, percentage, reset time, source label, and similar aggregate metadata. It does not store cookies, raw API responses, prompts, tool payloads, account IDs, or transcript content. Finished window summaries can be derived from these change events through `/api/quota-history`.
 
-The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Some Claude account UI fields, such as routines or usage credits, may not be available through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
+The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Fable token usage can appear in local Claude transcript model totals as `claude-fable-5`, but a separate Fable usage limit is shown only when Claude exposes a stable local/statusline/API bucket for it. Some Claude account UI fields, such as routines, Fable plan buckets, or usage credits, may be plan-specific or unavailable through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
 
 ### Crawler Watchdog
 
@@ -350,7 +351,7 @@ Anthropic admin keys also enable configured organization rate-limit display thro
 
 Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not generally available through the same API keys. The dashboard only shows those counters when a stable local provider-specific telemetry source exposes them.
 
-The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs. Provider subscription counters, such as Copilot premium requests or AI credits, are kept out of the API-cost estimate.
+The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs. Provider subscription counters, such as Copilot premium requests or AI credits, are kept out of the API-cost estimate. When local usage includes model names, known API model IDs such as `claude-fable-5` are matched to the curated price table; unknown model IDs stay unpriced instead of being silently folded into a different model's price.
 
 Model quality scores in the pricing table are an internal heuristic for quick sorting and visual comparison. They are not an official benchmark, not a provider claim, and should be recalibrated or removed when a better documented scoring method is adopted.
 
@@ -360,7 +361,7 @@ Refresh the curated API price table and latest ECB USD/EUR reference rate with:
 npm run pricing:update
 ```
 
-The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing and model-quality signals before changing the review dates in that script.
+The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing and model-quality signals before changing the review dates in that script. The 2026-07-05 catalog includes Claude Fable 5 from Anthropic's official Claude pricing/model-ID docs and Z.AI GLM rows from the official Z.AI pricing page. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
 
 ## Implementation Status
 

@@ -97,7 +97,7 @@ export const PROVIDER_CONTRACTS = Object.freeze({
       {
         scope: "statusline",
         path: "rate_limits",
-        allowedKeys: ["five_hour", "seven_day", "claude_design", "sonnet_only"]
+        allowedKeys: ["five_hour", "seven_day", "claude_design", "fable", "sonnet_only"]
       }
     ]
   }

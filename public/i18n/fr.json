@@ -259,6 +259,7 @@
     "currentSession": "Session actuelle",
     "allModels": "Tous les modèles",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Sonnet uniquement",
     "default": "Limite",
     "resetPrefix": "Réinitialisation {time}",

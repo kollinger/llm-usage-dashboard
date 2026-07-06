@@ -140,10 +140,10 @@ const providerMeta = {
   ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
 
-const USD_PER_EUR = 1.1614;
-const FX_DATE = "2026-06-03";
-const PRICING_DATE = "2026-06-03";
-const SCORE_DATE = "2026-06-03";
+const USD_PER_EUR = 1.1448;
+const FX_DATE = "2026-07-03";
+const PRICING_DATE = "2026-07-05";
+const SCORE_DATE = "2026-07-05";
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
@@ -279,7 +279,7 @@ const pricingModels = [
     cachedInputUsd: 0.5,
     outputUsd: 30,
     source: "OpenAI",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -289,7 +289,7 @@ const pricingModels = [
     cachedInputUsd: 0.25,
     outputUsd: 15,
     source: "OpenAI",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -299,7 +299,7 @@ const pricingModels = [
     cachedInputUsd: 0.075,
     outputUsd: 4.5,
     source: "OpenAI Codex",
-    sourceUrl: "https://openai.com/api/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -309,7 +309,7 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI Codex",
-    sourceUrl: "https://platform.openai.com/docs/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
     provider: "OpenAI",
@@ -329,7 +329,18 @@ const pricingModels = [
     cachedInputUsd: 0.175,
     outputUsd: 14,
     source: "OpenAI",
-    sourceUrl: "https://platform.openai.com/docs/pricing/"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+  },
+  {
+    provider: "Anthropic",
+    model: "Claude Fable 5",
+    region: "Global",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    source: "Anthropic",
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
   },
   {
     provider: "Anthropic",
@@ -451,6 +462,17 @@ const pricingModels = [
   },
   {
     provider: "Z.AI",
+    model: "GLM-5.2",
+    region: "Global",
+    inputUsd: 1.4,
+    cachedInputUsd: 0.26,
+    outputUsd: 4.4,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
     model: "GLM-5.1",
     region: "Global",
     inputUsd: 1.4,
@@ -462,11 +484,132 @@ const pricingModels = [
   },
   {
     provider: "Z.AI",
+    model: "GLM-5",
+    region: "Global",
+    inputUsd: 1,
+    cachedInputUsd: 0.2,
+    outputUsd: 3.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-5-Turbo",
+    region: "Global",
+    inputUsd: 1.2,
+    cachedInputUsd: 0.24,
+    outputUsd: 4,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
     model: "GLM-4.7",
     region: "Global",
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.7-FlashX",
+    region: "Global",
+    inputUsd: 0.07,
+    cachedInputUsd: 0.01,
+    outputUsd: 0.4,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.7-Flash",
+    region: "Global free tier",
+    inputUsd: 0,
+    cachedInputUsd: 0,
+    outputUsd: 0,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.6",
+    region: "Global",
+    inputUsd: 0.6,
+    cachedInputUsd: 0.11,
+    outputUsd: 2.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5",
+    region: "Global",
+    inputUsd: 0.6,
+    cachedInputUsd: 0.11,
+    outputUsd: 2.2,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-X",
+    region: "Global",
+    inputUsd: 2.2,
+    cachedInputUsd: 0.45,
+    outputUsd: 8.9,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-Air",
+    region: "Global",
+    inputUsd: 0.2,
+    cachedInputUsd: 0.03,
+    outputUsd: 1.1,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-AirX",
+    region: "Global",
+    inputUsd: 1.1,
+    cachedInputUsd: 0.22,
+    outputUsd: 4.5,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4.5-Flash",
+    region: "Global free tier",
+    inputUsd: 0,
+    cachedInputUsd: 0,
+    outputUsd: 0,
+    source: "Z.AI",
+    sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    china: true
+  },
+  {
+    provider: "Z.AI",
+    model: "GLM-4-32B-0414-128K",
+    region: "Global",
+    inputUsd: 0.1,
+    cachedInputUsd: 0.1,
+    outputUsd: 0.1,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -509,9 +652,21 @@ const costPricingQualityBySource = {
   gemini: "estimated"
 };
 
+const pricingModelByCanonicalName = new Map(pricingModels.map((price) => [canonicalModelName(price.model), price]));
+const pricingModelAliasByCanonicalName = new Map(
+  Object.entries({
+    "claude-sonnet-4": "Claude Sonnet 4.6",
+    "claude-sonnet-4-5": "Claude Sonnet 4.6",
+    "claude-opus-4-7": "Claude Opus 4.8",
+    "claude-opus-4-6": "Claude Opus 4.8"
+  }).map(([alias, model]) => [alias, model])
+);
+
 const modelQualityScores = {
-  "Claude Opus 4.8": 100,
+  "Claude Fable 5": 100,
+  "Claude Opus 4.8": 98,
   "GPT-5.5": 97,
+  "GLM-5.2": 95,
   "Gemini 3.1 Pro Preview": 94,
   "GLM-5.1": 93,
   "DeepSeek V4 Pro": 92,
@@ -521,16 +676,27 @@ const modelQualityScores = {
   "GPT-5.3-Codex-Spark": 85,
   "Claude Sonnet 4.6": 84,
   "Gemini 3.5 Flash": 83,
+  "GLM-5-Turbo": 82,
+  "GLM-5": 81,
   "GPT-5.2": 80,
   "Qwen3-Max": 79,
   "GPT-5.4 Mini": 77,
+  "GLM-4.6": 74,
   "GLM-4.7": 73,
+  "GLM-4.5-X": 72,
+  "GLM-4.5-AirX": 71,
   "Qwen3.5-Plus": 70,
+  "GLM-4.5": 69,
   "step-3.7-flash": 68,
   "DeepSeek V4 Flash": 67,
+  "GLM-4.5-Air": 66,
   "Claude Haiku 4.5": 64,
   "Gemini 3.1 Flash-Lite": 62,
-  "step-3.5-flash": 58
+  "GLM-4.7-FlashX": 61,
+  "step-3.5-flash": 58,
+  "GLM-4-32B-0414-128K": 56,
+  "GLM-4.7-Flash": 55,
+  "GLM-4.5-Flash": 55
 };
 
 init();
@@ -1759,6 +1925,7 @@ function normalizeLimitRows(limits) {
   return [
     normalizeLimitRow(limits.fiveHour ? { key: "fiveHour", label: t("limits.fiveHour"), ...limits.fiveHour } : null),
     normalizeLimitRow(limits.weekly ? { key: "weekly", label: t("limits.weekly"), ...limits.weekly } : null),
+    normalizeLimitRow(limits.fable ? { key: "fable", label: t("limits.fable"), ...limits.fable } : null),
     normalizeLimitRow(limits.sonnetOnly ? { key: "sonnetOnly", label: t("limits.sonnetOnly"), ...limits.sonnetOnly } : null)
   ].filter(Boolean);
 }
@@ -2562,6 +2729,25 @@ function priceRegion(price) {
   return price.regionKey ? t(price.regionKey, {}, price.region) : price.region;
 }
 
+function pricingModelForUsageModel(model) {
+  const canonical = canonicalModelName(model);
+  if (!canonical) return null;
+  const direct = pricingModelByCanonicalName.get(canonical);
+  if (direct) return direct;
+  const alias = pricingModelAliasByCanonicalName.get(canonical);
+  return alias ? pricingModelByCanonicalName.get(canonicalModelName(alias)) || null : null;
+}
+
+function canonicalModelName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^anthropic[.:/-]+/u, "")
+    .replace(/^models[/:]+/u, "")
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-+|-+$/gu, "");
+}
+
 function compareSortValues(left, right) {
   const leftNumber = Number(left);
   const rightNumber = Number(right);
@@ -2925,17 +3111,10 @@ function buildCostDaily(daily) {
     for (const source of sources) {
       const totalTokens = Number(source.totalTokens || 0);
       if (!totalTokens) continue;
-      const price = costPricingModelBySource[source.id];
-      if (!price) {
-        unsupportedSources.add(source.id);
-        continue;
-      }
-      if (costPricingQualityBySource[source.id] === "estimated") estimatedSources.add(source.id);
-      const usage = normalizeBillingTotals(source.id, source);
-      const eur = estimateCost(usage, price).eur;
-      if (eur > 0) {
-        sourcesById.set(source.id, Number(sourcesById.get(source.id) || 0) + eur);
-      }
+      const result = estimateSourceCost(source);
+      for (const id of result.estimatedSources) estimatedSources.add(id);
+      for (const id of result.unsupportedSources) unsupportedSources.add(id);
+      if (result.eur > 0) sourcesById.set(source.id, Number(sourcesById.get(source.id) || 0) + result.eur);
     }
     return {
       date: day.date,
@@ -2945,6 +3124,45 @@ function buildCostDaily(daily) {
       unsupportedSources: Array.from(unsupportedSources)
     };
   });
+}
+
+function estimateSourceCost(source) {
+  const modelRows = Array.isArray(source.models)
+    ? source.models.filter((row) => Number(row?.totalTokens || 0) > 0)
+    : [];
+  if (modelRows.length) {
+    let eur = 0;
+    const estimatedSources = new Set();
+    const unsupportedSources = new Set();
+    for (const modelRow of modelRows) {
+      const price = pricingModelForUsageModel(modelRow.model);
+      if (!price) {
+        unsupportedSources.add(costModelGapKey(source.id, modelRow.model));
+        continue;
+      }
+      estimatedSources.add(source.id);
+      eur += estimateCost(normalizeBillingTotals(source.id, modelRow), price).eur;
+    }
+    return {
+      eur,
+      estimatedSources: Array.from(estimatedSources),
+      unsupportedSources: Array.from(unsupportedSources)
+    };
+  }
+
+  const price = costPricingModelBySource[source.id];
+  if (!price) {
+    return { eur: 0, estimatedSources: [], unsupportedSources: [source.id] };
+  }
+  return {
+    eur: estimateCost(normalizeBillingTotals(source.id, source), price).eur,
+    estimatedSources: costPricingQualityBySource[source.id] === "estimated" ? [source.id] : [],
+    unsupportedSources: []
+  };
+}
+
+function costModelGapKey(sourceId, model) {
+  return `${sourceId}::${String(model || "unknown model").trim() || "unknown model"}`;
 }
 
 function costSourcesInUse(costDaily) {
@@ -3092,10 +3310,10 @@ function summarizeCostQuality({ apiEquivalentEur, hasRange, paidKnown, estimated
 
   const details = [];
   if (estimatedSources.length) {
-    details.push(t("chart.costSummary.estimatedSources", { providers: estimatedSources.map(sourceLabel).join(", ") }));
+    details.push(t("chart.costSummary.estimatedSources", { providers: estimatedSources.map(costSourceLabel).join(", ") }));
   }
   if (unsupportedSources.length) {
-    details.push(t("chart.costSummary.missingSources", { providers: unsupportedSources.map(sourceLabel).join(", ") }));
+    details.push(t("chart.costSummary.missingSources", { providers: unsupportedSources.map(costSourceLabel).join(", ") }));
   }
   if (unsupportedCurrencies.length) {
     details.push(t("chart.costSummary.unsupportedCurrencies", { currencies: unsupportedCurrencies.join(", ") }));
@@ -3104,6 +3322,11 @@ function summarizeCostQuality({ apiEquivalentEur, hasRange, paidKnown, estimated
     label: details.length ? t("chart.costSummary.qualityPartial") : t("chart.costSummary.qualityComplete"),
     note: details.join(" ")
   };
+}
+
+function costSourceLabel(id) {
+  const [sourceId, model] = String(id || "").split("::");
+  return model ? `${sourceLabel(sourceId)} (${model})` : sourceLabel(sourceId);
 }
 
 function chartRangeForDaily(daily) {

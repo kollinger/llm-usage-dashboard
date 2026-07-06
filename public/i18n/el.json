@@ -259,6 +259,7 @@
     "currentSession": "Τρέχουσα συνεδρία",
     "allModels": "Όλα τα μοντέλα",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Μόνο Sonnet",
     "default": "Όριο",
     "resetPrefix": "Reset {time}",

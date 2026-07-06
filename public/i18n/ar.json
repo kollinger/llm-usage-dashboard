@@ -259,6 +259,7 @@
     "currentSession": "الجلسة الحالية",
     "allModels": "كل النماذج",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Sonnet فقط",
     "default": "الحد",
     "resetPrefix": "إعادة ضبط {time}",

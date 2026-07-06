@@ -259,6 +259,7 @@
     "currentSession": "Dabartinė sesija",
     "allModels": "Visi modeliai",
     "claudeDesign": "Claude Design",
+    "fable": "Fable",
     "sonnetOnly": "Tik Sonnet",
     "default": "Limitas",
     "resetPrefix": "Atstatymas {time}",

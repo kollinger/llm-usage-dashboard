@@ -30,6 +30,7 @@ function sanitizeStatuslinePayload(payload) {
   const fiveHour = sanitizeLimitWindow(findLimitWindow(limits, ["five_hour", "fiveHour", "current_session", "currentSession", "session", "primary", "5h"]));
   const weekly = sanitizeLimitWindow(findLimitWindow(limits, ["seven_day", "sevenDay", "all_models", "allModels", "secondary", "7d"]));
   const design = sanitizeLimitWindow(findLimitWindow(limits.weekly || limits.weekly_limits || limits.weeklyLimits || limits, ["claude_design", "claudeDesign", "design"]));
+  const fable = sanitizeLimitWindow(findLimitWindow(limits.weekly || limits.weekly_limits || limits.weeklyLimits || limits, ["fable", "claude_fable", "claudeFable", "seven_day_fable", "sevenDayFable"]));
   const sonnetOnly = sanitizeLimitWindow(findLimitWindow(limits.weekly || limits.weekly_limits || limits.weeklyLimits || limits, ["sonnet_only", "sonnetOnly", "sonnet", "claude_sonnet", "claudeSonnet", "nur_sonnet"]));
   const credits = sanitizeCredits(findCredits(payload) || findCredits(limits));
   const plan =
@@ -43,11 +44,12 @@ function sanitizeStatuslinePayload(payload) {
     limits.plan;
   const captured = {};
   if (plan) captured.plan_type = String(plan);
-  if (fiveHour || weekly || design || sonnetOnly) {
+  if (fiveHour || weekly || design || fable || sonnetOnly) {
     captured.rate_limits = {};
     if (fiveHour) captured.rate_limits.five_hour = fiveHour;
     if (weekly) captured.rate_limits.seven_day = weekly;
     if (design) captured.rate_limits.claude_design = design;
+    if (fable) captured.rate_limits.fable = fable;
     if (sonnetOnly) captured.rate_limits.sonnet_only = sonnetOnly;
   }
   if (credits) captured.usage_credits = credits;
@@ -141,11 +143,23 @@ function formatStatusLine(payload) {
     limits.secondary ||
     limits["7d"];
   const design = weeklyRoot.claude_design || weeklyRoot.claudeDesign || limits.claude_design || limits.claudeDesign;
+  const fable =
+    weeklyRoot.fable ||
+    weeklyRoot.claude_fable ||
+    weeklyRoot.claudeFable ||
+    weeklyRoot.seven_day_fable ||
+    weeklyRoot.sevenDayFable ||
+    limits.fable ||
+    limits.claude_fable ||
+    limits.claudeFable ||
+    limits.seven_day_fable ||
+    limits.sevenDayFable;
   const sonnetOnly = weeklyRoot.sonnet_only || weeklyRoot.sonnetOnly || limits.sonnet_only || limits.sonnetOnly;
   const credits = findCredits(payload) || findCredits(limits);
   const fiveHourFree = freePercent(fiveHour);
   const weeklyFree = freePercent(weekly);
   const designFree = freePercent(design);
+  const fableFree = freePercent(fable);
   const sonnetOnlyFree = freePercent(sonnetOnly);
   const spent = amount(credits?.spentAmount ?? credits?.spent ?? credits?.usedAmount ?? credits?.amountSpent);
   const monthlyLimit = amount(
@@ -156,6 +170,7 @@ function formatStatusLine(payload) {
   if (fiveHourFree !== null) parts.push(`5h ${fiveHourFree}% frei`);
   if (weeklyFree !== null) parts.push(`Woche ${weeklyFree}% frei`);
   if (designFree !== null) parts.push(`Design ${designFree}% frei`);
+  if (fableFree !== null) parts.push(`Fable ${fableFree}% frei`);
   if (sonnetOnlyFree !== null) parts.push(`Sonnet ${sonnetOnlyFree}% frei`);
   if (spent !== null && monthlyLimit !== null) parts.push(`Guthaben ${spent}/${monthlyLimit} EUR`);
   return parts.length ? `Claude ${parts.join(" · ")}` : "Claude usage: keine Limits";
