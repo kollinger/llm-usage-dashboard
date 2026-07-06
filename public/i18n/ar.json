@@ -451,10 +451,10 @@
       "recheckError": "Could not refresh source diagnostics.",
       "currentUser": "current user",
       "summaryStatus": "Status: {status}",
-      "summaryCounts": "{connected} connected · {candidates} candidates",
-      "connectedTitle": "Connected sources",
-      "candidatesTitle": "Detected sources",
-      "connectedEmpty": "No connected sources yet.",
+      "summaryCounts": "{connected} usable · {candidates} additional candidates",
+      "connectedTitle": "Usable sources",
+      "candidatesTitle": "Additional detected sources",
+      "connectedEmpty": "No usable sources detected yet.",
       "candidatesEmpty": "No additional source candidates detected right now.",
       "owner": "Owner: {owner}",
       "discovery": "Discovery: {method} · confidence {confidence}",
@@ -470,7 +470,8 @@
         "readable": "Readable",
         "denied": "Denied",
         "missing": "Missing",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "optionalMissing": "Optional missing"
       },
       "roles": {
         "sessions": "Sessions",
@@ -498,7 +499,8 @@
       "copyRevoke": "Copy revoke commands",
       "copyGrantSuccess": "Grant commands copied to the clipboard.",
       "copyRevokeSuccess": "Revoke commands copied to the clipboard.",
-      "copyError": "Could not copy commands to the clipboard."
+      "copyError": "Could not copy commands to the clipboard.",
+      "automatic": "used automatically"
     },
     "updates": {
       "title": "App updates",

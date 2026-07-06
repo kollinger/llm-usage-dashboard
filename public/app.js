@@ -5028,7 +5028,7 @@ function buildDiagnosticsFacets(diagnostics) {
   const counts = diagnostics.counts || {};
   const supportLevel = diagnostics.os?.supportLevel || "full";
   const readable = Number(counts.readable || 0);
-  const connected = Number(counts.connected || 0);
+  const savedSources = Number(counts.connectedSaved ?? counts.connectedEnabled ?? 0);
   const denied = Number(counts.denied || 0);
   const runtimeHints = Number(counts.processOnly || 0) + Number(counts.serviceOnly || 0);
   return [
@@ -5042,9 +5042,9 @@ function buildDiagnosticsFacets(diagnostics) {
     {
       id: "savedSources",
       icon: "plug",
-      value: formatNumber(connected),
+      value: formatNumber(savedSources),
       quality: "configured",
-      bodyKey: connected > 0 ? "diagnostics.facets.savedSources.available" : "diagnostics.facets.savedSources.empty"
+      bodyKey: savedSources > 0 ? "diagnostics.facets.savedSources.available" : "diagnostics.facets.savedSources.empty"
     },
     {
       id: "permissions",
@@ -5135,7 +5135,7 @@ function renderSourceSettings() {
         }))}</div>
         <div class="settings-source-pill">${escapeHtml(t("settings.sources.summaryCounts", {
           connected: formatNumber(connected.length),
-          candidates: formatNumber(candidates.length)
+          candidates: formatNumber(availableCandidates.length)
         }))}</div>
       `
     : `<div class="settings-source-pill">${escapeHtml(t("diagnostics.loading"))}</div>`;
@@ -5156,7 +5156,7 @@ function renderSourceCard(source, { mode }) {
   const grantCommands = source.suggestedAction?.commands || [];
   const revokeCommands = source.suggestedAction?.revokeCommands || [];
   const canConnect = mode === "candidate" && ["readable", "mixed"].includes(source.accessStatus);
-  const canDisable = mode === "connected";
+  const canDisable = mode === "connected" && !source.automatic;
   const pathMarkup = paths.length
     ? paths
         .map((entry) => {
@@ -5164,7 +5164,7 @@ function renderSourceCard(source, { mode }) {
             <li>
               <strong>${escapeHtml(pathRoleLabel(entry.role))}</strong>
               <span>${escapeHtml(entry.path || "--")}</span>
-              <em>${escapeHtml(t(`settings.sources.permissions.${entry.permission}`, {}, entry.permission || "--"))}</em>
+              <em>${escapeHtml(t(sourcePathPermissionKey(source, entry), {}, entry.permission || "--"))}</em>
             </li>
           `;
         })
@@ -5182,6 +5182,7 @@ function renderSourceCard(source, { mode }) {
       </div>
       <div class="source-card-meta">
         <span>${escapeHtml(t("settings.sources.owner", { owner }))}</span>
+        ${source.automatic ? `<span>${escapeHtml(t("settings.sources.automatic"))}</span>` : ""}
         <span>${escapeHtml(t("settings.sources.discovery", {
           method: source.discovery?.method || "--",
           confidence: source.discovery?.confidence || "--"
@@ -5218,6 +5219,13 @@ function renderSourceActionButton(action, sourceId, labelKey, variant = "primary
       ${escapeHtml(pending ? t(pendingKey) : t(labelKey))}
     </button>
   `;
+}
+
+function sourcePathPermissionKey(source, entry) {
+  if (entry?.permission === "missing" && ["readable", "mixed"].includes(source?.accessStatus)) {
+    return "settings.sources.permissions.optionalMissing";
+  }
+  return `settings.sources.permissions.${entry?.permission}`;
 }
 
 function renderCommandBlock(sourceId, commandType, titleKey, commands, copyKey) {

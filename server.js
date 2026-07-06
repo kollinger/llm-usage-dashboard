@@ -1128,33 +1128,52 @@ async function buildSourceDiagnostics() {
         codexHomes: CODEX_HOMES
       })
     ]);
-    const enabledConnected = (settings.sources || []).filter((source) => source.enabled !== false);
-    const connectedIds = new Set(enabledConnected.map((source) => source.id));
-    const candidates = (discovery.candidates || []).map((source) => ({
-      ...source,
-      connected: connectedIds.has(source.id)
-    }));
-    const connected = enabledConnected.map((source) => ({
-      ...source,
-      currentCandidate: candidates.find((candidate) => candidate.id === source.id) || null
-    }));
-    return {
-      ...discovery,
-      status: deriveSourceDiagnosticsStatus(discovery, candidates, connected),
-      candidates,
-      connected,
-      counts: {
-        ...(discovery.counts || {}),
-        connected: connected.length,
-        connectedEnabled: connected.length,
-        candidates: candidates.length
-      },
-      persistence: {
-        version: settings.version || 1,
-        file: path.join(DATA_DIR, "connected-sources.json")
-      }
-    };
+    return buildSourceDiagnosticsPayload(settings, discovery);
   });
+}
+
+function buildSourceDiagnosticsPayload(settings, discovery) {
+  const enabledConnected = (settings.sources || []).filter((source) => source.enabled !== false);
+  const connectedIds = new Set(enabledConnected.map((source) => source.id));
+  const candidates = (discovery.candidates || []).map((source) => ({
+    ...source,
+    connected: connectedIds.has(source.id) || isAutomaticCurrentUserSource(source),
+    automatic: !connectedIds.has(source.id) && isAutomaticCurrentUserSource(source)
+  }));
+  const persistedConnected = enabledConnected.map((source) => ({
+    ...source,
+    automatic: false,
+    currentCandidate: candidates.find((candidate) => candidate.id === source.id) || null
+  }));
+  const automaticConnected = candidates
+    .filter((source) => source.automatic)
+    .map((source) => ({
+      ...source,
+      currentCandidate: source
+    }));
+  const connected = [...automaticConnected, ...persistedConnected];
+  return {
+    ...discovery,
+    status: deriveSourceDiagnosticsStatus(discovery, candidates, connected),
+    candidates,
+    connected,
+    counts: {
+      ...(discovery.counts || {}),
+      connected: connected.length,
+      connectedEnabled: enabledConnected.length,
+      connectedSaved: enabledConnected.length,
+      connectedAutomatic: automaticConnected.length,
+      candidates: candidates.length
+    },
+    persistence: {
+      version: settings.version || 1,
+      file: path.join(DATA_DIR, "connected-sources.json")
+    }
+  };
+}
+
+function isAutomaticCurrentUserSource(source) {
+  return Boolean(source?.owner?.current && ["readable", "mixed"].includes(source.accessStatus));
 }
 
 function deriveSourceDiagnosticsStatus(discovery, candidates, connected) {
@@ -5388,6 +5407,7 @@ module.exports = {
     classifyAiProcess,
     aggregateAiProcessMetrics,
     buildLiveProcessMetrics,
-    buildAiLoadScore
+    buildAiLoadScore,
+    buildSourceDiagnosticsPayload
   }
 };

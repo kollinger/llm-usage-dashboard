@@ -451,10 +451,10 @@
       "recheckError": "Quellen-Diagnose konnte nicht aktualisiert werden.",
       "currentUser": "aktueller Benutzer",
       "summaryStatus": "Status: {status}",
-      "summaryCounts": "{connected} verbunden · {candidates} Kandidaten",
-      "connectedTitle": "Verbundene Quellen",
-      "candidatesTitle": "Erkannte Quellen",
-      "connectedEmpty": "Noch keine Quellen verbunden.",
+      "summaryCounts": "{connected} nutzbar · {candidates} zusätzliche Kandidaten",
+      "connectedTitle": "Nutzbare Quellen",
+      "candidatesTitle": "Weitere erkannte Quellen",
+      "connectedEmpty": "Noch keine nutzbaren Quellen erkannt.",
       "candidatesEmpty": "Aktuell wurden keine zusätzlichen Quellen-Kandidaten erkannt.",
       "owner": "Besitzer: {owner}",
       "discovery": "Discovery: {method} · Vertrauen {confidence}",
@@ -470,7 +470,8 @@
         "readable": "Lesbar",
         "denied": "Verweigert",
         "missing": "Fehlt",
-        "unknown": "Unbekannt"
+        "unknown": "Unbekannt",
+        "optionalMissing": "Optional nicht vorhanden"
       },
       "roles": {
         "sessions": "Sessions",
@@ -498,7 +499,8 @@
       "copyRevoke": "Revoke-Kommandos kopieren",
       "copyGrantSuccess": "Freigabe-Kommandos wurden in die Zwischenablage kopiert.",
       "copyRevokeSuccess": "Revoke-Kommandos wurden in die Zwischenablage kopiert.",
-      "copyError": "Kommandos konnten nicht in die Zwischenablage kopiert werden."
+      "copyError": "Kommandos konnten nicht in die Zwischenablage kopiert werden.",
+      "automatic": "automatisch genutzt"
     },
     "updates": {
       "title": "App-Updates",
