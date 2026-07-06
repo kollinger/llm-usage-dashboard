@@ -1932,11 +1932,13 @@ function normalizeLimitRows(limits) {
 
 function normalizeLimitRow(row) {
   if (!row) return null;
-  const hasUsedPercent = Number.isFinite(Number(row.usedPercent));
+  const usedPercentValue = finiteUiNumberOrNull(row.usedPercent);
+  const hasUsedPercent = usedPercentValue !== null;
   const status = row.status ? String(row.status) : null;
   const statusValueLabel = status === "unavailable" ? t("liveMetrics.unavailable") : null;
   if (!hasUsedPercent && !row.valueLabel && !statusValueLabel) return null;
-  const usedPercent = hasUsedPercent ? Math.max(0, Math.min(100, Number(row.usedPercent))) : null;
+  const usedPercent = hasUsedPercent ? Math.max(0, Math.min(100, usedPercentValue)) : null;
+  const remainingPercentValue = finiteUiNumberOrNull(row.remainingPercent);
   return {
     key: row.key || row.label || "limit",
     label: limitLabel(row),
@@ -1945,13 +1947,19 @@ function normalizeLimitRow(row) {
     remainingPercent:
       usedPercent === null
         ? null
-        : Number.isFinite(Number(row.remainingPercent))
-          ? Math.max(0, Math.min(100, Number(row.remainingPercent)))
+        : remainingPercentValue !== null
+          ? Math.max(0, Math.min(100, remainingPercentValue))
           : Math.max(0, 100 - usedPercent),
     valueLabel: row.valueLabel || statusValueLabel,
     resetsAt: row.resetsAt || null,
     resetLabel: row.resetLabel || row.detail || null
   };
+}
+
+function finiteUiNumberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function sourceLabel(id) {
