@@ -56,6 +56,10 @@ Instructions for agents working on this repository.
 - Batch macOS app builds for meaningful review points instead of rebuilding for
   every tiny change. When installing a fresh Mac build, state the commit,
   included tickets, and the exact things Gerhard should look at.
+- Restore review-facing UI state after QA. If a check turns on persisted
+  controls such as `Show all` providers, layout edit mode, alternate filters,
+  or diagnostic-only views, switch back to the normal review state before
+  handing the app to Gerhard, or explicitly call out the changed state.
 - Do not let cleanup lose recoverability: clean worktrees, stale processes, and
   generated artifacts, but keep ticket branches until their integration and
   closure are recorded or until Gerhard explicitly approves deletion.
