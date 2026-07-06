@@ -275,7 +275,11 @@ JSON.stringify({
   limitRisk: limitDisplayStatus({ usedPercent: 85 }),
   limitFull: limitDisplayStatus({ usedPercent: 100 }),
   limitUnknown: limitDisplayStatus({ status: "unavailable" }),
-  aliasesCollapsed: /<details/.test(renderPricingAliases(pricingModels[0]))
+  limitOkLabel: t("limits.status.ok"),
+  manualQualityLabel: t("subscriptions.quality.manual"),
+  manualSourceLabel: subscriptionSourceLabel("local_settings"),
+  aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
+  aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true }))
 });`,
     createAppContext(),
     { filename: appPath }
@@ -293,7 +297,11 @@ JSON.stringify({
   assert.equal(result.limitRisk, "risk");
   assert.equal(result.limitFull, "full");
   assert.equal(result.limitUnknown, "unknown");
-  assert.equal(result.aliasesCollapsed, true);
+  assert.equal(result.limitOkLabel, "On track");
+  assert.equal(result.manualQualityLabel, "Saved fallback estimate");
+  assert.equal(result.manualSourceLabel, "saved fallback");
+  assert.equal(result.aliasesHiddenByDefault, true);
+  assert.equal(result.aliasesCollapsedInDebug, true);
 }
 
 function assertUpdateSettingsAlwaysOn() {

@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Mostra custos fixos mensais somente quando detectados localmente com seguranca ou salvos como estimativas de fallback. Dados ausentes nao sao tratados como custo real.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "No caminho",
+      "risk": "Observar cota",
+      "full": "Limite atingido",
+      "unknown": "Desconhecido"
+    },
+    "statusLegend": "As cores de cota mostram apenas risco; provedor e modelo usam rotulos separados."
   },
   "tokens": {
     "input": "Entrada",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Planos e custos detectados vêm de sinais locais seguros. Dados ausentes nao contam como custo real.",
+      "detectedOnly": "Valores manuais nao fazem parte do setup normal. Use Advanced apenas como estimativa de fallback quando a deteccao local nao estiver disponivel.",
+      "advancedTitle": "Estimativas de fallback avancadas",
+      "advancedDescription": "Estes valores sao estimativas de fallback salvas. Cartoes e visoes de custo os rotulam como estimativas, nao como custos detectados automaticamente."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Estimativa de fallback salva",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "fallback salvo",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

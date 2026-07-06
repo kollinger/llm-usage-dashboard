@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Affiche les couts fixes mensuels seulement s ils sont detectes localement de facon fiable ou enregistres comme estimations de secours. Les donnees manquantes ne sont pas traitees comme cout reel.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "Dans les temps",
+      "risk": "Surveiller le quota",
+      "full": "Limite atteinte",
+      "unknown": "Inconnu"
+    },
+    "statusLegend": "Les couleurs de quota indiquent seulement le risque; fournisseur et modele utilisent des libelles separes."
   },
   "tokens": {
     "input": "Entrée",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Les forfaits et couts detectes viennent de signaux locaux surs. Les donnees manquantes ne sont pas comptees comme cout reel.",
+      "detectedOnly": "Les valeurs manuelles ne sont pas un flux de configuration normal. Utilisez Advanced seulement comme estimation de secours si la detection locale manque.",
+      "advancedTitle": "Estimations de secours avancees",
+      "advancedDescription": "Ces valeurs sont des estimations de secours enregistrees. Les cartes et vues de cout les signalent comme estimations, pas comme couts detectes automatiquement."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Estimation de secours enregistree",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "secours enregistre",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

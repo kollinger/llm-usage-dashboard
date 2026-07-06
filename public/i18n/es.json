@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Muestra costes fijos mensuales solo si se detectan localmente con seguridad o se guardan como estimaciones de respaldo. Los datos ausentes no se tratan como coste real.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "En curso",
+      "risk": "Vigilar cuota",
+      "full": "Limite alcanzado",
+      "unknown": "Desconocido"
+    },
+    "statusLegend": "Los colores de cuota solo muestran riesgo; proveedor y modelo usan etiquetas separadas."
   },
   "tokens": {
     "input": "Entrada",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Los planes y costes detectados vienen de senales locales seguras. Los datos ausentes no cuentan como coste real.",
+      "detectedOnly": "Los valores manuales no son un paso normal de configuracion. Usa Advanced solo como estimacion de respaldo si no hay deteccion local.",
+      "advancedTitle": "Estimaciones de respaldo avanzadas",
+      "advancedDescription": "Estos valores son estimaciones de respaldo guardadas. Las tarjetas y vistas de coste los etiquetan como estimaciones, no como costes detectados automaticamente."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Estimacion de respaldo guardada",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "respaldo guardado",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

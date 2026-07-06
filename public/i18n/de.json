@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Abo- und Fixkosten in {range}",
-      "description": "Monatliche Fixkosten erscheinen nur, wenn sie manuell überschrieben oder lokal sicher erkannt wurden. Fehlende Daten werden nicht als reale Kosten behandelt.",
+      "description": "Zeigt monatliche Fixkosten nur, wenn sie sicher lokal erkannt oder als Fallback-Schätzung gespeichert wurden. Fehlende Daten werden nicht als echte Kosten behandelt.",
       "empty": "Noch keine Abo- oder Fixkostendaten verfügbar.",
       "previous": "Vorherige Kosten",
       "delta": "Änderung"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} genutzt",
     "status": {
-      "ok": "Grün",
-      "risk": "Risiko",
-      "full": "Voll",
+      "ok": "Im Plan",
+      "risk": "Quote beobachten",
+      "full": "Limit erreicht",
       "unknown": "Unbekannt"
-    }
+    },
+    "statusLegend": "Quota-Farben zeigen nur das Risiko; Provider- und Modellidentität nutzen eigene Labels."
   },
   "tokens": {
     "input": "Input",
@@ -482,7 +483,10 @@
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert.",
       "saveError": "Konnte nicht gespeichert werden.",
-      "description": "Automatisch erkannte Pläne bleiben sichtbar; diese Felder sind manuelle Fallbacks oder Overrides und werden entsprechend markiert."
+      "description": "Erkannte Pläne und Kosten kommen aus sicheren lokalen Signalen. Fehlende Daten werden nicht als echte Kosten gezählt.",
+      "detectedOnly": "Manuelle Werte sind kein normaler Setup-Schritt. Nutze Advanced nur als Fallback-Schätzung, wenn lokale Erkennung nicht möglich ist.",
+      "advancedTitle": "Advanced-Fallback-Schätzungen",
+      "advancedDescription": "Diese Werte sind gespeicherte Fallback-Schätzungen. Karten und Kostenansichten kennzeichnen sie als Schätzung, nicht als automatisch erkannte Kosten."
     },
     "sources": {
       "title": "Datenquellen & Diagnose",
@@ -728,12 +732,12 @@
     "sourceLabel": "Quelle",
     "quality": {
       "automatic": "Automatisch erkannt",
-      "manual": "Manueller Override",
+      "manual": "Gespeicherte Fallback-Schätzung",
       "estimated": "Geschätzt / teilweise",
       "unknown": "Unbekannt"
     },
     "sources": {
-      "local_settings": "manuelle Einstellungen",
+      "local_settings": "gespeicherter Fallback",
       "codex_app_server": "lokaler Codex-App-Server",
       "codex_local_logs": "lokale Codex-Logs",
       "claude_statusline": "Claude-Code-Statusline",

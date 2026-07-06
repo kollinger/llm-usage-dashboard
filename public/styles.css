@@ -690,7 +690,7 @@ a {
 }
 
 .limit-state-ok {
-  background: var(--green);
+  background: #147a68;
 }
 
 .limit-state-risk {
@@ -703,6 +703,14 @@ a {
 
 .limit-state-unknown {
   background: #8a948f;
+}
+
+.limit-status-note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.3;
 }
 
 .credit-rows {
@@ -793,8 +801,8 @@ a {
 
 .subscription-summary {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 4px 8px;
   margin: 8px 0 2px;
   padding: 8px 10px;
@@ -804,10 +812,8 @@ a {
 }
 
 .subscription-summary strong {
-  overflow: hidden;
   color: var(--ink);
   font-size: 0.86rem;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -831,6 +837,12 @@ a {
   font-weight: 850;
   line-height: 1;
   white-space: nowrap;
+}
+
+.subscription-quality-note {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .subscription-quality-automatic .subscription-quality-pill {
@@ -914,8 +926,12 @@ a {
 }
 
 .mini-stat strong {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   margin-top: 2px;
+}
+
+.mini-stat-wide {
+  grid-column: 1 / -1;
 }
 
 .usage-layout {
@@ -1736,7 +1752,7 @@ a {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--green), #6ca07b);
+  background: linear-gradient(90deg, #2e6ea6, #78a7cf);
 }
 
 .price-table a {
@@ -2132,6 +2148,12 @@ select {
   color: var(--green);
   font-size: 0.8rem;
   font-weight: 850;
+}
+
+.settings-state-note.neutral-note {
+  border-color: rgba(102, 112, 105, 0.24);
+  background: #f6f8f5;
+  color: var(--ink-muted);
 }
 
 .settings-advanced {

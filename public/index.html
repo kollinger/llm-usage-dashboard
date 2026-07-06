@@ -270,31 +270,36 @@
         </div>
         <div class="settings-section">
           <h3 data-i18n="settings.subscriptions.title">Abo-Kosten</h3>
-          <p class="settings-desc" data-i18n="settings.subscriptions.description">Automatisch erkannte Pläne bleiben sichtbar; diese Felder sind manuelle Fallbacks oder Overrides und werden entsprechend markiert.</p>
-          <div class="subscription-grid">
-            <fieldset>
-              <legend>Codex</legend>
-              <label class="field">
-                <span data-i18n="settings.subscriptions.planLabel">Plan</span>
-                <input type="text" data-subscription-provider="codex" data-subscription-field="planType" placeholder="Pro Max" />
-              </label>
-              <label class="field">
-                <span data-i18n="settings.subscriptions.monthlyCostLabel">Monatskosten (EUR)</span>
-                <input type="number" min="0" step="0.01" data-subscription-provider="codex" data-subscription-field="monthlyCost" />
-              </label>
-            </fieldset>
-            <fieldset>
-              <legend>Claude Code</legend>
-              <label class="field">
-                <span data-i18n="settings.subscriptions.planLabel">Plan</span>
-                <input type="text" data-subscription-provider="claudeCode" data-subscription-field="planType" placeholder="Pro" />
-              </label>
-              <label class="field">
-                <span data-i18n="settings.subscriptions.monthlyCostLabel">Monatskosten (EUR)</span>
-                <input type="number" min="0" step="0.01" data-subscription-provider="claudeCode" data-subscription-field="monthlyCost" />
-              </label>
-            </fieldset>
-          </div>
+          <p class="settings-desc" data-i18n="settings.subscriptions.description">Automatisch erkannte Pläne und Kosten werden aus sicheren lokalen Signalen übernommen; fehlende Daten werden nicht als echte Kosten gezählt.</p>
+          <p class="settings-state-note neutral-note" data-i18n="settings.subscriptions.detectedOnly">Manuelle Werte sind kein normaler Setup-Schritt. Nutze Advanced nur als Fallback-Schätzung, wenn keine lokale Erkennung möglich ist.</p>
+          <details class="settings-advanced subscription-advanced">
+            <summary data-i18n="settings.subscriptions.advancedTitle">Advanced fallback estimates</summary>
+            <p class="settings-desc" data-i18n="settings.subscriptions.advancedDescription">Diese Werte sind gespeicherte Fallback-Schätzungen. Sie werden in Karten und Kostenansichten als Schätzung gekennzeichnet, nicht als automatisch erkannte Kosten.</p>
+            <div class="subscription-grid">
+              <fieldset>
+                <legend>Codex</legend>
+                <label class="field">
+                  <span data-i18n="settings.subscriptions.planLabel">Plan</span>
+                  <input type="text" data-subscription-provider="codex" data-subscription-field="planType" placeholder="Pro Max" />
+                </label>
+                <label class="field">
+                  <span data-i18n="settings.subscriptions.monthlyCostLabel">Monatskosten (EUR)</span>
+                  <input type="number" min="0" step="0.01" data-subscription-provider="codex" data-subscription-field="monthlyCost" />
+                </label>
+              </fieldset>
+              <fieldset>
+                <legend>Claude Code</legend>
+                <label class="field">
+                  <span data-i18n="settings.subscriptions.planLabel">Plan</span>
+                  <input type="text" data-subscription-provider="claudeCode" data-subscription-field="planType" placeholder="Pro" />
+                </label>
+                <label class="field">
+                  <span data-i18n="settings.subscriptions.monthlyCostLabel">Monatskosten (EUR)</span>
+                  <input type="number" min="0" step="0.01" data-subscription-provider="claudeCode" data-subscription-field="monthlyCost" />
+                </label>
+              </fieldset>
+            </div>
+          </details>
         </div>
         <div class="settings-section" id="updateSettingsSection" hidden>
           <h3 data-i18n="settings.updates.title">App-Updates</h3>

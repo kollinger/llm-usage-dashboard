@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "仅在本地安全检测到或保存为备用估算时显示每月固定成本。缺失数据不会被视为真实成本。",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "正常",
+      "risk": "关注配额",
+      "full": "已达上限",
+      "unknown": "未知"
+    },
+    "statusLegend": "配额颜色只表示风险；提供商和模型身份使用单独标签。"
   },
   "tokens": {
     "input": "输入",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "检测到的套餐和成本来自安全的本地信号。缺失数据不会计为真实成本。",
+      "detectedOnly": "手动值不是常规设置流程。仅在无法本地检测时，在 Advanced 中作为备用估算使用。",
+      "advancedTitle": "高级备用估算",
+      "advancedDescription": "这些值是已保存的备用估算。卡片和成本视图会将其标记为估算，而不是自动检测到的成本。"
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "已保存的备用估算",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "已保存备用",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

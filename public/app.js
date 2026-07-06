@@ -2289,7 +2289,7 @@ function buildQuotaFoot({ providerId, todayTokens, since, fiveHour, weekly, upda
 function insertSubscriptionFoot(rows, subscription) {
   if (!subscription) return;
   const index = Math.max(rows.length - 1, 0);
-  rows.splice(index, 0, footRow(t("labels.subscription"), subscriptionFootValue(subscription)));
+  rows.splice(index, 0, footRow(t("labels.subscription"), subscriptionFootValue(subscription), { wide: true }));
 }
 
 function footRow(label, value, options = {}) {
@@ -2803,14 +2803,18 @@ function renderProviderSubscription(provider) {
   if (!subscription) return "";
   const label = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
   const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
+  const qualityClass = subscription.quality || "unknown";
+  const qualityMarkup = qualityClass === "manual"
+    ? `<span class="subscription-quality-note">${escapeHtml(label)}</span>`
+    : `<span class="subscription-quality-pill">${escapeHtml(label)}</span>`;
   const details = [
     subscription.planType ? t("subscriptions.plan", { plan: subscription.planType }) : "",
     subscription.source ? t("subscriptions.source", { source: subscriptionSourceLabel(subscription.source) }) : "",
     subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : ""
   ].filter(Boolean);
   return `
-    <div class="subscription-summary subscription-quality-${escapeHtml(subscription.quality || "unknown")}">
-      <span class="subscription-quality-pill">${escapeHtml(label)}</span>
+    <div class="subscription-summary subscription-quality-${escapeHtml(qualityClass)}">
+      ${qualityMarkup}
       <strong>${escapeHtml(cost)}</strong>
       ${details.length ? `<small>${escapeHtml(details.join(" · "))}</small>` : ""}
     </div>
@@ -2834,7 +2838,7 @@ function renderProviderFootRow(row) {
     ? `<button type="button" class="mini-stat-help" aria-label="${escapeHtml(`${t("labels.updatedHelp")}: ${normalized.hint}`)}" title="${escapeHtml(normalized.hint)}">?</button>`
     : "";
   return `
-    <div class="mini-stat">
+    <div class="mini-stat${normalized.wide ? " mini-stat-wide" : ""}">
       <span class="mini-stat-label">${escapeHtml(normalized.label)}${hint}</span>
       <strong${title}>${escapeHtml(normalized.value)}</strong>
     </div>
@@ -2891,6 +2895,7 @@ function renderLimitBars(provider) {
   return `
     <div class="limit-bars">
       ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
+      <p class="limit-status-note">${escapeHtml(t("limits.statusLegend"))}</p>
     </div>
   `;
 }
@@ -2989,7 +2994,7 @@ function limitDisplayStatus(limit) {
 
 function limitStatusAccent(status, fallback) {
   return {
-    ok: "#23745c",
+    ok: "#147a68",
     risk: "#b76b00",
     full: "#b94e5c",
     unknown: "#8a948f"
@@ -3534,7 +3539,6 @@ function renderPricing(local, filteredDaily = [], providers = []) {
               <strong>${escapeHtml(price.model)}</strong>
               <span>${escapeHtml(price.provider)}</span>
               ${price.china ? `<em class="china-badge">${escapeHtml(t("pricing.chinaBadge"))}</em>` : ""}
-              ${renderPricingAliases(price)}
             </div>
           </td>
           <td class="score-cell">${renderQualityScore(price)}</td>
@@ -3696,7 +3700,8 @@ function previousSubscriptionEntry(subscriptionHistory, providerId) {
   return entries.find((entry) => entry.effectiveTo !== null) || null;
 }
 
-function renderPricingAliases(price) {
+function renderPricingAliases(price, { debug = false } = {}) {
+  if (!debug) return "";
   const aliases = (Array.isArray(price.aliases) ? price.aliases : []).filter(Boolean);
   if (!aliases.length) return "";
   return `

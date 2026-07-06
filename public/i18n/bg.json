@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Shows monthly fixed costs only when safely detected locally or saved as fallback estimates. Missing data is not treated as real cost.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
+      "ok": "On track",
+      "risk": "Watch quota",
+      "full": "Limit reached",
       "unknown": "Unknown"
-    }
+    },
+    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
   },
   "tokens": {
     "input": "Вход",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Detected plans and costs come from safe local signals. Missing data is not counted as real cost.",
+      "detectedOnly": "Manual values are not normal setup. Use Advanced only as a fallback estimate when local detection is unavailable.",
+      "advancedTitle": "Advanced fallback estimates",
+      "advancedDescription": "These values are saved fallback estimates. Cards and cost views label them as estimates, not automatically detected costs."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "saved fallback",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Visar fasta manadskostnader bara nar de upptacks sakert lokalt eller sparas som fallbackuppskattningar. Saknade data behandlas inte som verklig kostnad.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "Pa ratt vag",
+      "risk": "Bevaka kvot",
+      "full": "Grans nadd",
+      "unknown": "Okant"
+    },
+    "statusLegend": "Kvotfarger visar bara risk; leverantor och modell anvander separata etiketter."
   },
   "tokens": {
     "input": "Indata",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Identifierade planer och kostnader kommer fran sakra lokala signaler. Saknade data raknas inte som verklig kostnad.",
+      "detectedOnly": "Manuella varden ar inte normal installation. Anvand Advanced bara som fallbackuppskattning nar lokal identifiering saknas.",
+      "advancedTitle": "Avancerade fallbackuppskattningar",
+      "advancedDescription": "Dessa varden ar sparade fallbackuppskattningar. Kort och kostnadsvyer markerar dem som uppskattningar, inte automatiskt identifierade kostnader."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Sparad fallbackuppskattning",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "sparad fallback",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

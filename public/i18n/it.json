@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Mostra costi fissi mensili solo quando rilevati localmente in modo sicuro o salvati come stime fallback. I dati mancanti non sono trattati come costo reale.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "In linea",
+      "risk": "Controlla quota",
+      "full": "Limite raggiunto",
+      "unknown": "Sconosciuto"
+    },
+    "statusLegend": "I colori quota indicano solo il rischio; provider e modello usano etichette separate."
   },
   "tokens": {
     "input": "Input",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Piani e costi rilevati arrivano da segnali locali sicuri. I dati mancanti non contano come costo reale.",
+      "detectedOnly": "I valori manuali non sono un normale passaggio di setup. Usa Advanced solo come stima di fallback se manca il rilevamento locale.",
+      "advancedTitle": "Stime fallback avanzate",
+      "advancedDescription": "Questi valori sono stime fallback salvate. Schede e viste costi li indicano come stime, non come costi rilevati automaticamente."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Stima fallback salvata",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "fallback salvato",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",

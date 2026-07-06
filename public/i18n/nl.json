@@ -247,7 +247,7 @@
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
-      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "description": "Toont maandelijkse vaste kosten alleen wanneer ze veilig lokaal zijn gedetecteerd of als fallbackschatting zijn opgeslagen. Ontbrekende data wordt niet als echte kosten behandeld.",
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
@@ -379,11 +379,12 @@
     "period24h": "24h",
     "fullQuotaDetail": "{usage} used",
     "status": {
-      "ok": "Green",
-      "risk": "Risk",
-      "full": "Full",
-      "unknown": "Unknown"
-    }
+      "ok": "Op schema",
+      "risk": "Quota bewaken",
+      "full": "Limiet bereikt",
+      "unknown": "Onbekend"
+    },
+    "statusLegend": "Quotakleuren tonen alleen risico; provider en model gebruiken aparte labels."
   },
   "tokens": {
     "input": "Invoer",
@@ -482,7 +483,10 @@
       "saving": "Saving...",
       "saved": "Saved.",
       "saveError": "Could not save.",
-      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
+      "description": "Gedetecteerde plannen en kosten komen uit veilige lokale signalen. Ontbrekende data telt niet als echte kosten.",
+      "detectedOnly": "Handmatige waarden zijn geen normale setup. Gebruik Advanced alleen als fallbackschatting wanneer lokale detectie ontbreekt.",
+      "advancedTitle": "Geavanceerde fallbackschattingen",
+      "advancedDescription": "Deze waarden zijn opgeslagen fallbackschattingen. Kaarten en kostenweergaven tonen ze als schattingen, niet als automatisch gedetecteerde kosten."
     },
     "sources": {
       "title": "Data sources & diagnostics",
@@ -728,12 +732,12 @@
     "sourceLabel": "Source",
     "quality": {
       "automatic": "Automatically detected",
-      "manual": "Manual override",
+      "manual": "Opgeslagen fallbackschatting",
       "estimated": "Estimated / partial",
       "unknown": "Unknown"
     },
     "sources": {
-      "local_settings": "manual settings",
+      "local_settings": "opgeslagen fallback",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
