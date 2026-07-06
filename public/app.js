@@ -25,6 +25,7 @@ const state = {
   systemMetrics: null,
   systemMetricsError: "",
   sourceDiagnosticsError: "",
+  sourceRecheckResult: null,
   loadingSourceDiagnostics: false,
   loadingSystemMetrics: false,
   sourceMessage: { text: "", status: "" },
@@ -257,26 +258,14 @@ const pricingSortDefaults = {
   source: "asc"
 };
 const pricingExcludedSourceIds = new Set(["copilot"]);
-const DIAGNOSTIC_STATUS_ORDER = [
-  "connected_live",
-  "current_user_empty",
-  "candidates_readable_empty",
+const DIAGNOSTIC_ISSUE_STATUSES = new Set([
   "candidates_denied",
+  "runtime_hints_only",
   "no_tools_found",
   "other_dashboard_found",
   "partial_unsupported",
   "discovery_error"
-];
-const DIAGNOSTIC_STATUS_ICONS = {
-  connected_live: "plug-zap",
-  current_user_empty: "scan-search",
-  candidates_readable_empty: "folder-search-2",
-  candidates_denied: "shield-alert",
-  no_tools_found: "search-x",
-  other_dashboard_found: "monitor-smartphone",
-  partial_unsupported: "triangle-alert",
-  discovery_error: "octagon-alert"
-};
+]);
 
 const pricingModels = [
   {
@@ -4953,49 +4942,45 @@ function renderSourceDiagnostics() {
 
   els.sourceDiagnosticsMeta.textContent = t("diagnostics.meta", {
     user: currentUser.name || "--",
-    home: currentUser.home || "--",
     checkedAt: generatedAt,
     platform: diagnostics?.os?.platform || navigator.platform || "--",
     support: t(`diagnostics.support.${supportLevel}`, {}, supportLevel)
   });
-  els.sourceDiagnosticsSummary.innerHTML = renderDiagnosticsSummary(diagnostics);
-  els.sourceDiagnosticsGrid.innerHTML = DIAGNOSTIC_STATUS_ORDER.map((entry) => renderDiagnosticStatusCard(entry, status)).join("");
+  els.sourceDiagnosticsSummary.innerHTML = renderDiagnosticsSummary(diagnostics, status);
+  els.sourceDiagnosticsGrid.innerHTML = renderDiagnosticsFacetGrid(diagnostics);
   els.sourceDiagnosticsInstances.innerHTML = renderOtherDashboardInstances(diagnostics?.otherDashboardInstances || []);
   els.diagnosticsRecheckBtn.disabled = isSourceOpPending("recheck", "global");
 }
 
 function shouldShowSourceDiagnostics(diagnostics, status) {
   if (state.sourceDiagnosticsError || !diagnostics) return true;
+  if (state.sourceRecheckResult) return true;
+  if (isNonActionableSourceDiagnosticsStub(diagnostics, status)) return false;
   if (hasActionableSourceDiagnostics(diagnostics, status)) return true;
-  return !isNonActionableSourceDiagnosticsStub(diagnostics, status);
+  return false;
 }
 
 function hasActionableSourceDiagnostics(diagnostics, status) {
-  if (
-    [
-      "connected_live",
-      "candidates_readable_empty",
-      "candidates_denied",
-      "other_dashboard_found",
-      "discovery_error"
-    ].includes(status)
-  ) {
-    return true;
-  }
+  if (DIAGNOSTIC_ISSUE_STATUSES.has(status)) return true;
+  if (status === "candidates_readable_empty" && hasReadableSetupCandidate(diagnostics)) return true;
 
   const counts = diagnostics.counts || {};
   const actionableCounts = [
-    counts.connected,
-    counts.connectedEnabled,
-    counts.readable,
     counts.denied,
-    counts.processOnly,
     counts.otherDashboardInstances
   ];
   if (actionableCounts.some((value) => Number(value) > 0)) return true;
-  if ((diagnostics.connected || []).length) return true;
+  if (hasReadableSetupCandidate(diagnostics)) return true;
   if ((diagnostics.otherDashboardInstances || []).length) return true;
   return false;
+}
+
+function hasReadableSetupCandidate(diagnostics) {
+  return (diagnostics?.candidates || []).some((source) => {
+    if (source.connected) return false;
+    if (!["readable", "mixed"].includes(source.accessStatus)) return false;
+    return !source.owner?.current;
+  });
 }
 
 function isNonActionableSourceDiagnosticsStub(diagnostics, status) {
@@ -5003,7 +4988,7 @@ function isNonActionableSourceDiagnosticsStub(diagnostics, status) {
   return status === "partial_unsupported" && os.supported === false && os.supportLevel === "stub";
 }
 
-function renderDiagnosticsSummary(diagnostics) {
+function renderDiagnosticsSummary(diagnostics, status) {
   if (state.sourceDiagnosticsError) {
     return `<div class="diagnostics-summary-card diagnostics-summary-error">${escapeHtml(
       t("diagnostics.errors.load", { message: state.sourceDiagnosticsError }, state.sourceDiagnosticsError)
@@ -5012,30 +4997,97 @@ function renderDiagnosticsSummary(diagnostics) {
   if (!diagnostics) {
     return `<div class="diagnostics-summary-card">${escapeHtml(t("diagnostics.loading"))}</div>`;
   }
-  const counts = diagnostics.counts || {};
-  const bits = [
-    t("diagnostics.summary.connected", { count: formatNumber(counts.connected || 0) }),
-    t("diagnostics.summary.readable", { count: formatNumber(counts.readable || 0) }),
-    t("diagnostics.summary.denied", { count: formatNumber(counts.denied || 0) }),
-    t("diagnostics.summary.processOnly", { count: formatNumber(counts.processOnly || 0) })
-  ];
+  const statusTitle = t(`diagnostics.statuses.${status}.title`, {}, status);
+  const statusBody = t(`diagnostics.statuses.${status}.body`, {}, "");
+  const nextAction = t(`diagnostics.nextActions.${status}`, {}, "");
+  const recheck = renderSourceRecheckResult();
   return `
     <div class="diagnostics-summary-card">
-      <strong>${escapeHtml(t(`diagnostics.statuses.${diagnostics.status}.title`))}</strong>
-      <span>${escapeHtml(bits.join(" · "))}</span>
+      <div class="diagnostics-summary-head">
+        <strong>${escapeHtml(statusTitle)}</strong>
+        ${recheck}
+      </div>
+      ${statusBody ? `<p>${escapeHtml(statusBody)}</p>` : ""}
+      ${nextAction ? `<p class="diagnostics-next-action">${escapeHtml(nextAction)}</p>` : ""}
     </div>
   `;
 }
 
-function renderDiagnosticStatusCard(statusId, activeStatus) {
-  const active = statusId === activeStatus;
+function renderSourceRecheckResult() {
+  const result = state.sourceRecheckResult;
+  if (!result) return "";
+  return `<span class="diagnostics-recheck-result is-${escapeHtml(result.status || "ready")}">${escapeHtml(result.text || "")}</span>`;
+}
+
+function renderDiagnosticsFacetGrid(diagnostics) {
+  if (!diagnostics) return "";
+  return buildDiagnosticsFacets(diagnostics).map(renderDiagnosticsFacetCard).join("");
+}
+
+function buildDiagnosticsFacets(diagnostics) {
+  const counts = diagnostics.counts || {};
+  const supportLevel = diagnostics.os?.supportLevel || "full";
+  const readable = Number(counts.readable || 0);
+  const connected = Number(counts.connected || 0);
+  const denied = Number(counts.denied || 0);
+  const runtimeHints = Number(counts.processOnly || 0) + Number(counts.serviceOnly || 0);
+  return [
+    {
+      id: "logs",
+      icon: "folder-check",
+      value: formatNumber(readable),
+      quality: "measured",
+      bodyKey: readable > 0 ? "diagnostics.facets.logs.available" : "diagnostics.facets.logs.empty"
+    },
+    {
+      id: "savedSources",
+      icon: "plug",
+      value: formatNumber(connected),
+      quality: "configured",
+      bodyKey: connected > 0 ? "diagnostics.facets.savedSources.available" : "diagnostics.facets.savedSources.empty"
+    },
+    {
+      id: "permissions",
+      icon: "shield-check",
+      value: formatNumber(denied),
+      quality: "measured",
+      bodyKey: denied > 0 ? "diagnostics.facets.permissions.blocked" : "diagnostics.facets.permissions.clear"
+    },
+    {
+      id: "runtimeHints",
+      icon: "radar",
+      value: formatNumber(runtimeHints),
+      quality: "detected",
+      bodyKey: runtimeHints > 0 ? "diagnostics.facets.runtimeHints.available" : "diagnostics.facets.runtimeHints.empty"
+    },
+    {
+      id: "platform",
+      icon: "monitor-cog",
+      value: t(`diagnostics.supportShort.${supportLevel}`, {}, supportLevel),
+      quality: diagnosticsQualityForSupport(supportLevel),
+      bodyKey: `diagnostics.supportDescriptions.${supportLevel}`
+    }
+  ];
+}
+
+function diagnosticsQualityForSupport(supportLevel) {
+  if (supportLevel === "full") return "measured";
+  if (supportLevel === "partial_container") return "limited";
+  return "unavailable";
+}
+
+function renderDiagnosticsFacetCard(facet) {
   return `
-    <article class="diagnostic-state-card${active ? " is-active" : ""}">
+    <article class="diagnostic-state-card diagnostics-facet-card">
       <div class="diagnostic-state-head">
-        <i data-lucide="${escapeHtml(DIAGNOSTIC_STATUS_ICONS[statusId] || "circle")}"></i>
-        <strong>${escapeHtml(t(`diagnostics.statuses.${statusId}.title`))}</strong>
+        <i data-lucide="${escapeHtml(facet.icon || "circle")}"></i>
+        <strong>${escapeHtml(t(`diagnostics.facets.${facet.id}.title`))}</strong>
       </div>
-      <p>${escapeHtml(t(`diagnostics.statuses.${statusId}.body`))}</p>
+      <div class="diagnostics-facet-value">
+        <span>${escapeHtml(facet.value)}</span>
+        <em>${escapeHtml(t(`diagnostics.quality.${facet.quality}`, {}, facet.quality))}</em>
+      </div>
+      <p>${escapeHtml(t(facet.bodyKey, {}, ""))}</p>
     </article>
   `;
 }
@@ -5050,11 +5102,8 @@ function renderOtherDashboardInstances(instances) {
           return `
             <div class="diagnostics-instance-row">
               <span>${escapeHtml(t("diagnostics.instances.item", {
-                user: instance.user || "--",
-                port: formatNumber(instance.port || 0),
-                pid: formatNumber(instance.pid || 0)
+                user: instance.user || "--"
               }))}</span>
-              <strong>${escapeHtml(instance.url || "--")}</strong>
             </div>
           `;
         })
@@ -5205,15 +5254,25 @@ async function handleSourceActionClick(event) {
 async function recheckSources() {
   const opKey = "global";
   setSourceOpPending("recheck", opKey, true);
+  state.sourceRecheckResult = {
+    status: "checking",
+    text: t("diagnostics.recheckResults.checking")
+  };
   renderSourceDiagnostics();
   renderSourceSettings();
   setSourceMessage("", "");
   try {
     state.sourceDiagnostics = await fetchJson("/api/sources/recheck", { method: "POST" });
     state.sourceDiagnosticsError = "";
+    state.sourceRecheckResult = buildSourceRecheckResult(state.sourceDiagnostics);
     setSourceMessage(t("settings.sources.rechecked"), "ready");
   } catch (error) {
-    setSourceMessage(error.message || t("settings.sources.recheckError"), "error");
+    const message = error.message || t("settings.sources.recheckError");
+    state.sourceRecheckResult = {
+      status: "error",
+      text: t("diagnostics.recheckResults.error", { message }, message)
+    };
+    setSourceMessage(message, "error");
   } finally {
     setSourceOpPending("recheck", opKey, false);
     renderSourceDiagnostics();
@@ -5221,8 +5280,28 @@ async function recheckSources() {
   }
 }
 
+function buildSourceRecheckResult(diagnostics) {
+  if (!diagnostics) {
+    return {
+      status: "error",
+      text: t("diagnostics.recheckResults.empty")
+    };
+  }
+  const actionable =
+    !isNonActionableSourceDiagnosticsStub(diagnostics, diagnostics.status) &&
+    hasActionableSourceDiagnostics(diagnostics, diagnostics.status);
+  const severity = actionable ? "action" : "ready";
+  return {
+    status: severity,
+    text: t(`diagnostics.recheckResults.${severity}`, {
+      status: t(`diagnostics.statuses.${diagnostics.status}.title`, {}, diagnostics.status)
+    })
+  };
+}
+
 async function connectCandidateSource(sourceId) {
   const previous = cloneJson(state.sourceDiagnostics);
+  state.sourceRecheckResult = null;
   setSourceOpPending("connect", sourceId, true);
   setSourceMessage("", "");
   applyOptimisticSourceConnection(sourceId);
@@ -5246,6 +5325,7 @@ async function connectCandidateSource(sourceId) {
 
 async function disableConnectedSource(sourceId) {
   const previous = cloneJson(state.sourceDiagnostics);
+  state.sourceRecheckResult = null;
   setSourceOpPending("disable", sourceId, true);
   setSourceMessage("", "");
   applyOptimisticSourceDisable(sourceId);
@@ -5323,6 +5403,7 @@ function deriveUiDiagnosticsStatus(diagnostics) {
   if ((diagnostics.otherDashboardInstances || []).length) return "other_dashboard_found";
   if (candidates.some((source) => source.accessStatus === "denied")) return "candidates_denied";
   if (candidates.some((source) => ["readable", "mixed"].includes(source.accessStatus))) return "candidates_readable_empty";
+  if (candidates.some((source) => ["process_only", "service_only"].includes(source.accessStatus))) return "runtime_hints_only";
   if (diagnostics.os?.supportLevel === "partial_container" || diagnostics.os?.supported === false) return "partial_unsupported";
   if (candidates.some((source) => source.owner?.current)) return "current_user_empty";
   return "no_tools_found";

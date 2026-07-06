@@ -556,59 +556,119 @@
     "heading": "Diagnostics & connection",
     "recheck": "Recheck access",
     "loading": "Loading source diagnostics...",
-    "meta": "User {user} · Home {home} · Checked {checkedAt} · {platform} · {support}",
+    "meta": "User {user} · Checked {checkedAt} · {platform} · {support}",
     "support": {
-      "full": "full discovery",
+      "full": "full host discovery",
       "partial_container": "limited container discovery",
-      "stub": "partial platform stub",
+      "stub": "platform check unavailable",
       "unsupported": "unsupported platform"
     },
-    "summary": {
-      "connected": "{count} connected",
-      "readable": "{count} readable",
-      "denied": "{count} denied",
-      "processOnly": "{count} process-only"
+    "supportShort": {
+      "full": "Full",
+      "partial_container": "Limited",
+      "stub": "Unavailable",
+      "unsupported": "Unavailable"
+    },
+    "supportDescriptions": {
+      "full": "Host file access, process hints, and permissions are measured on this machine.",
+      "partial_container": "Container discovery can miss host users, services, and homes; mounted logs can still be read.",
+      "stub": "Host source discovery is not available on this platform build; current-user configured logs may still be read.",
+      "unsupported": "Host source discovery is unavailable here; use Settings or a supported host build for source setup."
+    },
+    "quality": {
+      "measured": "Measured",
+      "configured": "Configured",
+      "detected": "Detected",
+      "limited": "Limited",
+      "unavailable": "Unavailable"
+    },
+    "facets": {
+      "logs": {
+        "title": "Readable log sources",
+        "available": "The app can read at least one local usage source.",
+        "empty": "No readable token log source was found in this scan."
+      },
+      "savedSources": {
+        "title": "Saved extra sources",
+        "available": "These are additional sources saved in Settings.",
+        "empty": "Zero saved sources is OK: current-user log history can still appear below."
+      },
+      "permissions": {
+        "title": "Permission fixes",
+        "blocked": "At least one plausible source exists, but this app cannot read it yet.",
+        "clear": "No denied source path was found in this scan."
+      },
+      "runtimeHints": {
+        "title": "Process/service hints",
+        "available": "A supported tool is visible only as a process or service, not as readable logs.",
+        "empty": "No process-only or service-only source hints were found."
+      },
+      "platform": {
+        "title": "Platform coverage"
+      }
     },
     "errors": {
       "load": "Could not load source diagnostics: {message}"
     },
     "statuses": {
       "connected_live": {
-        "title": "Connected and live",
-        "body": "At least one readable source is already connected and can contribute local usage data."
+        "title": "Local data is available",
+        "body": "Readable local sources are available. Saved extra-source counts only track sources you connected manually."
       },
       "current_user_empty": {
-        "title": "Current user empty",
-        "body": "The app scanned the current desktop user successfully, but no local usage files with data were found yet."
+        "title": "Current-user logs empty",
+        "body": "The current desktop user was scanned, but no local usage files with token data were found yet."
       },
       "candidates_readable_empty": {
         "title": "Readable candidates found",
-        "body": "Known tool folders are readable, but they currently look empty or have no token-bearing events."
+        "body": "Known tool folders are readable, but they currently look empty or are not saved as extra sources."
       },
       "candidates_denied": {
-        "title": "Access denied",
-        "body": "Plausible source folders were found under another local user, but this app cannot read them yet."
+        "title": "Permission action needed",
+        "body": "A plausible source was found, but this app cannot read it with the current account."
+      },
+      "runtime_hints_only": {
+        "title": "Tool seen without readable logs",
+        "body": "A supported tool process or service was detected, but no readable log folder was found for it yet."
       },
       "no_tools_found": {
-        "title": "No tools found",
+        "title": "No local tools found",
         "body": "No supported local tool folders, related processes, or service hints were detected on this machine."
       },
       "other_dashboard_found": {
-        "title": "Other dashboard found",
-        "body": "Another local LLM Usage Dashboard instance is running and may already have access to usage data."
+        "title": "Other dashboard instance found",
+        "body": "Another local LLM Usage Dashboard instance is running and may already be reading local usage data."
       },
       "partial_unsupported": {
-        "title": "Partially supported",
+        "title": "Discovery is limited here",
         "body": "This runtime can only do limited source discovery, so some users, services, or homes may stay invisible."
       },
       "discovery_error": {
         "title": "Discovery error",
-        "body": "Source discovery did not finish cleanly. Recheck access or inspect the backend error state."
+        "body": "Source discovery did not finish cleanly."
       }
+    },
+    "nextActions": {
+      "connected_live": "No action is needed; local data below can come from default current-user logs even with zero saved extra sources.",
+      "current_user_empty": "No action is needed unless you expected history; start a supported tool or inspect sources in Settings.",
+      "candidates_readable_empty": "Open Settings > Local sources if you want to save one of these readable sources.",
+      "candidates_denied": "Open Settings > Local sources, copy the ACL command for the denied source, run it as an admin, then recheck.",
+      "runtime_hints_only": "Wait for the tool to write usage logs, or configure the readable source in Settings and recheck.",
+      "no_tools_found": "Start a supported local tool or add a source in Settings, then recheck.",
+      "other_dashboard_found": "Use the already running dashboard window or stop it before checking this instance again.",
+      "partial_unsupported": "Run the desktop app on the host OS for fuller discovery; mounted local logs can still be shown below.",
+      "discovery_error": "Recheck access. If it fails again, check the backend error and source settings."
+    },
+    "recheckResults": {
+      "checking": "Checking...",
+      "ready": "Recheck complete: {status}",
+      "action": "Action needed: {status}",
+      "error": "Recheck failed: {message}",
+      "empty": "Recheck did not return diagnostics."
     },
     "instances": {
       "title": "Other dashboard instances",
-      "item": "{user} on port {port} (PID {pid})"
+      "item": "{user} has another dashboard instance running."
     }
   }
 }

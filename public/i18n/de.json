@@ -556,59 +556,119 @@
     "heading": "Diagnose & Verbindung",
     "recheck": "Zugriff erneut prüfen",
     "loading": "Quellen-Diagnose wird geladen...",
-    "meta": "Benutzer {user} · Home {home} · Geprüft {checkedAt} · {platform} · {support}",
+    "meta": "Benutzer {user} · Geprüft {checkedAt} · {platform} · {support}",
     "support": {
-      "full": "volle Discovery",
+      "full": "volle Host-Discovery",
       "partial_container": "eingeschränkte Container-Discovery",
-      "stub": "teilweise Plattform-Vorbereitung",
+      "stub": "Plattformprüfung nicht verfügbar",
       "unsupported": "nicht unterstützte Plattform"
     },
-    "summary": {
-      "connected": "{count} verbunden",
-      "readable": "{count} lesbar",
-      "denied": "{count} verweigert",
-      "processOnly": "{count} nur Prozess-Hinweis"
+    "supportShort": {
+      "full": "Voll",
+      "partial_container": "Eingeschränkt",
+      "stub": "Nicht verfügbar",
+      "unsupported": "Nicht verfügbar"
+    },
+    "supportDescriptions": {
+      "full": "Dateizugriff, Prozess-Hinweise und Berechtigungen werden auf diesem Rechner gemessen.",
+      "partial_container": "Container-Discovery kann Host-Benutzer, Services und Homes übersehen; gemountete Logs können trotzdem gelesen werden.",
+      "stub": "Host-Quellen-Discovery ist in diesem Plattform-Build nicht verfügbar; konfigurierte Logs des aktuellen Benutzers können trotzdem gelesen werden.",
+      "unsupported": "Host-Quellen-Discovery ist hier nicht verfügbar; nutze Einstellungen oder einen unterstützten Host-Build für das Quellen-Setup."
+    },
+    "quality": {
+      "measured": "Gemessen",
+      "configured": "Konfiguriert",
+      "detected": "Erkannt",
+      "limited": "Eingeschränkt",
+      "unavailable": "Nicht verfügbar"
+    },
+    "facets": {
+      "logs": {
+        "title": "Lesbare Log-Quellen",
+        "available": "Die App kann mindestens eine lokale Usage-Quelle lesen.",
+        "empty": "In diesem Lauf wurde keine lesbare Token-Log-Quelle gefunden."
+      },
+      "savedSources": {
+        "title": "Gespeicherte Zusatzquellen",
+        "available": "Das sind zusätzliche Quellen, die in den Einstellungen gespeichert wurden.",
+        "empty": "Null gespeicherte Quellen ist in Ordnung: Log-Verlauf des aktuellen Benutzers kann trotzdem unten erscheinen."
+      },
+      "permissions": {
+        "title": "Berechtigungsaktionen",
+        "blocked": "Mindestens eine plausible Quelle existiert, ist für diese App aber noch nicht lesbar.",
+        "clear": "In diesem Lauf wurde kein verweigerter Quellenpfad gefunden."
+      },
+      "runtimeHints": {
+        "title": "Prozess-/Service-Hinweise",
+        "available": "Ein unterstütztes Tool ist nur als Prozess oder Service sichtbar, nicht als lesbare Logs.",
+        "empty": "Keine reinen Prozess- oder Service-Hinweise gefunden."
+      },
+      "platform": {
+        "title": "Plattform-Abdeckung"
+      }
     },
     "errors": {
       "load": "Quellen-Diagnose konnte nicht geladen werden: {message}"
     },
     "statuses": {
       "connected_live": {
-        "title": "Verbunden und aktiv",
-        "body": "Mindestens eine lesbare Quelle ist bereits verbunden und kann lokale Nutzungsdaten beitragen."
+        "title": "Lokale Daten verfügbar",
+        "body": "Lesbare lokale Quellen sind verfügbar. Gespeicherte Zusatzquellen zählen nur Quellen, die du manuell verbunden hast."
       },
       "current_user_empty": {
-        "title": "Aktueller Benutzer leer",
-        "body": "Der aktuelle Desktop-Benutzer wurde erfolgreich geprüft, aber es wurden noch keine lokalen Usage-Dateien mit Daten gefunden."
+        "title": "Logs des aktuellen Benutzers leer",
+        "body": "Der aktuelle Desktop-Benutzer wurde geprüft, aber es wurden noch keine lokalen Usage-Dateien mit Token-Daten gefunden."
       },
       "candidates_readable_empty": {
         "title": "Lesbare Kandidaten gefunden",
-        "body": "Bekannte Tool-Ordner sind lesbar, wirken aktuell aber leer oder enthalten keine tokenhaltigen Events."
+        "body": "Bekannte Tool-Ordner sind lesbar, wirken aktuell aber leer oder sind nicht als Zusatzquellen gespeichert."
       },
       "candidates_denied": {
-        "title": "Zugriff verweigert",
-        "body": "Plausible Quellordner wurden bei einem anderen lokalen Benutzer gefunden, sind für diese App aber noch nicht lesbar."
+        "title": "Berechtigungsaktion nötig",
+        "body": "Eine plausible Quelle wurde gefunden, ist mit dem aktuellen App-Konto aber nicht lesbar."
+      },
+      "runtime_hints_only": {
+        "title": "Tool ohne lesbare Logs gesehen",
+        "body": "Ein unterstützter Tool-Prozess oder Service wurde erkannt, aber noch kein lesbarer Log-Ordner dazu gefunden."
       },
       "no_tools_found": {
-        "title": "Keine Tools gefunden",
+        "title": "Keine lokalen Tools gefunden",
         "body": "Auf diesem Rechner wurden keine unterstützten lokalen Tool-Ordner, passenden Prozesse oder Service-Hinweise erkannt."
       },
       "other_dashboard_found": {
         "title": "Andere Dashboard-Instanz gefunden",
-        "body": "Eine andere lokale LLM-Usage-Dashboard-Instanz läuft bereits und hat eventuell schon Zugriff auf Nutzungsdaten."
+        "body": "Eine andere lokale LLM-Usage-Dashboard-Instanz läuft bereits und liest eventuell schon lokale Nutzungsdaten."
       },
       "partial_unsupported": {
-        "title": "Teilweise unterstützt",
+        "title": "Discovery ist hier eingeschränkt",
         "body": "Diese Laufzeit kann Quellen nur eingeschränkt erkennen; manche Benutzer, Services oder Homes bleiben daher unsichtbar."
       },
       "discovery_error": {
         "title": "Discovery-Fehler",
-        "body": "Die Quellen-Discovery konnte nicht sauber abgeschlossen werden. Zugriff erneut prüfen oder Backend-Fehlerzustand kontrollieren."
+        "body": "Die Quellen-Discovery konnte nicht sauber abgeschlossen werden."
       }
+    },
+    "nextActions": {
+      "connected_live": "Keine Aktion nötig; lokale Daten unten können aus Standard-Logs des aktuellen Benutzers kommen, auch bei null gespeicherten Zusatzquellen.",
+      "current_user_empty": "Keine Aktion nötig, außer du erwartest Verlauf; starte ein unterstütztes Tool oder prüfe Quellen in den Einstellungen.",
+      "candidates_readable_empty": "Öffne Einstellungen > Lokale Quellen, wenn du eine dieser lesbaren Quellen speichern möchtest.",
+      "candidates_denied": "Öffne Einstellungen > Lokale Quellen, kopiere den ACL-Befehl der verweigerten Quelle, führe ihn als Admin aus und prüfe erneut.",
+      "runtime_hints_only": "Warte, bis das Tool Usage-Logs schreibt, oder konfiguriere die lesbare Quelle in den Einstellungen und prüfe erneut.",
+      "no_tools_found": "Starte ein unterstütztes lokales Tool oder füge eine Quelle in den Einstellungen hinzu und prüfe erneut.",
+      "other_dashboard_found": "Nutze das bereits laufende Dashboard-Fenster oder stoppe es, bevor du diese Instanz erneut prüfst.",
+      "partial_unsupported": "Starte die Desktop-App auf dem Host-OS für vollständigere Discovery; gemountete lokale Logs können trotzdem unten erscheinen.",
+      "discovery_error": "Zugriff erneut prüfen. Wenn es wieder fehlschlägt, Backend-Fehler und Quellen-Einstellungen kontrollieren."
+    },
+    "recheckResults": {
+      "checking": "Prüfe...",
+      "ready": "Prüfung abgeschlossen: {status}",
+      "action": "Aktion nötig: {status}",
+      "error": "Prüfung fehlgeschlagen: {message}",
+      "empty": "Prüfung hat keine Diagnose zurückgegeben."
     },
     "instances": {
       "title": "Andere Dashboard-Instanzen",
-      "item": "{user} auf Port {port} (PID {pid})"
+      "item": "{user} hat eine weitere Dashboard-Instanz laufen."
     }
   }
 }

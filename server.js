@@ -314,7 +314,7 @@ app.get("/api/system/live", authMiddleware, async (_req, res) => {
 
 app.get("/api/sources/diagnostics", authMiddleware, async (_req, res) => {
   try {
-    res.json(await buildSourceDiagnostics());
+    res.json(sanitizeSourceDiagnosticsPayload(await buildSourceDiagnostics()));
   } catch (error) {
     sendApiError(res, error, "source_diagnostics_failed");
   }
@@ -324,7 +324,7 @@ app.post("/api/sources/recheck", authMiddleware, async (_req, res) => {
   try {
     invalidateTimedCache(sourceDiagnosticsCache);
     res.json({
-      ...(await buildSourceDiagnostics()),
+      ...sanitizeSourceDiagnosticsPayload(await buildSourceDiagnostics()),
       rechecked: true
     });
   } catch (error) {
@@ -1164,9 +1164,55 @@ function deriveSourceDiagnosticsStatus(discovery, candidates, connected) {
   if (discovery.otherDashboardInstances?.some((instance) => instance.pid !== process.pid)) return "other_dashboard_found";
   if (candidates.some((source) => source.accessStatus === "denied")) return "candidates_denied";
   if (candidates.some((source) => ["readable", "mixed"].includes(source.accessStatus))) return "candidates_readable_empty";
+  if (candidates.some((source) => ["process_only", "service_only"].includes(source.accessStatus))) return "runtime_hints_only";
   if (discovery.os?.supportLevel === "partial_container" || discovery.os?.supported === false) return "partial_unsupported";
   if (candidates.some((source) => source.owner?.current)) return "current_user_empty";
   return "no_tools_found";
+}
+
+function sanitizeSourceDiagnosticsPayload(diagnostics) {
+  if (!diagnostics || typeof diagnostics !== "object") return diagnostics;
+  const { processEvidence: _processEvidence, serviceEvidence: _serviceEvidence, ...rest } = diagnostics;
+  const otherDashboardInstances = (diagnostics.otherDashboardInstances || []).filter((instance) => Number(instance?.pid) !== process.pid);
+  return {
+    ...rest,
+    counts: diagnostics.counts
+      ? {
+          ...diagnostics.counts,
+          otherDashboardInstances: otherDashboardInstances.length
+        }
+      : diagnostics.counts,
+    currentUser: sanitizeDiagnosticOwner(diagnostics.currentUser),
+    candidates: (diagnostics.candidates || []).map(sanitizeDiagnosticSource),
+    connected: (diagnostics.connected || []).map(sanitizeDiagnosticSource),
+    otherDashboardInstances: otherDashboardInstances.map(sanitizeDiagnosticInstance),
+    persistence: diagnostics.persistence ? { version: diagnostics.persistence.version || 1 } : undefined
+  };
+}
+
+function sanitizeDiagnosticSource(source) {
+  if (!source || typeof source !== "object") return source;
+  const { processes: _processes, service: _service, currentCandidate, ...rest } = source;
+  return {
+    ...rest,
+    owner: sanitizeDiagnosticOwner(source.owner),
+    currentCandidate: currentCandidate ? sanitizeDiagnosticSource(currentCandidate) : currentCandidate
+  };
+}
+
+function sanitizeDiagnosticOwner(owner) {
+  if (!owner || typeof owner !== "object") return owner;
+  const { home: _home, ...rest } = owner;
+  return rest;
+}
+
+function sanitizeDiagnosticInstance(instance) {
+  if (!instance || typeof instance !== "object") return instance;
+  return {
+    user: instance.user || null,
+    startedAt: instance.startedAt || null,
+    version: instance.version || null
+  };
 }
 
 function buildReaderSources(connectedSources = []) {
