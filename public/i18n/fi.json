@@ -174,9 +174,14 @@
   "pricing": {
     "eyebrow": "API-kustannukset",
     "heading": "Mitä tokenisi olisivat maksaneet API:n kautta",
-    "meta": "EUR ECB:n kautta {fxDate} · hinnat {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Luettelo {catalogVersion} · {modelCount} mallia · EUR ECB:n kautta {fxDate} · API-hinnat {pricingDate} · sisäinen pisteytys {scoreDate}",
+    "qualityScoreTitle": "Sisäinen heuristinen pisteytys {scoreDate}: {score}/100",
     "chinaBadge": "Kiina",
+    "unknown": "Tuntematon",
+    "notPriced": "Ei hinnoiteltu",
+    "aliases": "Aliakset: {aliases}",
+    "limitSummary": "konteksti {context} · tuloste {output}",
+    "sourceReviewed": "Tarkistettu {date}",
     "regions": {
       "apiDiscount": "API-alennus"
     },
@@ -184,12 +189,31 @@
       "model": "Malli",
       "score": "Pisteet",
       "region": "Alue",
+      "limits": "Rajat",
       "input": "Syöte",
       "cache": "Välimuisti",
       "output": "Tuloste",
       "today": "Tänään",
       "total": "Yhteensä",
+      "status": "Tila",
       "source": "Lähde"
+    },
+    "priceStatus": {
+      "official": "Virallinen hinta",
+      "estimated": "Arvioitu hinta",
+      "unknown": "Hinta tuntematon",
+      "mixed": "Sekahinnat"
+    },
+    "availability": {
+      "ga": "Yleisesti saatavilla",
+      "preview": "Esikatselu",
+      "deprecated": "Vanhentunut",
+      "unknown": "Saatavuus tuntematon"
+    },
+    "limitStatus": {
+      "official": "Viralliset rajat",
+      "estimated": "Arvioidut rajat",
+      "unknown": "Rajat tuntemattomat"
     }
   },
   "providers": {

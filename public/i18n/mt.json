@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "Spejjeż API",
     "heading": "Kemm kienu jiswew it-tokens tiegħek permezz tal-API",
-    "meta": "EUR permezz tal-ECB {fxDate} · prezzijiet {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
-    "chinaBadge": "Ċina",
+    "meta": "Katalgu {catalogVersion} · {modelCount} mudelli · EUR permezz tal-ECB {fxDate} · prezzijiet API {pricingDate} · punteġġ intern {scoreDate}",
+    "qualityScoreTitle": "Punteġġ euristiku intern {scoreDate}: {score}/100",
+    "chinaBadge": "Iċ-Ċina",
+    "unknown": "Mhux magħruf",
+    "notPriced": "Mhux ipprezzat",
+    "aliases": "Ismijiet alternattivi: {aliases}",
+    "limitSummary": "kuntest {context} · output {output}",
+    "sourceReviewed": "Rivedut {date}",
     "regions": {
       "apiDiscount": "Skont API"
     },
     "columns": {
       "model": "Mudell",
-      "score": "Score",
+      "score": "Punteġġ",
       "region": "Reġjun",
-      "input": "Input",
-      "cache": "Cache",
-      "output": "Output",
+      "limits": "Limiti",
+      "input": "Daħħal",
+      "cache": "Memorja temporanja",
+      "output": "Riżultat",
       "today": "Illum",
-      "total": "Total",
+      "total": "B’kollox",
+      "status": "Stat",
       "source": "Sors"
+    },
+    "priceStatus": {
+      "official": "Prezz uffiċjali",
+      "estimated": "Prezz stmat",
+      "unknown": "Prezz mhux magħruf",
+      "mixed": "Prezzijiet imħallta"
+    },
+    "availability": {
+      "ga": "Disponibbli b’mod ġenerali",
+      "preview": "Previżjoni",
+      "deprecated": "Deprekat",
+      "unknown": "Disponibbiltà mhux magħrufa"
+    },
+    "limitStatus": {
+      "official": "Limiti uffiċjali",
+      "estimated": "Limiti stmati",
+      "unknown": "Limiti mhux magħrufa"
     }
   },
   "providers": {

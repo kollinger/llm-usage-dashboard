@@ -172,24 +172,48 @@
     }
   },
   "pricing": {
-    "eyebrow": "API sąnaudos",
+    "eyebrow": "API išlaidos",
     "heading": "Kiek tavo žetonai būtų kainavę per API",
-    "meta": "EUR per ECB {fxDate} · kainos {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalogas {catalogVersion} · {modelCount} modelių · EUR pagal ECB {fxDate} · API kainos {pricingDate} · vidinis balas {scoreDate}",
+    "qualityScoreTitle": "Vidinis euristinis balas {scoreDate}: {score}/100",
     "chinaBadge": "Kinija",
+    "unknown": "Nežinoma",
+    "notPriced": "Be kainos",
+    "aliases": "Pseudonimai: {aliases}",
+    "limitSummary": "kontekstas {context} · išvestis {output}",
+    "sourceReviewed": "Peržiūrėta {date}",
     "regions": {
       "apiDiscount": "API nuolaida"
     },
     "columns": {
       "model": "Modelis",
-      "score": "Score",
+      "score": "Balas",
       "region": "Regionas",
+      "limits": "Ribos",
       "input": "Įvestis",
       "cache": "Talpykla",
       "output": "Išvestis",
       "today": "Šiandien",
       "total": "Iš viso",
+      "status": "Būsena",
       "source": "Šaltinis"
+    },
+    "priceStatus": {
+      "official": "Oficiali kaina",
+      "estimated": "Įvertinta kaina",
+      "unknown": "Kaina nežinoma",
+      "mixed": "Mišrios kainos"
+    },
+    "availability": {
+      "ga": "Bendrai prieinama",
+      "preview": "Peržiūra",
+      "deprecated": "Nebenaudojama",
+      "unknown": "Prieinamumas nežinomas"
+    },
+    "limitStatus": {
+      "official": "Oficialios ribos",
+      "estimated": "Įvertintos ribos",
+      "unknown": "Ribos nežinomos"
     }
   },
   "providers": {

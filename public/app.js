@@ -144,8 +144,10 @@ const providerMeta = {
 
 const USD_PER_EUR = 1.1448;
 const FX_DATE = "2026-07-03";
-const PRICING_DATE = "2026-07-05";
-const SCORE_DATE = "2026-07-05";
+const PRICING_DATE = "2026-07-06";
+const SCORE_DATE = "2026-07-06";
+const PRICING_CATALOG_VERSION = "2026.07.06";
+const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
@@ -279,367 +281,870 @@ const pricingModels = [
   {
     provider: "OpenAI",
     model: "GPT-5.5",
+    aliases: [
+      "gpt-5.5",
+      "gpt-5-5"
+    ],
     region: "API/Codex",
     inputUsd: 5,
     cachedInputUsd: 0.5,
     outputUsd: 30,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "OpenAI",
     model: "GPT-5.4",
+    aliases: [
+      "gpt-5.4",
+      "gpt-5-4"
+    ],
     region: "API/Codex",
     inputUsd: 2.5,
     cachedInputUsd: 0.25,
     outputUsd: 15,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "OpenAI",
     model: "GPT-5.4 Mini",
+    aliases: [
+      "gpt-5.4-mini",
+      "gpt-5-4-mini"
+    ],
     region: "Codex",
     inputUsd: 0.75,
     cachedInputUsd: 0.075,
     outputUsd: 4.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "OpenAI Codex",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "OpenAI",
     model: "GPT-5.3-Codex",
+    aliases: [
+      "gpt-5.3-codex",
+      "gpt-5-3-codex",
+      "gpt-5.3"
+    ],
     region: "Codex",
     inputUsd: 1.75,
     cachedInputUsd: 0.175,
     outputUsd: 14,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 400000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "OpenAI Codex",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "OpenAI",
     model: "GPT-5.3-Codex-Spark",
+    aliases: [
+      "gpt-5.3-codex-spark",
+      "gpt-5-3-codex-spark",
+      "codex-spark"
+    ],
     region: "Codex Spark",
     inputUsd: 1.75,
     cachedInputUsd: 0.175,
     outputUsd: 14,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 400000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "OpenAI Codex",
-    sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/"
+    sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "OpenAI",
     model: "GPT-5.2",
+    aliases: [
+      "gpt-5.2",
+      "gpt-5-2"
+    ],
     region: "Legacy",
     inputUsd: 1.75,
     cachedInputUsd: 0.175,
     outputUsd: 14,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 400000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "Anthropic",
     model: "Claude Fable 5",
+    aliases: [
+      "claude-fable-5",
+      "anthropic.claude-fable-5"
+    ],
     region: "Global",
     inputUsd: 10,
     cacheWriteUsd: 12.5,
     cachedInputUsd: 1,
     outputUsd: 50,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
     source: "Anthropic",
-    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "Anthropic",
     model: "Claude Opus 4.8",
+    aliases: [
+      "claude-opus-4-8",
+      "anthropic.claude-opus-4-8",
+      "claude-opus-4.8",
+      "claude-opus-4-7",
+      "claude-opus-4-6"
+    ],
     region: "Global",
     inputUsd: 5,
     cacheWriteUsd: 6.25,
     cachedInputUsd: 0.5,
     outputUsd: 25,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
     source: "Anthropic",
-    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "Anthropic",
     model: "Claude Sonnet 4.6",
+    aliases: [
+      "claude-sonnet-4-6",
+      "anthropic.claude-sonnet-4-6",
+      "claude-sonnet-4.6",
+      "claude-sonnet-4-5",
+      "claude-sonnet-4"
+    ],
     region: "Global",
     inputUsd: 3,
     cacheWriteUsd: 3.75,
     cachedInputUsd: 0.3,
     outputUsd: 15,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "Anthropic",
-    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "Anthropic",
     model: "Claude Haiku 4.5",
+    aliases: [
+      "claude-haiku-4-5",
+      "claude-haiku-4-5-20251001",
+      "anthropic.claude-haiku-4-5-20251001-v1:0"
+    ],
     region: "Global",
     inputUsd: 1,
     cacheWriteUsd: 1.25,
     cachedInputUsd: 0.1,
     outputUsd: 5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 200000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "Anthropic",
-    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing"
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "MiniMax",
     model: "MiniMax M3",
+    aliases: [
+      "minimax-m3"
+    ],
     region: "<=512k 7d promo",
     inputUsd: 0.3,
     cachedInputUsd: 0.06,
     outputUsd: 1.2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 512000,
+    maxOutputTokens: null,
+    limitStatus: "official",
     source: "MiniMax",
     sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Google",
     model: "Gemini 3.1 Pro Preview",
+    aliases: [
+      "gemini-3.1-pro-preview",
+      "models/gemini-3.1-pro-preview"
+    ],
     region: "<=200k",
     inputUsd: 2,
     cachedInputUsd: 0.2,
     outputUsd: 12,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "preview",
+    contextTokens: 1000000,
+    maxOutputTokens: 65536,
+    limitStatus: "official",
     source: "Google",
-    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing"
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "Google",
     model: "Gemini 3.5 Flash",
+    aliases: [
+      "gemini-3.5-flash",
+      "models/gemini-3.5-flash",
+      "gemini-flash-latest"
+    ],
     region: "Standard",
     inputUsd: 1.5,
     cachedInputUsd: 0.15,
     outputUsd: 9,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 65536,
+    limitStatus: "official",
     source: "Google",
-    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing"
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "Google",
     model: "Gemini 3.1 Flash-Lite",
+    aliases: [
+      "gemini-3.1-flash-lite",
+      "models/gemini-3.1-flash-lite"
+    ],
     region: "Standard",
     inputUsd: 0.25,
     cachedInputUsd: 0.025,
     outputUsd: 1.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 65536,
+    limitStatus: "official",
     source: "Google",
-    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing"
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-07-06"
   },
   {
     provider: "DeepSeek",
     model: "DeepSeek V4 Pro",
+    aliases: [
+      "deepseek-v4-pro"
+    ],
     region: "API",
     inputUsd: 0.435,
     cachedInputUsd: 0.003625,
     outputUsd: 0.87,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 8000,
+    limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "DeepSeek",
     model: "DeepSeek V4 Flash",
+    aliases: [
+      "deepseek-v4-flash"
+    ],
     region: "API",
     inputUsd: 0.14,
     cachedInputUsd: 0.0028,
     outputUsd: 0.28,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 8000,
+    limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Alibaba",
     model: "Qwen3-Max",
+    aliases: [
+      "qwen3-max",
+      "qwen-max"
+    ],
     region: "Global <=32k",
     inputUsd: 0.359,
     cachedInputUsd: 0.0718,
     outputUsd: 1.434,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 32000,
+    maxOutputTokens: null,
+    limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Alibaba",
     model: "Qwen3.5-Plus",
+    aliases: [
+      "qwen3.5-plus",
+      "qwen3-5-plus",
+      "qwen-plus"
+    ],
     region: "Global <=128k",
     inputUsd: 0.115,
     cachedInputUsd: 0.023,
     outputUsd: 0.688,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: null,
+    limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-5.2",
+    aliases: [
+      "glm-5.2",
+      "glm-5-2"
+    ],
     region: "Global",
     inputUsd: 1.4,
     cachedInputUsd: 0.26,
     outputUsd: 4.4,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-5.1",
+    aliases: [
+      "glm-5.1",
+      "glm-5-1"
+    ],
     region: "Global",
     inputUsd: 1.4,
     cachedInputUsd: 0.26,
     outputUsd: 4.4,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-5",
+    aliases: [
+      "glm-5"
+    ],
     region: "Global",
     inputUsd: 1,
     cachedInputUsd: 0.2,
     outputUsd: 3.2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-5-Turbo",
+    aliases: [
+      "glm-5-turbo"
+    ],
     region: "Global",
     inputUsd: 1.2,
     cachedInputUsd: 0.24,
     outputUsd: 4,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.7",
+    aliases: [
+      "glm-4.7",
+      "glm-4-7"
+    ],
     region: "Global",
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.7-FlashX",
+    aliases: [
+      "glm-4.7-flashx",
+      "glm-4-7-flashx"
+    ],
     region: "Global",
     inputUsd: 0.07,
     cachedInputUsd: 0.01,
     outputUsd: 0.4,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.7-Flash",
+    aliases: [
+      "glm-4.7-flash",
+      "glm-4-7-flash"
+    ],
     region: "Global free tier",
     inputUsd: 0,
     cachedInputUsd: 0,
     outputUsd: 0,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.6",
+    aliases: [
+      "glm-4.6",
+      "glm-4-6"
+    ],
     region: "Global",
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.5",
+    aliases: [
+      "glm-4.5",
+      "glm-4-5"
+    ],
     region: "Global",
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.5-X",
+    aliases: [
+      "glm-4.5-x",
+      "glm-4-5-x"
+    ],
     region: "Global",
     inputUsd: 2.2,
     cachedInputUsd: 0.45,
     outputUsd: 8.9,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.5-Air",
+    aliases: [
+      "glm-4.5-air",
+      "glm-4-5-air"
+    ],
     region: "Global",
     inputUsd: 0.2,
     cachedInputUsd: 0.03,
     outputUsd: 1.1,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.5-AirX",
+    aliases: [
+      "glm-4.5-airx",
+      "glm-4-5-airx"
+    ],
     region: "Global",
     inputUsd: 1.1,
     cachedInputUsd: 0.22,
     outputUsd: 4.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4.5-Flash",
+    aliases: [
+      "glm-4.5-flash",
+      "glm-4-5-flash"
+    ],
     region: "Global free tier",
     inputUsd: 0,
     cachedInputUsd: 0,
     outputUsd: 0,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "Z.AI",
     model: "GLM-4-32B-0414-128K",
+    aliases: [
+      "glm-4-32b-0414-128k"
+    ],
     region: "Global",
     inputUsd: 0.1,
     cachedInputUsd: 0.1,
     outputUsd: 0.1,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: 32000,
+    limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "StepFun",
     model: "step-3.7-flash",
+    aliases: [
+      "step-3.7-flash",
+      "step-3-7-flash"
+    ],
     region: "API",
     inputUsd: 0.2,
     cachedInputUsd: 0.04,
     outputUsd: 1.15,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: null,
+    limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
+    sourceReviewDate: "2026-07-06",
     china: true
   },
   {
     provider: "StepFun",
     model: "step-3.5-flash",
+    aliases: [
+      "step-3.5-flash",
+      "step-3-5-flash"
+    ],
     region: "API",
     inputUsd: 0.1,
     cachedInputUsd: 0.02,
     outputUsd: 0.3,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: null,
+    limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
+    sourceReviewDate: "2026-07-06",
     china: true
+  },
+  {
+    provider: "xAI",
+    model: "Grok 4.3",
+    aliases: [
+      "grok-4.3",
+      "grok-4-3"
+    ],
+    region: "Chat API",
+    inputUsd: 1.25,
+    cachedInputUsd: 0.2,
+    outputUsd: 2.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "xAI",
+    sourceUrl: "https://docs.x.ai/developers/pricing",
+    sourceReviewDate: "2026-07-06",
+    sourceNotes: "Chat API table lists Cached input at $0.20 per 1M tokens."
+  },
+  {
+    provider: "xAI",
+    model: "Grok Build 0.1",
+    aliases: [
+      "grok-build-0.1",
+      "grok-build-0-1"
+    ],
+    region: "Code API",
+    inputUsd: 1,
+    cachedInputUsd: 0.2,
+    outputUsd: 2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 256000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "xAI",
+    sourceUrl: "https://docs.x.ai/developers/pricing",
+    sourceReviewDate: "2026-07-06",
+    sourceNotes: "Code API table lists Cached input at $0.20 per 1M tokens."
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Large 2",
+    aliases: [
+      "mistral-large-2",
+      "mistral-large-latest"
+    ],
+    region: "API",
+    inputUsd: null,
+    cachedInputUsd: null,
+    outputUsd: null,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "unknown",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/getting-started/models/",
+    sourceReviewDate: "2026-07-06"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Small 3.2",
+    aliases: [
+      "mistral-small-3.2",
+      "mistral-small-latest"
+    ],
+    region: "API",
+    inputUsd: null,
+    cachedInputUsd: null,
+    outputUsd: null,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "unknown",
+    availability: "ga",
+    contextTokens: 128000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/getting-started/models/",
+    sourceReviewDate: "2026-07-06"
   }
 ];
 
@@ -659,12 +1164,9 @@ const costPricingQualityBySource = {
 
 const pricingModelByCanonicalName = new Map(pricingModels.map((price) => [canonicalModelName(price.model), price]));
 const pricingModelAliasByCanonicalName = new Map(
-  Object.entries({
-    "claude-sonnet-4": "Claude Sonnet 4.6",
-    "claude-sonnet-4-5": "Claude Sonnet 4.6",
-    "claude-opus-4-7": "Claude Opus 4.8",
-    "claude-opus-4-6": "Claude Opus 4.8"
-  }).map(([alias, model]) => [alias, model])
+  pricingModels.flatMap((price) =>
+    (Array.isArray(price.aliases) ? price.aliases : []).map((alias) => [canonicalModelName(alias), price.model])
+  )
 );
 
 const modelQualityScores = {
@@ -683,9 +1185,12 @@ const modelQualityScores = {
   "Gemini 3.5 Flash": 83,
   "GLM-5-Turbo": 82,
   "GLM-5": 81,
+  "Grok 4.3": 81,
   "GPT-5.2": 80,
   "Qwen3-Max": 79,
   "GPT-5.4 Mini": 77,
+  "Grok Build 0.1": 76,
+  "Mistral Large 2": 75,
   "GLM-4.6": 74,
   "GLM-4.7": 73,
   "GLM-4.5-X": 72,
@@ -695,6 +1200,7 @@ const modelQualityScores = {
   "step-3.7-flash": 68,
   "DeepSeek V4 Flash": 67,
   "GLM-4.5-Air": 66,
+  "Mistral Small 3.2": 65,
   "Claude Haiku 4.5": 64,
   "Gemini 3.1 Flash-Lite": 62,
   "GLM-4.7-FlashX": 61,
@@ -2835,15 +3341,18 @@ function renderPricing(local) {
               <strong>${escapeHtml(price.model)}</strong>
               <span>${escapeHtml(price.provider)}</span>
               ${price.china ? `<em class="china-badge">${escapeHtml(t("pricing.chinaBadge"))}</em>` : ""}
+              ${renderPricingAliases(price)}
             </div>
           </td>
           <td class="score-cell">${renderQualityScore(price)}</td>
           <td>${escapeHtml(priceRegion(price))}</td>
+          <td>${renderLimitCell(price)}</td>
           <td class="numeric">${formatUsdPerM(price.inputUsd)}</td>
           <td class="numeric">${formatCacheRate(price)}</td>
           <td class="numeric">${formatUsdPerM(price.outputUsd)}</td>
-          <td class="numeric cost-cell">${formatEuro(today.eur)}</td>
-          <td class="numeric cost-cell">${formatEuro(total.eur)}</td>
+          <td class="numeric cost-cell">${formatCostEstimate(today)}</td>
+          <td class="numeric cost-cell">${formatCostEstimate(total)}</td>
+          <td>${renderPricingStatus(price)}</td>
           <td><a href="${price.sourceUrl}" target="_blank" rel="noreferrer">${escapeHtml(price.source)}</a></td>
         </tr>
       `;
@@ -2851,10 +3360,39 @@ function renderPricing(local) {
     .join("");
 
   els.pricingMeta.textContent = t("pricing.meta", {
+    catalogVersion: PRICING_CATALOG_VERSION,
+    modelCount: formatNumber(pricingModels.length),
     fxDate: FX_DATE,
     pricingDate: PRICING_DATE,
     scoreDate: SCORE_DATE
   });
+}
+
+function renderPricingAliases(price) {
+  const aliases = (Array.isArray(price.aliases) ? price.aliases : []).filter(Boolean);
+  if (!aliases.length) return "";
+  return `<small>${escapeHtml(t("pricing.aliases", { aliases: aliases.slice(0, 3).join(", ") }))}</small>`;
+}
+
+function renderLimitCell(price) {
+  const context = formatTokenLimit(price.contextTokens);
+  const output = formatTokenLimit(price.maxOutputTokens);
+  return `
+    <div class="limit-cell">
+      <span>${escapeHtml(t("pricing.limitSummary", { context, output }))}</span>
+      <small>${escapeHtml(pricingLimitStatusLabel(price.limitStatus))}</small>
+    </div>
+  `;
+}
+
+function renderPricingStatus(price) {
+  return `
+    <div class="pricing-status-cell">
+      <span class="status-pill" data-status="${escapeHtml(price.availability || "unknown")}">${escapeHtml(pricingAvailabilityLabel(price.availability))}</span>
+      <small>${escapeHtml(pricingPriceStatusLabel(price.priceStatus))}</small>
+      <small>${escapeHtml(t("pricing.sourceReviewed", { date: price.sourceReviewDate || PRICING_DATE }))}</small>
+    </div>
+  `;
 }
 
 function sortPricingRows(rows) {
@@ -2864,7 +3402,10 @@ function sortPricingRows(rows) {
   return [...rows].sort((a, b) => {
     const left = pricingSortValue(a, sort.key);
     const right = pricingSortValue(b, sort.key);
-    const result = compareSortValues(left, right);
+    const leftMissing = isMissingSortValue(left);
+    const rightMissing = isMissingSortValue(right);
+    if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+    const result = compareSortValues(sortValue(left), sortValue(right));
     if (result) return result * multiplier;
     return compareSortValues(a.price.model, b.price.model);
   });
@@ -2875,13 +3416,15 @@ function pricingSortValue(row, key) {
   return (
     {
       model: `${price.provider} ${price.model}`,
-      score: modelQualityScores[price.model] || 0,
+      score: sortNumber(modelQualityScores[price.model]),
       region: priceRegion(price),
-      input: price.inputUsd,
-      cache: price.cachedInputUsd ?? price.cacheWriteUsd ?? price.inputUsd,
-      output: price.outputUsd,
-      today: today.eur,
-      total: total.eur,
+      limits: sortNumber(price.contextTokens ?? price.maxOutputTokens),
+      input: sortNumber(price.inputUsd),
+      cache: sortNumber(price.cachedInputUsd ?? price.cacheWriteUsd),
+      output: sortNumber(price.outputUsd),
+      today: today.costed ? sortNumber(today.eur) : sortMissing(),
+      total: total.costed ? sortNumber(total.eur) : sortMissing(),
+      status: `${price.availability || "unknown"} ${price.priceStatus || "unknown"}`,
       source: price.source
     }[key] ?? ""
   );
@@ -2889,6 +3432,35 @@ function pricingSortValue(row, key) {
 
 function priceRegion(price) {
   return price.regionKey ? t(price.regionKey, {}, price.region) : price.region;
+}
+
+function sortNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? { value: number, missing: false } : sortMissing();
+}
+
+function sortMissing() {
+  return { value: "", missing: true };
+}
+
+function sortValue(value) {
+  return value && typeof value === "object" && Object.hasOwn(value, "value") ? value.value : value;
+}
+
+function isMissingSortValue(value) {
+  return Boolean(value && typeof value === "object" && value.missing);
+}
+
+function pricingAvailabilityLabel(status) {
+  return t(`pricing.availability.${status || "unknown"}`, {}, status || "unknown");
+}
+
+function pricingPriceStatusLabel(status) {
+  return t(`pricing.priceStatus.${status || "unknown"}`, {}, status || "unknown");
+}
+
+function pricingLimitStatusLabel(status) {
+  return t(`pricing.limitStatus.${status || "unknown"}`, {}, status || "unknown");
 }
 
 function pricingModelForUsageModel(model) {
@@ -2993,14 +3565,24 @@ function addBillingTotals(target, source) {
 }
 
 function estimateCost(usage, price) {
-  const inputUsd = (usage.inputTokens * price.inputUsd) / MILLION;
-  const cacheWriteUsd =
-    (usage.cacheCreationInputTokens * (price.cacheWriteUsd ?? price.inputUsd)) / MILLION;
-  const cachedUsd =
-    (usage.cachedInputTokens * (price.cachedInputUsd ?? price.inputUsd)) / MILLION;
-  const outputUsd = (usage.outputTokens * price.outputUsd) / MILLION;
-  const usd = inputUsd + cacheWriteUsd + cachedUsd + outputUsd;
-  return { usd, eur: usd / USD_PER_EUR };
+  const input = estimateTokenBucket(usage.inputTokens, price.inputUsd);
+  const cacheWrite = estimateTokenBucket(
+    usage.cacheCreationInputTokens,
+    price.cacheWriteUsd ?? price.inputUsd
+  );
+  const cached = estimateTokenBucket(usage.cachedInputTokens, price.cachedInputUsd);
+  const output = estimateTokenBucket(usage.outputTokens, price.outputUsd);
+  const costed = input.costed && cacheWrite.costed && cached.costed && output.costed;
+  const usd = input.usd + cacheWrite.usd + cached.usd + output.usd;
+  return { usd, eur: costed ? usd / USD_PER_EUR : null, costed };
+}
+
+function estimateTokenBucket(tokens, rateUsdPerMillion) {
+  const count = Number(tokens || 0);
+  if (!count) return { usd: 0, costed: true };
+  const rate = Number(rateUsdPerMillion);
+  if (!Number.isFinite(rate)) return { usd: 0, costed: false };
+  return { usd: (count * rate) / MILLION, costed: true };
 }
 
 const CHART_FILTERS = ["h24", "today", "week", "month", "year", "all"];
@@ -3403,8 +3985,13 @@ function estimateSourceCost(source) {
         unsupportedSources.add(costModelGapKey(source.id, modelRow.model));
         continue;
       }
+      const estimate = estimateCost(normalizeBillingTotals(source.id, modelRow), price);
+      if (!estimate.costed) {
+        unsupportedSources.add(costModelGapKey(source.id, modelRow.model));
+        continue;
+      }
       estimatedSources.add(source.id);
-      eur += estimateCost(normalizeBillingTotals(source.id, modelRow), price).eur;
+      eur += estimate.eur;
     }
     return {
       eur,
@@ -3417,9 +4004,13 @@ function estimateSourceCost(source) {
   if (!price) {
     return { eur: 0, estimatedSources: [], unsupportedSources: [source.id] };
   }
+  const estimate = estimateCost(normalizeBillingTotals(source.id, source), price);
+  if (!estimate.costed) {
+    return { eur: 0, estimatedSources: [], unsupportedSources: [source.id] };
+  }
   return {
-    eur: estimateCost(normalizeBillingTotals(source.id, source), price).eur,
-    estimatedSources: costPricingQualityBySource[source.id] === "estimated" ? [source.id] : [],
+    eur: estimate.eur,
+    estimatedSources: costPricingQualityBySource[source.id] === "estimated" || price.priceStatus !== "official" ? [source.id] : [],
     unsupportedSources: []
   };
 }
@@ -4858,7 +5449,7 @@ function formatNumber(value) {
 
 function formatUsdPerM(value) {
   const num = Number(value);
-  if (!Number.isFinite(num)) return "--";
+  if (value == null || !Number.isFinite(num)) return t("pricing.unknown");
   const maxDigits = num < 0.01 ? 6 : num < 1 ? 3 : 2;
   const formatted = new Intl.NumberFormat(currentLocale(), {
     minimumFractionDigits: num < 1 ? 2 : 0,
@@ -4870,11 +5461,21 @@ function formatUsdPerM(value) {
 function formatCacheRate(price) {
   const read = price.cachedInputUsd;
   const write = price.cacheWriteUsd;
-  if (read !== undefined && write !== undefined) {
+  if (read != null && write != null) {
     return t("format.cacheReadWrite", { read: formatUsdPerM(read), write: formatUsdPerM(write) });
   }
-  if (read !== undefined) return formatUsdPerM(read);
-  return t("format.cacheSameAsInput");
+  if (read != null) return formatUsdPerM(read);
+  return t("pricing.unknown");
+}
+
+function formatCostEstimate(estimate) {
+  return estimate?.costed ? formatEuro(estimate.eur) : t("pricing.notPriced");
+}
+
+function formatTokenLimit(value) {
+  const num = Number(value);
+  if (value == null || !Number.isFinite(num)) return t("pricing.unknown");
+  return formatTokens(num);
 }
 
 function formatEuro(value) {

@@ -174,9 +174,14 @@
   "pricing": {
     "eyebrow": "API Costs",
     "heading": "What your tokens would have cost through the API",
-    "meta": "EUR via ECB {fxDate} · API prices {pricingDate} · internal score {scoreDate}",
+    "meta": "Catalog {catalogVersion} · {modelCount} models · EUR via ECB {fxDate} · API prices {pricingDate} · internal score {scoreDate}",
     "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
     "chinaBadge": "China",
+    "unknown": "Unknown",
+    "notPriced": "Not priced",
+    "aliases": "Aliases: {aliases}",
+    "limitSummary": "context {context} · output {output}",
+    "sourceReviewed": "Reviewed {date}",
     "regions": {
       "apiDiscount": "API discount"
     },
@@ -184,12 +189,31 @@
       "model": "Model",
       "score": "Score",
       "region": "Region",
+      "limits": "Limits",
       "input": "Input",
       "cache": "Cache",
       "output": "Output",
       "today": "Today",
       "total": "Total",
+      "status": "Status",
       "source": "Source"
+    },
+    "priceStatus": {
+      "official": "Official price",
+      "estimated": "Estimated price",
+      "unknown": "Price unknown",
+      "mixed": "Mixed prices"
+    },
+    "availability": {
+      "ga": "Generally available",
+      "preview": "Preview",
+      "deprecated": "Deprecated",
+      "unknown": "Availability unknown"
+    },
+    "limitStatus": {
+      "official": "Official limits",
+      "estimated": "Estimated limits",
+      "unknown": "Limits unknown"
     }
   },
   "providers": {

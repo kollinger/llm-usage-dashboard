@@ -1403,7 +1403,7 @@ a {
 
 .price-table {
   width: 100%;
-  min-width: 1080px;
+  min-width: 1320px;
   border-collapse: collapse;
 }
 
@@ -1521,6 +1521,13 @@ a {
   font-weight: 760;
 }
 
+.model-cell small {
+  grid-column: 1 / span 2;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
 .china-badge {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -1533,6 +1540,30 @@ a {
   font-size: 0.68rem;
   font-style: normal;
   font-weight: 850;
+}
+
+.limit-cell,
+.pricing-status-cell {
+  display: grid;
+  gap: 4px;
+  min-width: 130px;
+}
+
+.limit-cell span,
+.pricing-status-cell small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.limit-cell small {
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 780;
+}
+
+.pricing-status-cell .status-pill {
+  justify-self: start;
 }
 
 .cost-cell {

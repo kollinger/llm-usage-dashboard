@@ -173,10 +173,15 @@
   },
   "pricing": {
     "eyebrow": "Coûts API",
-    "heading": "Ce que tes jetons auraient coûté via l’API",
-    "meta": "EUR via BCE {fxDate} · prix {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "Ce que tes tokens auraient coûté via l’API",
+    "meta": "Catalogue {catalogVersion} · {modelCount} modèles · EUR via BCE {fxDate} · prix API {pricingDate} · score interne {scoreDate}",
+    "qualityScoreTitle": "Score heuristique interne {scoreDate} : {score}/100",
     "chinaBadge": "Chine",
+    "unknown": "Inconnu",
+    "notPriced": "Non tarifé",
+    "aliases": "Alias : {aliases}",
+    "limitSummary": "contexte {context} · sortie {output}",
+    "sourceReviewed": "Vérifié le {date}",
     "regions": {
       "apiDiscount": "Remise API"
     },
@@ -184,12 +189,31 @@
       "model": "Modèle",
       "score": "Score",
       "region": "Région",
+      "limits": "Limites",
       "input": "Entrée",
       "cache": "Cache",
       "output": "Sortie",
       "today": "Aujourd’hui",
       "total": "Total",
+      "status": "Statut",
       "source": "Source"
+    },
+    "priceStatus": {
+      "official": "Prix officiel",
+      "estimated": "Prix estimé",
+      "unknown": "Prix inconnu",
+      "mixed": "Prix mixtes"
+    },
+    "availability": {
+      "ga": "Disponibilité générale",
+      "preview": "Aperçu",
+      "deprecated": "Déprécié",
+      "unknown": "Disponibilité inconnue"
+    },
+    "limitStatus": {
+      "official": "Limites officielles",
+      "estimated": "Limites estimées",
+      "unknown": "Limites inconnues"
     }
   },
   "providers": {

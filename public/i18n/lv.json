@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API izmaksas",
     "heading": "Cik tavi tokeni maksātu caur API",
-    "meta": "EUR caur ECB {fxDate} · cenas {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalogs {catalogVersion} · {modelCount} modeļi · EUR pēc ECB {fxDate} · API cenas {pricingDate} · iekšējais vērtējums {scoreDate}",
+    "qualityScoreTitle": "Iekšējais heiristiskais vērtējums {scoreDate}: {score}/100",
     "chinaBadge": "Ķīna",
+    "unknown": "Nezināms",
+    "notPriced": "Bez cenas",
+    "aliases": "Aizstājvārdi: {aliases}",
+    "limitSummary": "konteksts {context} · izvade {output}",
+    "sourceReviewed": "Pārskatīts {date}",
     "regions": {
       "apiDiscount": "API atlaide"
     },
     "columns": {
       "model": "Modelis",
-      "score": "Score",
+      "score": "Vērtējums",
       "region": "Reģions",
+      "limits": "Limiti",
       "input": "Ievade",
       "cache": "Kešatmiņa",
       "output": "Izvade",
       "today": "Šodien",
       "total": "Kopā",
+      "status": "Statuss",
       "source": "Avots"
+    },
+    "priceStatus": {
+      "official": "Oficiāla cena",
+      "estimated": "Aptuvena cena",
+      "unknown": "Cena nezināma",
+      "mixed": "Jauktas cenas"
+    },
+    "availability": {
+      "ga": "Vispārīgi pieejams",
+      "preview": "Priekšskatījums",
+      "deprecated": "Novecojis",
+      "unknown": "Pieejamība nezināma"
+    },
+    "limitStatus": {
+      "official": "Oficiāli limiti",
+      "estimated": "Aptuveni limiti",
+      "unknown": "Limiti nezināmi"
     }
   },
   "providers": {

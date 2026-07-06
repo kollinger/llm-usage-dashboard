@@ -173,10 +173,15 @@
   },
   "pricing": {
     "eyebrow": "API kulud",
-    "heading": "Mida sinu tokenid API kaudu maksaksid",
-    "meta": "EUR ECB kaudu {fxDate} · hinnad {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "Mida sinu tokenid API kaudu maksnuksid",
+    "meta": "Kataloog {catalogVersion} · {modelCount} mudelit · EUR ECB järgi {fxDate} · API hinnad {pricingDate} · sisemine skoor {scoreDate}",
+    "qualityScoreTitle": "Sisemine heuristiline skoor {scoreDate}: {score}/100",
     "chinaBadge": "Hiina",
+    "unknown": "Teadmata",
+    "notPriced": "Hinnata",
+    "aliases": "Aliased: {aliases}",
+    "limitSummary": "kontekst {context} · väljund {output}",
+    "sourceReviewed": "Üle vaadatud {date}",
     "regions": {
       "apiDiscount": "API allahindlus"
     },
@@ -184,12 +189,31 @@
       "model": "Mudel",
       "score": "Skoor",
       "region": "Piirkond",
+      "limits": "Piirangud",
       "input": "Sisend",
       "cache": "Vahemälu",
       "output": "Väljund",
       "today": "Täna",
       "total": "Kokku",
+      "status": "Olek",
       "source": "Allikas"
+    },
+    "priceStatus": {
+      "official": "Ametlik hind",
+      "estimated": "Hinnanguline hind",
+      "unknown": "Hind teadmata",
+      "mixed": "Segahinnad"
+    },
+    "availability": {
+      "ga": "Üldiselt saadaval",
+      "preview": "Eelvaade",
+      "deprecated": "Aegunud",
+      "unknown": "Saadavus teadmata"
+    },
+    "limitStatus": {
+      "official": "Ametlikud piirangud",
+      "estimated": "Hinnangulised piirangud",
+      "unknown": "Piirangud teadmata"
     }
   },
   "providers": {

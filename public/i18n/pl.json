@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "Koszty API",
     "heading": "Ile kosztowałyby twoje tokeny przez API",
-    "meta": "EUR przez EBC {fxDate} · ceny {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modeli · EUR wg EBC {fxDate} · ceny API {pricingDate} · wynik wewnętrzny {scoreDate}",
+    "qualityScoreTitle": "Wewnętrzny wynik heurystyczny {scoreDate}: {score}/100",
     "chinaBadge": "Chiny",
+    "unknown": "Nieznane",
+    "notPriced": "Bez ceny",
+    "aliases": "Aliasy: {aliases}",
+    "limitSummary": "kontekst {context} · wyjście {output}",
+    "sourceReviewed": "Sprawdzone {date}",
     "regions": {
       "apiDiscount": "Rabat API"
     },
     "columns": {
       "model": "Model",
-      "score": "Score",
-      "region": "Region",
+      "score": "Wynik",
+      "region": "Obszar",
+      "limits": "Limity",
       "input": "Wejście",
-      "cache": "Cache",
+      "cache": "Pamięć podręczna",
       "output": "Wyjście",
       "today": "Dziś",
-      "total": "Łącznie",
+      "total": "Razem",
+      "status": "Stan",
       "source": "Źródło"
+    },
+    "priceStatus": {
+      "official": "Cena oficjalna",
+      "estimated": "Cena szacowana",
+      "unknown": "Cena nieznana",
+      "mixed": "Ceny mieszane"
+    },
+    "availability": {
+      "ga": "Ogólnie dostępne",
+      "preview": "Podgląd",
+      "deprecated": "Wycofane",
+      "unknown": "Dostępność nieznana"
+    },
+    "limitStatus": {
+      "official": "Oficjalne limity",
+      "estimated": "Szacowane limity",
+      "unknown": "Limity nieznane"
     }
   },
   "providers": {

@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API-Kosten",
     "heading": "Was deine Tokens über die API gekostet hätten",
-    "meta": "EUR via EZB {fxDate} · API-Preise {pricingDate} · interner Score {scoreDate}",
-    "qualityScoreTitle": "Interner Heuristik-Score {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} Modelle · EUR via EZB {fxDate} · API-Preise {pricingDate} · interner Score {scoreDate}",
+    "qualityScoreTitle": "Interner heuristischer Score {scoreDate}: {score}/100",
     "chinaBadge": "China",
+    "unknown": "Unbekannt",
+    "notPriced": "Nicht bepreist",
+    "aliases": "Aliase: {aliases}",
+    "limitSummary": "Kontext {context} · Output {output}",
+    "sourceReviewed": "Geprüft {date}",
     "regions": {
       "apiDiscount": "API-Rabatt"
     },
     "columns": {
       "model": "Modell",
-      "score": "Score",
-      "region": "Region",
-      "input": "Input",
-      "cache": "Cache",
-      "output": "Output",
+      "score": "Bewertung",
+      "region": "Bereich",
+      "limits": "Grenzen",
+      "input": "Eingabe",
+      "cache": "Zwischenspeicher",
+      "output": "Ausgabe",
       "today": "Heute",
       "total": "Gesamt",
+      "status": "Zustand",
       "source": "Quelle"
+    },
+    "priceStatus": {
+      "official": "Offizieller Preis",
+      "estimated": "Geschätzter Preis",
+      "unknown": "Preis unbekannt",
+      "mixed": "Gemischte Preise"
+    },
+    "availability": {
+      "ga": "Allgemein verfügbar",
+      "preview": "Vorschau",
+      "deprecated": "Eingestellt",
+      "unknown": "Verfügbarkeit unbekannt"
+    },
+    "limitStatus": {
+      "official": "Offizielle Limits",
+      "estimated": "Geschätzte Limits",
+      "unknown": "Limits unbekannt"
     }
   },
   "providers": {

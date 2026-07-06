@@ -173,23 +173,47 @@
   },
   "pricing": {
     "eyebrow": "API 成本",
-    "heading": "你的令牌通过 API 会产生的费用",
-    "meta": "EUR via ECB {fxDate} · 价格 {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "你的 token 通过 API 会花费多少",
+    "meta": "目录 {catalogVersion} · {modelCount} 个模型 · EUR via ECB {fxDate} · API 价格 {pricingDate} · 内部评分 {scoreDate}",
+    "qualityScoreTitle": "内部启发式评分 {scoreDate}: {score}/100",
     "chinaBadge": "中国",
+    "unknown": "未知",
+    "notPriced": "未定价",
+    "aliases": "别名：{aliases}",
+    "limitSummary": "上下文 {context} · 输出 {output}",
+    "sourceReviewed": "已审核 {date}",
     "regions": {
       "apiDiscount": "API 折扣"
     },
     "columns": {
       "model": "模型",
-      "score": "Score",
+      "score": "评分",
       "region": "区域",
+      "limits": "限制",
       "input": "输入",
       "cache": "缓存",
       "output": "输出",
       "today": "今天",
       "total": "总计",
+      "status": "状态",
       "source": "来源"
+    },
+    "priceStatus": {
+      "official": "官方价格",
+      "estimated": "估算价格",
+      "unknown": "价格未知",
+      "mixed": "混合价格"
+    },
+    "availability": {
+      "ga": "正式可用",
+      "preview": "预览",
+      "deprecated": "已弃用",
+      "unknown": "可用性未知"
+    },
+    "limitStatus": {
+      "official": "官方限制",
+      "estimated": "估算限制",
+      "unknown": "限制未知"
     }
   },
   "providers": {

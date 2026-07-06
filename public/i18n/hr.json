@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API troškovi",
     "heading": "Koliko bi tvoji tokeni koštali putem API-ja",
-    "meta": "EUR preko ECB {fxDate} · cijene {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modela · EUR preko ECB-a {fxDate} · API cijene {pricingDate} · interni rezultat {scoreDate}",
+    "qualityScoreTitle": "Interni heuristički rezultat {scoreDate}: {score}/100",
     "chinaBadge": "Kina",
+    "unknown": "Nepoznato",
+    "notPriced": "Bez cijene",
+    "aliases": "Aliasi: {aliases}",
+    "limitSummary": "kontekst {context} · izlaz {output}",
+    "sourceReviewed": "Pregledano {date}",
     "regions": {
       "apiDiscount": "API popust"
     },
     "columns": {
       "model": "Model",
-      "score": "Score",
+      "score": "Rezultat",
       "region": "Regija",
+      "limits": "Ograničenja",
       "input": "Ulaz",
-      "cache": "Cache",
+      "cache": "Predmemorija",
       "output": "Izlaz",
       "today": "Danas",
       "total": "Ukupno",
+      "status": "Stanje",
       "source": "Izvor"
+    },
+    "priceStatus": {
+      "official": "Službena cijena",
+      "estimated": "Procijenjena cijena",
+      "unknown": "Cijena nepoznata",
+      "mixed": "Mješovite cijene"
+    },
+    "availability": {
+      "ga": "Općenito dostupno",
+      "preview": "Pretpregled",
+      "deprecated": "Zastarjelo",
+      "unknown": "Dostupnost nepoznata"
+    },
+    "limitStatus": {
+      "official": "Službena ograničenja",
+      "estimated": "Procijenjena ograničenja",
+      "unknown": "Ograničenja nepoznata"
     }
   },
   "providers": {

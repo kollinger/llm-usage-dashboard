@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API-kostnader",
     "heading": "Vad dina tokens skulle ha kostat via API",
-    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modeller · EUR via ECB {fxDate} · API-priser {pricingDate} · intern poäng {scoreDate}",
+    "qualityScoreTitle": "Intern heuristisk poäng {scoreDate}: {score}/100",
     "chinaBadge": "Kina",
+    "unknown": "Okänt",
+    "notPriced": "Ej prissatt",
+    "aliases": "Alias: {aliases}",
+    "limitSummary": "kontext {context} · utdata {output}",
+    "sourceReviewed": "Granskad {date}",
     "regions": {
       "apiDiscount": "API-rabatt"
     },
     "columns": {
       "model": "Modell",
-      "score": "Score",
-      "region": "Region",
+      "score": "Poäng",
+      "region": "Område",
+      "limits": "Gränser",
       "input": "Indata",
-      "cache": "Cache",
+      "cache": "Mellanlagring",
       "output": "Utdata",
-      "today": "Idag",
+      "today": "I dag",
       "total": "Totalt",
+      "status": "Läge",
       "source": "Källa"
+    },
+    "priceStatus": {
+      "official": "Officiellt pris",
+      "estimated": "Uppskattat pris",
+      "unknown": "Pris okänt",
+      "mixed": "Blandade priser"
+    },
+    "availability": {
+      "ga": "Allmänt tillgänglig",
+      "preview": "Förhandsvisning",
+      "deprecated": "Föråldrad",
+      "unknown": "Tillgänglighet okänd"
+    },
+    "limitStatus": {
+      "official": "Officiella gränser",
+      "estimated": "Uppskattade gränser",
+      "unknown": "Okända gränser"
     }
   },
   "providers": {

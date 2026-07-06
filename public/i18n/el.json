@@ -172,24 +172,48 @@
     }
   },
   "pricing": {
-    "eyebrow": "Κόστη API",
-    "heading": "Τι θα κόστιζαν τα tokens σου μέσω API",
-    "meta": "EUR μέσω ECB {fxDate} · τιμές {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "eyebrow": "Κόστος API",
+    "heading": "Τι θα κόστιζαν τα token σου μέσω API",
+    "meta": "Κατάλογος {catalogVersion} · {modelCount} μοντέλα · EUR μέσω ECB {fxDate} · τιμές API {pricingDate} · εσωτερική βαθμολογία {scoreDate}",
+    "qualityScoreTitle": "Εσωτερική ευρετική βαθμολογία {scoreDate}: {score}/100",
     "chinaBadge": "Κίνα",
+    "unknown": "Άγνωστο",
+    "notPriced": "Χωρίς τιμή",
+    "aliases": "Ψευδώνυμα: {aliases}",
+    "limitSummary": "περιβάλλον {context} · έξοδος {output}",
+    "sourceReviewed": "Ελέγχθηκε {date}",
     "regions": {
       "apiDiscount": "Έκπτωση API"
     },
     "columns": {
       "model": "Μοντέλο",
-      "score": "Score",
+      "score": "Βαθμολογία",
       "region": "Περιοχή",
+      "limits": "Όρια",
       "input": "Είσοδος",
       "cache": "Cache",
       "output": "Έξοδος",
       "today": "Σήμερα",
       "total": "Σύνολο",
+      "status": "Κατάσταση",
       "source": "Πηγή"
+    },
+    "priceStatus": {
+      "official": "Επίσημη τιμή",
+      "estimated": "Εκτιμώμενη τιμή",
+      "unknown": "Άγνωστη τιμή",
+      "mixed": "Μικτές τιμές"
+    },
+    "availability": {
+      "ga": "Γενικά διαθέσιμο",
+      "preview": "Προεπισκόπηση",
+      "deprecated": "Καταργημένο",
+      "unknown": "Άγνωστη διαθεσιμότητα"
+    },
+    "limitStatus": {
+      "official": "Επίσημα όρια",
+      "estimated": "Εκτιμώμενα όρια",
+      "unknown": "Άγνωστα όρια"
     }
   },
   "providers": {

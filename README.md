@@ -361,7 +361,19 @@ Refresh the curated API price table and latest ECB USD/EUR reference rate with:
 npm run pricing:update
 ```
 
-The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing and model-quality signals before changing the review dates in that script. The 2026-07-05 catalog includes Claude Fable 5 from Anthropic's official Claude pricing/model-ID docs and Z.AI GLM rows from the official Z.AI pricing page. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
+Validate the catalog without network access with:
+
+```sh
+npm run pricing:validate
+```
+
+`pricing:check` combines that offline catalog validation with the ECB reference-rate check and fails when `public/app.js` is not regenerated from the script:
+
+```sh
+npm run pricing:check
+```
+
+The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing, model limits, availability, aliases, and model-quality signals before changing the review dates in that script. The catalog records a version, review date, source URL, source review date, price quality, availability, context/output limits, and explicit unknown values where an official source does not publish a price. The 2026-07-06 catalog includes Claude Fable 5 limits from Anthropic's official model overview, xAI cached-input pricing from the official xAI pricing page, and Z.AI GLM rows from the official Z.AI pricing page. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
 
 ## Implementation Status
 

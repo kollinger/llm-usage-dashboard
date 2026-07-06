@@ -173,10 +173,15 @@
   },
   "pricing": {
     "eyebrow": "تكاليف API",
-    "heading": "ما كانت ستكلفه توكناتك عبر API",
-    "meta": "EUR عبر ECB {fxDate} · الأسعار {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "ما كانت ستكلفه رموزك عبر API",
+    "meta": "الكتالوج {catalogVersion} · {modelCount} نماذج · اليورو عبر ECB {fxDate} · أسعار API {pricingDate} · الدرجة الداخلية {scoreDate}",
+    "qualityScoreTitle": "درجة استدلالية داخلية {scoreDate}: {score}/100",
     "chinaBadge": "الصين",
+    "unknown": "غير معروف",
+    "notPriced": "غير مسعر",
+    "aliases": "الأسماء البديلة: {aliases}",
+    "limitSummary": "سياق {context} · إخراج {output}",
+    "sourceReviewed": "تمت المراجعة {date}",
     "regions": {
       "apiDiscount": "خصم API"
     },
@@ -184,12 +189,31 @@
       "model": "النموذج",
       "score": "الدرجة",
       "region": "المنطقة",
+      "limits": "الحدود",
       "input": "الإدخال",
-      "cache": "الكاش",
+      "cache": "التخزين المؤقت",
       "output": "الإخراج",
       "today": "اليوم",
       "total": "الإجمالي",
+      "status": "الحالة",
       "source": "المصدر"
+    },
+    "priceStatus": {
+      "official": "سعر رسمي",
+      "estimated": "سعر تقديري",
+      "unknown": "السعر غير معروف",
+      "mixed": "أسعار مختلطة"
+    },
+    "availability": {
+      "ga": "متاح عام",
+      "preview": "معاينة",
+      "deprecated": "متوقف",
+      "unknown": "التوفر غير معروف"
+    },
+    "limitStatus": {
+      "official": "حدود رسمية",
+      "estimated": "حدود تقديرية",
+      "unknown": "الحدود غير معروفة"
     }
   },
   "providers": {

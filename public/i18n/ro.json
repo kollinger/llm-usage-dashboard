@@ -173,23 +173,47 @@
   },
   "pricing": {
     "eyebrow": "Costuri API",
-    "heading": "Cât ar fi costat tokenii tăi prin API",
-    "meta": "EUR prin BCE {fxDate} · prețuri {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "Cât ar fi costat tokenurile tale prin API",
+    "meta": "Catalog {catalogVersion} · {modelCount} modele · EUR prin BCE {fxDate} · prețuri API {pricingDate} · scor intern {scoreDate}",
+    "qualityScoreTitle": "Scor euristic intern {scoreDate}: {score}/100",
     "chinaBadge": "China",
+    "unknown": "Necunoscut",
+    "notPriced": "Fără preț",
+    "aliases": "Aliasuri: {aliases}",
+    "limitSummary": "context {context} · ieșire {output}",
+    "sourceReviewed": "Revizuit {date}",
     "regions": {
       "apiDiscount": "Reducere API"
     },
     "columns": {
       "model": "Model",
-      "score": "Score",
+      "score": "Scor",
       "region": "Regiune",
+      "limits": "Limite",
       "input": "Intrare",
       "cache": "Cache",
       "output": "Ieșire",
-      "today": "Azi",
+      "today": "Astăzi",
       "total": "Total",
+      "status": "Stare",
       "source": "Sursă"
+    },
+    "priceStatus": {
+      "official": "Preț oficial",
+      "estimated": "Preț estimat",
+      "unknown": "Preț necunoscut",
+      "mixed": "Prețuri mixte"
+    },
+    "availability": {
+      "ga": "Disponibil general",
+      "preview": "Previzualizare",
+      "deprecated": "Depreciat",
+      "unknown": "Disponibilitate necunoscută"
+    },
+    "limitStatus": {
+      "official": "Limite oficiale",
+      "estimated": "Limite estimate",
+      "unknown": "Limite necunoscute"
     }
   },
   "providers": {

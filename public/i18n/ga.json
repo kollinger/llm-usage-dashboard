@@ -173,10 +173,15 @@
   },
   "pricing": {
     "eyebrow": "Costais API",
-    "heading": "Cad a chosnódh do tokens tríd an API",
-    "meta": "EUR trí ECB {fxDate} · praghsanna {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "Cad a chosnódh do chuid token tríd an API",
+    "meta": "Catalóg {catalogVersion} · {modelCount} samhail · EUR trí ECB {fxDate} · praghsanna API {pricingDate} · scór inmheánach {scoreDate}",
+    "qualityScoreTitle": "Scór heorastúil inmheánach {scoreDate}: {score}/100",
     "chinaBadge": "An tSín",
+    "unknown": "Anaithnid",
+    "notPriced": "Gan phraghas",
+    "aliases": "Ailiasanna: {aliases}",
+    "limitSummary": "comhthéacs {context} · aschur {output}",
+    "sourceReviewed": "Athbhreithnithe {date}",
     "regions": {
       "apiDiscount": "Lascaine API"
     },
@@ -184,12 +189,31 @@
       "model": "Samhail",
       "score": "Scór",
       "region": "Réigiún",
+      "limits": "Teorainneacha",
       "input": "Ionchur",
       "cache": "Taisce",
       "output": "Aschur",
       "today": "Inniu",
       "total": "Iomlán",
+      "status": "Stádas",
       "source": "Foinse"
+    },
+    "priceStatus": {
+      "official": "Praghas oifigiúil",
+      "estimated": "Praghas measta",
+      "unknown": "Praghas anaithnid",
+      "mixed": "Praghsanna measctha"
+    },
+    "availability": {
+      "ga": "Ar fáil go ginearálta",
+      "preview": "Réamhamharc",
+      "deprecated": "Dímheasta",
+      "unknown": "Infhaighteacht anaithnid"
+    },
+    "limitStatus": {
+      "official": "Teorainneacha oifigiúla",
+      "estimated": "Teorainneacha measta",
+      "unknown": "Teorainneacha anaithnid"
     }
   },
   "providers": {

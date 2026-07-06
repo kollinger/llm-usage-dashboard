@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "Costi API",
     "heading": "Quanto sarebbero costati i tuoi token tramite API",
-    "meta": "EUR via BCE {fxDate} · prezzi {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Catalogo {catalogVersion} · {modelCount} modelli · EUR via BCE {fxDate} · prezzi API {pricingDate} · punteggio interno {scoreDate}",
+    "qualityScoreTitle": "Punteggio euristico interno {scoreDate}: {score}/100",
     "chinaBadge": "Cina",
+    "unknown": "Sconosciuto",
+    "notPriced": "Senza prezzo",
+    "aliases": "Alias: {aliases}",
+    "limitSummary": "contesto {context} · output {output}",
+    "sourceReviewed": "Revisionato {date}",
     "regions": {
       "apiDiscount": "Sconto API"
     },
     "columns": {
       "model": "Modello",
-      "score": "Score",
+      "score": "Punteggio",
       "region": "Regione",
+      "limits": "Limiti",
       "input": "Input",
       "cache": "Cache",
       "output": "Output",
       "today": "Oggi",
       "total": "Totale",
+      "status": "Stato",
       "source": "Fonte"
+    },
+    "priceStatus": {
+      "official": "Prezzo ufficiale",
+      "estimated": "Prezzo stimato",
+      "unknown": "Prezzo sconosciuto",
+      "mixed": "Prezzi misti"
+    },
+    "availability": {
+      "ga": "Disponibilità generale",
+      "preview": "Anteprima",
+      "deprecated": "Deprecato",
+      "unknown": "Disponibilità sconosciuta"
+    },
+    "limitStatus": {
+      "official": "Limiti ufficiali",
+      "estimated": "Limiti stimati",
+      "unknown": "Limiti sconosciuti"
     }
   },
   "providers": {

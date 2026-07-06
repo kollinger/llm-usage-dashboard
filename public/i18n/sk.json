@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "Náklady API",
     "heading": "Koľko by tvoje tokeny stáli cez API",
-    "meta": "EUR cez ECB {fxDate} · ceny {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalóg {catalogVersion} · {modelCount} modelov · EUR cez ECB {fxDate} · ceny API {pricingDate} · interné skóre {scoreDate}",
+    "qualityScoreTitle": "Interné heuristické skóre {scoreDate}: {score}/100",
     "chinaBadge": "Čína",
+    "unknown": "Neznáme",
+    "notPriced": "Bez ceny",
+    "aliases": "Aliasy: {aliases}",
+    "limitSummary": "kontext {context} · výstup {output}",
+    "sourceReviewed": "Skontrolované {date}",
     "regions": {
-      "apiDiscount": "API zľava"
+      "apiDiscount": "Zľava API"
     },
     "columns": {
       "model": "Model",
-      "score": "Score",
+      "score": "Skóre",
       "region": "Región",
+      "limits": "Limity",
       "input": "Vstup",
       "cache": "Cache",
       "output": "Výstup",
       "today": "Dnes",
-      "total": "Celkovo",
+      "total": "Spolu",
+      "status": "Stav",
       "source": "Zdroj"
+    },
+    "priceStatus": {
+      "official": "Oficiálna cena",
+      "estimated": "Odhadovaná cena",
+      "unknown": "Neznáma cena",
+      "mixed": "Zmiešané ceny"
+    },
+    "availability": {
+      "ga": "Všeobecne dostupné",
+      "preview": "Náhľad",
+      "deprecated": "Zastarané",
+      "unknown": "Neznáma dostupnosť"
+    },
+    "limitStatus": {
+      "official": "Oficiálne limity",
+      "estimated": "Odhadované limity",
+      "unknown": "Neznáme limity"
     }
   },
   "providers": {

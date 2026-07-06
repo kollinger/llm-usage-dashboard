@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API-omkostninger",
     "heading": "Hvad dine tokens ville have kostet via API",
-    "meta": "EUR via ECB {fxDate} · priser {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modeller · EUR via ECB {fxDate} · API-priser {pricingDate} · intern score {scoreDate}",
+    "qualityScoreTitle": "Intern heuristisk score {scoreDate}: {score}/100",
     "chinaBadge": "Kina",
+    "unknown": "Ukendt",
+    "notPriced": "Ikke prissat",
+    "aliases": "Aliaser: {aliases}",
+    "limitSummary": "kontekst {context} · output {output}",
+    "sourceReviewed": "Gennemgået {date}",
     "regions": {
       "apiDiscount": "API-rabat"
     },
     "columns": {
-      "model": "Model",
-      "score": "Score",
-      "region": "Region",
-      "input": "Input",
-      "cache": "Cache",
-      "output": "Output",
+      "model": "Modelnavn",
+      "score": "Point",
+      "region": "Område",
+      "limits": "Grænser",
+      "input": "Inddata",
+      "cache": "Mellemlager",
+      "output": "Uddata",
       "today": "I dag",
       "total": "I alt",
+      "status": "Tilstand",
       "source": "Kilde"
+    },
+    "priceStatus": {
+      "official": "Officiel pris",
+      "estimated": "Anslået pris",
+      "unknown": "Ukendt pris",
+      "mixed": "Blandede priser"
+    },
+    "availability": {
+      "ga": "Generelt tilgængelig",
+      "preview": "Forhåndsvisning",
+      "deprecated": "Udfaset",
+      "unknown": "Ukendt tilgængelighed"
+    },
+    "limitStatus": {
+      "official": "Officielle grænser",
+      "estimated": "Anslåede grænser",
+      "unknown": "Ukendte grænser"
     }
   },
   "providers": {

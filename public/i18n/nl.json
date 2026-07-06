@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API-kosten",
     "heading": "Wat je tokens via de API zouden hebben gekost",
-    "meta": "EUR via ECB {fxDate} · prijzen {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Catalogus {catalogVersion} · {modelCount} modellen · EUR via ECB {fxDate} · API-prijzen {pricingDate} · interne score {scoreDate}",
+    "qualityScoreTitle": "Interne heuristische score {scoreDate}: {score}/100",
     "chinaBadge": "China",
+    "unknown": "Onbekend",
+    "notPriced": "Niet geprijsd",
+    "aliases": "Aliassen: {aliases}",
+    "limitSummary": "context {context} · uitvoer {output}",
+    "sourceReviewed": "Beoordeeld {date}",
     "regions": {
       "apiDiscount": "API-korting"
     },
     "columns": {
-      "model": "Model",
-      "score": "Score",
+      "model": "Modelnaam",
+      "score": "Waardering",
       "region": "Regio",
+      "limits": "Limieten",
       "input": "Invoer",
-      "cache": "Cache",
+      "cache": "Tussenopslag",
       "output": "Uitvoer",
       "today": "Vandaag",
       "total": "Totaal",
+      "status": "Toestand",
       "source": "Bron"
+    },
+    "priceStatus": {
+      "official": "Officiële prijs",
+      "estimated": "Geschatte prijs",
+      "unknown": "Prijs onbekend",
+      "mixed": "Gemengde prijzen"
+    },
+    "availability": {
+      "ga": "Algemeen beschikbaar",
+      "preview": "Voorbeeld",
+      "deprecated": "Verouderd",
+      "unknown": "Beschikbaarheid onbekend"
+    },
+    "limitStatus": {
+      "official": "Officiële limieten",
+      "estimated": "Geschatte limieten",
+      "unknown": "Limieten onbekend"
     }
   },
   "providers": {

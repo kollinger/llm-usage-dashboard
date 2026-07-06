@@ -172,24 +172,48 @@
     }
   },
   "pricing": {
-    "eyebrow": "Стоимость API",
-    "heading": "Сколько стоили бы твои токены через API",
-    "meta": "EUR через ECB {fxDate} · цены {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "eyebrow": "Расходы API",
+    "heading": "Сколько стоили бы ваши токены через API",
+    "meta": "Каталог {catalogVersion} · {modelCount} моделей · EUR через ECB {fxDate} · цены API {pricingDate} · внутренний балл {scoreDate}",
+    "qualityScoreTitle": "Внутренний эвристический балл {scoreDate}: {score}/100",
     "chinaBadge": "Китай",
+    "unknown": "Неизвестно",
+    "notPriced": "Без цены",
+    "aliases": "Псевдонимы: {aliases}",
+    "limitSummary": "контекст {context} · вывод {output}",
+    "sourceReviewed": "Проверено {date}",
     "regions": {
       "apiDiscount": "Скидка API"
     },
     "columns": {
       "model": "Модель",
-      "score": "Score",
+      "score": "Балл",
       "region": "Регион",
+      "limits": "Лимиты",
       "input": "Ввод",
       "cache": "Кэш",
       "output": "Вывод",
       "today": "Сегодня",
       "total": "Итого",
+      "status": "Статус",
       "source": "Источник"
+    },
+    "priceStatus": {
+      "official": "Официальная цена",
+      "estimated": "Оценочная цена",
+      "unknown": "Цена неизвестна",
+      "mixed": "Смешанные цены"
+    },
+    "availability": {
+      "ga": "Общедоступно",
+      "preview": "Предпросмотр",
+      "deprecated": "Устарело",
+      "unknown": "Доступность неизвестна"
+    },
+    "limitStatus": {
+      "official": "Официальные лимиты",
+      "estimated": "Оценочные лимиты",
+      "unknown": "Лимиты неизвестны"
     }
   },
   "providers": {

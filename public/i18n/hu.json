@@ -173,10 +173,15 @@
   },
   "pricing": {
     "eyebrow": "API-költségek",
-    "heading": "Ennyibe kerültek volna a tokenjeid API-n keresztül",
-    "meta": "EUR ECB alapján {fxDate} · árak {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "heading": "Mennyibe kerültek volna a tokenjeid az API-n keresztül",
+    "meta": "Katalógus {catalogVersion} · {modelCount} modell · EUR az ECB alapján {fxDate} · API-árak {pricingDate} · belső pontszám {scoreDate}",
+    "qualityScoreTitle": "Belső heurisztikus pontszám {scoreDate}: {score}/100",
     "chinaBadge": "Kína",
+    "unknown": "Ismeretlen",
+    "notPriced": "Nincs árazva",
+    "aliases": "Aliasok: {aliases}",
+    "limitSummary": "kontextus {context} · kimenet {output}",
+    "sourceReviewed": "Ellenőrizve {date}",
     "regions": {
       "apiDiscount": "API-kedvezmény"
     },
@@ -184,12 +189,31 @@
       "model": "Modell",
       "score": "Pontszám",
       "region": "Régió",
+      "limits": "Limitek",
       "input": "Bemenet",
       "cache": "Gyorsítótár",
       "output": "Kimenet",
       "today": "Ma",
       "total": "Összesen",
+      "status": "Állapot",
       "source": "Forrás"
+    },
+    "priceStatus": {
+      "official": "Hivatalos ár",
+      "estimated": "Becsült ár",
+      "unknown": "Ár ismeretlen",
+      "mixed": "Vegyes árak"
+    },
+    "availability": {
+      "ga": "Általánosan elérhető",
+      "preview": "Előzetes",
+      "deprecated": "Elavult",
+      "unknown": "Elérhetőség ismeretlen"
+    },
+    "limitStatus": {
+      "official": "Hivatalos limitek",
+      "estimated": "Becsült limitek",
+      "unknown": "Ismeretlen limitek"
     }
   },
   "providers": {

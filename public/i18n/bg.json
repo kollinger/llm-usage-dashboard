@@ -174,22 +174,46 @@
   "pricing": {
     "eyebrow": "API разходи",
     "heading": "Колко биха стрували токените ти през API",
-    "meta": "EUR чрез ECB {fxDate} · цени {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Каталог {catalogVersion} · {modelCount} модела · EUR чрез ECB {fxDate} · API цени {pricingDate} · вътрешен резултат {scoreDate}",
+    "qualityScoreTitle": "Вътрешен евристичен резултат {scoreDate}: {score}/100",
     "chinaBadge": "Китай",
+    "unknown": "Неизвестно",
+    "notPriced": "Без цена",
+    "aliases": "Псевдоними: {aliases}",
+    "limitSummary": "контекст {context} · изход {output}",
+    "sourceReviewed": "Прегледано {date}",
     "regions": {
       "apiDiscount": "API отстъпка"
     },
     "columns": {
       "model": "Модел",
-      "score": "Score",
+      "score": "Резултат",
       "region": "Регион",
+      "limits": "Лимити",
       "input": "Вход",
       "cache": "Кеш",
       "output": "Изход",
       "today": "Днес",
       "total": "Общо",
+      "status": "Статус",
       "source": "Източник"
+    },
+    "priceStatus": {
+      "official": "Официална цена",
+      "estimated": "Оценена цена",
+      "unknown": "Неизвестна цена",
+      "mixed": "Смесени цени"
+    },
+    "availability": {
+      "ga": "Общодостъпно",
+      "preview": "Предварителен преглед",
+      "deprecated": "Оттеглено",
+      "unknown": "Неизвестна наличност"
+    },
+    "limitStatus": {
+      "official": "Официални лимити",
+      "estimated": "Оценени лимити",
+      "unknown": "Неизвестни лимити"
     }
   },
   "providers": {
