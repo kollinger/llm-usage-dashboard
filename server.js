@@ -2037,27 +2037,46 @@ function copilotLimitsFromQuota(quota) {
 
 function copilotQuotaRow(key, snapshot) {
   if (!snapshot || typeof snapshot !== "object") return null;
-  const remainingPercent = Number(snapshot.remainingPercentage);
-  const entitlementRequests = Number(snapshot.entitlementRequests);
-  const usedRequests = Number(snapshot.usedRequests);
+  const remainingPercent = finiteNumberOrNull(snapshot.remainingPercentage);
+  const entitlementRequests = finiteNumberOrNull(snapshot.entitlementRequests);
+  const usedRequests = finiteNumberOrNull(snapshot.usedRequests);
+  const rowKey = `copilot${toPascalCase(key)}`;
+  const label = copilotQuotaLabel(key);
+  if (!snapshot.isUnlimitedEntitlement && entitlementRequests !== null && entitlementRequests <= 0) {
+    return {
+      key: rowKey,
+      label,
+      status: "unavailable",
+      usedPercent: null,
+      remainingPercent: null,
+      resetsAt: null,
+      valueLabel: null
+    };
+  }
   const usedPercent = Number.isFinite(remainingPercent)
     ? Math.max(0, Math.min(100, 100 - remainingPercent))
-    : entitlementRequests > 0 && Number.isFinite(usedRequests)
+    : entitlementRequests > 0 && usedRequests !== null
       ? Math.max(0, Math.min(100, (usedRequests / entitlementRequests) * 100))
       : null;
   if (usedPercent === null && !snapshot.resetDate) return null;
 
   const valueLabel =
-    entitlementRequests > 0 && Number.isFinite(usedRequests) ? `${usedRequests} / ${entitlementRequests}` : null;
+    entitlementRequests > 0 && usedRequests !== null ? `${usedRequests} / ${entitlementRequests}` : null;
 
   return {
-    key: `copilot${toPascalCase(key)}`,
-    label: copilotQuotaLabel(key),
+    key: rowKey,
+    label,
     usedPercent,
     remainingPercent: Number.isFinite(remainingPercent) ? Math.max(0, Math.min(100, remainingPercent)) : null,
     resetsAt: normalizeOptionalDate(snapshot.resetDate),
     valueLabel
   };
+}
+
+function finiteNumberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function toPascalCase(value) {
@@ -5073,5 +5092,8 @@ module.exports = {
   readClaudeCodeUsage,
   createTimedCache,
   invalidateTimedCache,
-  readThroughCache
+  readThroughCache,
+  _test: {
+    copilotLimitsFromQuota
+  }
 };

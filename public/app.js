@@ -1933,11 +1933,14 @@ function normalizeLimitRows(limits) {
 function normalizeLimitRow(row) {
   if (!row) return null;
   const hasUsedPercent = Number.isFinite(Number(row.usedPercent));
-  if (!hasUsedPercent && !row.valueLabel) return null;
+  const status = row.status ? String(row.status) : null;
+  const statusValueLabel = status === "unavailable" ? t("liveMetrics.unavailable") : null;
+  if (!hasUsedPercent && !row.valueLabel && !statusValueLabel) return null;
   const usedPercent = hasUsedPercent ? Math.max(0, Math.min(100, Number(row.usedPercent))) : null;
   return {
     key: row.key || row.label || "limit",
     label: limitLabel(row),
+    status,
     usedPercent,
     remainingPercent:
       usedPercent === null
@@ -1945,7 +1948,7 @@ function normalizeLimitRow(row) {
         : Number.isFinite(Number(row.remainingPercent))
           ? Math.max(0, Math.min(100, Number(row.remainingPercent)))
           : Math.max(0, 100 - usedPercent),
-    valueLabel: row.valueLabel || null,
+    valueLabel: row.valueLabel || statusValueLabel,
     resetsAt: row.resetsAt || null,
     resetLabel: row.resetLabel || row.detail || null
   };
