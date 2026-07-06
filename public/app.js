@@ -4079,6 +4079,11 @@ function renderSourceDiagnostics() {
 
   const diagnostics = state.sourceDiagnostics;
   const status = state.sourceDiagnosticsError ? "discovery_error" : diagnostics?.status || "current_user_empty";
+  if (!shouldShowSourceDiagnostics(diagnostics, status)) {
+    els.sourceDiagnosticsSection.hidden = true;
+    return;
+  }
+
   const currentUser = diagnostics?.currentUser || {};
   const generatedAt = diagnostics?.generatedAt ? formatUpdatedAt(diagnostics.generatedAt) : "--";
   const supportLevel = diagnostics?.os?.supportLevel || "full";
@@ -4094,6 +4099,45 @@ function renderSourceDiagnostics() {
   els.sourceDiagnosticsGrid.innerHTML = DIAGNOSTIC_STATUS_ORDER.map((entry) => renderDiagnosticStatusCard(entry, status)).join("");
   els.sourceDiagnosticsInstances.innerHTML = renderOtherDashboardInstances(diagnostics?.otherDashboardInstances || []);
   els.diagnosticsRecheckBtn.disabled = isSourceOpPending("recheck", "global");
+}
+
+function shouldShowSourceDiagnostics(diagnostics, status) {
+  if (state.sourceDiagnosticsError || !diagnostics) return true;
+  if (hasActionableSourceDiagnostics(diagnostics, status)) return true;
+  return !isNonActionableSourceDiagnosticsStub(diagnostics, status);
+}
+
+function hasActionableSourceDiagnostics(diagnostics, status) {
+  if (
+    [
+      "connected_live",
+      "candidates_readable_empty",
+      "candidates_denied",
+      "other_dashboard_found",
+      "discovery_error"
+    ].includes(status)
+  ) {
+    return true;
+  }
+
+  const counts = diagnostics.counts || {};
+  const actionableCounts = [
+    counts.connected,
+    counts.connectedEnabled,
+    counts.readable,
+    counts.denied,
+    counts.processOnly,
+    counts.otherDashboardInstances
+  ];
+  if (actionableCounts.some((value) => Number(value) > 0)) return true;
+  if ((diagnostics.connected || []).length) return true;
+  if ((diagnostics.otherDashboardInstances || []).length) return true;
+  return false;
+}
+
+function isNonActionableSourceDiagnosticsStub(diagnostics, status) {
+  const os = diagnostics.os || {};
+  return status === "partial_unsupported" && os.supported === false && os.supportLevel === "stub";
 }
 
 function renderDiagnosticsSummary(diagnostics) {
