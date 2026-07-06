@@ -40,6 +40,26 @@ Instructions for agents working on this repository.
 - When changing localized UI text, update every supported language file in `public/i18n/` and keep interpolation placeholders identical across languages.
 - For localization changes, run `npm run check`, verify translation key/placeholder consistency, and visually spot-check long translations and Arabic RTL when practical.
 
+## Delivery Rhythm
+
+- Keep the queue moving: after a ticket is implemented, verified, integrated,
+  recorded, and cleaned up, continue directly with the next eligible ticket
+  unless a real Gerhard review or decision gate is reached.
+- Prefer small, reversible ticket branches and commits. Each step should be
+  independently understandable, pushable, and easy to revert or adjust.
+- Treat local integration into the current review/integration branch as normal
+  delivery work, not as a separate Gerhard gate, as long as it does not cross a
+  release, production, account, permission, data-loss, or product-decision gate.
+- Use Gerhard's M1 for Mac-specific desktop builds, installation, launch,
+  notification, and UI-state checks. Do heavier implementation, Docker, and
+  broad QA on the Manjaro runner when available.
+- Batch macOS app builds for meaningful review points instead of rebuilding for
+  every tiny change. When installing a fresh Mac build, state the commit,
+  included tickets, and the exact things Gerhard should look at.
+- Do not let cleanup lose recoverability: clean worktrees, stale processes, and
+  generated artifacts, but keep ticket branches until their integration and
+  closure are recorded or until Gerhard explicitly approves deletion.
+
 ## System Metrics and Cross-Platform Features
 
 - System or live-load features must be safe on macOS, Windows, and Linux.
