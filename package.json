@@ -14,7 +14,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "electron": "electron .",
-    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js && node --check scripts/update-pricing-data.mjs && node --check scripts/usage-cache-smoke.mjs && node --check scripts/crawler-contracts.mjs && node --check scripts/crawler-watchdog.mjs && node test/crawler-watchdog.test.mjs && node test/copilot-quota.test.mjs && node test/gemini-stale-usage.test.mjs",
+    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js && node --check scripts/update-pricing-data.mjs && node --check scripts/usage-cache-smoke.mjs && node --check scripts/crawler-contracts.mjs && node --check scripts/crawler-watchdog.mjs && node test/crawler-watchdog.test.mjs && node test/copilot-quota.test.mjs && node test/gemini-stale-usage.test.mjs && node test/source-diagnostics-visibility.test.mjs",
     "test:usage-cache": "node scripts/usage-cache-smoke.mjs",
     "pricing:update": "node scripts/update-pricing-data.mjs",
     "pricing:check": "node scripts/update-pricing-data.mjs --check",

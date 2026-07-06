@@ -269,6 +269,12 @@ const DIAGNOSTIC_STATUS_ICONS = {
   partial_unsupported: "triangle-alert",
   discovery_error: "octagon-alert"
 };
+const DASHBOARD_DIAGNOSTIC_VISIBLE_STATUSES = new Set([
+  "candidates_readable_empty",
+  "candidates_denied",
+  "other_dashboard_found",
+  "discovery_error"
+]);
 
 const pricingModels = [
   {
@@ -4074,15 +4080,11 @@ async function sendTestNotification() {
 function renderSourceDiagnostics() {
   if (!els.sourceDiagnosticsSection) return;
   const authed = state.auth?.authenticated;
-  els.sourceDiagnosticsSection.hidden = !authed;
-  if (!authed) return;
-
   const diagnostics = state.sourceDiagnostics;
   const status = state.sourceDiagnosticsError ? "discovery_error" : diagnostics?.status || "current_user_empty";
-  if (!shouldShowSourceDiagnostics(diagnostics, status)) {
-    els.sourceDiagnosticsSection.hidden = true;
-    return;
-  }
+  const showDashboardDiagnostics = shouldShowSourceDiagnostics(diagnostics, status);
+  els.sourceDiagnosticsSection.hidden = !authed || !showDashboardDiagnostics;
+  if (!authed || !showDashboardDiagnostics) return;
 
   const currentUser = diagnostics?.currentUser || {};
   const generatedAt = diagnostics?.generatedAt ? formatUpdatedAt(diagnostics.generatedAt) : "--";
@@ -4102,42 +4104,15 @@ function renderSourceDiagnostics() {
 }
 
 function shouldShowSourceDiagnostics(diagnostics, status) {
-  if (state.sourceDiagnosticsError || !diagnostics) return true;
-  if (hasActionableSourceDiagnostics(diagnostics, status)) return true;
-  return !isNonActionableSourceDiagnosticsStub(diagnostics, status);
-}
+  if (state.sourceDiagnosticsError) return true;
+  if (!diagnostics) return false;
+  if (DASHBOARD_DIAGNOSTIC_VISIBLE_STATUSES.has(status)) return true;
 
-function hasActionableSourceDiagnostics(diagnostics, status) {
-  if (
-    [
-      "connected_live",
-      "candidates_readable_empty",
-      "candidates_denied",
-      "other_dashboard_found",
-      "discovery_error"
-    ].includes(status)
-  ) {
-    return true;
-  }
-
-  const counts = diagnostics.counts || {};
-  const actionableCounts = [
-    counts.connected,
-    counts.connectedEnabled,
-    counts.readable,
-    counts.denied,
-    counts.processOnly,
-    counts.otherDashboardInstances
-  ];
-  if (actionableCounts.some((value) => Number(value) > 0)) return true;
-  if ((diagnostics.connected || []).length) return true;
-  if ((diagnostics.otherDashboardInstances || []).length) return true;
-  return false;
-}
-
-function isNonActionableSourceDiagnosticsStub(diagnostics, status) {
-  const os = diagnostics.os || {};
-  return status === "partial_unsupported" && os.supported === false && os.supportLevel === "stub";
+  const candidates = Array.isArray(diagnostics.candidates) ? diagnostics.candidates : [];
+  const availableCandidates = candidates.filter((source) => !source.connected);
+  if (availableCandidates.some((source) => ["readable", "mixed"].includes(source.accessStatus))) return true;
+  if (candidates.some((source) => source.accessStatus === "denied")) return true;
+  return Array.isArray(diagnostics.otherDashboardInstances) && diagnostics.otherDashboardInstances.length > 0;
 }
 
 function renderDiagnosticsSummary(diagnostics) {

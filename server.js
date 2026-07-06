@@ -908,33 +908,47 @@ async function buildSourceDiagnostics() {
         codexHomes: CODEX_HOMES
       })
     ]);
-    const enabledConnected = (settings.sources || []).filter((source) => source.enabled !== false);
-    const connectedIds = new Set(enabledConnected.map((source) => source.id));
-    const candidates = (discovery.candidates || []).map((source) => ({
-      ...source,
-      connected: connectedIds.has(source.id)
-    }));
-    const connected = enabledConnected.map((source) => ({
-      ...source,
-      currentCandidate: candidates.find((candidate) => candidate.id === source.id) || null
-    }));
-    return {
-      ...discovery,
-      status: deriveSourceDiagnosticsStatus(discovery, candidates, connected),
-      candidates,
-      connected,
-      counts: {
-        ...(discovery.counts || {}),
-        connected: connected.length,
-        connectedEnabled: connected.length,
-        candidates: candidates.length
-      },
-      persistence: {
-        version: settings.version || 1,
-        file: path.join(DATA_DIR, "connected-sources.json")
-      }
-    };
+    return buildSourceDiagnosticsPayload(settings, discovery);
   });
+}
+
+function buildSourceDiagnosticsPayload(settings, discovery) {
+  const enabledConnected = (settings.sources || []).filter((source) => source.enabled !== false);
+  const connectedIds = new Set(enabledConnected.map((source) => source.id));
+  const candidates = (discovery.candidates || []).map((source) => ({
+    ...source,
+    connected: connectedIds.has(source.id)
+  }));
+  const connected = enabledConnected.map((source) => ({
+    ...source,
+    currentCandidate: candidates.find((candidate) => candidate.id === source.id) || null
+  }));
+  const otherDashboardInstances = filterCurrentDashboardInstance(discovery.otherDashboardInstances || []);
+  const normalizedDiscovery = {
+    ...discovery,
+    otherDashboardInstances
+  };
+  return {
+    ...normalizedDiscovery,
+    status: deriveSourceDiagnosticsStatus(normalizedDiscovery, candidates, connected),
+    candidates,
+    connected,
+    counts: {
+      ...(discovery.counts || {}),
+      connected: connected.length,
+      connectedEnabled: connected.length,
+      candidates: candidates.length,
+      otherDashboardInstances: otherDashboardInstances.length
+    },
+    persistence: {
+      version: settings.version || 1,
+      file: path.join(DATA_DIR, "connected-sources.json")
+    }
+  };
+}
+
+function filterCurrentDashboardInstance(instances) {
+  return (Array.isArray(instances) ? instances : []).filter((instance) => Number(instance?.pid) !== process.pid);
 }
 
 function deriveSourceDiagnosticsStatus(discovery, candidates, connected) {
@@ -5106,7 +5120,9 @@ module.exports = {
   invalidateTimedCache,
   readThroughCache,
   _test: {
+    buildSourceDiagnosticsPayload,
     copilotLimitsFromQuota,
+    filterCurrentDashboardInstance,
     readGeminiUsage
   }
 };
