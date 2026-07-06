@@ -2064,17 +2064,43 @@ function providerHasUsage(provider) {
     provider.apiTokens,
     provider.cost
   ].some((value) => Number(value || 0) > 0);
-  const hasLimitTelemetry = Boolean(
-    provider.fiveHour ||
-      provider.weekly ||
-      provider.limitRows?.length ||
-      provider.creditRows?.length ||
-      provider.planType ||
-      provider.subscription?.monthlyCost
-  );
-  const needsAttention = provider.status === "error";
+  const hasMeaningfulLimitTelemetry = providerHasMeaningfulLimitTelemetry(provider);
+  const needsAttention = provider.status === "error" || Boolean(provider.limitAlert);
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
-  return hasActiveUsage || hasLimitTelemetry || needsAttention || configuredApi;
+  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi;
+}
+
+function providerHasMeaningfulLimitTelemetry(provider) {
+  const windows = [
+    provider.fiveHour,
+    provider.weekly,
+    ...(provider.limitRows || [])
+  ];
+  if (windows.some(limitWindowHasUsage)) return true;
+  return (provider.creditRows || []).some(creditRowHasValue);
+}
+
+function limitWindowHasUsage(window) {
+  if (!window || typeof window !== "object") return false;
+  const status = String(window.status || "");
+  if (status === "unavailable") return false;
+  const usedPercent = Number(window.usedPercent);
+  if (Number.isFinite(usedPercent) && usedPercent > 0) return true;
+  const remainingPercent = Number(window.remainingPercent);
+  if (Number.isFinite(remainingPercent) && remainingPercent < 100) return true;
+  const valueLabel = String(window.valueLabel || "");
+  const match = valueLabel.match(/([0-9][0-9.,]*)\s*\/\s*([0-9][0-9.,]*)/u);
+  return match ? Number(match[1].replace(",", ".")) > 0 : false;
+}
+
+function creditRowHasValue(row) {
+  if (!row || typeof row !== "object") return false;
+  const amount = Number(row.amount);
+  if (Number.isFinite(amount) && amount > 0) return true;
+  const percent = Number(row.percent);
+  if (Number.isFinite(percent) && percent > 0) return true;
+  const valueLabel = String(row.valueLabel || "");
+  return Boolean(valueLabel && !/^off$/iu.test(valueLabel));
 }
 
 function updateProviderFilterControl(providers, visibleProviders) {

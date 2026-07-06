@@ -1586,13 +1586,16 @@ async function readCodexUsage(options = {}) {
       const timestampMs = Date.parse(event.timestamp);
       if (Number.isNaN(timestampMs)) return;
       const usage = event.payload.info?.last_token_usage || {};
+      const rateLimits = event.payload.rate_limits || null;
+      const isSparkRateLimit = isCodexSparkRateLimit(rateLimits);
+      const isSparkUsage = isCodexSparkUsageEvent(currentModel, rateLimits);
       if (event.payload.rate_limits) {
         const rateLimitEvent = {
           timestamp: event.timestamp,
-          rateLimits: event.payload.rate_limits,
+          rateLimits,
           file
         };
-        if (isCodexSparkRateLimit(event.payload.rate_limits)) {
+        if (isSparkRateLimit) {
           sparkRateLimitEvents.push(rateLimitEvent);
         } else {
           rateLimitEvents.push(rateLimitEvent);
@@ -1613,28 +1616,28 @@ async function readCodexUsage(options = {}) {
           rolloutSessionId: fileRecord.sessionId
         },
         metadata: {
-          sourceGroupId: isCodexSparkModel(currentModel) || isCodexSparkRateLimit(event.payload.rate_limits) ? "codexSpark" : "codex"
+          sourceGroupId: isSparkUsage ? "codexSpark" : "codex"
         }
       });
       addUsage(aggregates, usage);
       if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
       if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(last24h, usage);
       if (now - timestampMs <= 7 * 24 * 60 * 60 * 1000) addUsage(last7d, usage);
-      if (isCodexSparkModel(currentModel) || isCodexSparkRateLimit(event.payload.rate_limits)) {
+      if (isSparkUsage) {
         addUsageEvent(sparkUsage, timestampMs, usage);
         if (!sparkFirstEvent || timestampMs < Date.parse(sparkFirstEvent.timestamp)) {
           sparkFirstEvent = {
             timestamp: event.timestamp,
-            model: currentModel || event.payload.rate_limits?.limit_name || "gpt-5.3-codex-spark",
+            model: currentModel || rateLimits?.limit_name || "gpt-5.3-codex-spark",
             file
           };
         }
         if (!sparkLatestEvent || timestampMs > Date.parse(sparkLatestEvent.timestamp)) {
           sparkLatestEvent = {
             timestamp: event.timestamp,
-            model: currentModel || event.payload.rate_limits?.limit_name || "gpt-5.3-codex-spark",
+            model: currentModel || rateLimits?.limit_name || "gpt-5.3-codex-spark",
             info: event.payload.info || {},
-            rateLimits: event.payload.rate_limits || null,
+            rateLimits,
             file
           };
         }
@@ -2105,6 +2108,11 @@ function isCodexSparkRateLimit(rateLimits) {
 
 function isCodexSparkModel(model) {
   return /spark|bengalfox|research/i.test(String(model || ""));
+}
+
+function isCodexSparkUsageEvent(model, rateLimits) {
+  if (isCodexSparkModel(model)) return true;
+  return !model && isCodexSparkRateLimit(rateLimits);
 }
 
 function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, liveLimits, liveLimitsUpdatedAt = null) {
