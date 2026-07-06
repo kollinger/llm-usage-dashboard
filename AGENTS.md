@@ -97,7 +97,20 @@ an older `dist/` artifact.
 
 ## Commit Hygiene
 
-- Do not commit automatically.
-- Before committing, show the planned files and a proposed commit message.
+- Routine ticket work is delegated: agents may commit and push focused changes
+  on isolated ticket branches after the relevant checks pass, the diff is
+  reviewed, ignored/private paths are excluded, and the commit SHA plus
+  verification evidence are recorded in the ticket.
+- Keep one coherent user-visible outcome per ticket commit whenever practical.
+  If a workflow/policy change is needed, commit it separately from product code.
+- Do not wait for Gerhard before routine ticket commits or ticket-branch pushes
+  when the work is reversible in Git and does not cross a release, production,
+  account, permission, secret, data-loss, or product-decision gate.
+- Integration on Gerhard's Mac and local Mac-app test builds are allowed without
+  a separate gate when they are useful review builds. Batch them for meaningful
+  updates so the M1 is not kept busy for every tiny change.
+- Still stop for Gerhard before production deploys, releases, tags, main merges,
+  destructive actions, account/signing/permission changes, public tunnels, live
+  database writes, or unresolved product decisions.
 - Confirm that `git status --ignored` shows `data/`, `dist/`, `node_modules/`, and `.env` files as ignored.
 - Keep commits focused: code, documentation, packaging, and generated release artifacts should not be mixed unless explicitly requested.
