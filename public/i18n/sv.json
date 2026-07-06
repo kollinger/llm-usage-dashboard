@@ -38,14 +38,22 @@
   },
   "summary": {
     "ariaLabel": "Översikt",
-    "fiveHourOpen": "5h tillgängligt",
-    "weeklyOpen": "Vecka tillgänglig",
-    "tokensToday": "Loggade tokens idag",
+    "fiveHourOpen": "5h quota free",
+    "weeklyOpen": "Week quota free",
+    "tokensToday": "Logged tokens today",
     "tokensTotal": "Totalt loggade tokens",
-    "recordDay": "Record day: {date} · {tokens}"
+    "recordDay": "Record day: {date} · {tokens}",
+    "quotaWindowNote": "Provider quota window",
+    "tokensRange": "Logged tokens: {range}",
+    "rangeNotes": {
+      "h24": "Rolling 24-hour total; chart bars are day-grained.",
+      "today": "Calendar day in local time.",
+      "week": "Last 7 days from local logs.",
+      "month": "Last 30 calendar days from local logs."
+    }
   },
   "chart": {
-    "eyebrow": "Lokala loggar",
+    "eyebrow": "Local capture",
     "heading": "Tokenhistorik från loggar",
     "sourceTotalsAria": "Total användning per leverantör",
     "legendAria": "Förklaring",
@@ -54,14 +62,14 @@
     "costSummary": {
       "title": "Cost summary",
       "apiEquivalent": "API equivalent",
-      "paid": "Paid",
-      "saved": "Saved",
-      "quote": "Rate",
+      "paid": "Subscription fixed cost",
+      "saved": "Delta vs API",
+      "quote": "API difference",
       "quality": "Data quality",
       "qualityComplete": "Covered",
       "qualityPartial": "Partially estimated",
       "qualityUnavailable": "Unavailable",
-      "missingSubscriptions": "Subscription history is missing for this range.",
+      "missingSubscriptions": "Subscription history or a reliable fixed-cost source is missing for this range.",
       "estimatedSources": "Estimated providers: {providers}.",
       "missingSources": "Not included: {providers}.",
       "unsupportedCurrencies": "Unsupported currencies: {currencies}."
@@ -71,7 +79,7 @@
       "noData": "No cost data for the selected range."
     },
     "filters": {
-      "h24": "Last 24h",
+      "h24": "Last 24 hours",
       "today": "Today",
       "week": "Week",
       "month": "Month",
@@ -95,7 +103,15 @@
       "activeDaysValue": "{active}/{days}",
       "activeDaysDetail": "Days with usage",
       "peakDay": "Peak day",
-      "noData": "No activity in the selected range."
+      "noData": "No activity in the selected range.",
+      "selectedRangeDetail": "{range} shown with the selected range semantics."
+    },
+    "models": {
+      "heading": "Models used",
+      "range": "{range} model mix",
+      "topTokens": "Top by tokens: {model} · {tokens}",
+      "topCost": "Top by API-equivalent cost: {model} · {cost}",
+      "costUnknown": "API-equivalent cost unavailable for these models."
     }
   },
   "tokenMix": {
@@ -160,11 +176,11 @@
     "swapSub": "{used}/{total} GB used",
     "swapHelp": "System swap usage. High swap can slow the Mac even when AI process memory is only part of the total.",
     "noAiProcesses": "No AI process group found",
-    "processBreakdownHeading": "AI process groups",
-    "processBreakdownHelp": "Safe aggregate view: AI total load and group shares without command lines, prompts, or paths.",
-    "processTotal": "AI total: {cpu} CPU · {memory} · {memoryShare} RAM · {count} processes",
+    "processBreakdownHeading": "Running AI groups",
+    "processBreakdownHelp": "Safe aggregate view: running AI process groups and load shares without command lines, prompts, or paths.",
+    "processTotal": "AI total: {cpu} CPU · {memory} · {memoryShare} RAM · {count} running processes",
     "processBreakdownUnavailable": "Process grouping is not available on this platform/runtime.",
-    "processBreakdownEmpty": "No recognized AI process group is currently visible to the dashboard.",
+    "processBreakdownEmpty": "No recognized AI process group is currently running for the dashboard.",
     "processColumns": {
       "group": "Group",
       "cpu": "CPU",
@@ -195,7 +211,7 @@
       "input": "Indata",
       "cache": "Mellanlagring",
       "output": "Utdata",
-      "today": "I dag",
+      "today": "Last 24h",
       "total": "Totalt",
       "status": "Läge",
       "source": "Källa"
@@ -216,6 +232,25 @@
       "official": "Officiella gränser",
       "estimated": "Uppskattade gränser",
       "unknown": "Okända gränser"
+    },
+    "viewToggleAria": "Cost view",
+    "aliasesSummary": "{count} aliases",
+    "views": {
+      "api": "API equivalent",
+      "models": "Used models",
+      "subscriptions": "Fixed costs"
+    },
+    "usedModels": {
+      "heading": "Used models in {range}",
+      "description": "Actual logged model usage matched to the local pricing catalog where possible.",
+      "empty": "No model-level token data is available for the selected range."
+    },
+    "subscriptions": {
+      "heading": "Subscription and fixed costs in {range}",
+      "description": "Shows monthly fixed costs only when they are manually overridden or safely detected locally. Missing data is not treated as real cost.",
+      "empty": "No subscription or fixed-cost data is available yet.",
+      "previous": "Previous cost",
+      "delta": "Change"
     }
   },
   "providers": {
@@ -226,7 +261,7 @@
       "kicker": "Codex Spark"
     },
     "claudeCode": {
-      "kicker": "Claude Code local"
+      "kicker": "Claude Code"
     },
     "anthropic": {
       "kicker": "API-användning"
@@ -235,13 +270,13 @@
       "kicker": "API och krediter"
     },
     "gemini": {
-      "kicker": "Gemini lokalt"
+      "kicker": "Gemini"
     },
     "ollama": {
-      "kicker": "Ollama lokalt"
+      "kicker": "Ollama"
     },
     "local": {
-      "name": "Lokalt"
+      "name": "Local capture"
     },
     "gridAria": "Leverantörer",
     "messages": {
@@ -342,7 +377,13 @@
     "period5h": "5h",
     "period7d": "7d",
     "period24h": "24h",
-    "fullQuotaDetail": "{usage} used"
+    "fullQuotaDetail": "{usage} used",
+    "status": {
+      "ok": "Green",
+      "risk": "Risk",
+      "full": "Full",
+      "unknown": "Unknown"
+    }
   },
   "tokens": {
     "input": "Indata",
@@ -369,11 +410,11 @@
       "label": "Språk"
     },
     "notifications": {
-      "title": "Desktop notifications",
-      "description": "Warning when a limit window is being consumed too quickly at the current pace.",
+      "title": "Limits & warnings",
+      "description": "Warnings use real 5-hour and weekly provider windows plus projections; they are separate from monthly subscription/API cost comparisons.",
       "enabled": "Enable notifications",
-      "pacingLabel": "Pacing warning at projected usage (%)",
-      "hardLimitLabel": "Hard limit warning at used (%)",
+      "pacingLabel": "Pacing warning at projected provider-window usage (%)",
+      "hardLimitLabel": "Hard warning at measured provider-window usage (%)",
       "save": "Save",
       "saved": "Saved.",
       "saveError": "Could not save.",
@@ -430,7 +471,8 @@
       "systemGuideUnsupported": "This runtime cannot read browser notification permission. Open system notification settings and allow notifications for LLM Usage Dashboard there.",
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
-      "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again."
+      "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -439,10 +481,11 @@
       "save": "Save",
       "saving": "Saving...",
       "saved": "Saved.",
-      "saveError": "Could not save."
+      "saveError": "Could not save.",
+      "description": "Automatically detected plans stay visible; these fields are manual fallbacks or overrides and are labeled that way."
     },
     "sources": {
-      "title": "Local sources",
+      "title": "Data sources & diagnostics",
       "description": "Manage connected sources, recheck access, and copy ACL commands for other local users.",
       "recheck": "Recheck access",
       "recheckOne": "Recheck access",
@@ -504,8 +547,8 @@
     },
     "updates": {
       "title": "App updates",
-      "description": "Checks installed desktop versions against GitHub releases.",
-      "enabled": "Enable automatic update checks",
+      "description": "Automatic update checks are always active for supported packaged desktop builds; only preview releases are optional.",
+      "enabled": "Automatic update checks are always active",
       "allowPrerelease": "Include preview releases",
       "saved": "Saved.",
       "saveError": "Could not save update settings.",
@@ -546,8 +589,10 @@
       "support_unsupported_platform": "Unsupported platform",
       "support_electron_updater_missing": "Updater package missing",
       "support_unknown": "Unknown",
-      "state_electron_updater_missing": "Updater package missing"
-    }
+      "state_electron_updater_missing": "Updater package missing",
+      "alwaysOn": "Automatic update checks are always active."
+    },
+    "saving": "Saving..."
   },
   "errors": {
     "loadUsage": "Fel"
@@ -671,6 +716,35 @@
     "instances": {
       "title": "Other dashboard instances",
       "item": "{user} has another dashboard instance running."
+    }
+  },
+  "subscriptions": {
+    "plan": "Plan: {plan}",
+    "planUnknown": "Plan unknown",
+    "costUnknown": "Cost unknown",
+    "source": "Source: {source}",
+    "updated": "Updated {time}",
+    "qualityLabel": "Cost quality",
+    "sourceLabel": "Source",
+    "quality": {
+      "automatic": "Automatically detected",
+      "manual": "Manual override",
+      "estimated": "Estimated / partial",
+      "unknown": "Unknown"
+    },
+    "sources": {
+      "local_settings": "manual settings",
+      "codex_app_server": "Codex local app-server",
+      "codex_local_logs": "Codex local logs",
+      "claude_statusline": "Claude Code statusline",
+      "claude_auth_status": "Claude CLI auth status",
+      "claudeCode_local_signal": "Claude Code local signal",
+      "codex_local_signal": "Codex local signal",
+      "copilot_local_signal": "Copilot local signal",
+      "gemini_local_signal": "Gemini local signal",
+      "openai_api": "OpenAI API metadata",
+      "anthropic_api": "Anthropic API metadata",
+      "unknown": "unknown"
     }
   }
 }

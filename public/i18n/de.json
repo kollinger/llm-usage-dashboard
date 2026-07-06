@@ -38,14 +38,22 @@
   },
   "summary": {
     "ariaLabel": "Übersicht",
-    "fiveHourOpen": "5h frei",
-    "weeklyOpen": "Woche frei",
+    "fiveHourOpen": "5h-Limit frei",
+    "weeklyOpen": "Wochenlimit frei",
     "tokensToday": "Geloggte Tokens heute",
     "tokensTotal": "Geloggte Tokens gesamt",
-    "recordDay": "Rekord-Tag: {date} · {tokens}"
+    "recordDay": "Rekord-Tag: {date} · {tokens}",
+    "quotaWindowNote": "Provider-Zeitfenster",
+    "tokensRange": "Geloggte Tokens: {range}",
+    "rangeNotes": {
+      "h24": "Rollierende 24h-Summe; Chart-Balken sind tagesgenau.",
+      "today": "Kalendertag in lokaler Zeit.",
+      "week": "Letzte 7 Tage aus lokalen Logs.",
+      "month": "Letzte 30 Kalendertage aus lokalen Logs."
+    }
   },
   "chart": {
-    "eyebrow": "Lokale Logs",
+    "eyebrow": "Lokale Erfassung",
     "heading": "Token-Verlauf aus Logs",
     "sourceTotalsAria": "Gesamtverbrauch nach Anbieter",
     "legendAria": "Legende",
@@ -54,14 +62,14 @@
     "costSummary": {
       "title": "Kostenübersicht",
       "apiEquivalent": "API-Äquivalent",
-      "paid": "Bezahlt",
-      "saved": "Gespart",
-      "quote": "Satz",
+      "paid": "Abo-Fixkosten",
+      "saved": "Differenz zur API",
+      "quote": "API-Differenz",
       "quality": "Datenqualität",
       "qualityComplete": "Abgedeckt",
       "qualityPartial": "Teilweise geschätzt",
       "qualityUnavailable": "Nicht verfügbar",
-      "missingSubscriptions": "Für diesen Zeitraum fehlt die Abo-Historie.",
+      "missingSubscriptions": "Abo-Historie oder belastbare Fixkostenquelle fehlt für diesen Zeitraum.",
       "estimatedSources": "Geschätzte Anbieter: {providers}.",
       "missingSources": "Nicht enthalten: {providers}.",
       "unsupportedCurrencies": "Nicht unterstützte Währungen: {currencies}."
@@ -71,12 +79,12 @@
       "noData": "Keine Kostendaten für den gewählten Zeitraum."
     },
     "filters": {
-      "h24": "Letzte 24h",
-      "today": "Heute",
-      "week": "Woche",
-      "month": "Monat",
+      "h24": "Last 24 hours",
+      "today": "Today",
+      "week": "Week",
+      "month": "Month",
       "year": "Jahr",
-      "all": "Alle"
+      "all": "All"
     },
     "headingCosts": "Kostenverlauf aus Logs",
     "mode": {
@@ -95,7 +103,15 @@
       "activeDaysValue": "{active}/{days}",
       "activeDaysDetail": "Tage mit Nutzung",
       "peakDay": "Peak-Tag",
-      "noData": "Keine Aktivität im gewählten Zeitraum."
+      "noData": "Keine Aktivität im gewählten Zeitraum.",
+      "selectedRangeDetail": "{range} mit der gewählten Zeitraum-Semantik."
+    },
+    "models": {
+      "heading": "Genutzte Modelle",
+      "range": "Modellmix {range}",
+      "topTokens": "Nach Tokens vorn: {model} · {tokens}",
+      "topCost": "Nach API-Äquivalent vorn: {model} · {cost}",
+      "costUnknown": "API-äquivalente Kosten sind für diese Modelle nicht verfügbar."
     }
   },
   "tokenMix": {
@@ -160,11 +176,11 @@
     "swapSub": "{used}/{total} GB genutzt",
     "swapHelp": "System-Swap. Hoher Swap kann den Mac bremsen, auch wenn AI-Prozessspeicher nur ein Teil der Gesamtlast ist.",
     "noAiProcesses": "Keine AI-Prozessgruppe gefunden",
-    "processBreakdownHeading": "AI-Prozessgruppen",
-    "processBreakdownHelp": "Sichere Aggregatansicht: AI-Gesamtlast und Gruppenanteile ohne Kommandozeilen, Prompts oder Pfade.",
-    "processTotal": "AI gesamt: {cpu} CPU · {memory} · {memoryShare} RAM · {count} Prozesse",
+    "processBreakdownHeading": "Laufende AI-Gruppen",
+    "processBreakdownHelp": "Sichere Aggregatansicht: laufende AI-Prozessgruppen und Lastanteile ohne Kommandozeilen, Prompts oder Pfade.",
+    "processTotal": "AI gesamt: {cpu} CPU · {memory} · {memoryShare} RAM · {count} laufende Prozesse",
     "processBreakdownUnavailable": "Prozessgruppen sind auf dieser Plattform/Laufzeit nicht verfügbar.",
-    "processBreakdownEmpty": "Gerade ist keine erkannte AI-Prozessgruppe für das Dashboard sichtbar.",
+    "processBreakdownEmpty": "Gerade läuft keine erkannte AI-Prozessgruppe für das Dashboard.",
     "processColumns": {
       "group": "Gruppe",
       "cpu": "CPU",
@@ -195,7 +211,7 @@
       "input": "Eingabe",
       "cache": "Zwischenspeicher",
       "output": "Ausgabe",
-      "today": "Heute",
+      "today": "Last 24h",
       "total": "Gesamt",
       "status": "Zustand",
       "source": "Quelle"
@@ -216,6 +232,25 @@
       "official": "Offizielle Limits",
       "estimated": "Geschätzte Limits",
       "unknown": "Limits unbekannt"
+    },
+    "viewToggleAria": "Kostenansicht",
+    "aliasesSummary": "{count} Aliase",
+    "views": {
+      "api": "API-Äquivalent",
+      "models": "Genutzte Modelle",
+      "subscriptions": "Fixkosten"
+    },
+    "usedModels": {
+      "heading": "Genutzte Modelle in {range}",
+      "description": "Tatsächlich geloggte Modellnutzung, soweit möglich mit dem lokalen Preiskatalog abgeglichen.",
+      "empty": "Für den gewählten Zeitraum sind keine Modell-Token verfügbar."
+    },
+    "subscriptions": {
+      "heading": "Abo- und Fixkosten in {range}",
+      "description": "Monatliche Fixkosten erscheinen nur, wenn sie manuell überschrieben oder lokal sicher erkannt wurden. Fehlende Daten werden nicht als reale Kosten behandelt.",
+      "empty": "Noch keine Abo- oder Fixkostendaten verfügbar.",
+      "previous": "Vorherige Kosten",
+      "delta": "Änderung"
     }
   },
   "providers": {
@@ -226,7 +261,7 @@
       "kicker": "Codex Spark"
     },
     "claudeCode": {
-      "kicker": "Claude Code lokal"
+      "kicker": "Claude Code"
     },
     "anthropic": {
       "kicker": "API-Nutzung"
@@ -235,13 +270,13 @@
       "kicker": "API & Guthaben"
     },
     "gemini": {
-      "kicker": "Gemini lokal"
+      "kicker": "Gemini"
     },
     "ollama": {
-      "kicker": "Ollama lokal"
+      "kicker": "Ollama"
     },
     "local": {
-      "name": "Lokal"
+      "name": "Lokale Erfassung"
     },
     "gridAria": "Anbieter",
     "messages": {
@@ -342,7 +377,13 @@
     "period5h": "5h",
     "period7d": "7 Tagen",
     "period24h": "24h",
-    "fullQuotaDetail": "{usage} genutzt"
+    "fullQuotaDetail": "{usage} genutzt",
+    "status": {
+      "ok": "Grün",
+      "risk": "Risiko",
+      "full": "Voll",
+      "unknown": "Unbekannt"
+    }
   },
   "tokens": {
     "input": "Input",
@@ -369,11 +410,11 @@
       "label": "Sprache"
     },
     "notifications": {
-      "title": "Desktop-Benachrichtigungen",
-      "description": "Warnung, wenn ein Limit-Fenster bei aktuellem Tempo zu schnell aufgebraucht wird.",
+      "title": "Limits & Warnungen",
+      "description": "Warnungen nutzen echte 5-Stunden- und Wochenfenster der Provider plus Projektionen; sie sind von Abo-/API-Kosten getrennt.",
       "enabled": "Benachrichtigungen aktivieren",
-      "pacingLabel": "Tempo-Warnung bei projiziertem Verbrauch (%)",
-      "hardLimitLabel": "Harte Grenze bei Verbrauch (%)",
+      "pacingLabel": "Tempo-Warnung bei projiziertem Provider-Fenster-Verbrauch (%)",
+      "hardLimitLabel": "Harte Warnung bei gemessenem Provider-Fenster-Verbrauch (%)",
       "save": "Speichern",
       "saved": "Gespeichert.",
       "saveError": "Konnte nicht gespeichert werden.",
@@ -430,7 +471,8 @@
       "systemGuideUnsupported": "Diese Laufzeit kann die Browser-Berechtigung nicht prüfen. Öffne die System-Mitteilungen und erlaube LLM Usage Dashboard dort Benachrichtigungen.",
       "systemGuideNativeUnverified": "Native Banner sind mit diesem Build nicht verlässlich bestätigt. Prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard und teste nach einem App-Neustart erneut.",
       "systemGuideTestFailed": "Der letzte native Notification-Versuch meldete einen Fehler. Prüfe die System-Mitteilungen, starte die App neu und teste erneut.",
-      "systemGuideAfterTest": "Wenn kein echter System-Banner sichtbar wurde, prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard, starte die App neu und sende den Test noch einmal."
+      "systemGuideAfterTest": "Wenn kein echter System-Banner sichtbar wurde, prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard, starte die App neu und sende den Test noch einmal.",
+      "thresholdsHelp": "Tempo nutzt die aktuelle Verbrauchsrate; harte Warnung nutzt den gemessenen Verbrauch im jeweiligen 5h- oder Wochenfenster."
     },
     "subscriptions": {
       "title": "Abo-Kosten",
@@ -439,10 +481,11 @@
       "save": "Speichern",
       "saving": "Wird gespeichert...",
       "saved": "Gespeichert.",
-      "saveError": "Konnte nicht gespeichert werden."
+      "saveError": "Konnte nicht gespeichert werden.",
+      "description": "Automatisch erkannte Pläne bleiben sichtbar; diese Felder sind manuelle Fallbacks oder Overrides und werden entsprechend markiert."
     },
     "sources": {
-      "title": "Lokale Quellen",
+      "title": "Datenquellen & Diagnose",
       "description": "Verbundene Quellen verwalten, Zugriff neu prüfen und ACL-Kommandos für andere lokale Benutzer kopieren.",
       "recheck": "Zugriff erneut prüfen",
       "recheckOne": "Zugriff erneut prüfen",
@@ -504,8 +547,8 @@
     },
     "updates": {
       "title": "App-Updates",
-      "description": "Prüft installierte Desktop-Versionen gegen GitHub Releases.",
-      "enabled": "Automatische Update-Prüfung aktivieren",
+      "description": "Automatische Update-Prüfungen sind für unterstützte paketierte Desktop-Builds immer aktiv; nur Preview-Releases sind optional.",
+      "enabled": "Automatische Update-Prüfung ist immer aktiv",
       "allowPrerelease": "Preview-Releases einschließen",
       "saved": "Gespeichert.",
       "saveError": "Update-Einstellungen konnten nicht gespeichert werden.",
@@ -546,8 +589,10 @@
       "support_unsupported_platform": "Plattform nicht unterstützt",
       "support_electron_updater_missing": "Updater-Paket fehlt",
       "support_unknown": "Unbekannt",
-      "state_electron_updater_missing": "Updater-Paket fehlt"
-    }
+      "state_electron_updater_missing": "Updater-Paket fehlt",
+      "alwaysOn": "Automatische Update-Prüfung ist immer aktiv."
+    },
+    "saving": "Speichert..."
   },
   "errors": {
     "loadUsage": "Fehler"
@@ -671,6 +716,35 @@
     "instances": {
       "title": "Andere Dashboard-Instanzen",
       "item": "{user} hat eine weitere Dashboard-Instanz laufen."
+    }
+  },
+  "subscriptions": {
+    "plan": "Plan: {plan}",
+    "planUnknown": "Plan unbekannt",
+    "costUnknown": "Kosten unbekannt",
+    "source": "Quelle: {source}",
+    "updated": "Stand {time}",
+    "qualityLabel": "Kostenqualität",
+    "sourceLabel": "Quelle",
+    "quality": {
+      "automatic": "Automatisch erkannt",
+      "manual": "Manueller Override",
+      "estimated": "Geschätzt / teilweise",
+      "unknown": "Unbekannt"
+    },
+    "sources": {
+      "local_settings": "manuelle Einstellungen",
+      "codex_app_server": "lokaler Codex-App-Server",
+      "codex_local_logs": "lokale Codex-Logs",
+      "claude_statusline": "Claude-Code-Statusline",
+      "claude_auth_status": "Claude-CLI-Auth-Status",
+      "claudeCode_local_signal": "lokales Claude-Code-Signal",
+      "codex_local_signal": "lokales Codex-Signal",
+      "copilot_local_signal": "lokales Copilot-Signal",
+      "gemini_local_signal": "lokales Gemini-Signal",
+      "openai_api": "OpenAI-API-Metadaten",
+      "anthropic_api": "Anthropic-API-Metadaten",
+      "unknown": "unbekannt"
     }
   }
 }

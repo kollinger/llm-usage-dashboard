@@ -40,14 +40,17 @@
         <div class="metric-tile">
           <span data-i18n="summary.fiveHourOpen">5h frei</span>
           <strong id="fiveHourOpen">--</strong>
+          <span class="metric-note" data-i18n="summary.quotaWindowNote">Provider-Zeitfenster</span>
         </div>
         <div class="metric-tile">
           <span data-i18n="summary.weeklyOpen">Woche frei</span>
           <strong id="weeklyOpen">--</strong>
+          <span class="metric-note" data-i18n="summary.quotaWindowNote">Provider-Zeitfenster</span>
         </div>
         <div class="metric-tile">
-          <span data-i18n="summary.tokensToday">Geloggte Tokens heute</span>
+          <span id="tokensRangeLabel" data-i18n="summary.tokensToday">Geloggte Tokens heute</span>
           <strong id="tokensToday">--</strong>
+          <span class="metric-note" id="tokensRangeNote" hidden></span>
         </div>
         <div class="metric-tile">
           <span data-i18n="summary.tokensTotal">Geloggte Tokens gesamt</span>
@@ -128,33 +131,40 @@
       </section>
 
       <section class="panel price-panel">
-        <div class="panel-heading">
+        <div class="panel-heading price-panel-heading">
           <div>
             <p class="eyebrow" data-i18n="pricing.eyebrow">API-Kosten</p>
             <h2 data-i18n="pricing.heading">Was deine Tokens über die API gekostet hätten</h2>
           </div>
-          <span id="pricingMeta" class="soft-label">--</span>
+          <div class="price-panel-tools">
+            <nav id="pricingViewToggle" class="pricing-view-toggle" aria-label="Kostenansicht" data-i18n-aria-label="pricing.viewToggleAria"></nav>
+            <span id="pricingMeta" class="soft-label">--</span>
+          </div>
         </div>
-        <div class="price-table-wrap">
-          <table class="price-table">
-            <thead>
-              <tr>
-                <th><button class="sort-button" type="button" data-price-sort="model" data-i18n="pricing.columns.model">Modell</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="score" data-i18n="pricing.columns.score">Score</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="region" data-i18n="pricing.columns.region">Region</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="limits" data-i18n="pricing.columns.limits">Limits</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="input" data-i18n="pricing.columns.input">Input</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="cache" data-i18n="pricing.columns.cache">Cache</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="output" data-i18n="pricing.columns.output">Output</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="today" data-i18n="pricing.columns.today">Heute</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="total" data-i18n="pricing.columns.total">Gesamt</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="status" data-i18n="pricing.columns.status">Status</button></th>
-                <th><button class="sort-button" type="button" data-price-sort="source" data-i18n="pricing.columns.source">Quelle</button></th>
-              </tr>
-            </thead>
-            <tbody id="priceRows"></tbody>
-          </table>
+        <div class="price-view-panel" id="pricingApiView">
+          <div class="price-table-wrap">
+            <table class="price-table">
+              <thead>
+                <tr>
+                  <th><button class="sort-button" type="button" data-price-sort="model" data-i18n="pricing.columns.model">Modell</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="score" data-i18n="pricing.columns.score">Score</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="region" data-i18n="pricing.columns.region">Region</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="limits" data-i18n="pricing.columns.limits">Limits</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="input" data-i18n="pricing.columns.input">Input</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="cache" data-i18n="pricing.columns.cache">Cache</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="output" data-i18n="pricing.columns.output">Output</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="today" data-i18n="pricing.columns.today">Heute</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="total" data-i18n="pricing.columns.total">Gesamt</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="status" data-i18n="pricing.columns.status">Status</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="source" data-i18n="pricing.columns.source">Quelle</button></th>
+                </tr>
+              </thead>
+              <tbody id="priceRows"></tbody>
+            </table>
+          </div>
         </div>
+        <div class="price-view-panel" id="pricingUsedModels" hidden></div>
+        <div class="price-view-panel" id="pricingSubscriptionCosts" hidden></div>
       </section>
     </main>
 
@@ -179,8 +189,8 @@
     </dialog>
 
     <dialog id="settingsDialog" class="modal">
-      <div class="modal-body">
-        <div class="modal-heading">
+      <div class="modal-body settings-modal-body">
+        <div class="modal-heading settings-modal-heading">
           <h2 data-i18n="settings.heading">Einstellungen</h2>
           <button class="icon-button" type="button" id="settingsCloseBtn" aria-label="Schließen" title="Schließen" data-i18n-aria-label="actions.close" data-i18n-title="actions.close">
             <i data-lucide="x"></i>
@@ -193,7 +203,74 @@
           </label>
         </div>
         <div class="settings-section">
+          <h3 data-i18n="settings.notifications.title">Limits & Warnungen</h3>
+          <p class="settings-desc" data-i18n="settings.notifications.description">Warnungen beziehen sich auf reale 5-Stunden- und Wochenfenster sowie Projektionen, nicht auf API-Kosten.</p>
+          <label class="field toggle-field">
+            <input type="checkbox" id="notificationsEnabled" />
+            <span data-i18n="settings.notifications.enabled">Benachrichtigungen aktivieren</span>
+          </label>
+          <div class="notification-permission-notice" id="notificationPermissionNotice" hidden role="status" aria-live="polite">
+            <strong id="notificationPermissionNoticeTitle" data-i18n="settings.notifications.systemGuideTitle">System notifications need attention</strong>
+            <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Allow notifications for LLM Usage Dashboard in system settings, restart the app if you just changed the setting, then run the test again.</span>
+          </div>
+          <div id="notificationThresholds" class="notification-thresholds" hidden>
+            <p class="settings-desc" data-i18n="settings.notifications.thresholdsHelp">Tempo-Warnung nutzt die aktuelle Verbrauchsrate, harte Grenze nutzt den gemessenen Verbrauch im jeweiligen 5h-/Wochenlimit.</p>
+            <label class="field">
+              <span data-i18n="settings.notifications.pacingLabel">Tempo-Warnung bei projiziertem Verbrauch (%)</span>
+              <input type="number" id="notificationPacingPercent" min="50" max="200" step="5" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.notifications.hardLimitLabel">Harte Grenze bei Verbrauch (%)</span>
+              <input type="number" id="notificationHardLimitPercent" min="50" max="100" step="5" />
+            </label>
+          </div>
+          <details class="settings-advanced">
+            <summary data-i18n="settings.notifications.diagTitle">Notification diagnostics</summary>
+            <div class="notification-diagnostics" id="notificationDiagnostics">
+              <dl class="diag-list" id="notificationDiagList">
+                <dt data-i18n="settings.notifications.diagLastCheck">Last check</dt>
+                <dd id="notificationDiagLastCheck">--</dd>
+                <dt data-i18n="settings.notifications.diagDuration">Duration</dt>
+                <dd id="notificationDiagDuration">--</dd>
+                <dt data-i18n="settings.notifications.diagAlerts">Alerts found</dt>
+                <dd id="notificationDiagAlerts">--</dd>
+                <dt data-i18n="settings.notifications.diagLastShown">Last notification shown</dt>
+                <dd id="notificationDiagLastShown">--</dd>
+                <dt data-i18n="settings.notifications.diagSkipped">Skip reason</dt>
+                <dd id="notificationDiagSkipped">--</dd>
+                <dt data-i18n="settings.notifications.diagError">Last error</dt>
+                <dd id="notificationDiagError">--</dd>
+                <dt data-i18n="settings.notifications.diagSupported">Notifications supported</dt>
+                <dd id="notificationDiagSupported">--</dd>
+                <dt data-i18n="settings.notifications.diagPermission">Browser permission</dt>
+                <dd id="notificationDiagPermission">--</dd>
+                <dt data-i18n="settings.notifications.diagNativeDelivery">macOS native delivery</dt>
+                <dd id="notificationDiagNativeDelivery">--</dd>
+              </dl>
+              <div class="diag-test-row">
+                <button type="button" class="text-button" id="notificationSettingsBtn" data-i18n="settings.notifications.openSettingsBtn">Open macOS notification settings</button>
+                <button type="button" class="text-button" id="notificationTestBtn" data-i18n="settings.notifications.testBtn">Send test notification</button>
+                <p class="settings-desc" id="notificationTestStatus" hidden></p>
+              </div>
+              <div class="notification-test-preview" id="notificationTestPreview" hidden role="status" aria-live="polite">
+                <strong id="notificationTestPreviewTitle" data-i18n="settings.notifications.inAppTestTitle">In-app test notification</strong>
+                <span id="notificationTestPreviewBody" data-i18n="settings.notifications.inAppTestBody">This confirms the button can show an in-app fallback.</span>
+              </div>
+              <details class="diag-last-test" id="notificationLastTestDetails" hidden>
+                <summary data-i18n="settings.notifications.testResultLabel">Last test result</summary>
+                <dl class="diag-list">
+                  <dt data-i18n="settings.notifications.testResultAt">At</dt>
+                  <dd id="notificationLastTestAt">--</dd>
+                  <dt data-i18n="settings.notifications.testResultOutcome">Outcome</dt>
+                  <dd id="notificationLastTestResult">--</dd>
+                </dl>
+              </details>
+            </div>
+          </details>
+        </div>
+        <div class="settings-section">
           <h3 data-i18n="settings.subscriptions.title">Abo-Kosten</h3>
+          <p class="settings-desc" data-i18n="settings.subscriptions.description">Automatisch erkannte Pläne bleiben sichtbar; diese Felder sind manuelle Fallbacks oder Overrides und werden entsprechend markiert.</p>
           <div class="subscription-grid">
             <fieldset>
               <legend>Codex</legend>
@@ -221,11 +298,8 @@
         </div>
         <div class="settings-section" id="updateSettingsSection" hidden>
           <h3 data-i18n="settings.updates.title">App-Updates</h3>
-          <p class="settings-desc" data-i18n="settings.updates.description">Prüft installierte Desktop-Versionen gegen GitHub Releases.</p>
-          <label class="field toggle-field">
-            <input type="checkbox" id="updateChecksEnabled" />
-            <span data-i18n="settings.updates.enabled">Automatische Update-Prüfung aktivieren</span>
-          </label>
+          <p class="settings-desc" data-i18n="settings.updates.description">Automatische Update-Prüfungen sind immer aktiv; nur Preview-Releases sind optional.</p>
+          <p class="settings-state-note" data-i18n="settings.updates.alwaysOn">Automatische Update-Prüfung ist immer aktiv.</p>
           <label class="field toggle-field">
             <input type="checkbox" id="allowPrereleaseUpdates" />
             <span data-i18n="settings.updates.allowPrerelease">Preview-Releases einschließen</span>
@@ -275,69 +349,6 @@
               <h4 data-i18n="settings.sources.candidatesTitle">Erkannte Quellen</h4>
               <div class="source-list" id="settingsCandidateSources"></div>
             </div>
-          </div>
-        </div>
-        <div class="settings-section">
-          <h3 data-i18n="settings.notifications.title">Desktop-Benachrichtigungen</h3>
-          <p class="settings-desc" data-i18n="settings.notifications.description">Warnung, wenn ein Limit-Fenster zu schnell aufgebraucht wird.</p>
-          <label class="field toggle-field">
-            <input type="checkbox" id="notificationsEnabled" />
-            <span data-i18n="settings.notifications.enabled">Benachrichtigungen aktivieren</span>
-          </label>
-          <div class="notification-permission-notice" id="notificationPermissionNotice" hidden role="status" aria-live="polite">
-            <strong id="notificationPermissionNoticeTitle" data-i18n="settings.notifications.systemGuideTitle">System notifications need attention</strong>
-            <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Allow notifications for LLM Usage Dashboard in system settings, restart the app if you just changed the setting, then run the test again.</span>
-          </div>
-          <div id="notificationThresholds" class="notification-thresholds" hidden>
-            <label class="field">
-              <span data-i18n="settings.notifications.pacingLabel">Tempo-Warnung bei projiziertem Verbrauch (%)</span>
-              <input type="number" id="notificationPacingPercent" min="50" max="200" step="5" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.notifications.hardLimitLabel">Harte Grenze bei Verbrauch (%)</span>
-              <input type="number" id="notificationHardLimitPercent" min="50" max="100" step="5" />
-            </label>
-          </div>
-          <div class="notification-diagnostics" id="notificationDiagnostics">
-            <h4 class="settings-subheading" data-i18n="settings.notifications.diagTitle">Notification diagnostics</h4>
-            <dl class="diag-list" id="notificationDiagList">
-              <dt data-i18n="settings.notifications.diagLastCheck">Last check</dt>
-              <dd id="notificationDiagLastCheck">--</dd>
-              <dt data-i18n="settings.notifications.diagDuration">Duration</dt>
-              <dd id="notificationDiagDuration">--</dd>
-              <dt data-i18n="settings.notifications.diagAlerts">Alerts found</dt>
-              <dd id="notificationDiagAlerts">--</dd>
-              <dt data-i18n="settings.notifications.diagLastShown">Last notification shown</dt>
-              <dd id="notificationDiagLastShown">--</dd>
-              <dt data-i18n="settings.notifications.diagSkipped">Skip reason</dt>
-              <dd id="notificationDiagSkipped">--</dd>
-              <dt data-i18n="settings.notifications.diagError">Last error</dt>
-              <dd id="notificationDiagError">--</dd>
-              <dt data-i18n="settings.notifications.diagSupported">Notifications supported</dt>
-              <dd id="notificationDiagSupported">--</dd>
-              <dt data-i18n="settings.notifications.diagPermission">Browser permission</dt>
-              <dd id="notificationDiagPermission">--</dd>
-              <dt data-i18n="settings.notifications.diagNativeDelivery">macOS native delivery</dt>
-              <dd id="notificationDiagNativeDelivery">--</dd>
-            </dl>
-            <div class="diag-test-row">
-              <button type="button" class="text-button" id="notificationSettingsBtn" data-i18n="settings.notifications.openSettingsBtn">Open macOS notification settings</button>
-              <button type="button" class="text-button" id="notificationTestBtn" data-i18n="settings.notifications.testBtn">Send test notification</button>
-              <p class="settings-desc" id="notificationTestStatus" hidden></p>
-            </div>
-            <div class="notification-test-preview" id="notificationTestPreview" hidden role="status" aria-live="polite">
-              <strong id="notificationTestPreviewTitle" data-i18n="settings.notifications.inAppTestTitle">In-app test notification</strong>
-              <span id="notificationTestPreviewBody" data-i18n="settings.notifications.inAppTestBody">This confirms the button can show an in-app fallback.</span>
-            </div>
-            <details class="diag-last-test" id="notificationLastTestDetails" hidden>
-              <summary data-i18n="settings.notifications.testResultLabel">Last test result</summary>
-              <dl class="diag-list">
-                <dt data-i18n="settings.notifications.testResultAt">At</dt>
-                <dd id="notificationLastTestAt">--</dd>
-                <dt data-i18n="settings.notifications.testResultOutcome">Outcome</dt>
-                <dd id="notificationLastTestResult">--</dd>
-              </dl>
-            </details>
           </div>
         </div>
         <p class="settings-toast" id="settingsToast" hidden aria-live="polite"></p>

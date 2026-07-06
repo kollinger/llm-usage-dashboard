@@ -1974,6 +1974,7 @@ async function readCodexUsage(options = {}) {
     },
     liveRateLimits: liveRateLimits?.source || null,
     planType: liveRateLimits?.codex?.planType || null,
+    planSource: liveRateLimits?.codex?.planType ? "codex_app_server" : null,
     creditRows: liveCodexCreditRows,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
@@ -4820,7 +4821,7 @@ async function readUpdateSettings() {
 
 function sanitizeUpdateSettings(settings) {
   return {
-    enabled: typeof settings?.enabled === "boolean" ? settings.enabled : true,
+    enabled: true,
     allowPrerelease: typeof settings?.allowPrerelease === "boolean" ? settings.allowPrerelease : true
   };
 }
@@ -4828,7 +4829,6 @@ function sanitizeUpdateSettings(settings) {
 function mergeUpdateSettingsPatch(current, patch) {
   return sanitizeUpdateSettings({
     ...current,
-    enabled: typeof patch?.enabled === "boolean" ? patch.enabled : current.enabled,
     allowPrerelease: typeof patch?.allowPrerelease === "boolean" ? patch.allowPrerelease : current.allowPrerelease
   });
 }
@@ -5408,6 +5408,8 @@ module.exports = {
     aggregateAiProcessMetrics,
     buildLiveProcessMetrics,
     buildAiLoadScore,
-    buildSourceDiagnosticsPayload
+    buildSourceDiagnosticsPayload,
+    sanitizeUpdateSettings,
+    mergeUpdateSettingsPatch
   }
 };

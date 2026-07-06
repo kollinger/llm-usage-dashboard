@@ -17,7 +17,8 @@ const state = {
   chartScrollToLatest: true,
   chartMode: "tokens",
   chartTimeFilter: "all",
-  pricingSort: null,
+  pricingView: "api",
+  pricingSort: { key: "total", direction: "desc" },
   language: "en",
   translations: {},
   fallbackTranslations: {},
@@ -70,7 +71,6 @@ const els = {
   settingsToast: document.getElementById("settingsToast"),
   subscriptionFields: Array.from(document.querySelectorAll("[data-subscription-field]")),
   updateSettingsSection: document.getElementById("updateSettingsSection"),
-  updateChecksEnabled: document.getElementById("updateChecksEnabled"),
   allowPrereleaseUpdates: document.getElementById("allowPrereleaseUpdates"),
   updateDiagState: document.getElementById("updateDiagState"),
   updateDiagSupport: document.getElementById("updateDiagSupport"),
@@ -111,7 +111,9 @@ const els = {
   languageSelect: document.getElementById("languageSelect"),
   fiveHourOpen: document.getElementById("fiveHourOpen"),
   weeklyOpen: document.getElementById("weeklyOpen"),
+  tokensRangeLabel: document.getElementById("tokensRangeLabel"),
   tokensToday: document.getElementById("tokensToday"),
+  tokensRangeNote: document.getElementById("tokensRangeNote"),
   tokensTotal: document.getElementById("tokensTotal"),
   recordDay: document.getElementById("recordDay"),
   chartTitle: document.getElementById("chartTitle"),
@@ -128,6 +130,10 @@ const els = {
   liveHistoryChart: document.getElementById("liveHistoryChart"),
   liveHistoryLegend: document.getElementById("liveHistoryLegend"),
   tokenList: document.getElementById("tokenList"),
+  pricingViewToggle: document.getElementById("pricingViewToggle"),
+  pricingApiView: document.getElementById("pricingApiView"),
+  pricingUsedModels: document.getElementById("pricingUsedModels"),
+  pricingSubscriptionCosts: document.getElementById("pricingSubscriptionCosts"),
   priceRows: document.getElementById("priceRows"),
   pricingMeta: document.getElementById("pricingMeta"),
   priceSortButtons: Array.from(document.querySelectorAll("[data-price-sort]"))
@@ -196,6 +202,7 @@ const SETTINGS_TOAST_MS = 1800;
 const MODAL_BACKDROP_GRACE_MS = 450;
 const translationCache = new Map();
 const dialogOpenedAt = new WeakMap();
+const dialogPointerStartedInside = new WeakMap();
 const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
@@ -253,8 +260,8 @@ const pricingSortDefaults = {
   input: "asc",
   cache: "asc",
   output: "asc",
-  today: "asc",
-  total: "asc",
+  today: "desc",
+  total: "desc",
   source: "asc"
 };
 const pricingExcludedSourceIds = new Set(["copilot"]);
@@ -1231,6 +1238,8 @@ function bindEvents() {
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
+  els.loginDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
+  els.settingsDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
   els.loginDialog.addEventListener("click", closeDialogOnBackdrop);
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
   els.sourceDiagnosticsSection?.addEventListener("click", handleSourceActionClick);
@@ -1255,7 +1264,7 @@ function bindEvents() {
   els.subscriptionFields.forEach((field) => {
     field.addEventListener("input", () => scheduleSettingsAutosave("subscriptions"));
   });
-  [els.updateChecksEnabled, els.allowPrereleaseUpdates].forEach((field) => {
+  [els.allowPrereleaseUpdates].forEach((field) => {
     field?.addEventListener("change", () => scheduleSettingsAutosave("updates"));
   });
   els.updateCheckBtn?.addEventListener("click", requestUpdateCheck);
@@ -1271,6 +1280,14 @@ function bindEvents() {
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
+  });
+  els.pricingViewToggle?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pricing-view]");
+    if (!button) return;
+    state.pricingView = ["api", "models", "subscriptions"].includes(button.dataset.pricingView)
+      ? button.dataset.pricingView
+      : "api";
+    if (state.usage) renderPricing(state.usage.local, filterDailyByRange(state.usage.local?.daily || [], state.chartTimeFilter), buildProviders(state.usage));
   });
   els.loginForm.addEventListener("submit", login);
   els.appShell.addEventListener("click", (e) => {
@@ -1413,7 +1430,13 @@ function sortPricing(key) {
         : "asc"
       : pricingSortDefaults[key] || "asc";
   state.pricingSort = { key, direction };
-  if (state.usage) renderPricing(state.usage.local);
+  if (state.usage) {
+    renderPricing(
+      state.usage.local,
+      filterDailyByRange(state.usage.local?.daily || [], state.chartTimeFilter),
+      buildProviders(state.usage)
+    );
+  }
 }
 
 function loadProviderFilterPreference() {
@@ -2002,7 +2025,12 @@ function renderLocked() {
   els.providerGrid.innerHTML = "";
   els.fiveHourOpen.textContent = "--";
   els.weeklyOpen.textContent = "--";
+  if (els.tokensRangeLabel) els.tokensRangeLabel.textContent = t("summary.tokensToday");
   els.tokensToday.textContent = "--";
+  if (els.tokensRangeNote) {
+    els.tokensRangeNote.textContent = "";
+    els.tokensRangeNote.hidden = true;
+  }
   els.tokensTotal.textContent = "--";
   els.recordDay.textContent = "";
   els.recordDay.hidden = true;
@@ -2015,6 +2043,16 @@ function renderLocked() {
   els.sourceTotals.textContent = "--";
   renderLiveGauges(null);
   els.tokenList.innerHTML = "";
+  if (els.pricingViewToggle) els.pricingViewToggle.innerHTML = "";
+  if (els.pricingApiView) els.pricingApiView.hidden = false;
+  if (els.pricingUsedModels) {
+    els.pricingUsedModels.innerHTML = "";
+    els.pricingUsedModels.hidden = true;
+  }
+  if (els.pricingSubscriptionCosts) {
+    els.pricingSubscriptionCosts.innerHTML = "";
+    els.pricingSubscriptionCosts.hidden = true;
+  }
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
   state.chartRendered = false;
@@ -2040,10 +2078,10 @@ function render() {
   updateProviderViewNotice(providers);
   updateProviderFilterControl(providers, visibleProviders);
   updateLayoutControls(providers, visibleProviders);
-  renderSummary(visibleProviders, usage.local);
   const allDaily = usage.local?.daily || [];
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
+  renderSummary(visibleProviders, usage.local, filteredDaily);
   if (els.chartTitle) {
     els.chartTitle.textContent = state.chartMode === "costs" ? t("chart.headingCosts") : t("chart.heading");
   }
@@ -2061,7 +2099,7 @@ function render() {
   els.chartWindowInsights.innerHTML = renderChartWindowInsights(filteredDaily, state.chartMode);
   renderTokenList(usage.local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
-  renderPricing(usage.local);
+  renderPricing(usage.local, filteredDaily, providers);
   renderSourceDiagnostics();
   renderSourceSettings();
   refreshIcons();
@@ -2155,7 +2193,11 @@ function normalizeCodexProvider(codex) {
   const limitRows = normalizeLimitRows(codex?.limits);
   const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
   const creditRows = normalizeCreditRows(codex?.creditRows, codex?.credits);
-  const subscription = normalizeSubscription(codex?.subscription);
+  const subscription = normalizeSubscription(codex?.subscription, {
+    planType: codex?.planType || codex?.latest?.planType,
+    source: codex?.planSource || (codex?.liveRateLimits ? "codex_app_server" : codex?.latest?.planType ? "codex_local_logs" : null),
+    updatedAt: codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp
+  });
   const foot = buildQuotaFoot({
     providerId: "codex",
     todayTokens: last24hTokens,
@@ -2194,7 +2236,11 @@ function normalizeCodexSparkProvider(spark, codexSubscription) {
   const meta = providerMeta.codexSpark;
   const limitRows = normalizeLimitRows(spark?.limits);
   const limitUpdatedAt = spark?.limitsUpdatedAt || spark?.latest?.timestamp;
-  const subscription = normalizeSubscription(codexSubscription);
+  const subscription = normalizeSubscription(codexSubscription, {
+    planType: spark?.planType,
+    source: spark?.planSource || null,
+    updatedAt: spark?.limitsUpdatedAt || spark?.latest?.timestamp
+  });
   return {
     id: "codexSpark",
     name: meta.name,
@@ -2241,25 +2287,38 @@ function buildQuotaFoot({ providerId, todayTokens, since, fiveHour, weekly, upda
 }
 
 function insertSubscriptionFoot(rows, subscription) {
-  if (!subscription?.monthlyCost) return;
+  if (!subscription) return;
   const index = Math.max(rows.length - 1, 0);
-  rows.splice(index, 0, footRow(t("labels.subscription"), formatMonthlyCost(subscription)));
+  rows.splice(index, 0, footRow(t("labels.subscription"), subscriptionFootValue(subscription)));
 }
 
 function footRow(label, value, options = {}) {
   return { label, value, ...options };
 }
 
-function normalizeSubscription(subscription) {
-  if (!subscription || typeof subscription !== "object") return null;
-  const monthlyCost = Number(subscription.monthlyCost || 0);
-  const planType = String(subscription.planType || "").trim();
-  if (!planType && !(monthlyCost > 0)) return null;
+function normalizeSubscription(subscription, fallback = {}) {
+  const source = subscription && typeof subscription === "object" ? subscription : {};
+  const fallbackSource = fallback && typeof fallback === "object" ? fallback : {};
+  const monthlyCost = Number(source.monthlyCost || 0);
+  const planType = String(source.planType || fallbackSource.planType || "").trim();
+  const sourceId = source.source || fallbackSource.source || null;
+  const updatedAt = source.updatedAt || fallbackSource.updatedAt || null;
+  if (!planType && !(monthlyCost > 0) && !sourceId) return null;
   return {
     planType: planType || null,
     monthlyCost: monthlyCost > 0 ? monthlyCost : 0,
-    currency: subscription.currency || "EUR"
+    currency: source.currency || fallbackSource.currency || "EUR",
+    source: sourceId,
+    updatedAt,
+    quality: subscriptionQuality(sourceId, monthlyCost)
   };
+}
+
+function subscriptionQuality(sourceId, monthlyCost) {
+  if (sourceId === "local_settings") return "manual";
+  if (sourceId && Number(monthlyCost || 0) > 0) return "automatic";
+  if (sourceId) return "estimated";
+  return "unknown";
 }
 
 function normalizeLocalProvider(id, provider) {
@@ -2269,10 +2328,14 @@ function normalizeLocalProvider(id, provider) {
   const hasLimitData = hasLimits || Boolean(limitRows.length);
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const planType = provider?.planType || provider?.plan || null;
-  const subscription = normalizeSubscription(provider?.subscription);
   const limitsUpdatedAt =
     id === "claudeCode" ? provider?.limitsUpdatedAt : id === "copilot" && hasLimitData ? provider?.quotaStatus?.updatedAt : null;
   const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
+  const subscription = normalizeSubscription(provider?.subscription, {
+    planType,
+    source: provider?.planSource || (planType ? `${id}_local_signal` : null),
+    updatedAt
+  });
   const foot = buildQuotaFoot({
     providerId: id,
     todayTokens: provider?.totals?.last24h?.totalTokens,
@@ -2448,6 +2511,7 @@ function normalizeLimitRow(row) {
     key: row.key || row.label || "limit",
     label: limitLabel(row),
     status,
+    displayStatus: limitDisplayStatus({ status, usedPercent }),
     usedPercent,
     remainingPercent:
       usedPercent === null
@@ -2528,7 +2592,11 @@ function normalizeApiProvider(id, provider) {
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const limitRows = normalizeLimitRows(provider?.limits);
   const planType = provider?.planType || provider?.plan || null;
-  const subscription = normalizeSubscription(provider?.subscription);
+  const subscription = normalizeSubscription(provider?.subscription, {
+    planType,
+    source: provider?.planSource || (planType ? `${id}_api` : null),
+    updatedAt: provider?.updatedAt || null
+  });
   const foot = [
     [t("labels.tokens7d"), formatTokens(totalTokens)],
     [t("labels.cost7d"), formatMoney(costs?.total, costs?.currency)]
@@ -2698,6 +2766,7 @@ function renderProvider(provider, index = 0, total = 1) {
         </div>
         <span class="status-pill ${statusClass}">${statusText(provider.status)}</span>
       </div>
+      ${renderProviderSubscription(provider)}
       ${main}
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
@@ -2726,6 +2795,25 @@ function renderProviderDragHandle(provider, index, total) {
       <i data-lucide="grip-vertical"></i>
       <span class="provider-position">${escapeHtml(`${index + 1}/${total}`)}</span>
     </button>
+  `;
+}
+
+function renderProviderSubscription(provider) {
+  const subscription = provider.subscription;
+  if (!subscription) return "";
+  const label = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
+  const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
+  const details = [
+    subscription.planType ? t("subscriptions.plan", { plan: subscription.planType }) : "",
+    subscription.source ? t("subscriptions.source", { source: subscriptionSourceLabel(subscription.source) }) : "",
+    subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : ""
+  ].filter(Boolean);
+  return `
+    <div class="subscription-summary subscription-quality-${escapeHtml(subscription.quality || "unknown")}">
+      <span class="subscription-quality-pill">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(cost)}</strong>
+      ${details.length ? `<small>${escapeHtml(details.join(" · "))}</small>` : ""}
+    </div>
   `;
 }
 
@@ -2811,12 +2899,17 @@ function renderLimitBar(row, accent) {
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
   const remaining = Math.round(row.remainingPercent ?? Math.max(0, 100 - used));
-  const leftDetail = hasUsedPercent ? t("limits.leftValue", { percent: remaining }) : "";
+  const status = row.displayStatus || limitDisplayStatus(row);
+  const leftDetail = hasUsedPercent
+    ? `${t("limits.usedValue", { percent: used })} · ${t("limits.leftValue", { percent: remaining })}`
+    : "";
   const resetDetail = row.resetLabel || renderLimitRemaining(row.resetsAt);
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
-  const value = row.valueLabel || t("limits.usedValue", { percent: used });
+  const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
+  const statusText = t(`limits.status.${status}`, {}, status);
+  const statusAccent = limitStatusAccent(status, accent);
   return `
-    <div class="limit-bar">
+    <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
         <strong>${escapeHtml(row.label)}</strong>
         <span>${escapeHtml(value)}</span>
@@ -2824,11 +2917,11 @@ function renderLimitBar(row, accent) {
       ${
         hasUsedPercent
           ? `<div class="limit-bar-track" aria-hidden="true">
-              <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${accent}"></span>
+              <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${statusAccent}"></span>
             </div>`
           : ""
       }
-      ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
+      <p><span class="limit-state-pill limit-state-${escapeHtml(status)}">${escapeHtml(statusText)}</span>${detail ? ` ${escapeHtml(detail)}` : ""}</p>
     </div>
   `;
 }
@@ -2860,11 +2953,14 @@ function renderRing(limit, label, accent) {
   if (!limit) {
     return `
       <div class="ring-box">
-        <div class="ring" style="--percent: 0; --accent: ${accent}"><strong>--</strong></div>
+        <div class="ring" style="--percent: 0; --accent: ${limitStatusAccent("unknown", accent)}"><strong>--</strong></div>
         <span class="ring-label">${escapeHtml(label)}</span>
+        <div class="ring-sub">${escapeHtml(t("limits.status.unknown"))}</div>
       </div>
     `;
   }
+  const status = limitDisplayStatus(limit);
+  const accentColor = limitStatusAccent(status, accent);
   const remaining = Math.round(limit.remainingPercent ?? 0);
   let sub = "";
   if (limit.resetsAt) {
@@ -2872,23 +2968,94 @@ function renderRing(limit, label, accent) {
   }
   return `
     <div class="ring-box">
-      <div class="ring" style="--percent: ${remaining}; --accent: ${accent}">
+      <div class="ring" style="--percent: ${remaining}; --accent: ${accentColor}">
         <strong>${remaining}%</strong>
       </div>
       <span class="ring-label">${escapeHtml(t("limits.freeLabel", { label }))}</span>
+      <div class="ring-sub"><span class="limit-state-pill limit-state-${escapeHtml(status)}">${escapeHtml(t(`limits.status.${status}`, {}, status))}</span></div>
       ${sub}
     </div>
   `;
 }
 
-function renderSummary(providers, codex) {
+function limitDisplayStatus(limit) {
+  if (!limit || limit.status === "unavailable") return "unknown";
+  const used = finiteUiNumberOrNull(limit.usedPercent);
+  if (used === null) return "unknown";
+  if (used >= 99.5) return "full";
+  if (used >= 70) return "risk";
+  return "ok";
+}
+
+function limitStatusAccent(status, fallback) {
+  return {
+    ok: "#23745c",
+    risk: "#b76b00",
+    full: "#b94e5c",
+    unknown: "#8a948f"
+  }[status] || fallback || "#23745c";
+}
+
+function renderSummary(providers, local, filteredDaily = []) {
   const withFiveHour = providers.filter((p) => p.fiveHour);
   const withWeekly = providers.filter((p) => p.weekly);
   els.fiveHourOpen.textContent = percentAverage(withFiveHour.map((p) => p.fiveHour.remainingPercent));
   els.weeklyOpen.textContent = percentAverage(withWeekly.map((p) => p.weekly.remainingPercent));
-  els.tokensToday.textContent = formatTokens(codex?.totals?.last24h?.totalTokens);
-  els.tokensTotal.textContent = formatTokens(codex?.totals?.allTime?.totalTokens);
-  renderRecordDay(codex?.daily || []);
+  if (els.tokensRangeLabel) {
+    els.tokensRangeLabel.textContent = t("summary.tokensRange", { range: chartRangeLabel(state.chartTimeFilter) });
+  }
+  const rangeTotals = usageTotalsForSelectedRange(local, filteredDaily);
+  els.tokensToday.textContent = formatTokens(rangeTotals.totalTokens);
+  if (els.tokensRangeNote) {
+    const note = chartRangeNote(state.chartTimeFilter);
+    els.tokensRangeNote.textContent = note;
+    els.tokensRangeNote.hidden = !note;
+  }
+  els.tokensTotal.textContent = formatTokens(local?.totals?.allTime?.totalTokens);
+  renderRecordDay(local?.daily || []);
+}
+
+function usageTotalsForSelectedRange(local, filteredDaily = []) {
+  if (state.chartTimeFilter === "h24") return local?.totals?.last24h || createUiUsageTotals();
+  if (state.chartTimeFilter === "week") return local?.totals?.last7d || createUiUsageTotals();
+  if (state.chartTimeFilter === "all") return local?.totals?.allTime || createUiUsageTotals();
+  return sumDailyUsageTotals(filteredDaily);
+}
+
+function sumDailyUsageTotals(rows) {
+  const totals = createUiUsageTotals();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    totals.inputTokens += Number(row.inputTokens || 0);
+    totals.cacheCreationInputTokens += Number(row.cacheCreationInputTokens || 0);
+    totals.cachedInputTokens += Number(row.cachedInputTokens || 0);
+    totals.outputTokens += Number(row.outputTokens || 0);
+    totals.reasoningOutputTokens += Number(row.reasoningOutputTokens || 0);
+    totals.totalTokens += Number(row.totalTokens || 0);
+  }
+  return totals;
+}
+
+function createUiUsageTotals() {
+  return {
+    inputTokens: 0,
+    cacheCreationInputTokens: 0,
+    cachedInputTokens: 0,
+    outputTokens: 0,
+    reasoningOutputTokens: 0,
+    totalTokens: 0
+  };
+}
+
+function chartRangeLabel(filter = state.chartTimeFilter) {
+  return t(`chart.filters.${filter || "all"}`, {}, filter || "all");
+}
+
+function chartRangeNote(filter = state.chartTimeFilter) {
+  if (filter === "h24") return t("summary.rangeNotes.h24");
+  if (filter === "today") return t("summary.rangeNotes.today");
+  if (filter === "week") return t("summary.rangeNotes.week");
+  if (filter === "month") return t("summary.rangeNotes.month");
+  return "";
 }
 
 function renderRecordDay(daily) {
@@ -3332,7 +3499,23 @@ function roundSvg(value) {
   return Math.round(Number(value) * 10) / 10;
 }
 
-function renderPricing(local) {
+function renderPricing(local, filteredDaily = [], providers = []) {
+  if (els.pricingViewToggle) {
+    els.pricingViewToggle.innerHTML = renderPricingViewToggle();
+  }
+  if (els.pricingApiView) els.pricingApiView.hidden = state.pricingView !== "api";
+  if (els.pricingUsedModels) {
+    els.pricingUsedModels.hidden = state.pricingView !== "models";
+    els.pricingUsedModels.innerHTML = state.pricingView === "models" ? renderUsedModelPricingView(filteredDaily) : "";
+  }
+  if (els.pricingSubscriptionCosts) {
+    els.pricingSubscriptionCosts.hidden = state.pricingView !== "subscriptions";
+    els.pricingSubscriptionCosts.innerHTML =
+      state.pricingView === "subscriptions"
+        ? renderSubscriptionPricingView(filteredDaily, state.subscriptionHistory, providers)
+        : "";
+  }
+
   const todayUsage = billingTotalsForWindow(local, "last24h");
   const totalUsage = billingTotalsForWindow(local, "allTime");
   const rows = pricingModels.map((price) => ({
@@ -3378,10 +3561,150 @@ function renderPricing(local) {
   });
 }
 
+function renderPricingViewToggle() {
+  return ["api", "models", "subscriptions"]
+    .map((view) => {
+      const active = state.pricingView === view;
+      return `
+        <button type="button" class="pricing-view-btn${active ? " active" : ""}" data-pricing-view="${view}" aria-pressed="${active}">
+          ${escapeHtml(t(`pricing.views.${view}`))}
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderUsedModelPricingView(filteredDaily) {
+  const rows = summarizeModelUsageForDaily(filteredDaily);
+  if (!rows.length) {
+    return `<div class="pricing-empty">${escapeHtml(t("pricing.usedModels.empty"))}</div>`;
+  }
+  return `
+    <div class="pricing-view-heading">
+      <h3>${escapeHtml(t("pricing.usedModels.heading", { range: chartRangeLabel(state.chartTimeFilter) }))}</h3>
+      <p>${escapeHtml(t("pricing.usedModels.description"))}</p>
+    </div>
+    <div class="price-table-wrap">
+      <table class="price-table used-model-table">
+        <thead>
+          <tr>
+            <th scope="col">${escapeHtml(t("pricing.columns.model"))}</th>
+            <th scope="col">${escapeHtml(t("tokens.input"))}</th>
+            <th scope="col">${escapeHtml(t("tokens.output"))}</th>
+            <th scope="col">${escapeHtml(t("tokens.cachedInput"))}</th>
+            <th scope="col">${escapeHtml(t("tokens.total"))}</th>
+            <th scope="col">${escapeHtml(t("labels.cost"))}</th>
+            <th scope="col">${escapeHtml(t("pricing.columns.status"))}</th>
+          </tr>
+        </thead>
+        <tbody>${rows.map(renderUsedModelPricingRow).join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderUsedModelPricingRow(row) {
+  const priceLabel = row.price ? row.price.model : t("pricing.notPriced");
+  return `
+    <tr>
+      <th scope="row">
+        <div class="model-cell">
+          <strong>${escapeHtml(row.model)}</strong>
+          <span>${escapeHtml(sourceLabel(row.sourceId))}</span>
+        </div>
+      </th>
+      <td class="numeric">${escapeHtml(formatTokens(row.inputTokens))}</td>
+      <td class="numeric">${escapeHtml(formatTokens(row.outputTokens + row.reasoningOutputTokens))}</td>
+      <td class="numeric">${escapeHtml(formatTokens(row.cachedInputTokens + row.cacheCreationInputTokens))}</td>
+      <td class="numeric">${escapeHtml(formatTokens(row.totalTokens))}</td>
+      <td class="numeric cost-cell">${escapeHtml(formatCostEstimate(row.cost))}</td>
+      <td>${escapeHtml(priceLabel)}</td>
+    </tr>
+  `;
+}
+
+function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, providers) {
+  const costSummary = summarizeCostWindow(filteredDaily, subscriptionHistory);
+  const rows = providers
+    .map((provider) => ({
+      provider,
+      subscription: provider.subscription,
+      previous: previousSubscriptionEntry(subscriptionHistory, provider.id)
+    }))
+    .filter((row) => row.subscription || row.previous);
+  const cards = rows.length
+    ? rows.map(renderSubscriptionPricingCard).join("")
+    : `<div class="pricing-empty">${escapeHtml(t("pricing.subscriptions.empty"))}</div>`;
+  return `
+    <div class="pricing-view-heading">
+      <h3>${escapeHtml(t("pricing.subscriptions.heading", { range: chartRangeLabel(state.chartTimeFilter) }))}</h3>
+      <p>${escapeHtml(t("pricing.subscriptions.description"))}</p>
+    </div>
+    <div class="subscription-cost-summary">
+      <div><span>${escapeHtml(t("chart.costSummary.apiEquivalent"))}</span><strong>${escapeHtml(costSummary.apiEquivalent)}</strong></div>
+      <div><span>${escapeHtml(t("chart.costSummary.paid"))}</span><strong>${escapeHtml(costSummary.paid)}</strong></div>
+      <div><span>${escapeHtml(t("chart.costSummary.saved"))}</span><strong>${escapeHtml(costSummary.saved)}</strong></div>
+      <div><span>${escapeHtml(t("chart.costSummary.quality"))}</span><strong>${escapeHtml(costSummary.qualityLabel)}</strong></div>
+    </div>
+    ${costSummary.note ? `<p class="cost-summary-note">${escapeHtml(costSummary.note)}</p>` : ""}
+    <div class="subscription-cost-grid">${cards}</div>
+  `;
+}
+
+function renderSubscriptionPricingCard({ provider, subscription, previous }) {
+  const quality = subscription?.quality || "unknown";
+  const currentCost = subscription?.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
+  const previousCost = previous?.monthlyCost > 0
+    ? formatMoney(previous.monthlyCost, previous.currency || "EUR")
+    : null;
+  const delta = subscription?.monthlyCost > 0 && previous?.monthlyCost > 0
+    ? formatMoney(subscription.monthlyCost - previous.monthlyCost, subscription.currency || "EUR")
+    : t("pricing.unknown");
+  return `
+    <article class="subscription-cost-card subscription-quality-${escapeHtml(quality)}">
+      <div class="subscription-cost-head">
+        <span>${escapeHtml(provider.name)}</span>
+        <strong>${escapeHtml(currentCost)}</strong>
+      </div>
+      <p>${escapeHtml(subscription?.planType ? t("subscriptions.plan", { plan: subscription.planType }) : t("subscriptions.planUnknown"))}</p>
+      <dl>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.qualityLabel"))}</dt>
+          <dd>${escapeHtml(t(`subscriptions.quality.${quality}`, {}, quality))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.sourceLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.source ? subscriptionSourceLabel(subscription.source) : t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("pricing.subscriptions.previous"))}</dt>
+          <dd>${escapeHtml(previousCost || t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("pricing.subscriptions.delta"))}</dt>
+          <dd>${escapeHtml(delta)}</dd>
+        </div>
+      </dl>
+    </article>
+  `;
+}
+
+function previousSubscriptionEntry(subscriptionHistory, providerId) {
+  const entries = (Array.isArray(subscriptionHistory?.entries) ? subscriptionHistory.entries : [])
+    .filter((entry) => entry.provider === providerId)
+    .sort((a, b) => String(b.effectiveFrom || "").localeCompare(String(a.effectiveFrom || "")));
+  return entries.find((entry) => entry.effectiveTo !== null) || null;
+}
+
 function renderPricingAliases(price) {
   const aliases = (Array.isArray(price.aliases) ? price.aliases : []).filter(Boolean);
   if (!aliases.length) return "";
-  return `<small>${escapeHtml(t("pricing.aliases", { aliases: aliases.slice(0, 3).join(", ") }))}</small>`;
+  return `
+    <details class="alias-details">
+      <summary>${escapeHtml(t("pricing.aliasesSummary", { count: aliases.length }))}</summary>
+      <small>${escapeHtml(aliases.join(", "))}</small>
+    </details>
+  `;
 }
 
 function renderLimitCell(price) {
@@ -3595,7 +3918,7 @@ function estimateTokenBucket(tokens, rateUsdPerMillion) {
   return { usd: (count * rate) / MILLION, costed: true };
 }
 
-const CHART_FILTERS = ["h24", "today", "week", "month", "year", "all"];
+const CHART_FILTERS = ["h24", "today", "week", "month", "all"];
 
 function isoDateDaysAgo(n) {
   const d = new Date();
@@ -3610,20 +3933,13 @@ function filterDailyByRange(daily, filter) {
     today: today,
     week: isoDateDaysAgo(6),
     month: isoDateDaysAgo(29),
-    year: isoDateDaysAgo(364)
   };
   if (filter === "all" || !cutoffs[filter]) return daily;
   return daily.filter((d) => d.date >= cutoffs[filter]);
 }
 
 function availableChartFilters(daily) {
-  if (!daily.length) return ["all"];
-  const limited = CHART_FILTERS.filter((f) => {
-    if (f === "all") return true;
-    const filtered = filterDailyByRange(daily, f);
-    return filtered.length > 0 && filtered.length < daily.length;
-  });
-  return limited;
+  return CHART_FILTERS;
 }
 
 function syncChartTimeFilter(daily) {
@@ -3636,13 +3952,11 @@ function syncChartTimeFilter(daily) {
 
 function renderChartFilterBar(daily) {
   const available = availableChartFilters(daily);
-  if (available.length <= 1) return "";
   const labels = {
     h24: t("chart.filters.h24"),
     today: t("chart.filters.today"),
     week: t("chart.filters.week"),
     month: t("chart.filters.month"),
-    year: t("chart.filters.year"),
     all: t("chart.filters.all")
   };
   return available
@@ -3664,7 +3978,7 @@ function renderChartWindowInsights(daily, mode) {
     {
       label: t("chart.insights.total"),
       value: formatInsightValue(summary.total, valueMode),
-      detail: t("chart.insights.selectedRange")
+      detail: selectedRangeInsightDetail()
     },
     {
       label: t("chart.insights.avgActiveDay"),
@@ -3686,7 +4000,7 @@ function renderChartWindowInsights(daily, mode) {
     }
   ];
 
-  return rows
+  const insightCards = rows
     .map((row) => `
       <div class="chart-window-insight">
         <span>${escapeHtml(row.label)}</span>
@@ -3695,6 +4009,121 @@ function renderChartWindowInsights(daily, mode) {
       </div>
     `)
     .join("");
+  return `${insightCards}${renderModelWindowSummary(daily)}`;
+}
+
+function selectedRangeInsightDetail() {
+  return t("chart.insights.selectedRangeDetail", {
+    range: chartRangeLabel(state.chartTimeFilter)
+  });
+}
+
+function renderModelWindowSummary(daily) {
+  const rows = summarizeModelUsageForDaily(daily);
+  if (!rows.length) return "";
+  const topByTokens = rows[0];
+  const pricedRows = rows
+    .filter((row) => row.cost?.costed)
+    .sort((a, b) => Number(b.cost.eur || 0) - Number(a.cost.eur || 0));
+  const topByCost = pricedRows[0] || null;
+  return `
+    <div class="model-window-summary">
+      <div class="model-window-head">
+        <div>
+          <span>${escapeHtml(t("chart.models.heading"))}</span>
+          <strong>${escapeHtml(t("chart.models.range", { range: chartRangeLabel(state.chartTimeFilter) }))}</strong>
+        </div>
+        <div class="model-window-topline">
+          <span>${escapeHtml(t("chart.models.topTokens", {
+            model: topByTokens.model,
+            tokens: formatTokens(topByTokens.totalTokens)
+          }))}</span>
+          <span>${escapeHtml(topByCost
+            ? t("chart.models.topCost", { model: topByCost.model, cost: formatCostEstimate(topByCost.cost) })
+            : t("chart.models.costUnknown"))}</span>
+        </div>
+      </div>
+      <div class="model-window-table-wrap">
+        <table class="model-window-table">
+          <thead>
+            <tr>
+              <th scope="col">${escapeHtml(t("pricing.columns.model"))}</th>
+              <th scope="col">${escapeHtml(t("tokens.input"))}</th>
+              <th scope="col">${escapeHtml(t("tokens.output"))}</th>
+              <th scope="col">${escapeHtml(t("tokens.cachedInput"))}</th>
+              <th scope="col">${escapeHtml(t("tokens.total"))}</th>
+              <th scope="col">${escapeHtml(t("labels.cost"))}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.slice(0, 5).map(renderModelUsageRow).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderModelUsageRow(row) {
+  const source = row.sourceId ? ` <small>${escapeHtml(sourceLabel(row.sourceId))}</small>` : "";
+  return `
+    <tr>
+      <th scope="row">${escapeHtml(row.model)}${source}</th>
+      <td>${escapeHtml(formatTokens(row.inputTokens))}</td>
+      <td>${escapeHtml(formatTokens(row.outputTokens + row.reasoningOutputTokens))}</td>
+      <td>${escapeHtml(formatTokens(row.cachedInputTokens + row.cacheCreationInputTokens))}</td>
+      <td>${escapeHtml(formatTokens(row.totalTokens))}</td>
+      <td>${escapeHtml(formatCostEstimate(row.cost))}</td>
+    </tr>
+  `;
+}
+
+function summarizeModelUsageForDaily(daily) {
+  const modelMap = new Map();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    const sources = Array.isArray(day.sources) ? day.sources : [];
+    for (const source of sources) {
+      const models = Array.isArray(source.models) ? source.models : [];
+      for (const model of models) {
+        const modelName = String(model.model || "unknown").trim() || "unknown";
+        const key = `${source.id || "local"}::${modelName}`;
+        if (!modelMap.has(key)) {
+          modelMap.set(key, {
+            sourceId: source.id || "local",
+            model: modelName,
+            inputTokens: 0,
+            cacheCreationInputTokens: 0,
+            cachedInputTokens: 0,
+            outputTokens: 0,
+            reasoningOutputTokens: 0,
+            totalTokens: 0,
+            cost: { eur: null, costed: false }
+          });
+        }
+        addUiUsageTotals(modelMap.get(key), model);
+      }
+    }
+  }
+  return Array.from(modelMap.values())
+    .map((row) => {
+      const price = pricingModelForUsageModel(row.model);
+      return {
+        ...row,
+        price,
+        cost: price ? estimateCost(normalizeBillingTotals(row.sourceId, row), price) : { eur: null, costed: false }
+      };
+    })
+    .filter((row) => row.totalTokens > 0)
+    .sort((a, b) => b.totalTokens - a.totalTokens || String(a.model).localeCompare(String(b.model), currentLocale()));
+}
+
+function addUiUsageTotals(target, source) {
+  target.inputTokens += Number(source.inputTokens || 0);
+  target.cacheCreationInputTokens += Number(source.cacheCreationInputTokens || 0);
+  target.cachedInputTokens += Number(source.cachedInputTokens || 0);
+  target.outputTokens += Number(source.outputTokens || 0);
+  target.reasoningOutputTokens += Number(source.reasoningOutputTokens || 0);
+  target.totalTokens += Number(source.totalTokens || 0);
 }
 
 function summarizeTokenWindow(daily) {
@@ -4452,6 +4881,7 @@ function fillSubscriptionSettings(settings) {
 }
 
 async function saveSubscriptionSettings() {
+  showSettingsToast(t("settings.saving"), "loading", { persistMs: 0 });
   const payload = {};
   for (const field of els.subscriptionFields) {
     const provider = field.dataset.subscriptionProvider;
@@ -4479,7 +4909,6 @@ async function loadUpdateSettings() {
   if (!els.updateSettingsSection) return;
   try {
     const settings = await fetchJson("/api/updates/settings");
-    if (els.updateChecksEnabled) els.updateChecksEnabled.checked = Boolean(settings.enabled);
     if (els.allowPrereleaseUpdates) els.allowPrereleaseUpdates.checked = Boolean(settings.allowPrerelease);
   } catch {
     // Ignore; update settings are only useful in the desktop shell.
@@ -4493,8 +4922,8 @@ async function loadUpdateSettingsAndStatus() {
 
 async function saveUpdateSettings() {
   if (!els.updateSettingsSection) return;
+  showSettingsToast(t("settings.saving"), "loading", { persistMs: 0 });
   const payload = {
-    enabled: Boolean(els.updateChecksEnabled?.checked),
     allowPrerelease: Boolean(els.allowPrereleaseUpdates?.checked)
   };
   try {
@@ -4503,7 +4932,6 @@ async function saveUpdateSettings() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (els.updateChecksEnabled) els.updateChecksEnabled.checked = Boolean(settings.enabled);
     if (els.allowPrereleaseUpdates) els.allowPrereleaseUpdates.checked = Boolean(settings.allowPrerelease);
     showSettingsToast(t("settings.updates.saved"), "ready");
     await loadUpdateStatus();
@@ -4555,7 +4983,7 @@ function renderUpdateStatus(status) {
     els.updateDiagError.className = status?.lastError ? "diag-error" : "";
   }
   if (els.updateCheckBtn) {
-    els.updateCheckBtn.disabled = status?.supported === false || !els.updateChecksEnabled?.checked;
+    els.updateCheckBtn.disabled = status?.supported === false;
   }
   renderUpdateNotice(status);
 }
@@ -4639,6 +5067,7 @@ function onNotificationEnabledChange() {
 
 async function saveNotificationSettings() {
   if (!els.notificationsEnabled) return;
+  showSettingsToast(t("settings.saving"), "loading", { persistMs: 0 });
   const payload = {
     enabled: els.notificationsEnabled.checked,
     pacingPercent: Number(els.notificationPacingPercent?.value ?? 100),
@@ -5451,16 +5880,27 @@ function openModalDialog(dialog) {
   dialog.showModal();
 }
 
+function recordDialogPointerOrigin(event) {
+  const body = event.currentTarget.querySelector(".modal-body");
+  const inside = body ? pointInsideElement(body, event.clientX, event.clientY) : false;
+  dialogPointerStartedInside.set(event.currentTarget, inside);
+}
+
 function closeDialogOnBackdrop(event) {
   if (event.target !== event.currentTarget) return;
   const openedAt = dialogOpenedAt.get(event.currentTarget) || 0;
   if (Date.now() - openedAt < MODAL_BACKDROP_GRACE_MS) return;
   const body = event.currentTarget.querySelector(".modal-body");
   if (!body) return event.currentTarget.close();
-  const rect = body.getBoundingClientRect();
-  const inside =
-    event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-  if (!inside) event.currentTarget.close();
+  const inside = pointInsideElement(body, event.clientX, event.clientY);
+  const pointerStartedInside = dialogPointerStartedInside.get(event.currentTarget);
+  dialogPointerStartedInside.delete(event.currentTarget);
+  if (!inside && pointerStartedInside === false) event.currentTarget.close();
+}
+
+function pointInsideElement(element, x, y) {
+  const rect = element.getBoundingClientRect();
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
 function showSettingsToast(message, status, { persistMs = SETTINGS_TOAST_MS } = {}) {
@@ -5620,6 +6060,17 @@ function formatMonthlyCost(subscription) {
   return t("format.perMonth", {
     amount: formatMoney(subscription.monthlyCost, subscription.currency || "EUR")
   });
+}
+
+function subscriptionFootValue(subscription) {
+  if (!subscription) return "--";
+  const quality = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
+  const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
+  return `${cost} · ${quality}`;
+}
+
+function subscriptionSourceLabel(source) {
+  return t(`subscriptions.sources.${source || "unknown"}`, {}, source || t("pricing.unknown"));
 }
 
 function shortReset(value) {

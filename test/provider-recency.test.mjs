@@ -9,10 +9,12 @@ import { fileURLToPath } from "node:url";
 process.env.CODEX_LIVE_RATE_LIMITS = "false";
 
 const require = createRequire(import.meta.url);
-const { readCodexUsage } = require("../server.js");
+const { readCodexUsage, _test } = require("../server.js");
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 await assertProviderVisibility();
+await assertFrontendUsageIntelligence();
+await assertUpdateSettingsAlwaysOn();
 await assertCodexSparkRateLimitDoesNotMoveGpt55Usage();
 
 async function assertProviderVisibility() {
@@ -212,6 +214,95 @@ async function assertCodexSparkRateLimitDoesNotMoveGpt55Usage() {
     assert.equal(result._usageEvents[0].model, "gpt-5.5");
     assert.equal(result._usageEvents[0].metadata.sourceGroupId, "codex");
   });
+}
+
+async function assertFrontendUsageIntelligence() {
+  const appPath = path.join(rootDir, "public", "app.js");
+  const appSource = await readFile(appPath, "utf8");
+  const code = appSource.replace("\ninit();", "\n// init disabled for usage intelligence test");
+  assert.notEqual(code, appSource, "usage intelligence test must disable app bootstrap");
+  const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const result = JSON.parse(vm.runInNewContext(
+    `${code}
+state.translations = ${JSON.stringify(translations)};
+state.fallbackTranslations = {};
+const daily = [
+  {
+    date: "${yesterday}",
+    totalTokens: 500,
+    sources: [
+      { id: "claudeCode", totalTokens: 500, models: [{ model: "claude-fable-5", inputTokens: 200, cachedInputTokens: 40, outputTokens: 100, totalTokens: 340 }] }
+    ]
+  },
+  {
+    date: "${today}",
+    totalTokens: 222,
+    inputTokens: 100,
+    outputTokens: 80,
+    cachedInputTokens: 20,
+    sources: [
+      { id: "codex", totalTokens: 222, models: [{ model: "gpt-5.5", inputTokens: 120, cachedInputTokens: 20, outputTokens: 82, totalTokens: 222 }] }
+    ]
+  }
+];
+const local = {
+  totals: {
+    last24h: { totalTokens: 1234 },
+    last7d: { totalTokens: 3456 },
+    allTime: { totalTokens: 7890 }
+  }
+};
+state.chartTimeFilter = "h24";
+const h24Total = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "h24")).totalTokens;
+state.chartTimeFilter = "today";
+const todayTotal = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "today")).totalTokens;
+const models = summarizeModelUsageForDaily(daily);
+const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" });
+const detectedSubscription = normalizeSubscription(null, { planType: "Max", source: "claude_auth_status" });
+JSON.stringify({
+  filters: CHART_FILTERS,
+  h24Total,
+  todayTotal,
+  topModel: models[0]?.model,
+  topModelCosted: models[0]?.cost?.costed,
+  manualQuality: manualSubscription.quality,
+  detectedQuality: detectedSubscription.quality,
+  detectedCost: detectedSubscription.monthlyCost,
+  limitOk: limitDisplayStatus({ usedPercent: 20 }),
+  limitRisk: limitDisplayStatus({ usedPercent: 85 }),
+  limitFull: limitDisplayStatus({ usedPercent: 100 }),
+  limitUnknown: limitDisplayStatus({ status: "unavailable" }),
+  aliasesCollapsed: /<details/.test(renderPricingAliases(pricingModels[0]))
+});`,
+    createAppContext(),
+    { filename: appPath }
+  ));
+
+  assert.deepEqual(result.filters, ["h24", "today", "week", "month", "all"]);
+  assert.equal(result.h24Total, 1234);
+  assert.equal(result.todayTotal, 222);
+  assert.equal(result.topModel, "claude-fable-5");
+  assert.equal(result.topModelCosted, true);
+  assert.equal(result.manualQuality, "manual");
+  assert.equal(result.detectedQuality, "estimated");
+  assert.equal(result.detectedCost, 0);
+  assert.equal(result.limitOk, "ok");
+  assert.equal(result.limitRisk, "risk");
+  assert.equal(result.limitFull, "full");
+  assert.equal(result.limitUnknown, "unknown");
+  assert.equal(result.aliasesCollapsed, true);
+}
+
+function assertUpdateSettingsAlwaysOn() {
+  assert.equal(_test.sanitizeUpdateSettings({ enabled: false, allowPrerelease: false }).enabled, true);
+  assert.equal(_test.sanitizeUpdateSettings({ enabled: false, allowPrerelease: false }).allowPrerelease, false);
+  assert.deepEqual(
+    _test.mergeUpdateSettingsPatch({ enabled: true, allowPrerelease: true }, { enabled: false, allowPrerelease: false }),
+    { enabled: true, allowPrerelease: false }
+  );
 }
 
 async function withTempCodexHome(callback) {

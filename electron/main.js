@@ -429,7 +429,7 @@ function getUpdateStatusFile() {
 
 function sanitizeUpdateSettings(settings) {
   return {
-    enabled: typeof settings?.enabled === "boolean" ? settings.enabled : true,
+    enabled: true,
     allowPrerelease: typeof settings?.allowPrerelease === "boolean" ? settings.allowPrerelease : true
   };
 }
@@ -548,10 +548,8 @@ async function ensureAutoUpdater() {
     supportStatus: support.supportStatus,
     macDiagnostics: support.macDiagnostics
   };
-  if (!settings.enabled) setupStatus.state = "disabled";
-  else if (!support.supported) setupStatus.state = support.supportStatus;
+  if (!support.supported) setupStatus.state = support.supportStatus;
   await writeUpdateStatus(setupStatus);
-  if (!settings.enabled) return { ok: false, reason: "disabled" };
   if (!support.supported) return { ok: false, reason: support.supportStatus };
   if (!autoUpdaterRef) {
     let autoUpdater;
