@@ -46,7 +46,11 @@ function assertProcessParsingAndSanitizing() {
   const metrics = _test.buildLiveProcessMetrics({ psOutput });
   assert.equal(metrics.quality, "measured");
   assert(metrics.ai.processCount >= 3);
-  assert(metrics.groups.some((group) => group.id === "codex" && group.processCount === 2));
+  assert(metrics.ai.rssGb > 0);
+  assert(metrics.ai.memorySharePercent > 0);
+  const codexGroup = metrics.groups.find((group) => group.id === "codex");
+  assert.equal(codexGroup?.processCount, 2);
+  assert(codexGroup.memorySharePercent > 0);
   assert(metrics.groups.some((group) => group.id === "claude"));
 
   const serialized = JSON.stringify(metrics);

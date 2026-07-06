@@ -1254,13 +1254,27 @@ a {
   line-height: 1.35;
 }
 
+.live-process-total {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--panel-soft);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
 .live-process-table-wrap {
   overflow-x: auto;
 }
 
 .live-process-table {
   width: 100%;
-  min-width: 420px;
+  min-width: 500px;
   border-collapse: collapse;
   font-size: 0.78rem;
 }

@@ -617,6 +617,10 @@ function buildLiveProcessMetrics(options = {}) {
   const totalCpu = groups.reduce((sum, group) => sum + metricNumber(group.cpuPercent), 0);
   const processCount = groups.reduce((sum, group) => sum + metricNumber(group.processCount), 0);
   const totalMemMb = os.totalmem() / 1024 / 1024;
+  const groupsWithShares = groups.map((group) => ({
+    ...group,
+    memorySharePercent: totalMemMb > 0 ? roundMetric(clampPercent((metricNumber(group.rssMb) / totalMemMb) * 100)) : null
+  }));
   return {
     quality: "measured",
     ai: {
@@ -626,7 +630,7 @@ function buildLiveProcessMetrics(options = {}) {
       processCount,
       groupCount: groups.length
     },
-    groups
+    groups: groupsWithShares
   };
 }
 

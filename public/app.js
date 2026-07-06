@@ -2576,11 +2576,19 @@ function renderLiveProcessBreakdown(metrics) {
     `;
     return;
   }
+  const aiTotals = processes?.ai || {};
+  const summary = t("liveMetrics.processTotal", {
+    cpu: formatLivePercent(aiTotals.cpuPercent),
+    memory: formatLiveGb(aiTotals.rssGb),
+    memoryShare: formatLivePercent(aiTotals.memorySharePercent),
+    count: formatNumber(aiTotals.processCount || 0)
+  });
   const rows = groups.slice(0, 8).map((group) => `
     <tr>
       <th scope="row">${escapeHtml(group.label)}</th>
       <td>${escapeHtml(formatLivePercent(group.cpuPercent))}</td>
-      <td>${escapeHtml(group.rssGb !== null && group.rssGb !== undefined ? `${formatGb(group.rssGb)} GB` : t("liveMetrics.unavailableShort"))}</td>
+      <td>${escapeHtml(formatLiveGb(group.rssGb))}</td>
+      <td>${escapeHtml(formatLivePercent(group.memorySharePercent))}</td>
       <td>${escapeHtml(formatNumber(group.processCount || 0))}</td>
     </tr>
   `).join("");
@@ -2591,6 +2599,7 @@ function renderLiveProcessBreakdown(metrics) {
         <span class="live-quality-badge live-quality-measured">${escapeHtml(liveQualityLabel("measured"))}</span>
       </div>
       <p>${escapeHtml(t("liveMetrics.processBreakdownHelp"))}</p>
+      <div class="live-process-total">${escapeHtml(summary)}</div>
       <div class="live-process-table-wrap">
         <table class="live-process-table">
           <thead>
@@ -2598,6 +2607,7 @@ function renderLiveProcessBreakdown(metrics) {
               <th scope="col">${escapeHtml(t("liveMetrics.processColumns.group"))}</th>
               <th scope="col">${escapeHtml(t("liveMetrics.processColumns.cpu"))}</th>
               <th scope="col">${escapeHtml(t("liveMetrics.processColumns.memory"))}</th>
+              <th scope="col">${escapeHtml(t("liveMetrics.processColumns.memoryShare"))}</th>
               <th scope="col">${escapeHtml(t("liveMetrics.processColumns.count"))}</th>
             </tr>
           </thead>
@@ -2758,6 +2768,10 @@ function normalizeLiveSeriesValue(value) {
 
 function formatLivePercent(value) {
   return value === null || value === undefined ? t("liveMetrics.unavailableShort") : formatPercent(value);
+}
+
+function formatLiveGb(value) {
+  return value === null || value === undefined ? t("liveMetrics.unavailableShort") : `${formatGb(value)} GB`;
 }
 
 function formatGb(value) {

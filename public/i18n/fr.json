@@ -159,13 +159,15 @@
     "swapHelp": "System swap usage. High swap can slow the Mac even when AI process memory is only part of the total.",
     "noAiProcesses": "No AI process group found",
     "processBreakdownHeading": "AI process groups",
-    "processBreakdownHelp": "Safe aggregate view only: group name, CPU, memory, and process count. No command lines, prompts, or paths are shown.",
+    "processBreakdownHelp": "Safe aggregate view: AI total load and group shares without command lines, prompts, or paths.",
+    "processTotal": "AI total: {cpu} CPU · {memory} · {memoryShare} RAM · {count} processes",
     "processBreakdownUnavailable": "Process grouping is not available on this platform/runtime.",
     "processBreakdownEmpty": "No recognized AI process group is currently visible to the dashboard.",
     "processColumns": {
       "group": "Group",
       "cpu": "CPU",
       "memory": "Memory",
+      "memoryShare": "RAM %",
       "count": "Processes"
     }
   },

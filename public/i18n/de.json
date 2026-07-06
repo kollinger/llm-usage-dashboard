@@ -159,13 +159,15 @@
     "swapHelp": "System-Swap. Hoher Swap kann den Mac bremsen, auch wenn AI-Prozessspeicher nur ein Teil der Gesamtlast ist.",
     "noAiProcesses": "Keine AI-Prozessgruppe gefunden",
     "processBreakdownHeading": "AI-Prozessgruppen",
-    "processBreakdownHelp": "Sichere Aggregatansicht: nur Gruppe, CPU, Speicher und Prozessanzahl. Keine Kommandozeilen, Prompts oder Pfade.",
+    "processBreakdownHelp": "Sichere Aggregatansicht: AI-Gesamtlast und Gruppenanteile ohne Kommandozeilen, Prompts oder Pfade.",
+    "processTotal": "AI gesamt: {cpu} CPU · {memory} · {memoryShare} RAM · {count} Prozesse",
     "processBreakdownUnavailable": "Prozessgruppen sind auf dieser Plattform/Laufzeit nicht verfügbar.",
     "processBreakdownEmpty": "Gerade ist keine erkannte AI-Prozessgruppe für das Dashboard sichtbar.",
     "processColumns": {
       "group": "Gruppe",
       "cpu": "CPU",
       "memory": "Speicher",
+      "memoryShare": "RAM %",
       "count": "Prozesse"
     }
   },
