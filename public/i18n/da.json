@@ -82,7 +82,19 @@
       "costs": "Costs"
     },
     "modeToggleAria": "Chart mode",
-    "filterBarAria": "Time range"
+    "filterBarAria": "Time range",
+    "insights": {
+      "ariaLabel": "Selected range statistics",
+      "total": "Total",
+      "selectedRange": "Selected range",
+      "avgActiveDay": "Ø active day",
+      "avgActiveDayDetail": "Based on {days} active days",
+      "activeDays": "Active days",
+      "activeDaysValue": "{active}/{days}",
+      "activeDaysDetail": "Days with usage",
+      "peakDay": "Peak day",
+      "noData": "No activity in the selected range."
+    }
   },
   "tokenMix": {
     "eyebrow": "Token Mix",

@@ -923,6 +923,63 @@ a {
   border-color: var(--ink);
 }
 
+.chart-window-insights {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(128px, 1fr));
+  gap: 8px;
+  margin: 16px 0 4px;
+}
+
+.chart-window-insight,
+.chart-window-empty {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8faf7;
+}
+
+.chart-window-insight {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.chart-window-insight span,
+.chart-window-insight small {
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-window-insight span {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+}
+
+.chart-window-insight strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: clamp(1rem, 1.3vw, 1.35rem);
+  font-weight: 920;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+.chart-window-insight small {
+  font-size: 0.72rem;
+}
+
+.chart-window-empty {
+  grid-column: 1 / -1;
+  padding: 11px 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .chart {
   min-height: 300px;
   overflow-x: auto;
@@ -1895,6 +1952,10 @@ select {
     width: min(360px, 44vw);
     min-width: 0;
   }
+
+  .chart-window-insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -1950,6 +2011,10 @@ select {
   .chart-heading-tools {
     width: 100%;
     min-width: 0;
+  }
+
+  .chart-window-insights {
+    grid-template-columns: 1fr;
   }
 
   .provider-card {

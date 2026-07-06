@@ -82,7 +82,19 @@
       "costs": "Kosten"
     },
     "modeToggleAria": "Diagrammmodus",
-    "filterBarAria": "Zeitraum"
+    "filterBarAria": "Zeitraum",
+    "insights": {
+      "ariaLabel": "Statistik für den gewählten Zeitraum",
+      "total": "Gesamt",
+      "selectedRange": "Gewählter Zeitraum",
+      "avgActiveDay": "Ø aktiver Tag",
+      "avgActiveDayDetail": "Aus {days} aktiven Tagen",
+      "activeDays": "Aktive Tage",
+      "activeDaysValue": "{active}/{days}",
+      "activeDaysDetail": "Tage mit Nutzung",
+      "peakDay": "Peak-Tag",
+      "noData": "Keine Aktivität im gewählten Zeitraum."
+    }
   },
   "tokenMix": {
     "eyebrow": "Token Mix",

@@ -118,6 +118,7 @@ const els = {
   chartFilterBar: document.getElementById("chartFilterBar"),
   chartLegend: document.getElementById("chartLegend"),
   sourceTotals: document.getElementById("sourceTotals"),
+  chartWindowInsights: document.getElementById("chartWindowInsights"),
   liveGaugesSection: document.getElementById("liveGaugesSection"),
   liveMetricsUpdated: document.getElementById("liveMetricsUpdated"),
   liveGaugeGrid: document.getElementById("liveGaugeGrid"),
@@ -1514,6 +1515,7 @@ function renderLocked() {
   els.chart.innerHTML = "";
   els.chartLegend.innerHTML = "";
   els.chartFilterBar.innerHTML = "";
+  els.chartWindowInsights.innerHTML = "";
   els.sourceTotals.textContent = "--";
   renderLiveGauges(null);
   els.tokenList.innerHTML = "";
@@ -1558,6 +1560,7 @@ function render() {
     renderChart(filteredDaily);
     els.sourceTotals.innerHTML = renderSourceTotalBars(filteredDaily);
   }
+  els.chartWindowInsights.innerHTML = renderChartWindowInsights(filteredDaily, state.chartMode);
   renderTokenList(usage.local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
   renderPricing(usage.local);
@@ -3042,6 +3045,107 @@ function renderChartFilterBar(daily) {
       return `<button type="button" class="time-filter-btn${active ? " active" : ""}" data-chart-filter="${f}" aria-pressed="${active}">${escapeHtml(labels[f] || f)}</button>`;
     })
     .join("");
+}
+
+function renderChartWindowInsights(daily, mode) {
+  const summary = mode === "costs" ? summarizeCostWindowInsights(daily) : summarizeTokenWindow(daily);
+  if (!summary.hasActivity) {
+    return `<div class="chart-window-empty">${escapeHtml(t("chart.insights.noData"))}</div>`;
+  }
+
+  const valueMode = mode === "costs" ? "costs" : "tokens";
+  const rows = [
+    {
+      label: t("chart.insights.total"),
+      value: formatInsightValue(summary.total, valueMode),
+      detail: t("chart.insights.selectedRange")
+    },
+    {
+      label: t("chart.insights.avgActiveDay"),
+      value: formatInsightValue(summary.averageActiveDay, valueMode),
+      detail: t("chart.insights.avgActiveDayDetail", { days: formatNumber(summary.activeDays) })
+    },
+    {
+      label: t("chart.insights.activeDays"),
+      value: t("chart.insights.activeDaysValue", {
+        active: formatNumber(summary.activeDays),
+        days: formatNumber(summary.calendarDays)
+      }),
+      detail: t("chart.insights.activeDaysDetail")
+    },
+    {
+      label: t("chart.insights.peakDay"),
+      value: formatInsightValue(summary.peakValue, valueMode),
+      detail: summary.peakDate ? formatFullDate(summary.peakDate) : "--"
+    }
+  ];
+
+  return rows
+    .map((row) => `
+      <div class="chart-window-insight">
+        <span>${escapeHtml(row.label)}</span>
+        <strong>${escapeHtml(row.value)}</strong>
+        <small>${escapeHtml(row.detail)}</small>
+      </div>
+    `)
+    .join("");
+}
+
+function summarizeTokenWindow(daily) {
+  return summarizeWindowValues((Array.isArray(daily) ? daily : []).map((day) => ({
+    date: day.date,
+    value: Number(day.totalTokens || 0)
+  })));
+}
+
+function summarizeCostWindowInsights(daily) {
+  return summarizeWindowValues(buildCostDaily(daily).map((day) => ({
+    date: day.date,
+    value: Number(day.totalEur || 0)
+  })));
+}
+
+function summarizeWindowValues(rows) {
+  const values = (Array.isArray(rows) ? rows : [])
+    .map((row) => ({ date: row.date, value: Number(row.value || 0) }))
+    .filter((row) => row.date);
+  const total = values.reduce((sum, row) => sum + row.value, 0);
+  const activeRows = values.filter((row) => row.value > 0);
+  const range = chartRangeForDaily(values);
+  const calendarDays = range ? calendarDaySpan(range.start, range.end) : 0;
+  const peak = activeRows.reduce((current, row) => (row.value > current.value ? row : current), { date: "", value: 0 });
+
+  return {
+    total,
+    activeDays: activeRows.length,
+    calendarDays: Math.max(calendarDays, activeRows.length, values.length ? 1 : 0),
+    averageActiveDay: activeRows.length ? total / activeRows.length : 0,
+    averageCalendarDay: calendarDays ? total / calendarDays : 0,
+    peakDate: peak.date,
+    peakValue: peak.value,
+    hasActivity: activeRows.length > 0
+  };
+}
+
+function calendarDaySpan(startDate, endDate) {
+  const start = isoDateToUtcMs(startDate);
+  const end = isoDateToUtcMs(endDate);
+  if (start === null || end === null || end < start) return 0;
+  return Math.floor((end - start) / 86_400_000) + 1;
+}
+
+function isoDateToUtcMs(date) {
+  const match = String(date || "").match(/^(\d{4})-(\d{2})-(\d{2})$/u);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const value = Date.UTC(year, month - 1, day);
+  return Number.isFinite(value) ? value : null;
+}
+
+function formatInsightValue(value, mode) {
+  return mode === "costs" ? formatEuro(value) : formatTokens(Math.round(Number(value || 0)));
 }
 
 function renderChart(daily) {
