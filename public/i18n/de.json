@@ -21,7 +21,9 @@
     "showActive": "Nur aktive",
     "hideInactive": "Inaktive Anbieter ausblenden",
     "showInactiveCount": "{count} inaktive Anbieter anzeigen",
-    "allVisible": "Alle Anbieter sind sichtbar"
+    "allVisible": "Alle Anbieter sind sichtbar",
+    "showAllNoticeTitle": "Ansicht: Alle Anbieter",
+    "showAllNoticeBody": "Inaktive, leere, nur eingerichtete und historische Anbieter-Karten sind sichtbar. Nur aktive ist die normale Ansicht."
   },
   "layout": {
     "edit": "Layout bearbeiten",

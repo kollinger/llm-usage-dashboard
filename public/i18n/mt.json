@@ -21,7 +21,9 @@
     "showActive": "Attivi biss",
     "hideInactive": "Aħbi fornituri inattivi",
     "showInactiveCount": "Uri {count} fornituri inattivi",
-    "allVisible": "Il-fornituri kollha huma viżibbli"
+    "allVisible": "Il-fornituri kollha huma viżibbli",
+    "showAllNoticeTitle": "Dehra tal-fornituri kollha",
+    "showAllNoticeBody": "Karti ta’ fornituri inattivi, vojta, ta’ setup biss u storiċi huma viżibbli. Attivi biss hija d-dehra normali."
   },
   "layout": {
     "edit": "Edit layout",

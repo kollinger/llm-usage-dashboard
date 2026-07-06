@@ -21,7 +21,9 @@
     "showActive": "النشطة فقط",
     "hideInactive": "إخفاء المزوّدين غير النشطين",
     "showInactiveCount": "إظهار {count} مزوّدين غير نشطين",
-    "allVisible": "كل المزوّدين ظاهرون"
+    "allVisible": "كل المزوّدين ظاهرون",
+    "showAllNoticeTitle": "عرض كل المزوّدين",
+    "showAllNoticeBody": "تظهر بطاقات المزوّدين غير النشطة والفارغة والمخصّصة للإعداد فقط والتاريخية. «النشطة فقط» هو العرض العادي."
   },
   "layout": {
     "edit": "Edit layout",

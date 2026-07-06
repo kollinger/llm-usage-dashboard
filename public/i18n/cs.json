@@ -21,7 +21,9 @@
     "showActive": "Jen aktivní",
     "hideInactive": "Skrýt neaktivní poskytovatele",
     "showInactiveCount": "Zobrazit {count} neaktivních poskytovatelů",
-    "allVisible": "Všichni poskytovatelé jsou viditelní"
+    "allVisible": "Všichni poskytovatelé jsou viditelní",
+    "showAllNoticeTitle": "Zobrazení všech poskytovatelů",
+    "showAllNoticeBody": "Jsou vidět neaktivní, prázdné, pouze nastavené a historické karty poskytovatelů. Běžné zobrazení je Jen aktivní."
   },
   "layout": {
     "edit": "Edit layout",

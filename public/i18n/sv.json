@@ -21,7 +21,9 @@
     "showActive": "Endast aktiva",
     "hideInactive": "Dölj inaktiva leverantörer",
     "showInactiveCount": "Visa {count} inaktiva leverantörer",
-    "allVisible": "Alla leverantörer är synliga"
+    "allVisible": "Alla leverantörer är synliga",
+    "showAllNoticeTitle": "Vy med alla leverantörer",
+    "showAllNoticeBody": "Inaktiva, tomma, endast konfigurerade och historiska leverantörskort visas. Endast aktiva är normalvyn."
   },
   "layout": {
     "edit": "Edit layout",

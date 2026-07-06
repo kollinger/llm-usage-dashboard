@@ -21,7 +21,9 @@
     "showActive": "Csak aktívak",
     "hideInactive": "Inaktív szolgáltatók elrejtése",
     "showInactiveCount": "{count} inaktív szolgáltató megjelenítése",
-    "allVisible": "Minden szolgáltató látható"
+    "allVisible": "Minden szolgáltató látható",
+    "showAllNoticeTitle": "Összes szolgáltató nézete",
+    "showAllNoticeBody": "Az inaktív, üres, csak beállított és korábbi szolgáltatók kártyái is látszanak. A Csak aktívak a normál nézet."
   },
   "layout": {
     "edit": "Edit layout",

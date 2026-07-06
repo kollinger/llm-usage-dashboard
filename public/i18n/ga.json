@@ -21,7 +21,9 @@
     "showActive": "Gníomhach amháin",
     "hideInactive": "Folaigh soláthraithe neamhghníomhacha",
     "showInactiveCount": "Taispeáin {count} soláthraí neamhghníomhacha",
-    "allVisible": "Tá gach soláthraí le feiceáil"
+    "allVisible": "Tá gach soláthraí le feiceáil",
+    "showAllNoticeTitle": "Amharc gach soláthraí",
+    "showAllNoticeBody": "Tá cártaí soláthraithe neamhghníomhacha, folmha, cumraíochta amháin agus stairiúla le feiceáil. Is é Gníomhach amháin an gnáthamharc."
   },
   "layout": {
     "edit": "Edit layout",

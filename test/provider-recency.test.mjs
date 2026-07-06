@@ -24,7 +24,12 @@ async function assertProviderVisibility() {
   const context = createAppContext();
   const result = JSON.parse(vm.runInNewContext(
     `${code}
-state.translations = {};
+state.translations = {
+  filter: {
+    showAllNoticeTitle: "All providers view",
+    showAllNoticeBody: "Inactive, empty, setup-only, and historical provider cards are visible. Active only is the normal view."
+  }
+};
 state.fallbackTranslations = {};
 state.providerOrder = [];
 state.usage = {
@@ -79,6 +84,12 @@ state.showAllProviders = false;
 const activeIds = currentVisibleProviderIds();
 state.showAllProviders = true;
 const allIds = currentVisibleProviderIds();
+updateProviderViewNotice(orderProviders(buildProviders(state.usage)));
+const showAllNoticeVisible = !els.providerViewNotice.hidden;
+const showAllNoticeHtml = els.providerViewNotice.innerHTML;
+state.showAllProviders = false;
+updateProviderViewNotice(orderProviders(buildProviders(state.usage)));
+const normalNoticeHidden = els.providerViewNotice.hidden;
 JSON.stringify({
   neutralCopilot: providerHasUsage({
     id: "copilot",
@@ -129,7 +140,11 @@ JSON.stringify({
     creditRows: []
   }),
   activeIds,
-  allIds
+  allIds,
+  showAllNoticeVisible,
+  showAllNoticeHtml,
+  normalNoticeHidden,
+  restoredNormalView: state.showAllProviders === false
 });`,
     context,
     { filename: appPath }
@@ -144,6 +159,11 @@ JSON.stringify({
   assert(!result.activeIds.includes("codexSpark"));
   assert(result.allIds.includes("copilot"));
   assert(result.allIds.includes("codexSpark"));
+  assert.equal(result.showAllNoticeVisible, true);
+  assert.match(result.showAllNoticeHtml, /All providers view/);
+  assert.match(result.showAllNoticeHtml, /Inactive, empty, setup-only, and historical provider cards/);
+  assert.equal(result.normalNoticeHidden, true);
+  assert.equal(result.restoredNormalView, true);
 }
 
 async function assertCodexSparkRateLimitDoesNotMoveGpt55Usage() {

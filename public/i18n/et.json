@@ -21,7 +21,9 @@
     "showActive": "Ainult aktiivsed",
     "hideInactive": "Peida mitteaktiivsed pakkujad",
     "showInactiveCount": "Kuva {count} mitteaktiivset pakkujat",
-    "allVisible": "Kõik pakkujad on nähtavad"
+    "allVisible": "Kõik pakkujad on nähtavad",
+    "showAllNoticeTitle": "Kõigi pakkujate vaade",
+    "showAllNoticeBody": "Nähtavad on mitteaktiivsed, tühjad, ainult seadistusega ja ajaloolised pakkujakaardid. Ainult aktiivsed on tavavaade."
   },
   "layout": {
     "edit": "Edit layout",

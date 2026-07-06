@@ -125,6 +125,12 @@ a {
   min-width: 118px;
 }
 
+.filter-button.is-active {
+  border-color: rgba(185, 78, 92, 0.42);
+  background: #fff6f7;
+  color: var(--rose);
+}
+
 .layout-reset-btn {
   min-width: 132px;
 }
@@ -166,6 +172,43 @@ a {
 .diagnostics-panel {
   margin-bottom: 14px;
   padding: 16px;
+}
+
+.provider-view-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: -2px 0 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(185, 78, 92, 0.28);
+  border-radius: 8px;
+  background: #fff8f8;
+  color: var(--ink);
+}
+
+.provider-view-notice svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--rose);
+}
+
+.provider-view-notice div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.provider-view-notice strong {
+  font-size: 0.84rem;
+  line-height: 1.25;
+}
+
+.provider-view-notice span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .diagnostics-heading {

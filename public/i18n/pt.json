@@ -21,7 +21,9 @@
     "showActive": "Só ativos",
     "hideInactive": "Ocultar fornecedores inativos",
     "showInactiveCount": "Mostrar {count} fornecedores inativos",
-    "allVisible": "Todos os fornecedores estão visíveis"
+    "allVisible": "Todos os fornecedores estão visíveis",
+    "showAllNoticeTitle": "Vista de todos os fornecedores",
+    "showAllNoticeBody": "Cartões de fornecedores inativos, vazios, apenas configurados e históricos ficam visíveis. Só ativos é a vista normal."
   },
   "layout": {
     "edit": "Edit layout",

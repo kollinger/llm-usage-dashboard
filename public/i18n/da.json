@@ -21,7 +21,9 @@
     "showActive": "Kun aktive",
     "hideInactive": "Skjul inaktive udbydere",
     "showInactiveCount": "Vis {count} inaktive udbydere",
-    "allVisible": "Alle udbydere er synlige"
+    "allVisible": "Alle udbydere er synlige",
+    "showAllNoticeTitle": "Visning med alle udbydere",
+    "showAllNoticeBody": "Inaktive, tomme, kun opsatte og historiske udbyderkort er synlige. Kun aktive er den normale visning."
   },
   "layout": {
     "edit": "Edit layout",

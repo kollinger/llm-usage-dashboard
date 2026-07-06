@@ -21,7 +21,9 @@
     "showActive": "Doar active",
     "hideInactive": "Ascunde furnizorii inactivi",
     "showInactiveCount": "Afișează {count} furnizori inactivi",
-    "allVisible": "Toți furnizorii sunt vizibili"
+    "allVisible": "Toți furnizorii sunt vizibili",
+    "showAllNoticeTitle": "Vizualizarea tuturor furnizorilor",
+    "showAllNoticeBody": "Sunt vizibile cardurile furnizorilor inactivi, goi, doar configurați și istorici. Doar active este vizualizarea normală."
   },
   "layout": {
     "edit": "Edit layout",

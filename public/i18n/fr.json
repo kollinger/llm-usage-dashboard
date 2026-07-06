@@ -21,7 +21,9 @@
     "showActive": "Actifs seulement",
     "hideInactive": "Masquer les fournisseurs inactifs",
     "showInactiveCount": "Afficher {count} fournisseurs inactifs",
-    "allVisible": "Tous les fournisseurs sont visibles"
+    "allVisible": "Tous les fournisseurs sont visibles",
+    "showAllNoticeTitle": "Vue de tous les fournisseurs",
+    "showAllNoticeBody": "Les cartes de fournisseurs inactifs, vides, seulement configurés et historiques sont visibles. Actifs seulement est la vue normale."
   },
   "layout": {
     "edit": "Edit layout",

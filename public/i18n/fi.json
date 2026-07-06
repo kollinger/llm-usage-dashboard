@@ -21,7 +21,9 @@
     "showActive": "Vain aktiiviset",
     "hideInactive": "Piilota passiiviset palveluntarjoajat",
     "showInactiveCount": "Näytä {count} passiivista palveluntarjoajaa",
-    "allVisible": "Kaikki palveluntarjoajat ovat näkyvissä"
+    "allVisible": "Kaikki palveluntarjoajat ovat näkyvissä",
+    "showAllNoticeTitle": "Kaikkien palveluntarjoajien näkymä",
+    "showAllNoticeBody": "Passiiviset, tyhjät, vain määritetyt ja historialliset palveluntarjoajakortit näkyvät. Vain aktiiviset on normaali näkymä."
   },
   "layout": {
     "edit": "Edit layout",

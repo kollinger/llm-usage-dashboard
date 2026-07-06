@@ -21,7 +21,9 @@
     "showActive": "Active only",
     "hideInactive": "Hide inactive providers",
     "showInactiveCount": "Show {count} inactive providers",
-    "allVisible": "All providers are visible"
+    "allVisible": "All providers are visible",
+    "showAllNoticeTitle": "All providers view",
+    "showAllNoticeBody": "Inactive, empty, setup-only, and historical provider cards are visible. Active only is the normal view."
   },
   "layout": {
     "edit": "Edit layout",

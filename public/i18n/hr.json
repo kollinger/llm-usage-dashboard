@@ -21,7 +21,9 @@
     "showActive": "Samo aktivni",
     "hideInactive": "Sakrij neaktivne pružatelje",
     "showInactiveCount": "Prikaži {count} neaktivnih pružatelja",
-    "allVisible": "Svi pružatelji su vidljivi"
+    "allVisible": "Svi pružatelji su vidljivi",
+    "showAllNoticeTitle": "Prikaz svih pružatelja",
+    "showAllNoticeBody": "Vidljive su neaktivne, prazne, samo postavljene i povijesne kartice pružatelja. Samo aktivni je uobičajeni prikaz."
   },
   "layout": {
     "edit": "Edit layout",

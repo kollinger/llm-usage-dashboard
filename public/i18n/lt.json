@@ -21,7 +21,9 @@
     "showActive": "Tik aktyvūs",
     "hideInactive": "Slėpti neaktyvius teikėjus",
     "showInactiveCount": "Rodyti {count} neaktyvių teikėjų",
-    "allVisible": "Visi teikėjai matomi"
+    "allVisible": "Visi teikėjai matomi",
+    "showAllNoticeTitle": "Visų teikėjų rodinys",
+    "showAllNoticeBody": "Matomos neaktyvių, tuščių, tik sukonfigūruotų ir istorinių teikėjų kortelės. Tik aktyvūs yra įprastas rodinys."
   },
   "layout": {
     "edit": "Edit layout",

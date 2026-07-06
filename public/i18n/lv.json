@@ -21,7 +21,9 @@
     "showActive": "Tikai aktīvie",
     "hideInactive": "Paslēpt neaktīvos pakalpojumu sniedzējus",
     "showInactiveCount": "Rādīt {count} neaktīvus pakalpojumu sniedzējus",
-    "allVisible": "Visi pakalpojumu sniedzēji ir redzami"
+    "allVisible": "Visi pakalpojumu sniedzēji ir redzami",
+    "showAllNoticeTitle": "Visu pakalpojumu sniedzēju skats",
+    "showAllNoticeBody": "Redzamas neaktīvu, tukšu, tikai iestatītu un vēsturisku pakalpojumu sniedzēju kartītes. Tikai aktīvie ir parastais skats."
   },
   "layout": {
     "edit": "Edit layout",

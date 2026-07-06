@@ -21,7 +21,9 @@
     "showActive": "仅显示活跃项",
     "hideInactive": "隐藏非活跃提供商",
     "showInactiveCount": "显示 {count} 个非活跃提供商",
-    "allVisible": "所有提供商均可见"
+    "allVisible": "所有提供商均可见",
+    "showAllNoticeTitle": "全部提供商视图",
+    "showAllNoticeBody": "非活跃、空、仅设置和历史提供商卡片均可见。仅显示活跃项是常规视图。"
   },
   "layout": {
     "edit": "Edit layout",

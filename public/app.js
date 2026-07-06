@@ -39,6 +39,7 @@ const state = {
 const els = {
   appShell: document.querySelector("main.app-shell"),
   providerGrid: document.getElementById("providerGrid"),
+  providerViewNotice: document.getElementById("providerViewNotice"),
   sourceDiagnosticsSection: document.getElementById("sourceDiagnosticsSection"),
   sourceDiagnosticsMeta: document.getElementById("sourceDiagnosticsMeta"),
   sourceDiagnosticsSummary: document.getElementById("sourceDiagnosticsSummary"),
@@ -2030,6 +2031,7 @@ function renderLocked() {
   state.chartRendered = false;
   state.layoutEditMode = false;
   els.providerGrid.classList.remove("layout-edit-mode");
+  updateProviderViewNotice([], []);
   updateProviderFilterControl([], []);
   updateLayoutControls([], []);
   renderSourceDiagnostics();
@@ -2046,6 +2048,7 @@ function render() {
   els.providerGrid.innerHTML = visibleProviders.length
     ? visibleProviders.map((provider, index) => renderProvider(provider, index, visibleProviders.length)).join("")
     : renderNoActiveProviders();
+  updateProviderViewNotice(providers);
   updateProviderFilterControl(providers, visibleProviders);
   updateLayoutControls(providers, visibleProviders);
   renderSummary(visibleProviders, usage.local);
@@ -2620,12 +2623,30 @@ function updateProviderFilterControl(providers, visibleProviders) {
   const hiddenCount = Math.max(providers.length - visibleProviders.length, 0);
   els.providerFilterBtn.textContent = state.showAllProviders ? t("filter.showActive") : t("filter.showAll");
   els.providerFilterBtn.disabled = !providers.length;
+  els.providerFilterBtn.classList.toggle("is-active", state.showAllProviders);
   els.providerFilterBtn.title = state.showAllProviders
     ? t("filter.hideInactive")
     : hiddenCount
       ? t("filter.showInactiveCount", { count: hiddenCount })
       : t("filter.allVisible");
   els.providerFilterBtn.setAttribute("aria-pressed", String(state.showAllProviders));
+}
+
+function updateProviderViewNotice(providers) {
+  if (!els.providerViewNotice) return;
+  const showNotice = state.showAllProviders && providers.length > 0;
+  els.providerViewNotice.hidden = !showNotice;
+  if (!showNotice) {
+    els.providerViewNotice.innerHTML = "";
+    return;
+  }
+  els.providerViewNotice.innerHTML = `
+    <i data-lucide="eye" aria-hidden="true"></i>
+    <div>
+      <strong>${escapeHtml(t("filter.showAllNoticeTitle"))}</strong>
+      <span>${escapeHtml(t("filter.showAllNoticeBody"))}</span>
+    </div>
+  `;
 }
 
 function updateLayoutControls(providers, visibleProviders) {

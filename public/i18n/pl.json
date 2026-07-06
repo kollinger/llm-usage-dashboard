@@ -21,7 +21,9 @@
     "showActive": "Tylko aktywne",
     "hideInactive": "Ukryj nieaktywnych dostawców",
     "showInactiveCount": "Pokaż {count} nieaktywnych dostawców",
-    "allVisible": "Wszyscy dostawcy są widoczni"
+    "allVisible": "Wszyscy dostawcy są widoczni",
+    "showAllNoticeTitle": "Widok wszystkich dostawców",
+    "showAllNoticeBody": "Widoczne są nieaktywne, puste, tylko skonfigurowane i historyczne karty dostawców. Tylko aktywne to normalny widok."
   },
   "layout": {
     "edit": "Edit layout",

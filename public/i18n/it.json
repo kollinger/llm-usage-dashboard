@@ -21,7 +21,9 @@
     "showActive": "Solo attivi",
     "hideInactive": "Nascondi provider inattivi",
     "showInactiveCount": "Mostra {count} provider inattivi",
-    "allVisible": "Tutti i provider sono visibili"
+    "allVisible": "Tutti i provider sono visibili",
+    "showAllNoticeTitle": "Vista di tutti i provider",
+    "showAllNoticeBody": "Sono visibili schede provider inattive, vuote, solo configurate e storiche. Solo attivi è la vista normale."
   },
   "layout": {
     "edit": "Edit layout",

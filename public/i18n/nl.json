@@ -21,7 +21,9 @@
     "showActive": "Alleen actief",
     "hideInactive": "Inactieve providers verbergen",
     "showInactiveCount": "Toon {count} inactieve providers",
-    "allVisible": "Alle providers zijn zichtbaar"
+    "allVisible": "Alle providers zijn zichtbaar",
+    "showAllNoticeTitle": "Weergave alle providers",
+    "showAllNoticeBody": "Inactieve, lege, alleen ingestelde en historische providerkaarten zijn zichtbaar. Alleen actief is de normale weergave."
   },
   "layout": {
     "edit": "Edit layout",
