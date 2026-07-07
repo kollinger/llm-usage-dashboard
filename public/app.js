@@ -18,7 +18,7 @@ const state = {
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
-  usageProjectionMode: "tachometer",
+  usageProjectionModes: {},
   pricingView: "api",
   pricingSort: { key: "total", direction: "desc" },
   language: "en",
@@ -249,7 +249,7 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
-const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
+const USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
 const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
@@ -1427,7 +1427,7 @@ function bindEvents() {
   els.appShell.addEventListener("click", (e) => {
     const projectionModeBtn = e.target.closest("[data-usage-projection-mode]");
     if (projectionModeBtn) {
-      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode);
+      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionProvider, projectionModeBtn.dataset.usageProjectionMode);
       return;
     }
     const modeBtn = e.target.closest("[data-chart-mode]");
@@ -1610,18 +1610,31 @@ function normalizeUsageProjectionMode(mode) {
 
 function loadUsageProjectionModePreference() {
   try {
-    state.usageProjectionMode = normalizeUsageProjectionMode(localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY));
+    const saved = JSON.parse(localStorage.getItem(USAGE_PROJECTION_MODES_STORAGE_KEY) || "{}");
+    state.usageProjectionModes = saved && typeof saved === "object" && !Array.isArray(saved)
+      ? Object.fromEntries(
+          Object.entries(saved)
+            .map(([providerId, mode]) => [String(providerId), normalizeUsageProjectionMode(mode)])
+            .filter(([providerId]) => providerId)
+        )
+      : {};
   } catch {
-    state.usageProjectionMode = "tachometer";
+    state.usageProjectionModes = {};
   }
 }
 
-function setUsageProjectionMode(mode) {
+function usageProjectionModeForProvider(providerId) {
+  return normalizeUsageProjectionMode(state.usageProjectionModes?.[String(providerId || "")]);
+}
+
+function setUsageProjectionMode(providerId, mode) {
+  const key = String(providerId || "").trim();
+  if (!key) return;
   const nextMode = normalizeUsageProjectionMode(mode);
-  if (state.usageProjectionMode === nextMode) return;
-  state.usageProjectionMode = nextMode;
+  if (usageProjectionModeForProvider(key) === nextMode && state.usageProjectionModes?.[key] === nextMode) return;
+  state.usageProjectionModes = { ...(state.usageProjectionModes || {}), [key]: nextMode };
   try {
-    localStorage.setItem(USAGE_PROJECTION_MODE_STORAGE_KEY, nextMode);
+    localStorage.setItem(USAGE_PROJECTION_MODES_STORAGE_KEY, JSON.stringify(state.usageProjectionModes));
   } catch {
     // Ignore storage failures; the selected view still changes for this session.
   }
@@ -3447,26 +3460,29 @@ function renderLimitBars(provider) {
     ? provider.limitRows
     : normalizeLimitRows({ fiveHour: provider.fiveHour, weekly: provider.weekly });
   if (!rows.length) return "";
+  const providerId = provider.id || "provider";
+  const mode = usageProjectionModeForProvider(providerId);
   return `
-    <div class="limit-bars limit-bars-mode-${escapeHtml(state.usageProjectionMode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
-      ${renderUsageProjectionModeToggle()}
-      ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
+    <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}" data-usage-projection-provider="${escapeHtml(providerId)}">
+      ${renderUsageProjectionModeToggle({ ...provider, id: providerId }, mode)}
+      ${rows.map((row) => renderLimitBar(row, provider.accent, mode)).join("")}
       ${renderFableQuotaContext(provider, rows)}
     </div>
   `;
 }
 
-function renderUsageProjectionModeToggle() {
+function renderUsageProjectionModeToggle(provider, activeMode) {
   return `
     <div class="limit-bars-head">
       <span>${escapeHtml(t("limits.gauge.title"))}</span>
       <div class="usage-projection-toggle" role="group" aria-label="${escapeHtml(t("limits.viewToggleAria"))}">
         ${USAGE_PROJECTION_MODES.map((mode) => {
-          const active = state.usageProjectionMode === mode;
+          const active = activeMode === mode;
           return `
             <button
               type="button"
               class="chart-mode-btn usage-projection-mode-btn${active ? " active" : ""}"
+              data-usage-projection-provider="${escapeHtml(provider.id)}"
               data-usage-projection-mode="${mode}"
               aria-pressed="${active}"
             >
@@ -3479,7 +3495,7 @@ function renderUsageProjectionModeToggle() {
   `;
 }
 
-function renderLimitBar(row, accent) {
+function renderLimitBar(row, accent, mode = "tachometer") {
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
   const remaining = Math.round(row.remainingPercent ?? Math.max(0, 100 - used));
@@ -3491,7 +3507,7 @@ function renderLimitBar(row, accent) {
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
   const pace = limitPaceAssessment(row);
-  const gauge = renderLimitProjectionVisualization(row, accent);
+  const gauge = renderLimitProjectionVisualization(row, accent, mode);
   return `
     <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
@@ -3516,8 +3532,8 @@ function renderLimitBar(row, accent) {
   `;
 }
 
-function renderLimitProjectionVisualization(row, accent) {
-  return state.usageProjectionMode === "bar"
+function renderLimitProjectionVisualization(row, accent, mode = "tachometer") {
+  return normalizeUsageProjectionMode(mode) === "bar"
     ? renderLimitProjectionBar(row, accent)
     : renderLimitProjectionGauge(row, accent);
 }

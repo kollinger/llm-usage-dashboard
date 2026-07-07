@@ -224,6 +224,10 @@ async function assertFrontendUsageIntelligence() {
   assert.notEqual(code, appSource, "usage intelligence test must disable app bootstrap");
   assert.equal(appSource.includes("function renderRings"), false, "legacy quota ring renderer must stay removed");
   assert.equal(appSource.includes("function renderRing("), false, "legacy quota ring renderer must stay removed");
+  const stylesSource = await readFile(path.join(rootDir, "public", "styles.css"), "utf8");
+  assert.match(stylesSource, /\.limit-bars\s*\{[^}]*width:\s*100%/su, "Current Usage grid must stretch to provider card width");
+  assert.match(stylesSource, /\.limit-bars-grid\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/su, "5h/week grid must use full-width equal columns");
+  assert.match(stylesSource, /\.limit-tachometer-svg\s*\{[^}]*max-width:\s*none/su, "tachometer SVG must not keep a narrow fixed max-width");
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -332,7 +336,8 @@ const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOStrin
 const okFiveHourReset = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
 const earlyWeekLimit = { usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset };
 const okFiveHourLimit = { usedPercent: 10, windowMinutes: 300, resetsAt: okFiveHourReset };
-const defaultUsageProjectionMode = state.usageProjectionMode;
+const defaultCodexProjectionMode = usageProjectionModeForProvider("codex");
+const defaultClaudeProjectionMode = usageProjectionModeForProvider("claudeCode");
 const sourceBarsHtml = renderSourceTotalBars([
   {
     date: "${today}",
@@ -373,6 +378,7 @@ const providerCardHtml = renderProvider({
   message: "Logged tokens"
 });
 const limitBarsHtml = renderLimitBars({
+  id: "codex",
   accent: providerMeta.codex.accent,
   limitRows: [
     { label: "5h", usedPercent: 10, remainingPercent: 90, windowMinutes: 300, resetsAt: okFiveHourReset },
@@ -388,13 +394,31 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
   totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
 }));
 const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
-let storedProjectionMode = "";
+let storedProjectionModes = "";
 localStorage.setItem = (key, value) => {
-  if (key === USAGE_PROJECTION_MODE_STORAGE_KEY) storedProjectionMode = value;
+  if (key === USAGE_PROJECTION_MODES_STORAGE_KEY) storedProjectionModes = value;
 };
-setUsageProjectionMode("bar");
-const projectionModeAfterToggle = state.usageProjectionMode;
-const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
+setUsageProjectionMode("codex", "bar");
+const codexProjectionModeAfterToggle = usageProjectionModeForProvider("codex");
+const claudeProjectionModeAfterCodexToggle = usageProjectionModeForProvider("claudeCode");
+const storedProjectionModesParsed = JSON.parse(storedProjectionModes || "{}");
+const codexBarLimitBarsHtml = renderLimitBars({
+  id: "codex",
+  accent: providerMeta.codex.accent,
+  limitRows: [
+    { label: "5h", usedPercent: 10, remainingPercent: 90, windowMinutes: 300, resetsAt: okFiveHourReset },
+    { label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }
+  ]
+});
+const claudeTachometerLimitBarsHtml = renderLimitBars({
+  id: "claudeCode",
+  accent: providerMeta.claudeCode.accent,
+  limitRows: [
+    { label: "5h", usedPercent: 0, remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset },
+    { label: "Week", usedPercent: 0, remainingPercent: 100, windowMinutes: 10080, resetsAt: earlyWeekReset }
+  ]
+});
+const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent, "bar");
 const zeroUsageLimit = normalizeLimitRow({ label: "Claude Code", usedPercent: "0%", remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset });
 const zeroUsageLimitHtml = renderLimitBar(zeroUsageLimit, providerMeta.claudeCode.accent);
 const emptyUsageLimit = normalizeLimitRow({ label: "Claude Code", usedPercent: "", remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset });
@@ -590,14 +614,26 @@ JSON.stringify({
 	  riskLimitBarUsesProviderAccent:
 	    riskLimitTachometerHtml.includes("--accent: " + providerMeta.codex.accent) &&
 	    !riskLimitTachometerHtml.includes("--accent: #b76b00"),
-  defaultUsageProjectionMode,
-  projectionModeAfterToggle,
-  storedProjectionMode,
+  defaultCodexProjectionMode,
+  defaultClaudeProjectionMode,
+  codexProjectionModeAfterToggle,
+  claudeProjectionModeAfterCodexToggle,
+  storedProjectionModes:
+    storedProjectionModesParsed.codex === "bar" &&
+    !Object.prototype.hasOwnProperty.call(storedProjectionModesParsed, "claudeCode"),
   invalidProjectionModeFallsBack: normalizeUsageProjectionMode("bogus"),
   limitBarsHasProjectionToggle:
     limitBarsHtml.includes("usage-projection-toggle") &&
+    limitBarsHtml.includes("data-usage-projection-provider=\\"codex\\"") &&
     limitBarsHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
     limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\""),
+  providerProjectionModesIndependent:
+    codexBarLimitBarsHtml.includes("limit-bars-mode-bar") &&
+    codexBarLimitBarsHtml.includes("limit-projection-bar") &&
+    !codexBarLimitBarsHtml.includes("limit-tachometer-gauge") &&
+    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-tachometer") &&
+    claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge") &&
+    !claudeTachometerLimitBarsHtml.includes("limit-projection-bar"),
   rejectedPaceLegendRemoved: !limitBarsHtml.includes("limit-status-note"),
   riskLimitBarHasTachometerGauge:
     riskLimitTachometerHtml.includes("limit-tachometer-gauge") &&
@@ -690,11 +726,14 @@ JSON.stringify({
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
-  assert.equal(result.defaultUsageProjectionMode, "tachometer");
-  assert.equal(result.projectionModeAfterToggle, "bar");
-  assert.equal(result.storedProjectionMode, "bar");
+  assert.equal(result.defaultCodexProjectionMode, "tachometer");
+  assert.equal(result.defaultClaudeProjectionMode, "tachometer");
+  assert.equal(result.codexProjectionModeAfterToggle, "bar");
+  assert.equal(result.claudeProjectionModeAfterCodexToggle, "tachometer");
+  assert.equal(result.storedProjectionModes, true);
   assert.equal(result.invalidProjectionModeFallsBack, "tachometer");
   assert.equal(result.limitBarsHasProjectionToggle, true);
+  assert.equal(result.providerProjectionModesIndependent, true);
   assert.equal(result.rejectedPaceLegendRemoved, true);
   assert.equal(result.riskLimitBarHasTachometerGauge, true);
   assert.equal(result.riskLimitBarHasProjectionBarMode, true);

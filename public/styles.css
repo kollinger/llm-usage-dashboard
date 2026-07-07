@@ -730,12 +730,17 @@ a {
 
 .limit-bars {
   display: grid;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
   gap: 10px;
+  align-items: stretch;
+  justify-self: stretch;
 }
 
 .limit-bars-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .limit-bars-head {
@@ -769,13 +774,16 @@ a {
 
 .limit-bar {
   display: grid;
+  width: 100%;
   min-width: 0;
   gap: 7px;
+  align-content: start;
 }
 
 .limit-bar-body,
 .limit-bar-usage {
   display: grid;
+  width: 100%;
   min-width: 0;
   gap: 6px;
 }
@@ -895,6 +903,8 @@ a {
 
 .limit-projection-gauge {
   display: grid;
+  width: 100%;
+  max-width: none;
   min-width: 0;
   gap: 5px;
   color: var(--ink);
@@ -965,16 +975,17 @@ a {
 
 .limit-tachometer-shell {
   position: relative;
-  min-height: 126px;
+  width: 100%;
+  min-height: clamp(136px, 16vw, 220px);
   padding: 0 2px;
 }
 
 .limit-tachometer-svg {
   display: block;
   width: 100%;
-  max-width: 260px;
+  max-width: none;
   height: auto;
-  margin: 0 auto;
+  margin: 0;
   overflow: visible;
 }
 
@@ -1045,6 +1056,7 @@ a {
 
 .limit-projection-bar {
   align-self: end;
+  width: 100%;
 }
 
 .credit-rows {
