@@ -336,8 +336,7 @@ const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOStrin
 const okFiveHourReset = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
 const earlyWeekLimit = { usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset };
 const okFiveHourLimit = { usedPercent: 10, windowMinutes: 300, resetsAt: okFiveHourReset };
-const defaultCodexProjectionMode = usageProjectionModeForProvider("codex");
-const defaultClaudeProjectionMode = usageProjectionModeForProvider("claudeCode");
+const defaultUsageProjectionMode = state.usageProjectionMode;
 const sourceBarsHtml = renderSourceTotalBars([
   {
     date: "${today}",
@@ -394,14 +393,12 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
   totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
 }));
 const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
-let storedProjectionModes = "";
+let storedProjectionMode = "";
 localStorage.setItem = (key, value) => {
-  if (key === USAGE_PROJECTION_MODES_STORAGE_KEY) storedProjectionModes = value;
+  if (key === USAGE_PROJECTION_MODE_STORAGE_KEY) storedProjectionMode = value;
 };
-setUsageProjectionMode("codex", "bar");
-const codexProjectionModeAfterToggle = usageProjectionModeForProvider("codex");
-const claudeProjectionModeAfterCodexToggle = usageProjectionModeForProvider("claudeCode");
-const storedProjectionModesParsed = JSON.parse(storedProjectionModes || "{}");
+setUsageProjectionMode("bar");
+const projectionModeAfterToggle = state.usageProjectionMode;
 const codexBarLimitBarsHtml = renderLimitBars({
   id: "codex",
   accent: providerMeta.codex.accent,
@@ -614,26 +611,21 @@ JSON.stringify({
 	  riskLimitBarUsesProviderAccent:
 	    riskLimitTachometerHtml.includes("--accent: " + providerMeta.codex.accent) &&
 	    !riskLimitTachometerHtml.includes("--accent: #b76b00"),
-  defaultCodexProjectionMode,
-  defaultClaudeProjectionMode,
-  codexProjectionModeAfterToggle,
-  claudeProjectionModeAfterCodexToggle,
-  storedProjectionModes:
-    storedProjectionModesParsed.codex === "bar" &&
-    !Object.prototype.hasOwnProperty.call(storedProjectionModesParsed, "claudeCode"),
+  defaultUsageProjectionMode,
+  projectionModeAfterToggle,
+  storedProjectionMode,
   invalidProjectionModeFallsBack: normalizeUsageProjectionMode("bogus"),
   limitBarsHasProjectionToggle:
     limitBarsHtml.includes("usage-projection-toggle") &&
-    limitBarsHtml.includes("data-usage-projection-provider=\\"codex\\"") &&
     limitBarsHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
     limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\""),
-  providerProjectionModesIndependent:
+  providerProjectionModeGlobal:
     codexBarLimitBarsHtml.includes("limit-bars-mode-bar") &&
     codexBarLimitBarsHtml.includes("limit-projection-bar") &&
     !codexBarLimitBarsHtml.includes("limit-tachometer-gauge") &&
-    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-tachometer") &&
-    claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge") &&
-    !claudeTachometerLimitBarsHtml.includes("limit-projection-bar"),
+    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-bar") &&
+    claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
+    !claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
   rejectedPaceLegendRemoved: !limitBarsHtml.includes("limit-status-note"),
   riskLimitBarHasTachometerGauge:
     riskLimitTachometerHtml.includes("limit-tachometer-gauge") &&
@@ -726,14 +718,12 @@ JSON.stringify({
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
-  assert.equal(result.defaultCodexProjectionMode, "tachometer");
-  assert.equal(result.defaultClaudeProjectionMode, "tachometer");
-  assert.equal(result.codexProjectionModeAfterToggle, "bar");
-  assert.equal(result.claudeProjectionModeAfterCodexToggle, "tachometer");
-  assert.equal(result.storedProjectionModes, true);
+  assert.equal(result.defaultUsageProjectionMode, "tachometer");
+  assert.equal(result.projectionModeAfterToggle, "bar");
+  assert.equal(result.storedProjectionMode, "bar");
   assert.equal(result.invalidProjectionModeFallsBack, "tachometer");
   assert.equal(result.limitBarsHasProjectionToggle, true);
-  assert.equal(result.providerProjectionModesIndependent, true);
+  assert.equal(result.providerProjectionModeGlobal, true);
   assert.equal(result.rejectedPaceLegendRemoved, true);
   assert.equal(result.riskLimitBarHasTachometerGauge, true);
   assert.equal(result.riskLimitBarHasProjectionBarMode, true);

@@ -18,7 +18,7 @@ const state = {
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
-  usageProjectionModes: {},
+  usageProjectionMode: "tachometer",
   pricingView: "api",
   pricingSort: { key: "total", direction: "desc" },
   language: "en",
@@ -249,7 +249,8 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
-const USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
+const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
+const LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
 const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
@@ -1427,7 +1428,7 @@ function bindEvents() {
   els.appShell.addEventListener("click", (e) => {
     const projectionModeBtn = e.target.closest("[data-usage-projection-mode]");
     if (projectionModeBtn) {
-      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionProvider, projectionModeBtn.dataset.usageProjectionMode);
+      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode);
       return;
     }
     const modeBtn = e.target.closest("[data-chart-mode]");
@@ -1610,31 +1611,28 @@ function normalizeUsageProjectionMode(mode) {
 
 function loadUsageProjectionModePreference() {
   try {
-    const saved = JSON.parse(localStorage.getItem(USAGE_PROJECTION_MODES_STORAGE_KEY) || "{}");
-    state.usageProjectionModes = saved && typeof saved === "object" && !Array.isArray(saved)
-      ? Object.fromEntries(
-          Object.entries(saved)
-            .map(([providerId, mode]) => [String(providerId), normalizeUsageProjectionMode(mode)])
-            .filter(([providerId]) => providerId)
-        )
-      : {};
+    const saved = localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY);
+    if (saved) {
+      state.usageProjectionMode = normalizeUsageProjectionMode(saved);
+      return;
+    }
+    const legacyMap = JSON.parse(localStorage.getItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY) || "{}");
+    const legacyMode = legacyMap && typeof legacyMap === "object" && !Array.isArray(legacyMap)
+      ? Object.values(legacyMap).find((mode) => USAGE_PROJECTION_MODES.includes(mode))
+      : null;
+    state.usageProjectionMode = normalizeUsageProjectionMode(legacyMode);
   } catch {
-    state.usageProjectionModes = {};
+    state.usageProjectionMode = "tachometer";
   }
 }
 
-function usageProjectionModeForProvider(providerId) {
-  return normalizeUsageProjectionMode(state.usageProjectionModes?.[String(providerId || "")]);
-}
-
-function setUsageProjectionMode(providerId, mode) {
-  const key = String(providerId || "").trim();
-  if (!key) return;
+function setUsageProjectionMode(mode) {
   const nextMode = normalizeUsageProjectionMode(mode);
-  if (usageProjectionModeForProvider(key) === nextMode && state.usageProjectionModes?.[key] === nextMode) return;
-  state.usageProjectionModes = { ...(state.usageProjectionModes || {}), [key]: nextMode };
+  if (state.usageProjectionMode === nextMode) return;
+  state.usageProjectionMode = nextMode;
   try {
-    localStorage.setItem(USAGE_PROJECTION_MODES_STORAGE_KEY, JSON.stringify(state.usageProjectionModes));
+    localStorage.setItem(USAGE_PROJECTION_MODE_STORAGE_KEY, nextMode);
+    localStorage.removeItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY);
   } catch {
     // Ignore storage failures; the selected view still changes for this session.
   }
@@ -3460,18 +3458,17 @@ function renderLimitBars(provider) {
     ? provider.limitRows
     : normalizeLimitRows({ fiveHour: provider.fiveHour, weekly: provider.weekly });
   if (!rows.length) return "";
-  const providerId = provider.id || "provider";
-  const mode = usageProjectionModeForProvider(providerId);
+  const mode = normalizeUsageProjectionMode(state.usageProjectionMode);
   return `
-    <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}" data-usage-projection-provider="${escapeHtml(providerId)}">
-      ${renderUsageProjectionModeToggle({ ...provider, id: providerId }, mode)}
+    <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
+      ${renderUsageProjectionModeToggle(mode)}
       ${rows.map((row) => renderLimitBar(row, provider.accent, mode)).join("")}
       ${renderFableQuotaContext(provider, rows)}
     </div>
   `;
 }
 
-function renderUsageProjectionModeToggle(provider, activeMode) {
+function renderUsageProjectionModeToggle(activeMode) {
   return `
     <div class="limit-bars-head">
       <span>${escapeHtml(t("limits.gauge.title"))}</span>
@@ -3482,7 +3479,6 @@ function renderUsageProjectionModeToggle(provider, activeMode) {
             <button
               type="button"
               class="chart-mode-btn usage-projection-mode-btn${active ? " active" : ""}"
-              data-usage-projection-provider="${escapeHtml(provider.id)}"
               data-usage-projection-mode="${mode}"
               aria-pressed="${active}"
             >
