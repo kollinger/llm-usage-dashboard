@@ -2480,14 +2480,26 @@ a {
   white-space: nowrap;
 }
 
-.limit-cell,
+.limit-cell {
+  display: grid;
+  gap: 2px;
+  min-width: 94px;
+  max-width: 142px;
+}
+
 .pricing-status-cell {
   display: grid;
   gap: 4px;
   min-width: 130px;
 }
 
-.limit-cell span,
+.limit-cell span {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 720;
+  line-height: 1.18;
+}
+
 .pricing-status-cell small {
   color: var(--muted);
   font-size: 0.75rem;
@@ -2495,9 +2507,10 @@ a {
 }
 
 .limit-cell small {
-  color: var(--text);
-  font-size: 0.72rem;
-  font-weight: 780;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 740;
+  line-height: 1.15;
 }
 
 .pricing-status-cell .status-pill {
