@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lectura / {write} escritura",
     "cacheSameAsInput": "como entrada",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "desde {amount}/mes"
   },
   "settings": {
     "heading": "Ajustes",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Valor de catálogo",
-      "official": "Precio oficial de lista"
+      "official": "Precio oficial de lista",
+      "officialStarting": "Precio de lista inicial oficial"
     },
     "sources": {
       "local_settings": "respaldo guardado",
@@ -877,6 +879,21 @@
       "bundled": "fallback incluido",
       "missing": "faltante",
       "unknown": "desconocido"
+    },
+    "officialStartingListPriceNote": "Precio de lista inicial oficial; no se leyó la factura real de la cuenta y puede diferir por nivel, IVA/impuestos, descuentos anuales, puestos, cupones, precios regionales, complementos o contratos enterprise.",
+    "tierVariant": "Nivel/variante: {variant}",
+    "actualBilling": "Facturación real conocida: {status}",
+    "tierVariantLabel": "Nivel/variante",
+    "actualBillingKnownLabel": "Facturación real conocida",
+    "priceVariants": {
+      "from": "mínimo / desde",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "desconocido"
+    },
+    "actualBillingKnown": {
+      "yes": "sí",
+      "no": "no"
     }
   }
 }

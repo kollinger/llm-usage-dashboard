@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lasīšana / {write} rakstīšana",
     "cacheSameAsInput": "kā ievade",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "no {amount}/mēn."
   },
   "settings": {
     "heading": "Iestatījumi",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Kataloga vērtība",
-      "official": "Oficiālā saraksta cena"
+      "official": "Oficiālā saraksta cena",
+      "officialStarting": "Oficiālā sākuma cenrāža cena"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "iekļauts rezerves variants",
       "missing": "trūkst",
       "unknown": "nezināms"
+    },
+    "officialStartingListPriceNote": "Oficiālā sākuma cenrāža cena; faktiskā konta rēķina summa netika nolasīta un var atšķirties līmeņa, PVN/nodokļu, gada atlaides, vietu, kuponu, reģionālo cenu, papildinājumu vai enterprise līgumu dēļ.",
+    "tierVariant": "Līmenis/variants: {variant}",
+    "actualBilling": "Faktiskais rēķins zināms: {status}",
+    "tierVariantLabel": "Līmenis/variants",
+    "actualBillingKnownLabel": "Faktiskais rēķins zināms",
+    "priceVariants": {
+      "from": "minimums / no",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "nezināms"
+    },
+    "actualBillingKnown": {
+      "yes": "jā",
+      "no": "nē"
     }
   }
 }

@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} luku / {write} kirjoitus",
     "cacheSameAsInput": "kuten syöte",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "alkaen {amount}/kk"
   },
   "settings": {
     "heading": "Asetukset",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Katalogiarvo",
-      "official": "Virallinen listahinta"
+      "official": "Virallinen listahinta",
+      "officialStarting": "Virallinen alkaen-listahinta"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "mukana oleva varavaihtoehto",
       "missing": "puuttuu",
       "unknown": "tuntematon"
+    },
+    "officialStartingListPriceNote": "Virallinen alkaen-listahinta; tilin todellista laskua ei luettu ja se voi poiketa tason, ALV:n/verojen, vuosialennusten, käyttäjäpaikkojen, kuponkien, aluehintojen, lisäosien tai enterprise-sopimusten vuoksi.",
+    "tierVariant": "Taso/variantti: {variant}",
+    "actualBilling": "Todellinen laskutus tiedossa: {status}",
+    "tierVariantLabel": "Taso/variantti",
+    "actualBillingKnownLabel": "Todellinen laskutus tiedossa",
+    "priceVariants": {
+      "from": "vähintään / alkaen",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "tuntematon"
+    },
+    "actualBillingKnown": {
+      "yes": "kyllä",
+      "no": "ei"
     }
   }
 }

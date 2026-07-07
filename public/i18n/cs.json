@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} čtení / {write} zápis",
     "cacheSameAsInput": "jako vstup",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "od {amount}/měs."
   },
   "settings": {
     "heading": "Nastavení",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Katalogová hodnota",
-      "official": "Oficiální ceníková cena"
+      "official": "Oficiální ceníková cena",
+      "officialStarting": "Oficiální počáteční ceníková cena"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "přibalený fallback",
       "missing": "chybí",
       "unknown": "neznámé"
+    },
+    "officialStartingListPriceNote": "Oficiální počáteční ceníková cena; skutečná faktura účtu nebyla načtena a může se lišit kvůli tarifu, DPH/daním, ročním slevám, místům, kupónům, regionálním cenám, doplňkům nebo enterprise smlouvám.",
+    "tierVariant": "Tarif/varianta: {variant}",
+    "actualBilling": "Skutečná fakturace známá: {status}",
+    "tierVariantLabel": "Tarif/varianta",
+    "actualBillingKnownLabel": "Skutečná fakturace známá",
+    "priceVariants": {
+      "from": "minimum / od",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "neznámé"
+    },
+    "actualBillingKnown": {
+      "yes": "ano",
+      "no": "ne"
     }
   }
 }

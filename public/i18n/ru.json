@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} чтение / {write} запись",
     "cacheSameAsInput": "как ввод",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "от {amount}/мес."
   },
   "settings": {
     "heading": "Настройки",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Значение из каталога",
-      "official": "Официальная прайс-лист цена"
+      "official": "Официальная прайс-лист цена",
+      "officialStarting": "Официальная начальная цена по прайсу"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "встроенный резерв",
       "missing": "отсутствует",
       "unknown": "неизвестно"
+    },
+    "officialStartingListPriceNote": "Официальная начальная цена по прайсу; фактический счет аккаунта не был прочитан и может отличаться из-за уровня, НДС/налогов, годовых скидок, мест, купонов, региональных цен, дополнений или enterprise-договоров.",
+    "tierVariant": "Уровень/вариант: {variant}",
+    "actualBilling": "Фактический счет известен: {status}",
+    "tierVariantLabel": "Уровень/вариант",
+    "actualBillingKnownLabel": "Фактический счет известен",
+    "priceVariants": {
+      "from": "минимум / от",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "неизвестно"
+    },
+    "actualBillingKnown": {
+      "yes": "да",
+      "no": "нет"
     }
   }
 }

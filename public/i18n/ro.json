@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} citire / {write} scriere",
     "cacheSameAsInput": "ca intrarea",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "de la {amount}/lună"
   },
   "settings": {
     "heading": "Setări",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Valoare din catalog",
-      "official": "Preț oficial de listă"
+      "official": "Preț oficial de listă",
+      "officialStarting": "Preț oficial de listă de pornire"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "fallback inclus",
       "missing": "lipsește",
       "unknown": "necunoscut"
+    },
+    "officialStartingListPriceNote": "Preț oficial de listă de pornire; factura reală a contului nu a fost citită și poate diferi din cauza nivelului, TVA/taxelor, reducerilor anuale, locurilor, cupoanelor, prețurilor regionale, suplimentelor sau contractelor enterprise.",
+    "tierVariant": "Nivel/variantă: {variant}",
+    "actualBilling": "Facturarea reală cunoscută: {status}",
+    "tierVariantLabel": "Nivel/variantă",
+    "actualBillingKnownLabel": "Facturarea reală cunoscută",
+    "priceVariants": {
+      "from": "minimum / de la",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "necunoscut"
+    },
+    "actualBillingKnown": {
+      "yes": "da",
+      "no": "nu"
     }
   }
 }

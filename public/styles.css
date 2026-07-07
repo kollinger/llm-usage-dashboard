@@ -703,16 +703,6 @@ a {
   color: var(--rose);
 }
 
-.ring-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.ring-box {
-  min-width: 0;
-}
-
 .ring {
   --percent: 0;
   display: grid;
@@ -736,14 +726,6 @@ a {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 760;
-}
-
-.ring-sub {
-  display: block;
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.75rem;
-  margin-top: 4px;
 }
 
 .limit-bars {
@@ -810,6 +792,26 @@ a {
 
 .limit-bars-mode-bar .limit-projection-bar {
   align-self: end;
+}
+
+.limit-context-row {
+  grid-column: 1 / -1;
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf7;
+}
+
+.limit-context-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .limit-bar-top {
@@ -1244,7 +1246,8 @@ a {
   background: var(--green);
 }
 
-.subscription-quality-official .subscription-quality-pill {
+.subscription-quality-official .subscription-quality-pill,
+.subscription-quality-officialStarting .subscription-quality-pill {
   background: #2e6ea6;
 }
 
@@ -3102,10 +3105,6 @@ select {
   .provider-drag-handle {
     min-width: 44px;
     min-height: 44px;
-  }
-
-  .ring-row {
-    grid-template-columns: 1fr;
   }
 
   .source-card-head,

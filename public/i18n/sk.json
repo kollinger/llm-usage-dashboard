@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} čítanie / {write} zápis",
     "cacheSameAsInput": "ako vstup",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "od {amount}/mes."
   },
   "settings": {
     "heading": "Nastavenia",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Katalógová hodnota",
-      "official": "Oficiálna katalógová cena"
+      "official": "Oficiálna katalógová cena",
+      "officialStarting": "Oficiálna počiatočná cenníková cena"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "pribalený fallback",
       "missing": "chýba",
       "unknown": "neznáme"
+    },
+    "officialStartingListPriceNote": "Oficiálna počiatočná cenníková cena; skutočná faktúra účtu nebola načítaná a môže sa líšiť pre úroveň, DPH/dane, ročné zľavy, miesta, kupóny, regionálne ceny, doplnky alebo enterprise zmluvy.",
+    "tierVariant": "Úroveň/variant: {variant}",
+    "actualBilling": "Skutočná fakturácia známa: {status}",
+    "tierVariantLabel": "Úroveň/variant",
+    "actualBillingKnownLabel": "Skutočná fakturácia známa",
+    "priceVariants": {
+      "from": "minimum / od",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "neznáme"
+    },
+    "actualBillingKnown": {
+      "yes": "áno",
+      "no": "nie"
     }
   }
 }

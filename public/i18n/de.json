@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lesen / {write} schreiben",
     "cacheSameAsInput": "wie Input",
-    "perMonth": "{amount}/Monat"
+    "perMonth": "{amount}/Monat",
+    "fromPerMonth": "ab {amount}/Monat"
   },
   "settings": {
     "heading": "Einstellungen",
@@ -812,7 +813,8 @@
       "estimated": "Geschätzt / teilweise",
       "unknown": "Unbekannt",
       "catalog": "Katalogwert",
-      "official": "Offizieller Listenpreis"
+      "official": "Offizieller Listenpreis",
+      "officialStarting": "Offizieller Mindest-Listenpreis"
     },
     "sources": {
       "local_settings": "gespeicherter Fallback",
@@ -877,6 +879,21 @@
       "bundled": "gebündelter Fallback",
       "missing": "fehlend",
       "unknown": "unbekannt"
+    },
+    "officialStartingListPriceNote": "Offizieller Mindest-Listenpreis; die tatsächliche Account-Rechnung wurde nicht ausgelesen und kann wegen Tarifstufe, USt./Steuern, Jahresrabatten, Sitzplätzen, Coupons, regionalen Preisen, Zusatzoptionen oder Enterprise-Verträgen abweichen.",
+    "tierVariant": "Tarifstufe/Variante: {variant}",
+    "actualBilling": "Tatsächliche Rechnung bekannt: {status}",
+    "tierVariantLabel": "Tarifstufe/Variante",
+    "actualBillingKnownLabel": "Tatsächliche Rechnung bekannt",
+    "priceVariants": {
+      "from": "Minimum / ab",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "unbekannt"
+    },
+    "actualBillingKnown": {
+      "yes": "ja",
+      "no": "nein"
     }
   }
 }

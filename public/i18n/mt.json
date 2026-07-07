@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} qari / {write} kitba",
     "cacheSameAsInput": "bħall-input",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "minn {amount}/xahar"
   },
   "settings": {
     "heading": "Settings",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Valur tal-katalgu",
-      "official": "Prezz uffiċjali tal-lista"
+      "official": "Prezz uffiċjali tal-lista",
+      "officialStarting": "Prezz tal-lista uffiċjali tal-bidu"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "fallback inkluż",
       "missing": "nieqes",
       "unknown": "mhux magħruf"
+    },
+    "officialStartingListPriceNote": "Prezz tal-lista uffiċjali tal-bidu; il-kont attwali tal-account ma nqrax u jista’ jvarja minħabba livell, VAT/taxxi, skontijiet annwali, seats, kupuni, prezzijiet reġjonali, add-ons jew kuntratti enterprise.",
+    "tierVariant": "Livell/varjant: {variant}",
+    "actualBilling": "Kont attwali magħruf: {status}",
+    "tierVariantLabel": "Livell/varjant",
+    "actualBillingKnownLabel": "Kont attwali magħruf",
+    "priceVariants": {
+      "from": "minimu / minn",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "mhux magħruf"
+    },
+    "actualBillingKnown": {
+      "yes": "iva",
+      "no": "le"
     }
   }
 }

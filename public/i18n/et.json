@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lugemine / {write} kirjutamine",
     "cacheSameAsInput": "nagu sisend",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "alates {amount}/kuu"
   },
   "settings": {
     "heading": "Seaded",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Kataloogi väärtus",
-      "official": "Ametlik hinnakirja hind"
+      "official": "Ametlik hinnakirja hind",
+      "officialStarting": "Ametlik alates-hinnakirja hind"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "kaasasolev varuvariant",
       "missing": "puudub",
       "unknown": "teadmata"
+    },
+    "officialStartingListPriceNote": "Ametlik alates-hinnakirja hind; konto tegelikku arvet ei loetud ja see võib erineda paketi, käibemaksu/maksude, aastasoodustuste, kohtade, kupongide, piirkondlike hindade, lisade või enterprise-lepingute tõttu.",
+    "tierVariant": "Tase/variant: {variant}",
+    "actualBilling": "Tegelik arveldus teada: {status}",
+    "tierVariantLabel": "Tase/variant",
+    "actualBillingKnownLabel": "Tegelik arveldus teada",
+    "priceVariants": {
+      "from": "miinimum / alates",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "teadmata"
+    },
+    "actualBillingKnown": {
+      "yes": "jah",
+      "no": "ei"
     }
   }
 }

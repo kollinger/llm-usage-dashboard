@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} branje / {write} pisanje",
     "cacheSameAsInput": "kot vhod",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "od {amount}/mes."
   },
   "settings": {
     "heading": "Nastavitve",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Kataloška vrednost",
-      "official": "Uradna kataloška cena"
+      "official": "Uradna kataloška cena",
+      "officialStarting": "Uradna začetna kataloška cena"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "priložen fallback",
       "missing": "manjka",
       "unknown": "neznano"
+    },
+    "officialStartingListPriceNote": "Uradna začetna kataloška cena; dejanski račun ni bil prebran in se lahko razlikuje zaradi ravni, DDV/davkov, letnih popustov, sedežev, kuponov, regionalnih cen, dodatkov ali enterprise pogodb.",
+    "tierVariant": "Raven/različica: {variant}",
+    "actualBilling": "Dejansko obračunavanje znano: {status}",
+    "tierVariantLabel": "Raven/različica",
+    "actualBillingKnownLabel": "Dejansko obračunavanje znano",
+    "priceVariants": {
+      "from": "minimum / od",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "neznano"
+    },
+    "actualBillingKnown": {
+      "yes": "da",
+      "no": "ne"
     }
   }
 }

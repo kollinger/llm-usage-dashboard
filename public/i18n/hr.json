@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} čitanje / {write} pisanje",
     "cacheSameAsInput": "kao ulaz",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "od {amount}/mj."
   },
   "settings": {
     "heading": "Postavke",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Vrijednost iz kataloga",
-      "official": "Službena kataloška cijena"
+      "official": "Službena kataloška cijena",
+      "officialStarting": "Službena početna cjenikovna cijena"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "ugrađeni fallback",
       "missing": "nedostaje",
       "unknown": "nepoznato"
+    },
+    "officialStartingListPriceNote": "Službena početna cjenikovna cijena; stvarni račun računa nije pročitan i može se razlikovati zbog razine, PDV-a/poreza, godišnjih popusta, mjesta, kupona, regionalnih cijena, dodataka ili enterprise ugovora.",
+    "tierVariant": "Razina/varijanta: {variant}",
+    "actualBilling": "Stvarna naplata poznata: {status}",
+    "tierVariantLabel": "Razina/varijanta",
+    "actualBillingKnownLabel": "Stvarna naplata poznata",
+    "priceVariants": {
+      "from": "minimum / od",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "nepoznato"
+    },
+    "actualBillingKnown": {
+      "yes": "da",
+      "no": "ne"
     }
   }
 }

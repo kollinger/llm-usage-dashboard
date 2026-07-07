@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} قراءة / {write} كتابة",
     "cacheSameAsInput": "مثل الإدخال",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "من {amount}/شهر"
   },
   "settings": {
     "heading": "الإعدادات",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "قيمة من الكتالوج",
-      "official": "سعر قائمة رسمي"
+      "official": "سعر قائمة رسمي",
+      "officialStarting": "سعر قائمة رسمي ابتدائي"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "بديل مضمّن",
       "missing": "مفقود",
       "unknown": "غير معروف"
+    },
+    "officialStartingListPriceNote": "سعر قائمة رسمي ابتدائي؛ لم تتم قراءة فاتورة الحساب الفعلية وقد تختلف بسبب الفئة أو ضريبة القيمة المضافة/الضرائب أو الخصومات السنوية أو المقاعد أو القسائم أو الأسعار الإقليمية أو الإضافات أو عقود المؤسسات.",
+    "tierVariant": "الفئة/المتغير: {variant}",
+    "actualBilling": "الفاتورة الفعلية معروفة: {status}",
+    "tierVariantLabel": "الفئة/المتغير",
+    "actualBillingKnownLabel": "الفاتورة الفعلية معروفة",
+    "priceVariants": {
+      "from": "الحد الأدنى / من",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "غير معروف"
+    },
+    "actualBillingKnown": {
+      "yes": "نعم",
+      "no": "لا"
     }
   }
 }

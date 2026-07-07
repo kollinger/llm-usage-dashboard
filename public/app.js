@@ -289,18 +289,37 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
-      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
+      aliases: ["pro", "chatgpt pro", "codex pro"],
       monthlyCost: 100,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://developers.openai.com/codex/pricing"
+      sourceUrl: "https://developers.openai.com/codex/pricing",
+      priceType: "official_starting_list_price",
+      priceVariant: "from",
+      tierVariant: null,
+      actualBillingKnown: false
+    },
+    {
+      aliases: ["pro 5x", "pro-5x"],
+      monthlyCost: 100,
+      currency: "USD",
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing",
+      priceType: "bundled_catalog",
+      priceVariant: "pro_5x",
+      tierVariant: "pro_5x",
+      actualBillingKnown: false
     },
     {
       aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://developers.openai.com/codex/pricing"
+      sourceUrl: "https://developers.openai.com/codex/pricing",
+      priceType: "bundled_catalog",
+      priceVariant: "pro_20x",
+      tierVariant: "pro_20x",
+      actualBillingKnown: false
     }
   ],
   anthropic: [
@@ -2495,6 +2514,9 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let planKey = source.planKey || null;
   let priceType = source.priceType || null;
   let priceSourceType = source.priceSourceType || null;
+  let priceVariant = source.priceVariant || null;
+  let tierVariant = source.tierVariant || null;
+  let actualBillingKnown = source.actualBillingKnown === true;
   let officialListPrice = Boolean(source.officialListPrice);
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
@@ -2508,12 +2530,19 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     costStatus = "catalog";
     planKey = normalizeSubscriptionPlanKey(planType);
     parserStatus = "bundled";
-    priceType = "bundled_catalog";
+    priceType = catalog.priceType || "bundled_catalog";
     priceSourceType = "bundled_catalog";
+    priceVariant = catalog.priceVariant || null;
+    tierVariant = catalog.tierVariant || null;
+    actualBillingKnown = catalog.actualBillingKnown === true;
+    officialListPrice = String(priceType || "").startsWith("official_");
   } else if (!(monthlyCost > 0) && planType && sourceId) {
     costStatus = costStatus || "catalog_missing";
     priceSourceType = priceSourceType || "unknown";
     costReason = costReason || subscriptionCostMissingReasonKey(providerId, sourceId || planSource);
+  }
+  if (monthlyCost > 0 && !actualBillingKnown) {
+    actualBillingKnown = subscriptionSourceHasActualBilling(sourceId, source);
   }
   if (!planType && !(monthlyCost > 0) && !sourceId) return null;
   return {
@@ -2530,11 +2559,19 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     planKey,
     priceType,
     priceSourceType: priceSourceType || sourceId || null,
+    priceVariant,
+    tierVariant,
+    actualBillingKnown,
     officialListPrice,
     costStatus,
     costReason,
-    quality: subscriptionQuality(sourceId, monthlyCost, { costStatus, catalogReviewedAt, priceSourceType })
+    quality: subscriptionQuality(sourceId, monthlyCost, { costStatus, catalogReviewedAt, priceSourceType, priceType })
   };
+}
+
+function subscriptionSourceHasActualBilling(sourceId, source = {}) {
+  if (source?.actualBillingKnown === false) return false;
+  return ["account", "browser", "claude_browser_sync"].includes(String(sourceId || ""));
 }
 
 function subscriptionCostMissingReasonKey(providerId, sourceId) {
@@ -2549,8 +2586,10 @@ function subscriptionCostMissingReasonKey(providerId, sourceId) {
 }
 
 function subscriptionQuality(sourceId, monthlyCost, meta = {}) {
+  const sourceType = meta.priceSourceType || sourceId;
   if (sourceId === "local_settings") return "manual";
-  if (["official_pricing_page", "cached_official_snapshot"].includes(meta.priceSourceType || sourceId)) return "official";
+  if (meta.priceType === "official_starting_list_price" && ["official_pricing_page", "cached_official_snapshot"].includes(sourceType)) return "officialStarting";
+  if (["official_pricing_page", "cached_official_snapshot"].includes(sourceType)) return "official";
   if (meta.costStatus === "catalog" || meta.catalogReviewedAt || sourceId === "bundled_catalog" || /public_catalog$/u.test(String(sourceId || ""))) return "catalog";
   if (sourceId && Number(monthlyCost || 0) > 0) return "automatic";
   if (sourceId) return "estimated";
@@ -3074,12 +3113,10 @@ function renderNoActiveProviders() {
 
 function renderProvider(provider, index = 0, total = 1) {
   const statusClass = `status-${provider.status}`;
-  const hasConfiguredLimitRows = provider.limitRows?.some((row) => row.valueLabel);
-  const showLimitBars = hasConfiguredLimitRows || provider.limitRows?.length > 2 || Boolean(provider.planType);
-  const main = provider.limitRows?.length || provider.fiveHour || provider.weekly
-    ? showLimitBars
-      ? renderLimitBars(provider)
-      : renderRings(provider)
+  const hasCurrentUsage = providerHasCurrentUsage(provider);
+  const footRows = providerFootRows(provider);
+  const main = hasCurrentUsage
+    ? renderLimitBars(provider)
     : `<div class="api-total">
         <div class="ring" style="--percent: ${Math.min(100, Number(provider.apiTokens || 0) ? 72 : 0)}; --accent: ${provider.accent}">
           <strong>${formatTokens(provider.apiTokens)}</strong>
@@ -3109,14 +3146,23 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
-      ${renderFableQuotaAudit(provider)}
-      <div class="provider-foot">
-        ${provider.foot
-          .map(renderProviderFootRow)
-          .join("")}
-      </div>
+      ${footRows.length ? `
+        <div class="provider-foot">
+          ${footRows.map(renderProviderFootRow).join("")}
+        </div>
+      ` : ""}
     </article>
   `;
+}
+
+function providerHasCurrentUsage(provider) {
+  return Boolean(provider?.limitRows?.length || provider?.fiveHour || provider?.weekly);
+}
+
+function providerFootRows(provider) {
+  const rows = Array.isArray(provider?.foot) ? provider.foot : [];
+  if (providerHasCurrentUsage(provider)) return [];
+  return rows;
 }
 
 function renderProviderFreshness(provider) {
@@ -3201,11 +3247,14 @@ function renderProviderSubscription(provider) {
     subscription.quality === "catalog" && subscription.planSource
       ? t("subscriptions.catalogFallbackNote")
       : "",
+    subscription.quality === "officialStarting" ? t("subscriptions.officialStartingListPriceNote") : "",
     subscription.quality === "official" ? t("subscriptions.officialListPriceNote") : "",
     subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : "",
     subscription.fetchedAt ? t("subscriptions.fetched", { time: formatUpdatedAt(subscription.fetchedAt) }) : "",
     subscription.sourceUrl ? t("subscriptions.sourceUrl", { url: subscription.sourceUrl }) : "",
     subscription.planKey ? t("subscriptions.planKey", { key: subscription.planKey }) : "",
+    subscriptionPriceVariantLabel(subscription) ? t("subscriptions.tierVariant", { variant: subscriptionPriceVariantLabel(subscription) }) : "",
+    t("subscriptions.actualBilling", { status: subscriptionActualBillingKnownLabel(subscription) }),
     subscription.parserStatus ? t("subscriptions.parserStatus", { status: subscriptionParserStatusLabel(subscription.parserStatus) }) : "",
     subscription.catalogReviewedAt ? t("subscriptions.catalogReviewed", { date: subscription.catalogReviewedAt }) : "",
     subscription.costStatus === "catalog_missing" ? subscriptionCostMissingText(subscription) : "",
@@ -3313,13 +3362,16 @@ function subscriptionSourceAuditRows(provider, subscription) {
   return rows;
 }
 
-function renderFableQuotaAudit(provider) {
+function renderFableQuotaContext(provider, rows) {
   if (provider.id !== "claudeCode") return "";
-  const hasFableLimit = (provider.limitRows || []).some((row) => row.key === "fable");
+  const hasFableLimit = (rows || provider.limitRows || []).some((row) => row.key === "fable");
   return `
-    <div class="provider-source-audit fable-quota-audit">
-      <strong>${escapeHtml(t("providers.fableQuotaAudit.heading"))}</strong>
-      <span>${escapeHtml(hasFableLimit ? t("providers.fableQuotaAudit.available") : t("providers.fableQuotaAudit.unavailable"))}</span>
+    <div class="limit-context-row fable-quota-audit">
+      <div class="limit-bar-top">
+        <strong>${escapeHtml(t("providers.fableQuotaAudit.heading"))}</strong>
+        <span>${escapeHtml(hasFableLimit ? t("limits.status.ok") : t("limits.status.unknown"))}</span>
+      </div>
+      <p class="limit-detail">${escapeHtml(hasFableLimit ? t("providers.fableQuotaAudit.available") : t("providers.fableQuotaAudit.unavailable"))}</p>
     </div>
   `;
 }
@@ -3399,6 +3451,7 @@ function renderLimitBars(provider) {
     <div class="limit-bars limit-bars-mode-${escapeHtml(state.usageProjectionMode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
       ${renderUsageProjectionModeToggle()}
       ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
+      ${renderFableQuotaContext(provider, rows)}
     </div>
   `;
 }
@@ -3580,44 +3633,6 @@ function renderLimitRemaining(resetsAt) {
     return `${t("limits.remainingShort", { days, hours, minutes })} · ${formatDateTime(resetsAt)}`;
   }
   return t("limits.resetPrefix", { time: formatDateTime(resetsAt) });
-}
-
-function renderRings(provider) {
-  return `
-    <div class="ring-row">
-      ${renderRing(provider.fiveHour, provider.primaryLabel, provider.accent)}
-      ${renderRing(provider.weekly, provider.secondaryLabel, provider.accent)}
-    </div>
-  `;
-}
-
-function renderRing(limit, label, accent) {
-  if (!limit) {
-    return `
-      <div class="ring-box">
-        <div class="ring" style="--percent: 0; --accent: ${limitStatusAccent("unknown", accent)}"><strong>--</strong></div>
-        <span class="ring-label">${escapeHtml(label)}</span>
-        <div class="ring-sub">${escapeHtml(t("limits.status.unknown"))}</div>
-      </div>
-    `;
-  }
-  const status = limitDisplayStatus(limit);
-  const pace = limitPaceAssessment(limit);
-  const remaining = Math.round(limit.remainingPercent ?? 0);
-  let sub = "";
-  if (limit.resetsAt) {
-    sub = `<div class="ring-sub">${escapeHtml(renderLimitRemaining(limit.resetsAt))}</div>`;
-  }
-  return `
-    <div class="ring-box">
-      <div class="ring" style="--percent: ${remaining}; --accent: ${accent || limitStatusAccent(status, accent)}">
-        <strong>${remaining}%</strong>
-      </div>
-      <span class="ring-label">${escapeHtml(t("limits.freeLabel", { label }))}</span>
-      <div class="ring-sub limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</div>
-      ${sub}
-    </div>
-  `;
 }
 
 function limitDisplayStatus(limit) {
@@ -4622,6 +4637,14 @@ function renderSubscriptionPricingCard({ provider, subscription, previous }) {
         <div>
           <dt>${escapeHtml(t("subscriptions.planKeyLabel"))}</dt>
           <dd>${escapeHtml(subscription?.planKey || t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.tierVariantLabel"))}</dt>
+          <dd>${escapeHtml(subscriptionPriceVariantLabel(subscription) || t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.actualBillingKnownLabel"))}</dt>
+          <dd>${escapeHtml(subscriptionActualBillingKnownLabel(subscription))}</dd>
         </div>
         <div>
           <dt>${escapeHtml(t("subscriptions.parserStatusLabel"))}</dt>
@@ -7221,7 +7244,8 @@ function formatMoney(value, currency = "usd") {
 }
 
 function formatMonthlyCost(subscription) {
-  return t("format.perMonth", {
+  const key = subscriptionPriceIsStarting(subscription) ? "format.fromPerMonth" : "format.perMonth";
+  return t(key, {
     amount: formatMoney(subscription.monthlyCost, subscription.currency || "EUR")
   });
 }
@@ -7231,6 +7255,20 @@ function subscriptionFootValue(subscription) {
   const quality = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
   const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
   return `${cost} · ${quality}`;
+}
+
+function subscriptionPriceIsStarting(subscription) {
+  return subscription?.priceType === "official_starting_list_price" || subscription?.priceVariant === "from";
+}
+
+function subscriptionPriceVariantLabel(subscription) {
+  const variant = subscription?.tierVariant || subscription?.priceVariant || "";
+  if (!variant) return "";
+  return t(`subscriptions.priceVariants.${variant}`, {}, variant);
+}
+
+function subscriptionActualBillingKnownLabel(subscription) {
+  return t(`subscriptions.actualBillingKnown.${subscription?.actualBillingKnown ? "yes" : "no"}`);
 }
 
 function subscriptionSourceLabel(source) {

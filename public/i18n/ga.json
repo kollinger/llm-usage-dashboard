@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} léamh / {write} scríobh",
     "cacheSameAsInput": "cosúil leis an ionchur",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "ó {amount}/mí"
   },
   "settings": {
     "heading": "Socruithe",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Luach catalóige",
-      "official": "Praghas liosta oifigiúil"
+      "official": "Praghas liosta oifigiúil",
+      "officialStarting": "Praghas liosta tosaigh oifigiúil"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "cúltaca cuachta",
       "missing": "ar iarraidh",
       "unknown": "anaithnid"
+    },
+    "officialStartingListPriceNote": "Praghas liosta tosaigh oifigiúil; níor léadh bille iarbhír an chuntais agus d’fhéadfadh sé a bheith difriúil mar gheall ar shraith, CBL/cánacha, lascainí bliantúla, suíocháin, cúpóin, praghsanna réigiúnacha, breiseáin nó conarthaí enterprise.",
+    "tierVariant": "Sraith/leagan: {variant}",
+    "actualBilling": "Billeáil iarbhír ar eolas: {status}",
+    "tierVariantLabel": "Sraith/leagan",
+    "actualBillingKnownLabel": "Billeáil iarbhír ar eolas",
+    "priceVariants": {
+      "from": "íosmhéid / ó",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "anaithnid"
+    },
+    "actualBillingKnown": {
+      "yes": "tá",
+      "no": "níl"
     }
   }
 }

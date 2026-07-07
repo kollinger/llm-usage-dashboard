@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} четене / {write} запис",
     "cacheSameAsInput": "като входа",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "от {amount}/месец"
   },
   "settings": {
     "heading": "Настройки",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Стойност от каталога",
-      "official": "Официална каталожна цена"
+      "official": "Официална каталожна цена",
+      "officialStarting": "Официална начална каталожна цена"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "вграден fallback",
       "missing": "липсва",
       "unknown": "неизвестно"
+    },
+    "officialStartingListPriceNote": "Официална начална каталожна цена; действителната сметка на акаунта не е прочетена и може да се различава заради ниво, ДДС/данъци, годишни отстъпки, места, купони, регионални цени, добавки или корпоративни договори.",
+    "tierVariant": "Ниво/вариант: {variant}",
+    "actualBilling": "Действителната сметка е известна: {status}",
+    "tierVariantLabel": "Ниво/вариант",
+    "actualBillingKnownLabel": "Действителната сметка е известна",
+    "priceVariants": {
+      "from": "минимум / от",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "неизвестно"
+    },
+    "actualBillingKnown": {
+      "yes": "да",
+      "no": "не"
     }
   }
 }

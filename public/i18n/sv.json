@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} läs / {write} skriv",
     "cacheSameAsInput": "som indata",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "från {amount}/månad"
   },
   "settings": {
     "heading": "Inställningar",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Katalogvärde",
-      "official": "Officiellt listpris"
+      "official": "Officiellt listpris",
+      "officialStarting": "Officiellt start-listpris"
     },
     "sources": {
       "local_settings": "sparad fallback",
@@ -877,6 +879,21 @@
       "bundled": "inbäddad fallback",
       "missing": "saknas",
       "unknown": "okänd"
+    },
+    "officialStartingListPriceNote": "Officiellt start-listpris; den faktiska kontofakturan lästes inte och kan skilja sig på grund av nivå, moms/skatter, års-rabatter, platser, kuponger, regionala priser, tillägg eller enterprise-avtal.",
+    "tierVariant": "Nivå/variant: {variant}",
+    "actualBilling": "Faktisk fakturering känd: {status}",
+    "tierVariantLabel": "Nivå/variant",
+    "actualBillingKnownLabel": "Faktisk fakturering känd",
+    "priceVariants": {
+      "from": "minimum / från",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "okänt"
+    },
+    "actualBillingKnown": {
+      "yes": "ja",
+      "no": "nej"
     }
   }
 }

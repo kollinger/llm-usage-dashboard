@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lettura / {write} scrittura",
     "cacheSameAsInput": "come input",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "da {amount}/mese"
   },
   "settings": {
     "heading": "Impostazioni",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Valore da catalogo",
-      "official": "Prezzo di listino ufficiale"
+      "official": "Prezzo di listino ufficiale",
+      "officialStarting": "Prezzo di listino ufficiale di partenza"
     },
     "sources": {
       "local_settings": "fallback salvato",
@@ -877,6 +879,21 @@
       "bundled": "fallback incluso",
       "missing": "mancante",
       "unknown": "sconosciuto"
+    },
+    "officialStartingListPriceNote": "Prezzo di listino ufficiale di partenza; la fattura reale dell’account non è stata letta e può differire per tier, IVA/imposte, sconti annuali, posti, coupon, prezzi regionali, componenti aggiuntivi o contratti enterprise.",
+    "tierVariant": "Tier/variante: {variant}",
+    "actualBilling": "Fatturazione reale nota: {status}",
+    "tierVariantLabel": "Tier/variante",
+    "actualBillingKnownLabel": "Fatturazione reale nota",
+    "priceVariants": {
+      "from": "minimo / da",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "sconosciuto"
+    },
+    "actualBillingKnown": {
+      "yes": "sì",
+      "no": "no"
     }
   }
 }

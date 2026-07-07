@@ -463,7 +463,8 @@
     "usdPerMillion": "${value}/M",
     "cacheReadWrite": "{read} read / {write} write",
     "cacheSameAsInput": "same as input",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "from {amount}/mo"
   },
   "settings": {
     "heading": "Settings",
@@ -812,7 +813,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Catalog value",
-      "official": "Official list price"
+      "official": "Official list price",
+      "officialStarting": "Official starting list price"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "bundled fallback",
       "missing": "missing",
       "unknown": "unknown"
+    },
+    "officialStartingListPriceNote": "Official starting list price; the actual account bill was not read and can differ because of tier, VAT/taxes, annual discounts, seats, coupons, regional pricing, add-ons, or enterprise contracts.",
+    "tierVariant": "Tier/variant: {variant}",
+    "actualBilling": "Actual billing known: {status}",
+    "tierVariantLabel": "Tier/variant",
+    "actualBillingKnownLabel": "Actual billing known",
+    "priceVariants": {
+      "from": "minimum / from",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "unknown"
+    },
+    "actualBillingKnown": {
+      "yes": "yes",
+      "no": "no"
     }
   }
 }

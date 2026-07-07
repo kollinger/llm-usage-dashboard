@@ -222,6 +222,8 @@ async function assertFrontendUsageIntelligence() {
   const appSource = await readFile(appPath, "utf8");
   const code = appSource.replace("\ninit();", "\n// init disabled for usage intelligence test");
   assert.notEqual(code, appSource, "usage intelligence test must disable app bootstrap");
+  assert.equal(appSource.includes("function renderRings"), false, "legacy quota ring renderer must stay removed");
+  assert.equal(appSource.includes("function renderRing("), false, "legacy quota ring renderer must stay removed");
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -282,11 +284,31 @@ const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost:
 const detectedSubscription = normalizeSubscription(null, { planType: "Pro", source: "codex_app_server" }, "codex");
 const missingCatalogSubscription = normalizeSubscription(null, { planType: "Enterprise", source: "codex_app_server" }, "codex");
 const claudeCatalogSubscription = normalizeSubscription(null, { planType: "Max", source: "claude_statusline" }, "claudeCode");
+const genericCodexOfficialSubscription = normalizeSubscription({
+  planType: "Pro",
+  monthlyCost: 100,
+  currency: "USD",
+  source: "official_pricing_page",
+  priceSourceType: "official_pricing_page",
+  sourceUrl: "https://developers.openai.com/codex/pricing",
+  fetchedAt: "${today}T10:00:00Z",
+  planKey: "pro",
+  parserStatus: "parsed",
+  priceType: "official_starting_list_price",
+  priceVariant: "from",
+  actualBillingKnown: false
+}, {}, "codex");
 const detectedSubscriptionCard = renderSubscriptionPricingCard({
   provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
   subscription: detectedSubscription,
   previous: null
 });
+const genericCodexOfficialCard = renderSubscriptionPricingCard({
+  provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
+  subscription: genericCodexOfficialSubscription,
+  previous: null
+});
+const genericCodexOfficialProviderSummary = renderProviderSubscription({ subscription: genericCodexOfficialSubscription });
 const usedModelPricingHtml = renderUsedModelPricingView(daily);
 const unknownModelPricingHtml = renderUsedModelPricingView([
   {
@@ -338,7 +360,10 @@ const providerCardHtml = renderProvider({
   kicker: "local CLI capture",
   accent: providerMeta.claudeCode.accent,
   status: "live",
-  limitRows: [],
+  limitRows: [
+    { label: "5h", usedPercent: 0, remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset },
+    { label: "Week", usedPercent: 0, remainingPercent: 100, windowMinutes: 10080, resetsAt: earlyWeekReset }
+  ],
   creditRows: [],
   usageUpdatedAt: "${today}T10:15:00Z",
   limitsUpdatedAt: "${today}T10:14:00Z",
@@ -481,12 +506,20 @@ JSON.stringify({
 	  manualQualityLabel: t("subscriptions.quality.manual"),
 	  manualSourceLabel: subscriptionSourceLabel("local_settings"),
   detectedSubscriptionCardShowsCost:
-    detectedSubscriptionCard.includes("$100.00/mo") &&
+    detectedSubscriptionCard.includes("from $100.00/mo") &&
     detectedSubscriptionCard.includes("Catalog value"),
   detectedSubscriptionCardSourceAudit:
     detectedSubscriptionCard.includes("Read-only price sources") &&
     detectedSubscriptionCard.includes("plan/limits only; no monthly price exposed") &&
     detectedSubscriptionCard.includes("catalog fallback price"),
+  genericCodexProStartingPrice:
+    genericCodexOfficialSubscription.quality === "officialStarting" &&
+    genericCodexOfficialCard.includes("from $100.00/mo") &&
+    genericCodexOfficialCard.includes("Actual billing known") &&
+    genericCodexOfficialCard.includes("<dd>no</dd>") &&
+    genericCodexOfficialProviderSummary.includes("Official starting list price") &&
+    genericCodexOfficialProviderSummary.includes("Actual billing known: no") &&
+    !genericCodexOfficialCard.includes("<strong>$100.00/mo</strong>"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
 	  sourceBarsUseProviderColors:
@@ -518,7 +551,19 @@ JSON.stringify({
     providerCardHtml.includes("Catalog"),
   providerCardFableQuotaAudit:
     providerCardHtml.includes("Fable quota source") &&
-    providerCardHtml.includes("no synthetic quota is shown"),
+    providerCardHtml.includes("no synthetic quota is shown") &&
+    providerCardHtml.includes("limit-context-row") &&
+    providerCardHtml.includes("limit-tachometer-gauge") &&
+    !providerCardHtml.includes("ring-row"),
+  claudeCodeUsesCurrentUsageComponent:
+    providerCardHtml.includes("limit-bars") &&
+    providerCardHtml.includes("usage-projection-toggle") &&
+    providerCardHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
+    providerCardHtml.includes("data-usage-projection-mode=\\"bar\\"") &&
+    providerCardHtml.includes("limit-tachometer-gauge") &&
+    !providerCardHtml.includes("ring-row") &&
+    !providerCardHtml.includes("ring-box") &&
+    !providerCardHtml.includes("ring-sub"),
   logoSamplesCoverCatalogProviders:
     logoSamples.includes("provider-mark-zai") &&
     logoSamples.includes("assets/provider-logos/zai.svg") &&
@@ -631,6 +676,7 @@ JSON.stringify({
   assert.equal(result.manualSourceLabel, "saved fallback");
   assert.equal(result.detectedSubscriptionCardShowsCost, true);
   assert.equal(result.detectedSubscriptionCardSourceAudit, true);
+  assert.equal(result.genericCodexProStartingPrice, true);
   assert.equal(result.aliasesHiddenByDefault, true);
   assert.equal(result.aliasesCollapsedInDebug, true);
   assert.equal(result.sourceBarsUseProviderColors, true);
@@ -641,6 +687,7 @@ JSON.stringify({
   assert.equal(result.providerCardHasLogo, true);
   assert.equal(result.providerCardFreshness, true);
   assert.equal(result.providerCardFableQuotaAudit, true);
+  assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
   assert.equal(result.defaultUsageProjectionMode, "tachometer");
@@ -697,6 +744,9 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(openAiPricing.parserStatus, "parsed");
   assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "plus").monthlyCost, 20);
   assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "pro").monthlyCost, 100);
+  assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "pro").priceType, "official_starting_list_price");
+  assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "pro").priceVariant, "from");
+  assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "pro").actualBillingKnown, false);
 
   const claudePricing = _test.parseClaudePricingPage(
     '<span data-plan="pro_monthly">$20</span><div data-plan="max_5x_monthly">From $100</div>',
@@ -713,16 +763,29 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     }
   };
   assert.equal(_test.officialSubscriptionPlan("codex", "pro", officialPricing).source, "official_pricing_page");
+  assert.equal(_test.officialSubscriptionPlan("codex", "pro", officialPricing).priceType, "official_starting_list_price");
+  assert.equal(_test.officialSubscriptionPlan("codex", "pro", officialPricing).priceVariant, "from");
+  assert.equal(_test.officialSubscriptionPlan("codex", "pro", officialPricing).actualBillingKnown, false);
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).priceType, "official_list_price");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).tierVariant, "pro_5x");
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "max", officialPricing).monthlyCost, 100);
   assert.equal(_test.parseOpenAiCodexPricingPage("<html>No pricing cards</html>", { sourceUrl: "https://developers.openai.com/codex/pricing" }).parserStatus, "parse_failed");
 
   const officialMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", officialPricing);
   assert.equal(officialMerged.subscription.source, "official_pricing_page");
   assert.equal(officialMerged.subscription.monthlyCost, 100);
-  assert.equal(officialMerged.subscription.priceType, "official_list_price");
+  assert.equal(officialMerged.subscription.priceType, "official_starting_list_price");
+  assert.equal(officialMerged.subscription.priceVariant, "from");
+  assert.equal(officialMerged.subscription.actualBillingKnown, false);
   const bundledMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro 20x" }, null, "codex", officialPricing);
   assert.equal(bundledMerged.subscription.source, "bundled_catalog");
   assert.equal(bundledMerged.subscription.monthlyCost, 200);
+  assert.equal(bundledMerged.subscription.tierVariant, "pro_20x");
+  const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
+  assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
+  assert.equal(bundledGenericPro.subscription.monthlyCost, 100);
+  assert.equal(bundledGenericPro.subscription.priceType, "official_starting_list_price");
+  assert.equal(bundledGenericPro.subscription.actualBillingKnown, false);
   const unknownMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Enterprise" }, null, "codex", officialPricing);
   assert.equal(unknownMerged.subscription.monthlyCost, 0);
   assert.equal(unknownMerged.subscription.costStatus, "catalog_missing");

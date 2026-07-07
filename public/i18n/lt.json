@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} skaitymas / {write} rašymas",
     "cacheSameAsInput": "kaip įvestis",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "nuo {amount}/mėn."
   },
   "settings": {
     "heading": "Nustatymai",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Katalogo reikšmė",
-      "official": "Oficiali sąrašo kaina"
+      "official": "Oficiali sąrašo kaina",
+      "officialStarting": "Oficiali pradinė sąrašo kaina"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "įtrauktas atsarginis variantas",
       "missing": "trūksta",
       "unknown": "nežinoma"
+    },
+    "officialStartingListPriceNote": "Oficiali pradinė sąrašo kaina; faktinė paskyros sąskaita nebuvo nuskaityta ir gali skirtis dėl plano lygio, PVM/mokesčių, metinių nuolaidų, vietų, kuponų, regioninių kainų, priedų ar enterprise sutarčių.",
+    "tierVariant": "Lygis/variantas: {variant}",
+    "actualBilling": "Faktinė sąskaita žinoma: {status}",
+    "tierVariantLabel": "Lygis/variantas",
+    "actualBillingKnownLabel": "Faktinė sąskaita žinoma",
+    "priceVariants": {
+      "from": "minimumas / nuo",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "nežinoma"
+    },
+    "actualBillingKnown": {
+      "yes": "taip",
+      "no": "ne"
     }
   }
 }

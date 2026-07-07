@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} lezen / {write} schrijven",
     "cacheSameAsInput": "zoals invoer",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "vanaf {amount}/maand"
   },
   "settings": {
     "heading": "Instellingen",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Cataloguswaarde",
-      "official": "Officiële lijstprijs"
+      "official": "Officiële lijstprijs",
+      "officialStarting": "Officiële vanaf-lijstprijs"
     },
     "sources": {
       "local_settings": "opgeslagen fallback",
@@ -877,6 +879,21 @@
       "bundled": "meegeleverde fallback",
       "missing": "ontbreekt",
       "unknown": "onbekend"
+    },
+    "officialStartingListPriceNote": "Officiële vanaf-lijstprijs; de werkelijke accountfactuur is niet gelezen en kan afwijken door tier, btw/belastingen, jaarkortingen, seats, coupons, regionale prijzen, add-ons of enterprise-contracten.",
+    "tierVariant": "Tier/variant: {variant}",
+    "actualBilling": "Werkelijke facturering bekend: {status}",
+    "tierVariantLabel": "Tier/variant",
+    "actualBillingKnownLabel": "Werkelijke facturering bekend",
+    "priceVariants": {
+      "from": "minimum / vanaf",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "onbekend"
+    },
+    "actualBillingKnown": {
+      "yes": "ja",
+      "no": "nee"
     }
   }
 }

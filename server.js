@@ -102,18 +102,37 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
-      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
+      aliases: ["pro", "chatgpt pro", "codex pro"],
       monthlyCost: 100,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://developers.openai.com/codex/pricing"
+      sourceUrl: "https://developers.openai.com/codex/pricing",
+      priceType: "official_starting_list_price",
+      priceVariant: "from",
+      tierVariant: null,
+      actualBillingKnown: false
+    },
+    {
+      aliases: ["pro 5x", "pro-5x"],
+      monthlyCost: 100,
+      currency: "USD",
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing",
+      priceType: "bundled_catalog",
+      priceVariant: "pro_5x",
+      tierVariant: "pro_5x",
+      actualBillingKnown: false
     },
     {
       aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://developers.openai.com/codex/pricing"
+      sourceUrl: "https://developers.openai.com/codex/pricing",
+      priceType: "bundled_catalog",
+      priceVariant: "pro_20x",
+      tierVariant: "pro_20x",
+      actualBillingKnown: false
     }
   ],
   anthropic: [
@@ -1588,9 +1607,13 @@ function parseOpenAiCodexPricingPage(html, meta = {}) {
       family: "openai",
       planKey: "pro",
       planName: "Pro",
-      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
+      aliases: ["pro", "chatgpt pro", "codex pro"],
       sourceUrl: meta.sourceUrl,
-      fetchedAt: meta.fetchedAt
+      fetchedAt: meta.fetchedAt,
+      priceType: "official_starting_list_price",
+      priceVariant: "from",
+      tierVariant: null,
+      actualBillingKnown: false
     })
   ].filter(Boolean);
   return {
@@ -1649,6 +1672,7 @@ function officialPricingEntryFromDataPlan(html, options) {
 function officialPricingEntryFromPriceText(priceText, options) {
   const monthlyCost = positiveAmount(priceText);
   if (!(monthlyCost > 0)) return null;
+  const startingPrice = /\bfrom\b/i.test(String(priceText || "")) || options.priceType === "official_starting_list_price";
   return {
     planKey: options.planKey,
     planName: options.planName,
@@ -1659,7 +1683,10 @@ function officialPricingEntryFromPriceText(priceText, options) {
     sourceUrl: options.sourceUrl,
     fetchedAt: options.fetchedAt || new Date().toISOString(),
     parserStatus: "parsed",
-    priceType: "official_list_price"
+    priceType: startingPrice ? "official_starting_list_price" : options.priceType || "official_list_price",
+    priceVariant: options.priceVariant || (startingPrice ? "from" : null),
+    tierVariant: options.tierVariant || null,
+    actualBillingKnown: options.actualBillingKnown === true
   };
 }
 
@@ -1908,7 +1935,8 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
     currency: normalizeCurrency(subscription.currency || "EUR"),
     source: "local_settings",
     costStatus: "local_settings",
-    priceSourceType: "local_settings"
+    priceSourceType: "local_settings",
+    actualBillingKnown: false
   };
   const merged = {
     ...provider,
@@ -1947,7 +1975,10 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
     parserStatus: catalog?.parserStatus || (catalog ? "bundled" : "missing"),
     priceType: catalog?.priceType || (catalog ? "bundled_catalog" : null),
     priceSourceType: catalog?.source || (catalog ? "bundled_catalog" : "unknown"),
-    officialListPrice: catalog?.priceType === "official_list_price",
+    priceVariant: catalog?.priceVariant || null,
+    tierVariant: catalog?.tierVariant || null,
+    actualBillingKnown: catalog?.actualBillingKnown === true,
+    officialListPrice: String(catalog?.priceType || "").startsWith("official_"),
     costStatus: catalog ? catalog.source : "catalog_missing",
     costReason: catalog ? null : subscriptionCostMissingReasonKey(providerId, existing?.source || planSource)
   };
@@ -1964,16 +1995,30 @@ function officialSubscriptionPlan(providerId, planType, officialPricing) {
   const entries = family ? officialPricing?.families?.[family]?.entries || [] : [];
   const planKey = normalizeSubscriptionPlanKey(planType);
   if (!planKey) return null;
-  const entry = entries.find((candidate) => (candidate.aliases || []).some((alias) => normalizeSubscriptionPlanKey(alias) === planKey));
+  let entry = entries.find((candidate) => (candidate.aliases || []).some((alias) => normalizeSubscriptionPlanKey(alias) === planKey));
+  if (!entry && family === "openai" && planKey === "pro 5x") {
+    entry = entries.find((candidate) => candidate.planKey === "pro");
+  }
   if (!entry) return null;
   const familyMeta = officialPricing.families[family] || {};
-  return {
+  const official = {
     ...entry,
     source: familyMeta.source || entry.source || "official_pricing_page",
     sourceUrl: familyMeta.sourceUrl || entry.sourceUrl,
     fetchedAt: familyMeta.fetchedAt || entry.fetchedAt,
     parserStatus: familyMeta.parserStatus || entry.parserStatus || "parsed"
   };
+  if (family === "openai" && entry.planKey === "pro") {
+    const explicitFiveX = planKey === "pro 5x";
+    return {
+      ...official,
+      priceType: explicitFiveX ? "official_list_price" : "official_starting_list_price",
+      priceVariant: explicitFiveX ? "pro_5x" : "from",
+      tierVariant: explicitFiveX ? "pro_5x" : null,
+      actualBillingKnown: false
+    };
+  }
+  return official;
 }
 
 function publicSubscriptionPlan(providerId, planType) {
@@ -5309,6 +5354,7 @@ function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, optio
     monthlyCost: normalizedCost,
     currency: normalizeCurrency(candidate.currency || candidate.price?.currency || "EUR"),
     source: "claude_browser_sync",
+    actualBillingKnown: normalizedCost > 0,
     updatedAt: normalizeOptionalDate(candidate.updatedAt || candidate.updated_at) || fallbackUpdatedAt
   };
 }

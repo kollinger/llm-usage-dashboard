@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} olvasás / {write} írás",
     "cacheSameAsInput": "mint a bemenet",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "ettől: {amount}/hó"
   },
   "settings": {
     "heading": "Beállítások",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Katalógusérték",
-      "official": "Hivatalos listaár"
+      "official": "Hivatalos listaár",
+      "officialStarting": "Hivatalos induló listaár"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "beépített tartalék",
       "missing": "hiányzik",
       "unknown": "ismeretlen"
+    },
+    "officialStartingListPriceNote": "Hivatalos induló listaár; a tényleges fiókszámla nem lett beolvasva, és eltérhet csomagszint, áfa/adók, éves kedvezmények, helyek, kuponok, regionális árak, kiegészítők vagy enterprise szerződések miatt.",
+    "tierVariant": "Csomagszint/változat: {variant}",
+    "actualBilling": "Tényleges számla ismert: {status}",
+    "tierVariantLabel": "Csomagszint/változat",
+    "actualBillingKnownLabel": "Tényleges számla ismert",
+    "priceVariants": {
+      "from": "minimum / ettől",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "ismeretlen"
+    },
+    "actualBillingKnown": {
+      "yes": "igen",
+      "no": "nem"
     }
   }
 }

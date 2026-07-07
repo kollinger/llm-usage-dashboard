@@ -463,7 +463,8 @@
     "usdPerMillion": "${value}/M",
     "cacheReadWrite": "{read} 读取 / {write} 写入",
     "cacheSameAsInput": "同输入",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "每月 {amount} 起"
   },
   "settings": {
     "heading": "设置",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "目录价格",
-      "official": "官方标价"
+      "official": "官方标价",
+      "officialStarting": "官方起始标价"
     },
     "sources": {
       "local_settings": "已保存备用",
@@ -877,6 +879,21 @@
       "bundled": "内置回退",
       "missing": "缺失",
       "unknown": "未知"
+    },
+    "officialStartingListPriceNote": "官方起始标价；未读取账户的实际账单，实际金额可能因档位、增值税/税费、年付折扣、席位、优惠券、地区定价、附加项或企业合同而不同。",
+    "tierVariant": "档位/变体：{variant}",
+    "actualBilling": "已知实际账单：{status}",
+    "tierVariantLabel": "档位/变体",
+    "actualBillingKnownLabel": "已知实际账单",
+    "priceVariants": {
+      "from": "最低 / 起",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "未知"
+    },
+    "actualBillingKnown": {
+      "yes": "是",
+      "no": "否"
     }
   }
 }

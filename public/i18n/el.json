@@ -463,7 +463,8 @@
     "usdPerMillion": "{value} $/M",
     "cacheReadWrite": "{read} ανάγνωση / {write} εγγραφή",
     "cacheSameAsInput": "όπως η είσοδος",
-    "perMonth": "{amount}/mo"
+    "perMonth": "{amount}/mo",
+    "fromPerMonth": "από {amount}/μήνα"
   },
   "settings": {
     "heading": "Ρυθμίσεις",
@@ -810,7 +811,8 @@
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
       "catalog": "Τιμή καταλόγου",
-      "official": "Επίσημη τιμή καταλόγου"
+      "official": "Επίσημη τιμή καταλόγου",
+      "officialStarting": "Επίσημη αρχική τιμή καταλόγου"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -877,6 +879,21 @@
       "bundled": "ενσωματωμένο fallback",
       "missing": "λείπει",
       "unknown": "άγνωστο"
+    },
+    "officialStartingListPriceNote": "Επίσημη αρχική τιμή καταλόγου· ο πραγματικός λογαριασμός δεν διαβάστηκε και μπορεί να διαφέρει λόγω βαθμίδας, ΦΠΑ/φόρων, ετήσιων εκπτώσεων, θέσεων, κουπονιών, περιφερειακών τιμών, πρόσθετων ή εταιρικών συμβάσεων.",
+    "tierVariant": "Βαθμίδα/παραλλαγή: {variant}",
+    "actualBilling": "Γνωστή πραγματική χρέωση: {status}",
+    "tierVariantLabel": "Βαθμίδα/παραλλαγή",
+    "actualBillingKnownLabel": "Γνωστή πραγματική χρέωση",
+    "priceVariants": {
+      "from": "ελάχιστο / από",
+      "pro_5x": "Pro 5x",
+      "pro_20x": "Pro 20x",
+      "unknown": "άγνωστο"
+    },
+    "actualBillingKnown": {
+      "yes": "ναι",
+      "no": "όχι"
     }
   }
 }

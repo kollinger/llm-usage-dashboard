@@ -1473,6 +1473,7 @@ function sanitizeClaudeSubscriptionCandidate(candidate, options = {}) {
     monthlyCost: normalizedCost,
     currency: normalizeClaudeCurrency(candidate.currency || candidate.price?.currency),
     source: "claude_browser_sync",
+    actualBillingKnown: normalizedCost > 0,
     updatedAt: new Date().toISOString()
   };
 }
