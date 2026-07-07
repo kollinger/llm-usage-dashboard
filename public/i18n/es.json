@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "En curso",
-      "risk": "Vigilar cuota",
+      "risk": "Ritmo alto",
       "full": "Limite alcanzado",
       "unknown": "Desconocido"
     },
-    "statusLegend": "Los colores de cuota solo muestran riesgo; proveedor y modelo usan etiquetas separadas."
+    "paceLegend": "Las barras conservan los colores del proveedor; los mensajes de ritmo muestran si el uso llegara hasta el reinicio.",
+    "pace": {
+      "remaining": "Al ritmo actual quedara cerca del {percent}% al reiniciar.",
+      "shortfall": "Al ritmo actual faltara cerca del {percent}% al reiniciar.",
+      "hitBeforeReset": "Al ritmo actual el limite se alcanzara unos {duration} antes del reinicio.",
+      "fullWithReset": "Limite alcanzado; reinicia {time}.",
+      "fullNoReset": "Limite alcanzado; hora de reinicio no disponible.",
+      "unavailable": {
+        "noUsage": "Ritmo no disponible: esta fuente no entrega porcentaje de uso.",
+        "noWindow": "Ritmo no disponible: esta fuente no entrega duracion de ventana ni hora de reinicio.",
+        "notStarted": "Ritmo no disponible: esta ventana de cuota aun no ha empezado.",
+        "staleReset": "Ritmo no disponible: la hora de reinicio esta desactualizada; actualiza la fuente."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Entrada",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "catálogo público de suscripciones de OpenAI",
-      "anthropic_public_catalog": "catálogo público de suscripciones de Anthropic"
+      "anthropic_public_catalog": "catálogo público de suscripciones de Anthropic",
+      "claude_browser_sync": "sincronizacion de navegador/cuenta Claude",
+      "claude_api": "API de uso de cuenta Claude",
+      "browser": "fuente de cuenta del navegador"
     },
     "catalogReviewed": "Catálogo revisado el {date}",
     "costReasons": {
-      "catalogMissing": "Ningún precio fiable de catálogo o cuenta coincide con este plan detectado."
+      "catalogMissing": "Ningun precio fiable de catalogo o cuenta coincide con este plan detectado.",
+      "catalogMissingCodexAppServer": "El servidor local de Codex mostro el plan, pero no un precio mensual; ningun precio fiable del catalogo coincide.",
+      "catalogMissingClaudeStatusline": "La statusline de Claude mostro el plan, pero no un precio mensual; faltan datos de navegador/cuenta o no exponen precio.",
+      "catalogMissingClaudeAuth": "La autenticacion CLI de Claude mostro el plan, pero no un precio mensual; faltan datos de navegador/cuenta o no exponen precio.",
+      "catalogMissingClaudeBrowser": "Se comprobo {source}, pero no expone un precio mensual del plan."
     },
     "costActions": {
       "addFallback": "Actualiza la fuente de catálogo/cuenta o añade una estimación de respaldo en Advanced."

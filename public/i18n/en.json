@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Fast pace",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Bars keep provider identity colors; pace messages show whether current usage can last until reset.",
+    "pace": {
+      "remaining": "At current pace about {percent}% remains by reset.",
+      "shortfall": "At current pace about {percent}% is missing by reset.",
+      "hitBeforeReset": "At current pace the limit will be reached about {duration} before reset.",
+      "fullWithReset": "Limit reached; resets {time}.",
+      "fullNoReset": "Limit reached; reset time unavailable.",
+      "unavailable": {
+        "noUsage": "Pace unavailable: no usage percentage from this source.",
+        "noWindow": "Pace unavailable: this source has no window length or reset time.",
+        "notStarted": "Pace unavailable: this quota window has not started yet.",
+        "staleReset": "Pace unavailable: reset time is stale; refresh the source."
+      }
+    },
+    "duration": {
+      "daysHours": "{days}d {hours}h",
+      "hoursMinutes": "{hours}h {minutes}m",
+      "minutes": "{minutes}m"
+    }
   },
   "tokens": {
     "input": "Input",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAI public subscription catalog",
-      "anthropic_public_catalog": "Anthropic public subscription catalog"
+      "anthropic_public_catalog": "Anthropic public subscription catalog",
+      "claude_browser_sync": "Claude browser/account sync",
+      "claude_api": "Claude account usage API",
+      "browser": "browser account source"
     },
     "catalogReviewed": "Catalog reviewed {date}",
     "costReasons": {
-      "catalogMissing": "No trusted catalog or account price matched this detected plan."
+      "catalogMissing": "No trusted catalog or account price matched this detected plan.",
+      "catalogMissingCodexAppServer": "Codex app-server exposed the plan, but not a monthly price; no trusted catalog price matched it.",
+      "catalogMissingClaudeStatusline": "Claude statusline exposed the plan, but not a monthly price; browser/account data is missing or did not expose a price.",
+      "catalogMissingClaudeAuth": "Claude CLI auth exposed the plan, but not a monthly price; browser/account data is missing or did not expose a price.",
+      "catalogMissingClaudeBrowser": "{source} was checked, but it did not expose a monthly plan price."
     },
     "costActions": {
       "addFallback": "Update the catalog/account source or add an Advanced fallback estimate."

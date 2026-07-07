@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Wysokie tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Slupki zachowuja kolory dostawcow; komunikaty tempa pokazuja, czy uzycie wystarczy do resetu.",
+    "pace": {
+      "remaining": "Przy obecnym tempie do resetu zostanie okolo {percent}%.",
+      "shortfall": "Przy obecnym tempie do resetu zabraknie okolo {percent}%.",
+      "hitBeforeReset": "Przy obecnym tempie limit zostanie osiagniety okolo {duration} przed resetem.",
+      "fullWithReset": "Limit osiagniety; reset {time}.",
+      "fullNoReset": "Limit osiagniety; czas resetu niedostepny.",
+      "unavailable": {
+        "noUsage": "Tempo niedostepne: to zrodlo nie podaje procentu uzycia.",
+        "noWindow": "Tempo niedostepne: to zrodlo nie podaje dlugosci okna ani czasu resetu.",
+        "notStarted": "Tempo niedostepne: to okno limitu jeszcze sie nie zaczelo.",
+        "staleReset": "Tempo niedostepne: czas resetu jest nieaktualny; odswiez zrodlo."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} godz.",
+      "hoursMinutes": "{hours} godz. {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Wejście",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "publiczny katalog subskrypcji OpenAI",
-      "anthropic_public_catalog": "publiczny katalog subskrypcji Anthropic"
+      "anthropic_public_catalog": "publiczny katalog subskrypcji Anthropic",
+      "claude_browser_sync": "synchronizacja przegladarki/konta Claude",
+      "claude_api": "API uzycia konta Claude",
+      "browser": "zrodlo konta przegladarki"
     },
     "catalogReviewed": "Katalog sprawdzono {date}",
     "costReasons": {
-      "catalogMissing": "Żadna zaufana cena z katalogu ani konta nie pasuje do wykrytego planu."
+      "catalogMissing": "Brak wiarygodnej ceny z katalogu lub konta pasujacej do wykrytego planu.",
+      "catalogMissingCodexAppServer": "Lokalny serwer aplikacji Codex podal plan, ale nie miesieczna cene; brak pasujacej wiarygodnej ceny katalogowej.",
+      "catalogMissingClaudeStatusline": "Statusline Claude podal plan, ale nie miesieczna cene; dane przegladarki/konta sa niedostepne albo nie pokazuja ceny.",
+      "catalogMissingClaudeAuth": "Uwierzytelnienie CLI Claude podalo plan, ale nie miesieczna cene; dane przegladarki/konta sa niedostepne albo nie pokazuja ceny.",
+      "catalogMissingClaudeBrowser": "Sprawdzono {source}, ale nie pokazuje miesiecznej ceny planu."
     },
     "costActions": {
       "addFallback": "Zaktualizuj źródło katalogu/konta albo dodaj zapasowe oszacowanie w Advanced."

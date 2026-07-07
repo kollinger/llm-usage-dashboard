@@ -263,7 +263,11 @@ const models = summarizeModelUsageForDaily(daily);
 const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" }, {}, "codex");
 const detectedSubscription = normalizeSubscription(null, { planType: "Pro", source: "codex_app_server" }, "codex");
 const missingCatalogSubscription = normalizeSubscription(null, { planType: "Enterprise", source: "codex_app_server" }, "codex");
+const noWindowLimit = { usedPercent: 85 };
 const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString();
+const okFiveHourReset = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
+const earlyWeekLimit = { usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset };
+const okFiveHourLimit = { usedPercent: 10, windowMinutes: 300, resetsAt: okFiveHourReset };
 const sourceBarsHtml = renderSourceTotalBars([
   {
     date: "${today}",
@@ -286,6 +290,15 @@ const providerCardHtml = renderProvider({
   apiTokens: 100,
   message: "Logged tokens"
 });
+const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", {
+  status: "live",
+  planType: "max",
+  limits: {
+    fable: { usedPercent: 29, remainingPercent: 71, windowMinutes: 10080, resetsAt: earlyWeekReset, resetLabel: "in 6d" }
+  },
+  totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
+}));
+const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
 const mixedCurrencySubscriptionCard = renderSubscriptionPricingCard({
   provider: { name: "Codex" },
   subscription: detectedSubscription,
@@ -307,26 +320,36 @@ JSON.stringify({
   detectedCost: detectedSubscription.monthlyCost,
   detectedCurrency: detectedSubscription.currency,
   detectedSource: detectedSubscription.source,
-  missingCatalogQuality: missingCatalogSubscription.quality,
-  missingCatalogStatus: missingCatalogSubscription.costStatus,
-  limitOk: limitDisplayStatus({ usedPercent: 20 }),
-  limitRisk: limitDisplayStatus({ usedPercent: 85 }),
-  limitEarlyWeekRisk: limitDisplayStatus({ usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }),
-  limitFull: limitDisplayStatus({ usedPercent: 100 }),
-  limitUnknown: limitDisplayStatus({ status: "unavailable" }),
-  limitOkLabel: t("limits.status.ok"),
-  catalogQualityLabel: t("subscriptions.quality.catalog"),
-  manualQualityLabel: t("subscriptions.quality.manual"),
-  manualSourceLabel: subscriptionSourceLabel("local_settings"),
+	  missingCatalogQuality: missingCatalogSubscription.quality,
+	  missingCatalogStatus: missingCatalogSubscription.costStatus,
+	  missingCatalogReason: renderProviderSubscription({ subscription: missingCatalogSubscription }),
+	  limitOk: limitDisplayStatus(okFiveHourLimit),
+	  limitNoWindow: limitDisplayStatus(noWindowLimit),
+	  limitEarlyWeekRisk: limitDisplayStatus(earlyWeekLimit),
+	  earlyWeekPaceMessage: limitPaceAssessment(earlyWeekLimit).message,
+	  okFiveHourPaceMessage: limitPaceAssessment(okFiveHourLimit).message,
+	  limitFull: limitDisplayStatus({ usedPercent: 100 }),
+	  limitUnknown: limitDisplayStatus({ status: "unavailable" }),
+	  limitOkLabel: t("limits.status.ok"),
+	  limitRiskLabel: t("limits.status.risk"),
+	  catalogQualityLabel: t("subscriptions.quality.catalog"),
+	  manualQualityLabel: t("subscriptions.quality.manual"),
+	  manualSourceLabel: subscriptionSourceLabel("local_settings"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
-  sourceBarsUseProviderColors:
-    sourceBarsHtml.includes("--accent: " + providerMeta.codex.accent) &&
-    sourceBarsHtml.includes("--accent: " + providerMeta.claudeCode.accent),
-  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
-  allRangeHidesTotalTile: shouldShowTotalTokensTile("all") === false,
-  weekRangeShowsTotalTile: shouldShowTotalTokensTile("week") === true,
-  mixedCurrencyDeltaUnknown: mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
+	  sourceBarsUseProviderColors:
+	    sourceBarsHtml.includes("--accent: " + providerMeta.codex.accent) &&
+	    sourceBarsHtml.includes("--accent: " + providerMeta.claudeCode.accent),
+	  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
+	  riskLimitBarUsesProviderAccent:
+	    riskLimitBarHtml.includes("--accent: " + providerMeta.codex.accent) &&
+	    !riskLimitBarHtml.includes("--accent: #b76b00"),
+	  fableLimitRowVisible:
+	    claudeWithFableHtml.includes(">Fable<") &&
+	    claudeWithFableHtml.includes("--accent: " + providerMeta.claudeCode.accent),
+	  allRangeHidesTotalTile: shouldShowTotalTokensTile("all") === false,
+	  weekRangeShowsTotalTile: shouldShowTotalTokensTile("week") === true,
+	  mixedCurrencyDeltaUnknown: mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
   sameCurrencyDeltaShown: sameCurrencySubscriptionCard.includes("$20.00")
 });`,
     createAppContext(),
@@ -345,12 +368,16 @@ JSON.stringify({
   assert.equal(result.detectedSource, "openai_public_catalog");
   assert.equal(result.missingCatalogQuality, "estimated");
   assert.equal(result.missingCatalogStatus, "catalog_missing");
+  assert.equal(result.missingCatalogReason.includes("Codex app-server exposed the plan"), true);
   assert.equal(result.limitOk, "ok");
-  assert.equal(result.limitRisk, "risk");
+  assert.equal(result.limitNoWindow, "unknown");
   assert.equal(result.limitEarlyWeekRisk, "risk");
+  assert.equal(result.earlyWeekPaceMessage.includes("before reset"), true);
+  assert.equal(result.okFiveHourPaceMessage.includes("remains by reset"), true);
   assert.equal(result.limitFull, "full");
   assert.equal(result.limitUnknown, "unknown");
   assert.equal(result.limitOkLabel, "On track");
+  assert.equal(result.limitRiskLabel, "Fast pace");
   assert.equal(result.catalogQualityLabel, "Catalog value");
   assert.equal(result.manualQualityLabel, "Saved fallback estimate");
   assert.equal(result.manualSourceLabel, "saved fallback");
@@ -358,6 +385,8 @@ JSON.stringify({
   assert.equal(result.aliasesCollapsedInDebug, true);
   assert.equal(result.sourceBarsUseProviderColors, true);
   assert.equal(result.providerCardUsesProviderAccent, true);
+  assert.equal(result.riskLimitBarUsesProviderAccent, true);
+  assert.equal(result.fableLimitRowVisible, true);
   assert.equal(result.allRangeHidesTotalTile, true);
   assert.equal(result.weekRangeShowsTotalTile, true);
   assert.equal(result.mixedCurrencyDeltaUnknown, true);

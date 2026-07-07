@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "Dans les temps",
-      "risk": "Surveiller le quota",
+      "risk": "Rythme eleve",
       "full": "Limite atteinte",
       "unknown": "Inconnu"
     },
-    "statusLegend": "Les couleurs de quota indiquent seulement le risque; fournisseur et modele utilisent des libelles separes."
+    "paceLegend": "Les barres gardent les couleurs des fournisseurs; les messages de rythme indiquent si l usage tiendra jusqu a la reinitialisation.",
+    "pace": {
+      "remaining": "Au rythme actuel, environ {percent}% restera a la reinitialisation.",
+      "shortfall": "Au rythme actuel, il manquera environ {percent}% a la reinitialisation.",
+      "hitBeforeReset": "Au rythme actuel, la limite sera atteinte environ {duration} avant la reinitialisation.",
+      "fullWithReset": "Limite atteinte; reinitialisation {time}.",
+      "fullNoReset": "Limite atteinte; heure de reinitialisation indisponible.",
+      "unavailable": {
+        "noUsage": "Rythme indisponible: cette source ne fournit aucun pourcentage d utilisation.",
+        "noWindow": "Rythme indisponible: cette source ne fournit ni duree de fenetre ni heure de reinitialisation.",
+        "notStarted": "Rythme indisponible: cette fenetre de quota n a pas encore commence.",
+        "staleReset": "Rythme indisponible: l heure de reinitialisation est obsolete; actualisez la source."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} j {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Entrée",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "catalogue public des abonnements OpenAI",
-      "anthropic_public_catalog": "catalogue public des abonnements Anthropic"
+      "anthropic_public_catalog": "catalogue public des abonnements Anthropic",
+      "claude_browser_sync": "Synchronisation navigateur/compte Claude",
+      "claude_api": "API d utilisation du compte Claude",
+      "browser": "source de compte navigateur"
     },
     "catalogReviewed": "Catalogue vérifié le {date}",
     "costReasons": {
-      "catalogMissing": "Aucun prix fiable du catalogue ou du compte ne correspond à ce forfait détecté."
+      "catalogMissing": "Aucun prix fiable du catalogue ou du compte ne correspond a ce plan detecte.",
+      "catalogMissingCodexAppServer": "Le serveur local Codex a expose le plan, mais pas le prix mensuel; aucun prix fiable du catalogue ne correspond.",
+      "catalogMissingClaudeStatusline": "La statusline Claude a expose le plan, mais pas le prix mensuel; les donnees navigateur/compte manquent ou n exposent pas de prix.",
+      "catalogMissingClaudeAuth": "L authentification CLI Claude a expose le plan, mais pas le prix mensuel; les donnees navigateur/compte manquent ou n exposent pas de prix.",
+      "catalogMissingClaudeBrowser": "{source} a ete verifiee, mais n expose pas de prix mensuel du plan."
     },
     "costActions": {
       "addFallback": "Mettez à jour la source catalogue/compte ou ajoutez une estimation de secours dans Advanced."

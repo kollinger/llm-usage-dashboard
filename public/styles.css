@@ -678,32 +678,28 @@ a {
   overflow-wrap: anywhere;
 }
 
-.limit-state-pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  border-radius: 999px;
-  padding: 2px 7px;
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 850;
-  line-height: 1;
+.limit-detail {
+  color: var(--muted);
 }
 
-.limit-state-ok {
-  background: #147a68;
+.limit-pace-note {
+  color: var(--ink-muted);
 }
 
-.limit-state-risk {
-  background: #b76b00;
+.limit-pace-ok {
+  color: #147a68;
 }
 
-.limit-state-full {
-  background: var(--rose);
+.limit-pace-risk {
+  color: #a65f00;
 }
 
-.limit-state-unknown {
-  background: #8a948f;
+.limit-pace-full {
+  color: var(--rose);
+}
+
+.limit-pace-unknown {
+  color: #6f7c76;
 }
 
 .limit-status-note {

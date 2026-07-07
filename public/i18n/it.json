@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "In linea",
-      "risk": "Controlla quota",
+      "risk": "Ritmo alto",
       "full": "Limite raggiunto",
       "unknown": "Sconosciuto"
     },
-    "statusLegend": "I colori quota indicano solo il rischio; provider e modello usano etichette separate."
+    "paceLegend": "Le barre mantengono i colori del provider; i messaggi di ritmo indicano se l uso dura fino al reset.",
+    "pace": {
+      "remaining": "Al ritmo attuale restera circa il {percent}% al reset.",
+      "shortfall": "Al ritmo attuale manchera circa il {percent}% al reset.",
+      "hitBeforeReset": "Al ritmo attuale il limite sara raggiunto circa {duration} prima del reset.",
+      "fullWithReset": "Limite raggiunto; reset {time}.",
+      "fullNoReset": "Limite raggiunto; ora del reset non disponibile.",
+      "unavailable": {
+        "noUsage": "Ritmo non disponibile: questa fonte non fornisce una percentuale di uso.",
+        "noWindow": "Ritmo non disponibile: questa fonte non fornisce durata della finestra o ora del reset.",
+        "notStarted": "Ritmo non disponibile: questa finestra di quota non e ancora iniziata.",
+        "staleReset": "Ritmo non disponibile: l ora del reset e obsoleta; aggiorna la fonte."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} g {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Input",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "catalogo pubblico degli abbonamenti OpenAI",
-      "anthropic_public_catalog": "catalogo pubblico degli abbonamenti Anthropic"
+      "anthropic_public_catalog": "catalogo pubblico degli abbonamenti Anthropic",
+      "claude_browser_sync": "sync browser/account Claude",
+      "claude_api": "API uso account Claude",
+      "browser": "fonte account browser"
     },
     "catalogReviewed": "Catalogo verificato il {date}",
     "costReasons": {
-      "catalogMissing": "Nessun prezzo attendibile dal catalogo o dall'account corrisponde a questo piano rilevato."
+      "catalogMissing": "Nessun prezzo affidabile di catalogo o account corrisponde a questo piano rilevato.",
+      "catalogMissingCodexAppServer": "Il server app locale Codex ha esposto il piano, ma non il prezzo mensile; nessun prezzo affidabile di catalogo corrisponde.",
+      "catalogMissingClaudeStatusline": "La statusline Claude ha esposto il piano, ma non il prezzo mensile; i dati browser/account mancano o non espongono un prezzo.",
+      "catalogMissingClaudeAuth": "L auth CLI Claude ha esposto il piano, ma non il prezzo mensile; i dati browser/account mancano o non espongono un prezzo.",
+      "catalogMissingClaudeBrowser": "{source} e stata controllata, ma non espone un prezzo mensile del piano."
     },
     "costActions": {
       "addFallback": "Aggiorna la fonte catalogo/account o aggiungi una stima di riserva in Advanced."

@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Kiire tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Ribad hoiavad pakkuja varve; tempoteated naitavad, kas kasutus kestab lahtestamiseni.",
+    "pace": {
+      "remaining": "Praeguse tempoga jaab lahtestamisel alles umbes {percent}%.",
+      "shortfall": "Praeguse tempoga jaab lahtestamisel puudu umbes {percent}%.",
+      "hitBeforeReset": "Praeguse tempoga saavutatakse piir umbes {duration} enne lahtestamist.",
+      "fullWithReset": "Piir saavutatud; lahtestus {time}.",
+      "fullNoReset": "Piir saavutatud; lahtestuse aeg pole saadaval.",
+      "unavailable": {
+        "noUsage": "Tempo pole saadaval: see allikas ei anna kasutusprotsenti.",
+        "noWindow": "Tempo pole saadaval: see allikas ei anna akna pikkust ega lahtestuse aega.",
+        "notStarted": "Tempo pole saadaval: see kvoodiaken pole veel alanud.",
+        "staleReset": "Tempo pole saadaval: lahtestuse aeg on aegunud; varskenda allikat."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} p {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Sisend",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAI avalik tellimuste kataloog",
-      "anthropic_public_catalog": "Anthropicu avalik tellimuste kataloog"
+      "anthropic_public_catalog": "Anthropicu avalik tellimuste kataloog",
+      "claude_browser_sync": "Claude brauseri/konto sunkroon",
+      "claude_api": "Claude konto kasutuse API",
+      "browser": "brauserikonto allikas"
     },
     "catalogReviewed": "Kataloog üle vaadatud {date}",
     "costReasons": {
-      "catalogMissing": "Ükski usaldusväärne kataloogi- või kontohind ei vastanud tuvastatud paketile."
+      "catalogMissing": "Usaldusvaarset kataloogi voi konto hinda selle plaani jaoks ei leitud.",
+      "catalogMissingCodexAppServer": "Kohalik Codex app-server andis plaani, kuid mitte kuuhinda; sobivat usaldusvaarset kataloogihinda pole.",
+      "catalogMissingClaudeStatusline": "Claude statusline andis plaani, kuid mitte kuuhinda; brauseri/konto andmed puuduvad voi ei naita hinda.",
+      "catalogMissingClaudeAuth": "Claude CLI auth andis plaani, kuid mitte kuuhinda; brauseri/konto andmed puuduvad voi ei naita hinda.",
+      "catalogMissingClaudeBrowser": "{source} kontrolliti, kuid see ei naita plaani kuuhinda."
     },
     "costActions": {
       "addFallback": "Uuenda kataloogi/konto allikat või lisa Advanced varuhinnang."

@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Nopea tahti",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Palkit sailyttavat tarjoajavarit; tahtiviestit nayttavat, riittaako kaytto nollaukseen asti.",
+    "pace": {
+      "remaining": "Nykyisella tahdilla nollauksessa jaa noin {percent}%.",
+      "shortfall": "Nykyisella tahdilla nollauksessa puuttuu noin {percent}%.",
+      "hitBeforeReset": "Nykyisella tahdilla raja tayttyy noin {duration} ennen nollausta.",
+      "fullWithReset": "Raja tayttynyt; nollaus {time}.",
+      "fullNoReset": "Raja tayttynyt; nollausaikaa ei saatavilla.",
+      "unavailable": {
+        "noUsage": "Tahti ei saatavilla: tama lahde ei anna kayttoprosenttia.",
+        "noWindow": "Tahti ei saatavilla: tama lahde ei anna ikkunan pituutta tai nollausaikaa.",
+        "notStarted": "Tahti ei saatavilla: tama kiintioikkuna ei ole viela alkanut.",
+        "staleReset": "Tahti ei saatavilla: nollausaika on vanhentunut; paivita lahde."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} pv {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Syöte",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAI:n julkinen tilausluettelo",
-      "anthropic_public_catalog": "Anthropicin julkinen tilausluettelo"
+      "anthropic_public_catalog": "Anthropicin julkinen tilausluettelo",
+      "claude_browser_sync": "Claude-selaimen/tilin synkronointi",
+      "claude_api": "Claude-tilin kaytto-API",
+      "browser": "selaintilin lahde"
     },
     "catalogReviewed": "Katalogi tarkistettu {date}",
     "costReasons": {
-      "catalogMissing": "Mikään luotettu katalogi- tai tilihinta ei vastannut tähän tunnistettuun tilaukseen."
+      "catalogMissing": "Luotettava katalogi- tai tilihinta ei vastaa tata havaittua pakettia.",
+      "catalogMissingCodexAppServer": "Paikallinen Codex app-server naytti paketin, mutta ei kuukausihintaa; luotettavaa katalogihintaa ei loytynyt.",
+      "catalogMissingClaudeStatusline": "Claude-statusline naytti paketin, mutta ei kuukausihintaa; selain-/tilitiedot puuttuvat tai eivat nayta hintaa.",
+      "catalogMissingClaudeAuth": "Claude CLI -todennus naytti paketin, mutta ei kuukausihintaa; selain-/tilitiedot puuttuvat tai eivat nayta hintaa.",
+      "catalogMissingClaudeBrowser": "{source} tarkistettiin, mutta se ei nayta paketin kuukausihintaa."
     },
     "costActions": {
       "addFallback": "Päivitä katalogi-/tililähde tai lisää varmistusarvio Advanced-osiossa."

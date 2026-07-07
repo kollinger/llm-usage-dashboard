@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "وتيرة مرتفعة",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "تحتفظ الاشرطة بالوان المزوّد؛ وتوضح رسائل الوتيرة ما اذا كان الاستخدام سيكفي حتى اعادة الضبط.",
+    "pace": {
+      "remaining": "بالوتيرة الحالية سيبقى نحو {percent}% عند اعادة الضبط.",
+      "shortfall": "بالوتيرة الحالية سينقص نحو {percent}% عند اعادة الضبط.",
+      "hitBeforeReset": "بالوتيرة الحالية سيصل الحد قبل اعادة الضبط بحوالي {duration}.",
+      "fullWithReset": "تم بلوغ الحد؛ اعادة الضبط {time}.",
+      "fullNoReset": "تم بلوغ الحد؛ وقت اعادة الضبط غير متاح.",
+      "unavailable": {
+        "noUsage": "الوتيرة غير متاحة: هذا المصدر لا يقدم نسبة الاستخدام.",
+        "noWindow": "الوتيرة غير متاحة: هذا المصدر لا يقدم طول النافذة او وقت اعادة الضبط.",
+        "notStarted": "الوتيرة غير متاحة: نافذة الحصة هذه لم تبدأ بعد.",
+        "staleReset": "الوتيرة غير متاحة: وقت اعادة الضبط قديم؛ حدّث المصدر."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} يوم {hours} س",
+      "hoursMinutes": "{hours} س {minutes} د",
+      "minutes": "{minutes} د"
+    }
   },
   "tokens": {
     "input": "الإدخال",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "كتالوج اشتراكات OpenAI العام",
-      "anthropic_public_catalog": "كتالوج اشتراكات Anthropic العام"
+      "anthropic_public_catalog": "كتالوج اشتراكات Anthropic العام",
+      "claude_browser_sync": "مزامنة متصفح/حساب Claude",
+      "claude_api": "واجهة استخدام حساب Claude",
+      "browser": "مصدر حساب المتصفح"
     },
     "catalogReviewed": "تمت مراجعة الكتالوج في {date}",
     "costReasons": {
-      "catalogMissing": "لم يتطابق أي سعر موثوق من الكتالوج أو الحساب مع هذه الخطة المكتشفة."
+      "catalogMissing": "لا يوجد سعر موثوق من الكتالوج او الحساب يطابق هذه الخطة المكتشفة.",
+      "catalogMissingCodexAppServer": "عرض خادم Codex المحلي الخطة، لكنه لم يعرض السعر الشهري؛ ولا يوجد سعر كتالوج موثوق مطابق.",
+      "catalogMissingClaudeStatusline": "عرض شريط حالة Claude الخطة، لكنه لم يعرض السعر الشهري؛ بيانات المتصفح/الحساب مفقودة او لا تعرض سعرا.",
+      "catalogMissingClaudeAuth": "عرض تحقق Claude CLI الخطة، لكنه لم يعرض السعر الشهري؛ بيانات المتصفح/الحساب مفقودة او لا تعرض سعرا.",
+      "catalogMissingClaudeBrowser": "تم فحص {source}، لكنه لا يعرض سعر الخطة الشهري."
     },
     "costActions": {
       "addFallback": "حدّث مصدر الكتالوج/الحساب أو أضف تقديرًا احتياطيًا من Advanced."

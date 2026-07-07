@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "Op schema",
-      "risk": "Quota bewaken",
+      "risk": "Hoog tempo",
       "full": "Limiet bereikt",
       "unknown": "Onbekend"
     },
-    "statusLegend": "Quotakleuren tonen alleen risico; provider en model gebruiken aparte labels."
+    "paceLegend": "Balken behouden providerkleuren; tempoberichten tonen of het gebruik tot de reset meegaat.",
+    "pace": {
+      "remaining": "In het huidige tempo blijft bij reset ongeveer {percent}% over.",
+      "shortfall": "In het huidige tempo ontbreekt bij reset ongeveer {percent}%.",
+      "hitBeforeReset": "In het huidige tempo wordt de limiet ongeveer {duration} voor reset bereikt.",
+      "fullWithReset": "Limiet bereikt; reset {time}.",
+      "fullNoReset": "Limiet bereikt; resettijd niet beschikbaar.",
+      "unavailable": {
+        "noUsage": "Tempo niet beschikbaar: deze bron geeft geen gebruikspercentage.",
+        "noWindow": "Tempo niet beschikbaar: deze bron geeft geen vensterduur of resettijd.",
+        "notStarted": "Tempo niet beschikbaar: dit quotavenster is nog niet gestart.",
+        "staleReset": "Tempo niet beschikbaar: resettijd is verouderd; vernieuw de bron."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} u",
+      "hoursMinutes": "{hours} u {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Invoer",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "openbare abonnementencatalogus van OpenAI",
-      "anthropic_public_catalog": "openbare abonnementencatalogus van Anthropic"
+      "anthropic_public_catalog": "openbare abonnementencatalogus van Anthropic",
+      "claude_browser_sync": "Claude browser/account-sync",
+      "claude_api": "Claude account-gebruiks-API",
+      "browser": "browseraccountbron"
     },
     "catalogReviewed": "Catalogus gecontroleerd op {date}",
     "costReasons": {
-      "catalogMissing": "Geen vertrouwde catalogus- of accountprijs komt overeen met dit gedetecteerde abonnement."
+      "catalogMissing": "Geen betrouwbare catalogus- of accountprijs past bij dit gedetecteerde plan.",
+      "catalogMissingCodexAppServer": "De lokale Codex-appserver gaf het plan, maar geen maandprijs; geen betrouwbare catalogusprijs past.",
+      "catalogMissingClaudeStatusline": "De Claude-statusline gaf het plan, maar geen maandprijs; browser-/accountgegevens ontbreken of tonen geen prijs.",
+      "catalogMissingClaudeAuth": "Claude CLI-auth gaf het plan, maar geen maandprijs; browser-/accountgegevens ontbreken of tonen geen prijs.",
+      "catalogMissingClaudeBrowser": "{source} is gecontroleerd, maar toont geen maandelijkse planprijs."
     },
     "costActions": {
       "addFallback": "Werk de catalogus-/accountbron bij of voeg een reserve-inschatting toe in Advanced."

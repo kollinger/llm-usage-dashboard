@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Luas ard",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Coinnionn na barra dathanna an tsolathrai; taispeanann teachtaireachtai luais an mairfidh an usaid go dti an t-athshocru.",
+    "pace": {
+      "remaining": "Ag an luas reatha beidh thart ar {percent}% fagtha ag an athshocru.",
+      "shortfall": "Ag an luas reatha beidh thart ar {percent}% in easnamh ag an athshocru.",
+      "hitBeforeReset": "Ag an luas reatha bainfear an teorainn amach thart ar {duration} roimh an athshocru.",
+      "fullWithReset": "Teorainn bainte amach; athshocru {time}.",
+      "fullNoReset": "Teorainn bainte amach; am athshocraithe ar fail.",
+      "unavailable": {
+        "noUsage": "Luas ar fail: ni thugann an fhoinse seo ceatadan usaide.",
+        "noWindow": "Luas ar fail: ni thugann an fhoinse seo fad fuinneoige no am athshocraithe.",
+        "notStarted": "Luas ar fail: nior thosaigh an fhuinneog chuota seo fos.",
+        "staleReset": "Luas ar fail: ta am an athshocraithe as data; athnuaigh an fhoinse."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} l {hours} u",
+      "hoursMinutes": "{hours} u {minutes} n",
+      "minutes": "{minutes} n"
+    }
   },
   "tokens": {
     "input": "Ionchur",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "catalóg poiblí síntiús OpenAI",
-      "anthropic_public_catalog": "catalóg poiblí síntiús Anthropic"
+      "anthropic_public_catalog": "catalóg poiblí síntiús Anthropic",
+      "claude_browser_sync": "sioncronú brabhsalaí/cuntais Claude",
+      "claude_api": "API usaide cuntais Claude",
+      "browser": "foinse chuntais bhrabhsalaí"
     },
     "catalogReviewed": "Athbhreithníodh an catalóg ar {date}",
     "costReasons": {
-      "catalogMissing": "Níor mheaitseáil praghas iontaofa ón gcatalóg ná ón gcuntas leis an bplean braite seo."
+      "catalogMissing": "Nil praghas iontaofa cataloige no cuntais ag teacht leis an bplean braite seo.",
+      "catalogMissingCodexAppServer": "Nocht app-server Codex an plean, ach ni praghas miosuil; nil praghas cataloige iontaofa ag teacht leis.",
+      "catalogMissingClaudeStatusline": "Nocht statusline Claude an plean, ach ni praghas miosuil; ta sonrai brabhsalai/cuntais in easnamh no gan phraghas.",
+      "catalogMissingClaudeAuth": "Nocht auth CLI Claude an plean, ach ni praghas miosuil; ta sonrai brabhsalai/cuntais in easnamh no gan phraghas.",
+      "catalogMissingClaudeBrowser": "Seicealadh {source}, ach ni nochtann se praghas miosuil an phleain."
     },
     "costActions": {
       "addFallback": "Nuashonraigh foinse an chatalóige/an chuntais nó cuir meastachán cúltaca Advanced leis."

@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "正常",
-      "risk": "关注配额",
+      "risk": "速度偏高",
       "full": "已达上限",
       "unknown": "未知"
     },
-    "statusLegend": "配额颜色只表示风险；提供商和模型身份使用单独标签。"
+    "paceLegend": "条形保留提供商识别颜色；速度提示显示当前用量是否能撑到重置。",
+    "pace": {
+      "remaining": "按当前速度，重置时约剩余 {percent}%。",
+      "shortfall": "按当前速度，重置时约缺少 {percent}%。",
+      "hitBeforeReset": "按当前速度，额度将在重置前约 {duration} 达到上限。",
+      "fullWithReset": "已达到上限；{time} 重置。",
+      "fullNoReset": "已达到上限；重置时间不可用。",
+      "unavailable": {
+        "noUsage": "速度不可用：此来源未提供用量百分比。",
+        "noWindow": "速度不可用：此来源未提供窗口长度或重置时间。",
+        "notStarted": "速度不可用：此额度窗口尚未开始。",
+        "staleReset": "速度不可用：重置时间已过期；请刷新来源。"
+      }
+    },
+    "duration": {
+      "daysHours": "{days}天 {hours}小时",
+      "hoursMinutes": "{hours}小时 {minutes}分钟",
+      "minutes": "{minutes}分钟"
+    }
   },
   "tokens": {
     "input": "输入",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAI 公开订阅目录",
-      "anthropic_public_catalog": "Anthropic 公开订阅目录"
+      "anthropic_public_catalog": "Anthropic 公开订阅目录",
+      "claude_browser_sync": "Claude 浏览器/账户同步",
+      "claude_api": "Claude 账户用量 API",
+      "browser": "浏览器账户来源"
     },
     "catalogReviewed": "目录已于 {date} 审核",
     "costReasons": {
-      "catalogMissing": "没有可信的目录价格或账户价格与检测到的方案匹配。"
+      "catalogMissing": "没有可信的目录或账户价格匹配检测到的计划。",
+      "catalogMissingCodexAppServer": "Codex 本地 app-server 暴露了计划，但没有月度价格；可信目录中没有匹配价格。",
+      "catalogMissingClaudeStatusline": "Claude statusline 暴露了计划，但没有月度价格；浏览器/账户数据缺失或未暴露价格。",
+      "catalogMissingClaudeAuth": "Claude CLI 认证暴露了计划，但没有月度价格；浏览器/账户数据缺失或未暴露价格。",
+      "catalogMissingClaudeBrowser": "已检查 {source}，但它未暴露月度计划价格。"
     },
     "costActions": {
       "addFallback": "更新目录/账户来源，或在 Advanced 中添加备用估算。"

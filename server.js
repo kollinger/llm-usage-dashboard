@@ -1766,7 +1766,8 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
     planSource,
     catalogReviewedAt: catalog ? SUBSCRIPTION_CATALOG_REVIEW_DATE : null,
     sourceUrl: catalog ? catalog.sourceUrl : null,
-    costStatus: catalog ? "catalog" : "catalog_missing"
+    costStatus: catalog ? "catalog" : "catalog_missing",
+    costReason: catalog ? null : subscriptionCostMissingReasonKey(providerId, existing?.source || planSource)
   };
 
   return {
@@ -1782,6 +1783,17 @@ function publicSubscriptionPlan(providerId, planType) {
   const planKey = normalizeSubscriptionPlanKey(planType);
   if (!planKey) return null;
   return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function subscriptionCostMissingReasonKey(providerId, sourceId) {
+  const source = String(sourceId || "").trim();
+  if (source === "codex_app_server") return "catalogMissingCodexAppServer";
+  if (source === "claude_statusline") return "catalogMissingClaudeStatusline";
+  if (source === "claude_auth_status") return "catalogMissingClaudeAuth";
+  if (source === "claude_browser_sync" || source === "browser") return "catalogMissingClaudeBrowser";
+  if (providerId === "codex" || providerId === "codexSpark") return "catalogMissingCodexAppServer";
+  if (providerId === "claudeCode") return "catalogMissingClaudeStatusline";
+  return "catalogMissing";
 }
 
 function subscriptionCatalogFamily(providerId) {

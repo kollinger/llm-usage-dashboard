@@ -2360,6 +2360,7 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let catalogReviewedAt = source.catalogReviewedAt || null;
   let sourceUrl = source.sourceUrl || null;
   let costStatus = source.costStatus || null;
+  let costReason = source.costReason || fallbackSource.costReason || null;
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
     currency = catalog.currency;
@@ -2369,6 +2370,7 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     costStatus = "catalog";
   } else if (!(monthlyCost > 0) && planType && sourceId) {
     costStatus = costStatus || "catalog_missing";
+    costReason = costReason || subscriptionCostMissingReasonKey(providerId, sourceId || planSource);
   }
   if (!planType && !(monthlyCost > 0) && !sourceId) return null;
   return {
@@ -2381,8 +2383,20 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     catalogReviewedAt,
     sourceUrl,
     costStatus,
+    costReason,
     quality: subscriptionQuality(sourceId, monthlyCost, { costStatus, catalogReviewedAt })
   };
+}
+
+function subscriptionCostMissingReasonKey(providerId, sourceId) {
+  const source = String(sourceId || "").trim();
+  if (source === "codex_app_server") return "catalogMissingCodexAppServer";
+  if (source === "claude_statusline") return "catalogMissingClaudeStatusline";
+  if (source === "claude_auth_status") return "catalogMissingClaudeAuth";
+  if (source === "claude_browser_sync" || source === "browser") return "catalogMissingClaudeBrowser";
+  if (providerId === "codex" || providerId === "codexSpark") return "catalogMissingCodexAppServer";
+  if (providerId === "claudeCode") return "catalogMissingClaudeStatusline";
+  return "catalogMissing";
 }
 
 function subscriptionQuality(sourceId, monthlyCost, meta = {}) {
@@ -2910,7 +2924,7 @@ function renderProviderSubscription(provider) {
     subscription.source ? t("subscriptions.source", { source: subscriptionSourceLabel(subscription.source) }) : "",
     subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : "",
     subscription.catalogReviewedAt ? t("subscriptions.catalogReviewed", { date: subscription.catalogReviewedAt }) : "",
-    subscription.costStatus === "catalog_missing" ? t("subscriptions.costReasons.catalogMissing") : "",
+    subscription.costStatus === "catalog_missing" ? subscriptionCostMissingText(subscription) : "",
     subscription.costStatus === "catalog_missing" ? t("subscriptions.costActions.addFallback") : ""
   ].filter(Boolean);
   return `
@@ -2996,7 +3010,7 @@ function renderLimitBars(provider) {
   return `
     <div class="limit-bars">
       ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
-      <p class="limit-status-note">${escapeHtml(t("limits.statusLegend"))}</p>
+      <p class="limit-status-note">${escapeHtml(t("limits.paceLegend"))}</p>
     </div>
   `;
 }
@@ -3012,8 +3026,7 @@ function renderLimitBar(row, accent) {
   const resetDetail = row.resetLabel || renderLimitRemaining(row.resetsAt);
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
-  const statusText = t(`limits.status.${status}`, {}, status);
-  const statusAccent = limitStatusAccent(status, accent);
+  const pace = limitPaceAssessment(row);
   return `
     <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
@@ -3023,11 +3036,12 @@ function renderLimitBar(row, accent) {
       ${
         hasUsedPercent
           ? `<div class="limit-bar-track" aria-hidden="true">
-              <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${statusAccent}"></span>
+              <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${accent}"></span>
             </div>`
           : ""
       }
-      <p><span class="limit-state-pill limit-state-${escapeHtml(status)}">${escapeHtml(statusText)}</span>${detail ? ` ${escapeHtml(detail)}` : ""}</p>
+      ${detail ? `<p class="limit-detail">${escapeHtml(detail)}</p>` : ""}
+      <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
     </div>
   `;
 }
@@ -3066,7 +3080,7 @@ function renderRing(limit, label, accent) {
     `;
   }
   const status = limitDisplayStatus(limit);
-  const accentColor = limitStatusAccent(status, accent);
+  const pace = limitPaceAssessment(limit);
   const remaining = Math.round(limit.remainingPercent ?? 0);
   let sub = "";
   if (limit.resetsAt) {
@@ -3074,11 +3088,11 @@ function renderRing(limit, label, accent) {
   }
   return `
     <div class="ring-box">
-      <div class="ring" style="--percent: ${remaining}; --accent: ${accentColor}">
+      <div class="ring" style="--percent: ${remaining}; --accent: ${accent || limitStatusAccent(status, accent)}">
         <strong>${remaining}%</strong>
       </div>
       <span class="ring-label">${escapeHtml(t("limits.freeLabel", { label }))}</span>
-      <div class="ring-sub"><span class="limit-state-pill limit-state-${escapeHtml(status)}">${escapeHtml(t(`limits.status.${status}`, {}, status))}</span></div>
+      <div class="ring-sub limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</div>
       ${sub}
     </div>
   `;
@@ -3089,24 +3103,89 @@ function limitDisplayStatus(limit) {
   const used = finiteUiNumberOrNull(limit.usedPercent);
   if (used === null) return "unknown";
   if (used >= 99.5) return "full";
-  if (limitPaceStatusIsRisk(limit, used)) return "risk";
-  if (used >= 70) return "risk";
-  return "ok";
+  const pace = limitPaceAssessment(limit);
+  if (pace.status === "risk") return "risk";
+  if (pace.status === "ok") return "ok";
+  return "unknown";
 }
 
 function limitPaceStatusIsRisk(limit, usedPercent) {
+  return limitPaceAssessment({ ...(limit || {}), usedPercent }).status === "risk";
+}
+
+function limitPaceAssessment(limit, nowMs = Date.now()) {
+  if (!limit || limit.status === "unavailable") return limitPaceUnavailable("noUsage");
+  const used = finiteUiNumberOrNull(limit.usedPercent);
+  if (used === null) return limitPaceUnavailable("noUsage");
+  const resetTime = limit.resetsAt ? formatDateTime(limit.resetsAt) : "";
+  if (used >= 99.5) {
+    return {
+      status: "full",
+      message: resetTime ? t("limits.pace.fullWithReset", { time: resetTime }) : t("limits.pace.fullNoReset")
+    };
+  }
+
   const windowMinutes = finiteUiNumberOrNull(limit.windowMinutes ?? limit.window_minutes);
-  if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return false;
+  if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return limitPaceUnavailable("noWindow");
   const resetMs = Date.parse(limit.resetsAt);
-  if (!Number.isFinite(resetMs)) return false;
+  if (!Number.isFinite(resetMs)) return limitPaceUnavailable("noWindow");
   const windowMs = windowMinutes * 60 * 1000;
   const startMs = resetMs - windowMs;
-  const now = Date.now();
-  if (!Number.isFinite(startMs) || now <= startMs || now >= resetMs) return false;
-  const elapsedPercent = ((now - startMs) / windowMs) * 100;
-  const gracePercent = windowMinutes >= 24 * 60 ? 10 : 20;
-  const riskThreshold = Math.max(20, elapsedPercent + gracePercent);
-  return usedPercent > riskThreshold;
+  if (!Number.isFinite(startMs)) return limitPaceUnavailable("noWindow");
+  if (nowMs <= startMs) return limitPaceUnavailable("notStarted");
+  if (nowMs >= resetMs) return limitPaceUnavailable("staleReset");
+
+  const elapsedMs = nowMs - startMs;
+  const elapsedFraction = elapsedMs / windowMs;
+  if (!(elapsedFraction > 0)) return limitPaceUnavailable("notStarted");
+  const projectedPercent = used / elapsedFraction;
+  const surplus = 100 - projectedPercent;
+  if (surplus >= 0) {
+    return {
+      status: "ok",
+      message: t("limits.pace.remaining", { percent: formatPacePercent(surplus) })
+    };
+  }
+
+  const remainingPercent = Math.max(0, 100 - used);
+  const percentPerMs = used > 0 ? used / elapsedMs : 0;
+  if (remainingPercent > 0 && percentPerMs > 0) {
+    const hitMs = nowMs + remainingPercent / percentPerMs;
+    const beforeResetMs = resetMs - hitMs;
+    if (beforeResetMs > 60 * 1000) {
+      return {
+        status: "risk",
+        message: t("limits.pace.hitBeforeReset", { duration: formatDurationCompact(beforeResetMs) })
+      };
+    }
+  }
+
+  return {
+    status: "risk",
+    message: t("limits.pace.shortfall", { percent: formatPacePercent(Math.abs(surplus)) })
+  };
+}
+
+function limitPaceUnavailable(reason) {
+  return {
+    status: "unknown",
+    message: t(`limits.pace.unavailable.${reason}`, {}, t("limits.pace.unavailable.noWindow"))
+  };
+}
+
+function formatPacePercent(value) {
+  const rounded = Math.round(Math.abs(Number(value) || 0));
+  return String(Math.max(1, rounded));
+}
+
+function formatDurationCompact(ms) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return t("limits.duration.daysHours", { days, hours });
+  if (hours > 0) return t("limits.duration.hoursMinutes", { hours, minutes });
+  return t("limits.duration.minutes", { minutes });
 }
 
 function limitStatusAccent(status, fallback) {
@@ -6207,6 +6286,12 @@ function subscriptionFootValue(subscription) {
 
 function subscriptionSourceLabel(source) {
   return t(`subscriptions.sources.${source || "unknown"}`, {}, source || t("pricing.unknown"));
+}
+
+function subscriptionCostMissingText(subscription) {
+  const reasonKey = subscription?.costReason || subscriptionCostMissingReasonKey(null, subscription?.planSource || subscription?.source);
+  const source = subscriptionSourceLabel(subscription?.planSource || subscription?.source || "unknown");
+  return t(`subscriptions.costReasons.${reasonKey}`, { source }, t("subscriptions.costReasons.catalogMissing"));
 }
 
 function shortReset(value) {

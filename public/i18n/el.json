@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Υψηλος ρυθμος",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Οι μπαρες κρατουν τα χρωματα παροχου· τα μηνυματα ρυθμου δειχνουν αν η χρηση κρατα ως την επαναφορα.",
+    "pace": {
+      "remaining": "Με τον τρεχοντα ρυθμο θα μεινει περιπου {percent}% στην επαναφορα.",
+      "shortfall": "Με τον τρεχοντα ρυθμο θα λειπει περιπου {percent}% στην επαναφορα.",
+      "hitBeforeReset": "Με τον τρεχοντα ρυθμο το οριο θα φτασει περιπου {duration} πριν την επαναφορα.",
+      "fullWithReset": "Το οριο επιτευχθηκε· επαναφορα {time}.",
+      "fullNoReset": "Το οριο επιτευχθηκε· η ωρα επαναφορας δεν ειναι διαθεσιμη.",
+      "unavailable": {
+        "noUsage": "Ο ρυθμος δεν ειναι διαθεσιμος: η πηγη δεν δινει ποσοστο χρησης.",
+        "noWindow": "Ο ρυθμος δεν ειναι διαθεσιμος: η πηγη δεν δινει διαρκεια παραθυρου ή ωρα επαναφορας.",
+        "notStarted": "Ο ρυθμος δεν ειναι διαθεσιμος: το παραθυρο quota δεν εχει αρχισει.",
+        "staleReset": "Ο ρυθμος δεν ειναι διαθεσιμος: η ωρα επαναφορας ειναι παλια· ανανεωστε την πηγη."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} η {hours} ω",
+      "hoursMinutes": "{hours} ω {minutes} λ",
+      "minutes": "{minutes} λ"
+    }
   },
   "tokens": {
     "input": "Είσοδος",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "δημόσιος κατάλογος συνδρομών OpenAI",
-      "anthropic_public_catalog": "δημόσιος κατάλογος συνδρομών Anthropic"
+      "anthropic_public_catalog": "δημόσιος κατάλογος συνδρομών Anthropic",
+      "claude_browser_sync": "συγχρονισμος browser/λογαριασμου Claude",
+      "claude_api": "API χρησης λογαριασμου Claude",
+      "browser": "πηγη λογαριασμου browser"
     },
     "catalogReviewed": "Ο κατάλογος ελέγχθηκε στις {date}",
     "costReasons": {
-      "catalogMissing": "Δεν βρέθηκε αξιόπιστη τιμή καταλόγου ή λογαριασμού που να ταιριάζει με αυτό το αναγνωρισμένο πλάνο."
+      "catalogMissing": "Δεν βρεθηκε αξιοπιστη τιμη καταλογου ή λογαριασμου για αυτο το πλανο.",
+      "catalogMissingCodexAppServer": "Ο τοπικος Codex app-server εδωσε το πλανο, αλλα οχι μηνιαια τιμη· δεν ταιριαξε αξιοπιστη τιμη καταλογου.",
+      "catalogMissingClaudeStatusline": "Το Claude statusline εδωσε το πλανο, αλλα οχι μηνιαια τιμη· λειπουν δεδομενα browser/λογαριασμου ή δεν δινουν τιμη.",
+      "catalogMissingClaudeAuth": "Το Claude CLI auth εδωσε το πλανο, αλλα οχι μηνιαια τιμη· λειπουν δεδομενα browser/λογαριασμου ή δεν δινουν τιμη.",
+      "catalogMissingClaudeBrowser": "Ελεγχθηκε το {source}, αλλα δεν δινει μηνιαια τιμη πλανου."
     },
     "costActions": {
       "addFallback": "Ενημερώστε την πηγή καταλόγου/λογαριασμού ή προσθέστε εφεδρική εκτίμηση στο Advanced."

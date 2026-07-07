@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Високо темпо",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Лентите пазят цветовете на доставчика; съобщенията за темпо показват дали употребата ще стигне до нулирането.",
+    "pace": {
+      "remaining": "При текущото темпо ще останат около {percent}% при нулиране.",
+      "shortfall": "При текущото темпо ще липсват около {percent}% при нулиране.",
+      "hitBeforeReset": "При текущото темпо лимитът ще бъде достигнат около {duration} преди нулирането.",
+      "fullWithReset": "Лимитът е достигнат; нулиране {time}.",
+      "fullNoReset": "Лимитът е достигнат; часът за нулиране не е наличен.",
+      "unavailable": {
+        "noUsage": "Темпото не е налично: този източник няма процент употреба.",
+        "noWindow": "Темпото не е налично: този източник няма дължина на прозорец или час за нулиране.",
+        "notStarted": "Темпото не е налично: този квотен прозорец още не е започнал.",
+        "staleReset": "Темпото не е налично: часът за нулиране е остарял; обновете източника."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} д {hours} ч",
+      "hoursMinutes": "{hours} ч {minutes} мин",
+      "minutes": "{minutes} мин"
+    }
   },
   "tokens": {
     "input": "Вход",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "публичен каталог с абонаменти на OpenAI",
-      "anthropic_public_catalog": "публичен каталог с абонаменти на Anthropic"
+      "anthropic_public_catalog": "публичен каталог с абонаменти на Anthropic",
+      "claude_browser_sync": "синхронизация на браузър/акаунт Claude",
+      "claude_api": "API за употреба на акаунт Claude",
+      "browser": "източник от браузърен акаунт"
     },
     "catalogReviewed": "Каталогът е прегледан на {date}",
     "costReasons": {
-      "catalogMissing": "Няма надеждна каталожна или акаунт цена, която да съответства на този разпознат план."
+      "catalogMissing": "Няма надеждна каталожна или акаунт цена за този открит план.",
+      "catalogMissingCodexAppServer": "Локалният app-server на Codex показа плана, но не месечна цена; няма надеждна каталожна цена.",
+      "catalogMissingClaudeStatusline": "Statusline на Claude показа плана, но не месечна цена; браузърните/акаунт данни липсват или не показват цена.",
+      "catalogMissingClaudeAuth": "CLI удостоверяването на Claude показа плана, но не месечна цена; браузърните/акаунт данни липсват или не показват цена.",
+      "catalogMissingClaudeBrowser": "{source} е проверен, но не показва месечна цена на плана."
     },
     "costActions": {
       "addFallback": "Актуализирайте каталожния/акаунт източник или добавете резервна оценка в Advanced."

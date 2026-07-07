@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Hojt tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Bjalker beholder udbyderfarver; tempobeskeder viser, om forbruget holder til nulstilling.",
+    "pace": {
+      "remaining": "Med nuvaerende tempo er der cirka {percent}% tilbage ved nulstilling.",
+      "shortfall": "Med nuvaerende tempo mangler der cirka {percent}% ved nulstilling.",
+      "hitBeforeReset": "Med nuvaerende tempo nas graensen cirka {duration} for nulstilling.",
+      "fullWithReset": "Graensen er naet; nulstilles {time}.",
+      "fullNoReset": "Graensen er naet; nulstillingstid er ikke tilgaengelig.",
+      "unavailable": {
+        "noUsage": "Tempo er ikke tilgaengeligt: denne kilde giver ingen forbrugsprocent.",
+        "noWindow": "Tempo er ikke tilgaengeligt: denne kilde giver ingen vindueslaengde eller nulstillingstid.",
+        "notStarted": "Tempo er ikke tilgaengeligt: dette kvotevindue er ikke startet endnu.",
+        "staleReset": "Tempo er ikke tilgaengeligt: nulstillingstiden er foraeldet; opdater kilden."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} t",
+      "hoursMinutes": "{hours} t {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Input",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAIs offentlige abonnementskatalog",
-      "anthropic_public_catalog": "Anthropics offentlige abonnementskatalog"
+      "anthropic_public_catalog": "Anthropics offentlige abonnementskatalog",
+      "claude_browser_sync": "Claude browser-/kontosynk",
+      "claude_api": "Claude konto-forbrugs-API",
+      "browser": "browserkontokilde"
     },
     "catalogReviewed": "Katalog gennemgået {date}",
     "costReasons": {
-      "catalogMissing": "Ingen betroet katalog- eller kontopris matchede denne registrerede plan."
+      "catalogMissing": "Ingen palidelig katalog- eller kontopris matcher denne registrerede plan.",
+      "catalogMissingCodexAppServer": "Codex app-server viste planen, men ikke en manedspris; ingen palidelig katalogpris matcher.",
+      "catalogMissingClaudeStatusline": "Claude statusline viste planen, men ikke en manedspris; browser-/kontodata mangler eller viser ingen pris.",
+      "catalogMissingClaudeAuth": "Claude CLI-auth viste planen, men ikke en manedspris; browser-/kontodata mangler eller viser ingen pris.",
+      "catalogMissingClaudeBrowser": "{source} blev kontrolleret, men viser ingen manedlig planpris."
     },
     "costActions": {
       "addFallback": "Opdater katalog-/kontokilden, eller tilføj et Advanced-reserveestimat."

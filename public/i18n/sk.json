@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Vysoke tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Pruhy si ponechavaju farby poskytovatelov; spravy o tempe ukazuju, ci vyuzitie vydrzi do resetu.",
+    "pace": {
+      "remaining": "Pri sucasnom tempe zostane do resetu asi {percent}%.",
+      "shortfall": "Pri sucasnom tempe bude do resetu chybat asi {percent}%.",
+      "hitBeforeReset": "Pri sucasnom tempe bude limit dosiahnuty asi {duration} pred resetom.",
+      "fullWithReset": "Limit dosiahnuty; reset {time}.",
+      "fullNoReset": "Limit dosiahnuty; cas resetu nie je dostupny.",
+      "unavailable": {
+        "noUsage": "Tempo nie je dostupne: tento zdroj neposkytuje percento vyuzitia.",
+        "noWindow": "Tempo nie je dostupne: tento zdroj neposkytuje dlzku okna ani cas resetu.",
+        "notStarted": "Tempo nie je dostupne: toto kvotove okno sa este nezacalo.",
+        "staleReset": "Tempo nie je dostupne: cas resetu je zastarany; obnovte zdroj."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Vstup",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "verejný katalóg predplatného OpenAI",
-      "anthropic_public_catalog": "verejný katalóg predplatného Anthropic"
+      "anthropic_public_catalog": "verejný katalóg predplatného Anthropic",
+      "claude_browser_sync": "synchronizacia prehliadaca/uctu Claude",
+      "claude_api": "API vyuzitia uctu Claude",
+      "browser": "zdroj uctu prehliadaca"
     },
     "catalogReviewed": "Katalóg skontrolovaný {date}",
     "costReasons": {
-      "catalogMissing": "Tomuto zistenému plánu nezodpovedá žiadna dôveryhodná cena z katalógu ani účtu."
+      "catalogMissing": "Ziadna doveryhodna katalogova ani uctova cena nezodpoveda tomuto zistenemu planu.",
+      "catalogMissingCodexAppServer": "Miestny app-server Codex zobrazil plan, ale nie mesacnu cenu; ziadna doveryhodna katalogova cena nesedi.",
+      "catalogMissingClaudeStatusline": "Claude statusline zobrazil plan, ale nie mesacnu cenu; data prehliadaca/uctu chybaju alebo cenu neobsahuju.",
+      "catalogMissingClaudeAuth": "Claude CLI auth zobrazil plan, ale nie mesacnu cenu; data prehliadaca/uctu chybaju alebo cenu neobsahuju.",
+      "catalogMissingClaudeBrowser": "{source} bol skontrolovany, ale neobsahuje mesacnu cenu planu."
     },
     "costActions": {
       "addFallback": "Aktualizujte zdroj katalógu/účtu alebo pridajte záložný odhad v Advanced."

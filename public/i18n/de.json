@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} genutzt",
     "status": {
       "ok": "Im Plan",
-      "risk": "Quote beobachten",
+      "risk": "Tempo zu hoch",
       "full": "Limit erreicht",
       "unknown": "Unbekannt"
     },
-    "statusLegend": "Quota-Farben zeigen nur das Risiko; Provider- und Modellidentität nutzen eigene Labels."
+    "paceLegend": "Balken behalten die Anbieterfarben; Tempo-Hinweise zeigen, ob die Nutzung bis zum Reset reicht.",
+    "pace": {
+      "remaining": "Bei aktuellem Tempo bleiben bis zum Reset ca. {percent}% übrig.",
+      "shortfall": "Bei aktuellem Tempo fehlen bis zum Reset ca. {percent}%.",
+      "hitBeforeReset": "Bei aktuellem Tempo wird das Limit ca. {duration} vor dem Reset erreicht.",
+      "fullWithReset": "Limit erreicht; Reset {time}.",
+      "fullNoReset": "Limit erreicht; Reset-Zeit nicht verfügbar.",
+      "unavailable": {
+        "noUsage": "Tempo nicht verfügbar: diese Quelle liefert keinen Nutzungsprozentsatz.",
+        "noWindow": "Tempo nicht verfügbar: diese Quelle liefert keine Fensterlänge oder Reset-Zeit.",
+        "notStarted": "Tempo nicht verfügbar: dieses Quotenfenster hat noch nicht begonnen.",
+        "staleReset": "Tempo nicht verfügbar: Reset-Zeit ist veraltet; Quelle aktualisieren."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} T {hours} Std.",
+      "hoursMinutes": "{hours} Std. {minutes} Min.",
+      "minutes": "{minutes} Min."
+    }
   },
   "tokens": {
     "input": "Input",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic-API-Metadaten",
       "unknown": "unbekannt",
       "openai_public_catalog": "öffentlicher OpenAI-Abo-Katalog",
-      "anthropic_public_catalog": "öffentlicher Anthropic-Abo-Katalog"
+      "anthropic_public_catalog": "öffentlicher Anthropic-Abo-Katalog",
+      "claude_browser_sync": "Claude-Browser-/Account-Sync",
+      "claude_api": "Claude-Account-Nutzungs-API",
+      "browser": "Browser-Account-Quelle"
     },
     "catalogReviewed": "Katalog geprüft am {date}",
     "costReasons": {
-      "catalogMissing": "Kein vertrauenswürdiger Katalog- oder Account-Preis passt zu diesem erkannten Plan."
+      "catalogMissing": "Kein vertrauenswürdiger Katalog- oder Account-Preis passt zu diesem erkannten Plan.",
+      "catalogMissingCodexAppServer": "Der Codex-App-Server hat den Plan geliefert, aber keinen Monatspreis; kein vertrauenswürdiger Katalogpreis passt dazu.",
+      "catalogMissingClaudeStatusline": "Die Claude-Statusline hat den Plan geliefert, aber keinen Monatspreis; Browser-/Account-Daten fehlen oder liefern keinen Preis.",
+      "catalogMissingClaudeAuth": "Der Claude-CLI-Auth-Status hat den Plan geliefert, aber keinen Monatspreis; Browser-/Account-Daten fehlen oder liefern keinen Preis.",
+      "catalogMissingClaudeBrowser": "{source} wurde geprüft, liefert aber keinen monatlichen Planpreis."
     },
     "costActions": {
       "addFallback": "Aktualisiere Katalog/Account-Quelle oder nutze Advanced-Fallback-Schätzung."

@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Visok tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Trake zadrzavaju boje pruzatelja; poruke tempa pokazuju hoce li potrosnja trajati do resetiranja.",
+    "pace": {
+      "remaining": "Trenutnim tempom do resetiranja ostaje oko {percent}%.",
+      "shortfall": "Trenutnim tempom do resetiranja nedostaje oko {percent}%.",
+      "hitBeforeReset": "Trenutnim tempom limit ce biti dosegnut oko {duration} prije resetiranja.",
+      "fullWithReset": "Limit dosegnut; resetiranje {time}.",
+      "fullNoReset": "Limit dosegnut; vrijeme resetiranja nije dostupno.",
+      "unavailable": {
+        "noUsage": "Tempo nije dostupan: ovaj izvor ne daje postotak potrosnje.",
+        "noWindow": "Tempo nije dostupan: ovaj izvor ne daje trajanje prozora ili vrijeme resetiranja.",
+        "notStarted": "Tempo nije dostupan: ovaj kvotni prozor jos nije poceo.",
+        "staleReset": "Tempo nije dostupan: vrijeme resetiranja je zastarjelo; osvjezite izvor."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Ulaz",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "javni katalog pretplata OpenAI",
-      "anthropic_public_catalog": "javni katalog pretplata Anthropic"
+      "anthropic_public_catalog": "javni katalog pretplata Anthropic",
+      "claude_browser_sync": "sinkronizacija preglednika/racuna Claude",
+      "claude_api": "API upotrebe racuna Claude",
+      "browser": "izvor racuna preglednika"
     },
     "catalogReviewed": "Katalog pregledan {date}",
     "costReasons": {
-      "catalogMissing": "Nijedna pouzdana cijena iz kataloga ili računa ne odgovara ovom prepoznatom planu."
+      "catalogMissing": "Nema pouzdane kataloske ili racunske cijene za ovaj otkriveni plan.",
+      "catalogMissingCodexAppServer": "Lokalni Codex app-server prikazao je plan, ali ne mjesecnu cijenu; nema pouzdane kataloske cijene.",
+      "catalogMissingClaudeStatusline": "Claude statusline prikazao je plan, ali ne mjesecnu cijenu; podaci preglednika/racuna nedostaju ili ne prikazuju cijenu.",
+      "catalogMissingClaudeAuth": "Claude CLI auth prikazao je plan, ali ne mjesecnu cijenu; podaci preglednika/racuna nedostaju ili ne prikazuju cijenu.",
+      "catalogMissingClaudeBrowser": "{source} je provjeren, ali ne prikazuje mjesecnu cijenu plana."
     },
     "costActions": {
       "addFallback": "Ažurirajte izvor kataloga/računa ili dodajte rezervnu procjenu u Advanced."

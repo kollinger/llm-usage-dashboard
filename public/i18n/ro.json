@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Ritm ridicat",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Barele pastreaza culorile furnizorului; mesajele de ritm arata daca utilizarea ajunge pana la resetare.",
+    "pace": {
+      "remaining": "La ritmul actual raman aproximativ {percent}% la resetare.",
+      "shortfall": "La ritmul actual lipsesc aproximativ {percent}% la resetare.",
+      "hitBeforeReset": "La ritmul actual limita va fi atinsa cu aproximativ {duration} inainte de resetare.",
+      "fullWithReset": "Limita atinsa; resetare {time}.",
+      "fullNoReset": "Limita atinsa; ora resetarii nu este disponibila.",
+      "unavailable": {
+        "noUsage": "Ritm indisponibil: aceasta sursa nu ofera procent de utilizare.",
+        "noWindow": "Ritm indisponibil: aceasta sursa nu ofera durata ferestrei sau ora resetarii.",
+        "notStarted": "Ritm indisponibil: aceasta fereastra de cota nu a inceput inca.",
+        "staleReset": "Ritm indisponibil: ora resetarii este invechita; reimprospatati sursa."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} z {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Intrare",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "catalogul public de abonamente OpenAI",
-      "anthropic_public_catalog": "catalogul public de abonamente Anthropic"
+      "anthropic_public_catalog": "catalogul public de abonamente Anthropic",
+      "claude_browser_sync": "sincronizare browser/cont Claude",
+      "claude_api": "API utilizare cont Claude",
+      "browser": "sursa cont browser"
     },
     "catalogReviewed": "Catalog verificat la {date}",
     "costReasons": {
-      "catalogMissing": "Niciun preț de catalog sau de cont de încredere nu se potrivește cu acest plan detectat."
+      "catalogMissing": "Niciun pret de catalog sau cont de incredere nu corespunde acestui plan detectat.",
+      "catalogMissingCodexAppServer": "Serverul local Codex a expus planul, dar nu pretul lunar; niciun pret de catalog de incredere nu corespunde.",
+      "catalogMissingClaudeStatusline": "Statusline Claude a expus planul, dar nu pretul lunar; datele browser/cont lipsesc sau nu expun pretul.",
+      "catalogMissingClaudeAuth": "Autentificarea CLI Claude a expus planul, dar nu pretul lunar; datele browser/cont lipsesc sau nu expun pretul.",
+      "catalogMissingClaudeBrowser": "{source} a fost verificata, dar nu expune un pret lunar al planului."
     },
     "costActions": {
       "addFallback": "Actualizează sursa catalogului/contului sau adaugă o estimare de rezervă în Advanced."

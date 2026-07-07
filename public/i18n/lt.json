@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Didelis tempas",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Juostos islaiko tiekejo spalvas; tempo zinutes rodo, ar naudojimas uzteks iki atstatymo.",
+    "pace": {
+      "remaining": "Dabartiniu tempu iki atstatymo liks apie {percent}%.",
+      "shortfall": "Dabartiniu tempu iki atstatymo truks apie {percent}%.",
+      "hitBeforeReset": "Dabartiniu tempu limitas bus pasiektas mazdaug {duration} pries atstatyma.",
+      "fullWithReset": "Limitas pasiektas; atstatymas {time}.",
+      "fullNoReset": "Limitas pasiektas; atstatymo laikas neprieinamas.",
+      "unavailable": {
+        "noUsage": "Tempas neprieinamas: sis saltinis nepateikia naudojimo procento.",
+        "noWindow": "Tempas neprieinamas: sis saltinis nepateikia lango trukmes ar atstatymo laiko.",
+        "notStarted": "Tempas neprieinamas: sis kvotos langas dar neprasidejo.",
+        "staleReset": "Tempas neprieinamas: atstatymo laikas pasenes; atnaujinkite saltini."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} val.",
+      "hoursMinutes": "{hours} val. {minutes} min.",
+      "minutes": "{minutes} min."
+    }
   },
   "tokens": {
     "input": "Įvestis",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "viešasis „OpenAI“ prenumeratų katalogas",
-      "anthropic_public_catalog": "viešasis „Anthropic“ prenumeratų katalogas"
+      "anthropic_public_catalog": "viešasis „Anthropic“ prenumeratų katalogas",
+      "claude_browser_sync": "Claude narsykles/paskyros sinchronizacija",
+      "claude_api": "Claude paskyros naudojimo API",
+      "browser": "narsykles paskyros saltinis"
     },
     "catalogReviewed": "Katalogas peržiūrėtas {date}",
     "costReasons": {
-      "catalogMissing": "Šiam aptiktam planui neatitiko jokia patikima katalogo arba paskyros kaina."
+      "catalogMissing": "Nera patikimos katalogo ar paskyros kainos siam aptiktam planui.",
+      "catalogMissingCodexAppServer": "Vietinis Codex app-server parode plana, bet ne menesio kaina; patikima katalogo kaina nerasta.",
+      "catalogMissingClaudeStatusline": "Claude statusline parode plana, bet ne menesio kaina; narsykles/paskyros duomenu nera arba jie nerodo kainos.",
+      "catalogMissingClaudeAuth": "Claude CLI auth parode plana, bet ne menesio kaina; narsykles/paskyros duomenu nera arba jie nerodo kainos.",
+      "catalogMissingClaudeBrowser": "{source} patikrintas, bet nerodo menesines plano kainos."
     },
     "costActions": {
       "addFallback": "Atnaujinkite katalogo / paskyros šaltinį arba pridėkite atsarginį įvertį skiltyje Advanced."

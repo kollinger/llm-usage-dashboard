@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Ritmu gholi",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Il-bars izommu l-kuluri tal-fornitur; il-messaggi tar-ritmu juru jekk l-uzu jasalx sal-reset.",
+    "pace": {
+      "remaining": "Bir-ritmu attwali jibqa madwar {percent}% sal-reset.",
+      "shortfall": "Bir-ritmu attwali jonqos madwar {percent}% sal-reset.",
+      "hitBeforeReset": "Bir-ritmu attwali l-limitu jintlaħaq madwar {duration} qabel ir-reset.",
+      "fullWithReset": "Il-limitu ntlaħaq; reset {time}.",
+      "fullNoReset": "Il-limitu ntlaħaq; il-hin tar-reset mhux disponibbli.",
+      "unavailable": {
+        "noUsage": "Ritmu mhux disponibbli: dan is-sors ma jaghtix percentwal ta uzu.",
+        "noWindow": "Ritmu mhux disponibbli: dan is-sors ma jaghtix tul ta tieqa jew hin tar-reset.",
+        "notStarted": "Ritmu mhux disponibbli: din it-tieqa tal-kwota ghadha ma bdietx.",
+        "staleReset": "Ritmu mhux disponibbli: il-hin tar-reset qadim; aggorna s-sors."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} j {hours} sieg",
+      "hoursMinutes": "{hours} sieg {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Input",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "katalgu pubbliku tal-abbonamenti ta' OpenAI",
-      "anthropic_public_catalog": "katalgu pubbliku tal-abbonamenti ta' Anthropic"
+      "anthropic_public_catalog": "katalgu pubbliku tal-abbonamenti ta' Anthropic",
+      "claude_browser_sync": "sinkronizzazzjoni browser/kont Claude",
+      "claude_api": "API tal-uzu tal-kont Claude",
+      "browser": "sors tal-kont tal-browser"
     },
     "catalogReviewed": "Katalgu rivedut fil-{date}",
     "costReasons": {
-      "catalogMissing": "L-ebda prezz affidabbli mill-katalgu jew mill-kont ma jaqbel ma' dan il-pjan misjub."
+      "catalogMissing": "L-ebda prezz affidabbli tal-katalogu jew tal-kont ma jaqbel ma dan il-pjan misjub.",
+      "catalogMissingCodexAppServer": "L-app-server lokali Codex wera l-pjan, imma mhux prezz fix-xahar; ma nstabx prezz affidabbli fil-katalogu.",
+      "catalogMissingClaudeStatusline": "Claude statusline wera l-pjan, imma mhux prezz fix-xahar; dejta tal-browser/kont nieqsa jew ma turix prezz.",
+      "catalogMissingClaudeAuth": "Claude CLI auth wera l-pjan, imma mhux prezz fix-xahar; dejta tal-browser/kont nieqsa jew ma turix prezz.",
+      "catalogMissingClaudeBrowser": "{source} gie ccekjat, imma ma jurix prezz fix-xahar tal-pjan."
     },
     "costActions": {
       "addFallback": "Aġġorna s-sors tal-katalgu/kont jew żid stima ta' riżerva f'Advanced."

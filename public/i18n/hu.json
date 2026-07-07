@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Magas tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "A savok megtartjak a szolgaltatoi szineket; a tempo-uzenetek mutatjak, kitart-e a hasznalat a visszaallitasig.",
+    "pace": {
+      "remaining": "A jelenlegi tempoval a visszaallitasig kb. {percent}% marad.",
+      "shortfall": "A jelenlegi tempoval a visszaallitasig kb. {percent}% hianyzik.",
+      "hitBeforeReset": "A jelenlegi tempoval a limit kb. {duration} idovel a visszaallitas elott elerheto.",
+      "fullWithReset": "Limit elerve; visszaallitas {time}.",
+      "fullNoReset": "Limit elerve; a visszaallitas ideje nem elerheto.",
+      "unavailable": {
+        "noUsage": "Tempo nem elerheto: ez a forras nem ad hasznalati szazalekot.",
+        "noWindow": "Tempo nem elerheto: ez a forras nem ad ablak-hosszt vagy visszaallitasi idot.",
+        "notStarted": "Tempo nem elerheto: ez a kvotaablak meg nem indult el.",
+        "staleReset": "Tempo nem elerheto: a visszaallitasi ido elavult; frissitse a forrast."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} n {hours} o",
+      "hoursMinutes": "{hours} o {minutes} p",
+      "minutes": "{minutes} p"
+    }
   },
   "tokens": {
     "input": "Bemenet",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAI nyilvános előfizetési katalógusa",
-      "anthropic_public_catalog": "Anthropic nyilvános előfizetési katalógusa"
+      "anthropic_public_catalog": "Anthropic nyilvános előfizetési katalógusa",
+      "claude_browser_sync": "Claude bongeszo-/fiokszinkron",
+      "claude_api": "Claude fiokhasznalati API",
+      "browser": "bongeszofiok-forras"
     },
     "catalogReviewed": "Katalógus ellenőrizve: {date}",
     "costReasons": {
-      "catalogMissing": "Nem találtunk megbízható katalógus- vagy fiókárat ehhez az észlelt csomaghoz."
+      "catalogMissing": "Nincs megbizhato katalogus- vagy fiokar ehhez az eszlelt csomaghoz.",
+      "catalogMissingCodexAppServer": "A helyi Codex app-server megadta a csomagot, de nem havi arat; nincs megbizhato katalogusar.",
+      "catalogMissingClaudeStatusline": "A Claude statusline megadta a csomagot, de nem havi arat; a bongeszo-/fiokadat hianyzik vagy nem tartalmaz arat.",
+      "catalogMissingClaudeAuth": "A Claude CLI auth megadta a csomagot, de nem havi arat; a bongeszo-/fiokadat hianyzik vagy nem tartalmaz arat.",
+      "catalogMissingClaudeBrowser": "{source} ellenorizve lett, de nem ad havi csomagarat."
     },
     "costActions": {
       "addFallback": "Frissítse a katalógus-/fiókforrást, vagy adjon meg egy tartalék becslést az Advanced részben."

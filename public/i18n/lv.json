@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Augsts temps",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Joslas saglaba piegadataju krasas; tempa zinojumi rada, vai lietojums pietiks lidz atiestatei.",
+    "pace": {
+      "remaining": "Pie pasreizeja tempa lidz atiestatei paliks ap {percent}%.",
+      "shortfall": "Pie pasreizeja tempa lidz atiestatei pietruks ap {percent}%.",
+      "hitBeforeReset": "Pie pasreizeja tempa limits tiks sasniegts ap {duration} pirms atiestates.",
+      "fullWithReset": "Limits sasniegts; atiestate {time}.",
+      "fullNoReset": "Limits sasniegts; atiestates laiks nav pieejams.",
+      "unavailable": {
+        "noUsage": "Temps nav pieejams: sis avots nesniedz lietojuma procentu.",
+        "noWindow": "Temps nav pieejams: sis avots nesniedz loga ilgumu vai atiestates laiku.",
+        "notStarted": "Temps nav pieejams: sis kvotas logs vel nav sacies.",
+        "staleReset": "Temps nav pieejams: atiestates laiks ir novecojis; atsvaidziniet avotu."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Ievade",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAI publiskais abonementu katalogs",
-      "anthropic_public_catalog": "Anthropic publiskais abonementu katalogs"
+      "anthropic_public_catalog": "Anthropic publiskais abonementu katalogs",
+      "claude_browser_sync": "Claude parluka/konta sinhronizacija",
+      "claude_api": "Claude konta lietojuma API",
+      "browser": "parluka konta avots"
     },
     "catalogReviewed": "Katalogs pārskatīts {date}",
     "costReasons": {
-      "catalogMissing": "Šim noteiktajam plānam neatbilst neviena uzticama kataloga vai konta cena."
+      "catalogMissing": "Nav uzticamas kataloga vai konta cenas sim noteiktajam planam.",
+      "catalogMissingCodexAppServer": "Vietejais Codex app-server paradija planu, bet ne menesa cenu; nav atbilstosas uzticamas kataloga cenas.",
+      "catalogMissingClaudeStatusline": "Claude statusline paradija planu, bet ne menesa cenu; parluka/konta dati trukst vai nerada cenu.",
+      "catalogMissingClaudeAuth": "Claude CLI auth paradija planu, bet ne menesa cenu; parluka/konta dati trukst vai nerada cenu.",
+      "catalogMissingClaudeBrowser": "{source} tika parbaudits, bet nerada menesa plana cenu."
     },
     "costActions": {
       "addFallback": "Atjauniniet kataloga/konta avotu vai pievienojiet rezerves aplēsi sadaļā Advanced."

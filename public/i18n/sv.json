@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "Pa ratt vag",
-      "risk": "Bevaka kvot",
+      "risk": "Hog takt",
       "full": "Grans nadd",
       "unknown": "Okant"
     },
-    "statusLegend": "Kvotfarger visar bara risk; leverantor och modell anvander separata etiketter."
+    "paceLegend": "Staplar behaller leverantorsfarger; taktmeddelanden visar om anvandningen racker till aterstallning.",
+    "pace": {
+      "remaining": "I nuvarande takt finns cirka {percent}% kvar vid aterstallning.",
+      "shortfall": "I nuvarande takt saknas cirka {percent}% vid aterstallning.",
+      "hitBeforeReset": "I nuvarande takt nas gransen cirka {duration} fore aterstallning.",
+      "fullWithReset": "Gransen nadd; aterstallning {time}.",
+      "fullNoReset": "Gransen nadd; aterstallningstid saknas.",
+      "unavailable": {
+        "noUsage": "Takt saknas: den har kallan ger ingen anvandningsprocent.",
+        "noWindow": "Takt saknas: den har kallan ger ingen fonsterlangd eller aterstallningstid.",
+        "notStarted": "Takt saknas: det har kvotfonstret har inte startat an.",
+        "staleReset": "Takt saknas: aterstallningstiden ar gammal; uppdatera kallan."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Indata",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "OpenAIs offentliga prenumerationskatalog",
-      "anthropic_public_catalog": "Anthropics offentliga prenumerationskatalog"
+      "anthropic_public_catalog": "Anthropics offentliga prenumerationskatalog",
+      "claude_browser_sync": "Claude webblasare-/kontosynk",
+      "claude_api": "Claude kontoanvandnings-API",
+      "browser": "webblasarens kontokalla"
     },
     "catalogReviewed": "Katalog granskad {date}",
     "costReasons": {
-      "catalogMissing": "Inget betrott katalog- eller kontopris matchade den identifierade planen."
+      "catalogMissing": "Inget tillforlitligt katalog- eller kontopris matchar den upptackta planen.",
+      "catalogMissingCodexAppServer": "Lokal Codex app-server visade planen, men inget manadspris; inget tillforlitligt katalogpris matchar.",
+      "catalogMissingClaudeStatusline": "Claude statusline visade planen, men inget manadspris; webblasar-/kontodata saknas eller visar inget pris.",
+      "catalogMissingClaudeAuth": "Claude CLI-auth visade planen, men inget manadspris; webblasar-/kontodata saknas eller visar inget pris.",
+      "catalogMissingClaudeBrowser": "{source} kontrollerades, men visar inget manadspris for planen."
     },
     "costActions": {
       "addFallback": "Uppdatera katalog-/kontokällan eller lägg till en reservuppskattning i Advanced."

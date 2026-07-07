@@ -380,11 +380,29 @@
     "fullQuotaDetail": "{usage} used",
     "status": {
       "ok": "On track",
-      "risk": "Watch quota",
+      "risk": "Visok tempo",
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "statusLegend": "Quota colors show risk only; provider and model identity use separate labels."
+    "paceLegend": "Vrstice ohranijo barve ponudnika; sporocila tempa pokazejo, ali bo poraba zdrzala do ponastavitve.",
+    "pace": {
+      "remaining": "Pri trenutnem tempu bo ob ponastavitvi ostalo priblizno {percent}%.",
+      "shortfall": "Pri trenutnem tempu bo ob ponastavitvi manjkalo priblizno {percent}%.",
+      "hitBeforeReset": "Pri trenutnem tempu bo omejitev dosezena priblizno {duration} pred ponastavitvijo.",
+      "fullWithReset": "Omejitev dosezena; ponastavitev {time}.",
+      "fullNoReset": "Omejitev dosezena; cas ponastavitve ni na voljo.",
+      "unavailable": {
+        "noUsage": "Tempo ni na voljo: ta vir ne poda odstotka uporabe.",
+        "noWindow": "Tempo ni na voljo: ta vir ne poda dolzine okna ali casa ponastavitve.",
+        "notStarted": "Tempo ni na voljo: to kvotno okno se se ni zacelo.",
+        "staleReset": "Tempo ni na voljo: cas ponastavitve je zastarel; osvezite vir."
+      }
+    },
+    "duration": {
+      "daysHours": "{days} d {hours} h",
+      "hoursMinutes": "{hours} h {minutes} min",
+      "minutes": "{minutes} min"
+    }
   },
   "tokens": {
     "input": "Vhod",
@@ -751,11 +769,18 @@
       "anthropic_api": "Anthropic API metadata",
       "unknown": "unknown",
       "openai_public_catalog": "javni katalog naročnin OpenAI",
-      "anthropic_public_catalog": "javni katalog naročnin Anthropic"
+      "anthropic_public_catalog": "javni katalog naročnin Anthropic",
+      "claude_browser_sync": "sinhronizacija brskalnika/racuna Claude",
+      "claude_api": "API uporabe racuna Claude",
+      "browser": "vir brskalniskega racuna"
     },
     "catalogReviewed": "Katalog pregledan {date}",
     "costReasons": {
-      "catalogMissing": "Nobena zaupanja vredna kataloška ali računska cena se ne ujema s tem zaznanim paketom."
+      "catalogMissing": "Nobena zanesljiva kataloska ali racunska cena ne ustreza zaznanemu paketu.",
+      "catalogMissingCodexAppServer": "Lokalni Codex app-server je pokazal paket, vendar ne mesecne cene; zanesljiva kataloska cena ne ustreza.",
+      "catalogMissingClaudeStatusline": "Claude statusline je pokazal paket, vendar ne mesecne cene; podatki brskalnika/racuna manjkajo ali ne prikazejo cene.",
+      "catalogMissingClaudeAuth": "Claude CLI auth je pokazal paket, vendar ne mesecne cene; podatki brskalnika/racuna manjkajo ali ne prikazejo cene.",
+      "catalogMissingClaudeBrowser": "{source} je bil preverjen, vendar ne prikaze mesecne cene paketa."
     },
     "costActions": {
       "addFallback": "Posodobite vir kataloga/računa ali dodajte rezervno oceno v razdelku Advanced."
