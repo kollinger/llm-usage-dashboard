@@ -835,7 +835,8 @@
       "browser": "sursa cont browser",
       "official_pricing_page": "pagină oficială de prețuri",
       "cached_official_snapshot": "snapshot oficial în cache",
-      "bundled_catalog": "catalog inclus"
+      "bundled_catalog": "catalog inclus",
+      "account_billing": "sursă de cont/facturare"
     },
     "catalogReviewed": "Catalog verificat la {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "nu este prezent în această rulare",
       "notAvailable": "nu există sursă sigură de preț doar pentru citire",
       "notUsed": "neutilizat",
-      "officialListPrice": "preț oficial de listă"
+      "officialListPrice": "preț oficial de listă",
+      "accountSourceExpired": "sursa contului a expirat",
+      "accountSourceUnavailable": "sursa contului nu este disponibilă"
     },
     "officialListPriceNote": "Preț oficial de listă; factura reală poate diferi din cauza TVA/taxelor, reducerilor anuale, locurilor, cupoanelor, prețurilor regionale sau contractelor Enterprise.",
     "fetched": "Preluat {time}",

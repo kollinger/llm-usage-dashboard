@@ -835,7 +835,8 @@
       "browser": "izvor racuna preglednika",
       "official_pricing_page": "službena stranica cijena",
       "cached_official_snapshot": "spremljena službena snimka",
-      "bundled_catalog": "ugrađeni katalog"
+      "bundled_catalog": "ugrađeni katalog",
+      "account_billing": "izvor računa/naplate"
     },
     "catalogReviewed": "Katalog pregledan {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "nije prisutno u ovom pokretanju",
       "notAvailable": "nema sigurnog izvora cijene samo za čitanje",
       "notUsed": "ne koristi se",
-      "officialListPrice": "službena kataloška cijena"
+      "officialListPrice": "službena kataloška cijena",
+      "accountSourceExpired": "izvor računa je istekao",
+      "accountSourceUnavailable": "izvor računa nije dostupan"
     },
     "officialListPriceNote": "Službena kataloška cijena; stvarna naplata može odstupati zbog PDV-a/poreza, godišnjih popusta, sjedala, kupona, regionalnih cijena ili Enterprise ugovora.",
     "fetched": "Dohvaćeno {time}",

@@ -835,7 +835,8 @@
       "browser": "parluka konta avots",
       "official_pricing_page": "oficiāla cenu lapa",
       "cached_official_snapshot": "kešots oficiāls momentuzņēmums",
-      "bundled_catalog": "iekļauts katalogs"
+      "bundled_catalog": "iekļauts katalogs",
+      "account_billing": "konta/norēķinu avots"
     },
     "catalogReviewed": "Katalogs pārskatīts {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "nav šajā izpildē",
       "notAvailable": "nav droša tikai lasāma cenu avota",
       "notUsed": "netiek izmantots",
-      "officialListPrice": "oficiālā saraksta cena"
+      "officialListPrice": "oficiālā saraksta cena",
+      "accountSourceExpired": "konta avotam beidzies derīgums",
+      "accountSourceUnavailable": "konta avots nav pieejams"
     },
     "officialListPriceNote": "Oficiālā saraksta cena; faktiskā maksa var atšķirties PVN/nodokļu, gada atlaižu, vietu, kuponu, reģionālo cenu vai Enterprise līgumu dēļ.",
     "fetched": "Nolasīts {time}",

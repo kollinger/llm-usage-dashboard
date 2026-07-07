@@ -837,7 +837,8 @@
       "browser": "browser account source",
       "official_pricing_page": "official pricing page",
       "cached_official_snapshot": "cached official snapshot",
-      "bundled_catalog": "bundled catalog"
+      "bundled_catalog": "bundled catalog",
+      "account_billing": "account/billing source"
     },
     "catalogReviewed": "Catalog reviewed {date}",
     "catalogFallbackNote": "Monthly price is a catalog fallback; read-only app/account sources provide plan, limit, or credit data but no trusted monthly price.",
@@ -860,7 +861,9 @@
       "notConfigured": "not present in this run",
       "notAvailable": "no safe read-only price source available",
       "notUsed": "not used",
-      "officialListPrice": "official list price"
+      "officialListPrice": "official list price",
+      "accountSourceExpired": "account source expired",
+      "accountSourceUnavailable": "account source unavailable"
     },
     "officialListPriceNote": "Official list price; actual billing can differ because of VAT/taxes, annual discounts, seats, coupons, regional pricing, or enterprise contracts.",
     "fetched": "Fetched {time}",

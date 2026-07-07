@@ -835,7 +835,8 @@
       "browser": "selaintilin lahde",
       "official_pricing_page": "virallinen hinnastosivu",
       "cached_official_snapshot": "välimuistissa oleva virallinen vedos",
-      "bundled_catalog": "mukana toimitettu katalogi"
+      "bundled_catalog": "mukana toimitettu katalogi",
+      "account_billing": "tili-/laskutuslähde"
     },
     "catalogReviewed": "Katalogi tarkistettu {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "ei mukana tässä ajossa",
       "notAvailable": "turvallista vain luku -hintalähdettä ei ole",
       "notUsed": "ei käytössä",
-      "officialListPrice": "virallinen listahinta"
+      "officialListPrice": "virallinen listahinta",
+      "accountSourceExpired": "tililähde on vanhentunut",
+      "accountSourceUnavailable": "tililähde ei ole käytettävissä"
     },
     "officialListPriceNote": "Virallinen listahinta; todellinen laskutus voi poiketa ALV:n/verojen, vuosialennusten, käyttäjäpaikkojen, kuponkien, aluehintojen tai Enterprise-sopimusten vuoksi.",
     "fetched": "Haettu {time}",

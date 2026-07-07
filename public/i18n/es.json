@@ -835,7 +835,8 @@
       "browser": "fuente de cuenta del navegador",
       "official_pricing_page": "página oficial de precios",
       "cached_official_snapshot": "instantánea oficial en caché",
-      "bundled_catalog": "catálogo incluido"
+      "bundled_catalog": "catálogo incluido",
+      "account_billing": "fuente de cuenta/facturación"
     },
     "catalogReviewed": "Catálogo revisado el {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "no presente en esta ejecución",
       "notAvailable": "no hay fuente segura de precio de solo lectura",
       "notUsed": "no usado",
-      "officialListPrice": "precio oficial de lista"
+      "officialListPrice": "precio oficial de lista",
+      "accountSourceExpired": "fuente de cuenta caducada",
+      "accountSourceUnavailable": "fuente de cuenta no disponible"
     },
     "officialListPriceNote": "Precio oficial de lista; la facturación real puede variar por IVA/impuestos, descuentos anuales, asientos, cupones, precios regionales o contratos Enterprise.",
     "fetched": "Leído {time}",

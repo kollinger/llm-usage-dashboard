@@ -835,7 +835,8 @@
       "browser": "sors tal-kont tal-browser",
       "official_pricing_page": "paġna uffiċjali tal-prezzijiet",
       "cached_official_snapshot": "snapshot uffiċjali fil-cache",
-      "bundled_catalog": "katalgu inkluż"
+      "bundled_catalog": "katalgu inkluż",
+      "account_billing": "sors tal-kont/fatturazzjoni"
     },
     "catalogReviewed": "Katalgu rivedut fil-{date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "mhux preżenti f’din it-tħaddima",
       "notAvailable": "m’hemmx sors sigur tal-prezz għall-qari biss",
       "notUsed": "mhux użat",
-      "officialListPrice": "prezz uffiċjali tal-lista"
+      "officialListPrice": "prezz uffiċjali tal-lista",
+      "accountSourceExpired": "is-sors tal-kont skada",
+      "accountSourceUnavailable": "is-sors tal-kont mhux disponibbli"
     },
     "officialListPriceNote": "Prezz uffiċjali tal-lista; il-kont reali jista’ jvarja minħabba VAT/taxxi, skontijiet annwali, seats, kupuni, prezzijiet reġjonali jew kuntratti Enterprise.",
     "fetched": "Miġjub {time}",

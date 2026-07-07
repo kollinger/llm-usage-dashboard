@@ -835,7 +835,8 @@
       "browser": "browseraccountbron",
       "official_pricing_page": "officiële prijspagina",
       "cached_official_snapshot": "gecachete officiële snapshot",
-      "bundled_catalog": "meegeleverde catalogus"
+      "bundled_catalog": "meegeleverde catalogus",
+      "account_billing": "account-/factureringsbron"
     },
     "catalogReviewed": "Catalogus gecontroleerd op {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "niet aanwezig in deze run",
       "notAvailable": "geen veilige alleen-lezen prijsbron beschikbaar",
       "notUsed": "niet gebruikt",
-      "officialListPrice": "officiële lijstprijs"
+      "officialListPrice": "officiële lijstprijs",
+      "accountSourceExpired": "accountbron verlopen",
+      "accountSourceUnavailable": "accountbron niet beschikbaar"
     },
     "officialListPriceNote": "Officiële lijstprijs; werkelijke facturatie kan afwijken door btw/belastingen, jaarkortingen, seats, coupons, regionale prijzen of Enterprise-contracten.",
     "fetched": "Opgehaald {time}",

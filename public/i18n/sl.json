@@ -835,7 +835,8 @@
       "browser": "vir brskalniskega racuna",
       "official_pricing_page": "uradna stran s cenami",
       "cached_official_snapshot": "predpomnjen uradni posnetek",
-      "bundled_catalog": "priložen katalog"
+      "bundled_catalog": "priložen katalog",
+      "account_billing": "vir računa/obračunavanja"
     },
     "catalogReviewed": "Katalog pregledan {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "ni prisotno v tem zagonu",
       "notAvailable": "varen vir cene samo za branje ni na voljo",
       "notUsed": "ni uporabljeno",
-      "officialListPrice": "uradna kataloška cena"
+      "officialListPrice": "uradna kataloška cena",
+      "accountSourceExpired": "vir računa je potekel",
+      "accountSourceUnavailable": "vir računa ni na voljo"
     },
     "officialListPriceNote": "Uradna kataloška cena; dejanski obračun se lahko razlikuje zaradi DDV/davkov, letnih popustov, sedežev, kuponov, regionalnih cen ali Enterprise pogodb.",
     "fetched": "Pridobljeno {time}",

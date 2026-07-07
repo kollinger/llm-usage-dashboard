@@ -835,7 +835,8 @@
       "browser": "brauserikonto allikas",
       "official_pricing_page": "ametlik hinnaleht",
       "cached_official_snapshot": "vahemällu salvestatud ametlik tõmmis",
-      "bundled_catalog": "kaasasolev kataloog"
+      "bundled_catalog": "kaasasolev kataloog",
+      "account_billing": "konto/arvelduse allikas"
     },
     "catalogReviewed": "Kataloog üle vaadatud {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "selles jooksus puudub",
       "notAvailable": "turvalist ainult loetavat hinnaallikat pole",
       "notUsed": "ei kasutata",
-      "officialListPrice": "ametlik hinnakirja hind"
+      "officialListPrice": "ametlik hinnakirja hind",
+      "accountSourceExpired": "konto allikas on aegunud",
+      "accountSourceUnavailable": "konto allikas pole saadaval"
     },
     "officialListPriceNote": "Ametlik hinnakirja hind; tegelik arve võib erineda käibemaksu/maksude, aastasoodustuste, kohtade, kupongide, piirkondlike hindade või Enterprise-lepingute tõttu.",
     "fetched": "Loetud {time}",

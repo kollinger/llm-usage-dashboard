@@ -835,7 +835,8 @@
       "browser": "narsykles paskyros saltinis",
       "official_pricing_page": "oficialus kainodaros puslapis",
       "cached_official_snapshot": "talpykloje esanti oficiali kopija",
-      "bundled_catalog": "įtrauktas katalogas"
+      "bundled_catalog": "įtrauktas katalogas",
+      "account_billing": "paskyros / atsiskaitymo šaltinis"
     },
     "catalogReviewed": "Katalogas peržiūrėtas {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "šiame vykdyme nėra",
       "notAvailable": "nėra saugaus tik skaitomo kainos šaltinio",
       "notUsed": "nenaudojama",
-      "officialListPrice": "oficiali sąrašo kaina"
+      "officialListPrice": "oficiali sąrašo kaina",
+      "accountSourceExpired": "paskyros šaltinis nebegalioja",
+      "accountSourceUnavailable": "paskyros šaltinis nepasiekiamas"
     },
     "officialListPriceNote": "Oficiali sąrašo kaina; faktinė sąskaita gali skirtis dėl PVM/mokesčių, metinių nuolaidų, vietų, kuponų, regioninių kainų ar Enterprise sutarčių.",
     "fetched": "Gauta {time}",

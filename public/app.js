@@ -2966,6 +2966,11 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let tierVariant = source.tierVariant || null;
   let actualBillingKnown = source.actualBillingKnown === true;
   let officialListPrice = Boolean(source.officialListPrice);
+  let accountBillingStatus = source.accountBillingStatus || null;
+  let accountBillingReason = source.accountBillingReason || null;
+  let accountBillingFetchedAt = source.accountBillingFetchedAt || null;
+  let accountBillingParserStatus = source.accountBillingParserStatus || null;
+  let accountBillingSourceType = source.accountBillingSourceType || null;
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
     currency = catalog.currency;
@@ -3011,6 +3016,11 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     tierVariant,
     actualBillingKnown,
     officialListPrice,
+    accountBillingStatus,
+    accountBillingReason,
+    accountBillingFetchedAt,
+    accountBillingParserStatus,
+    accountBillingSourceType,
     costStatus,
     costReason,
     quality: subscriptionQuality(sourceId, monthlyCost, { costStatus, catalogReviewedAt, priceSourceType, priceType })
@@ -3019,7 +3029,7 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
 
 function subscriptionSourceHasActualBilling(sourceId, source = {}) {
   if (source?.actualBillingKnown === false) return false;
-  return ["account", "browser", "claude_browser_sync"].includes(String(sourceId || ""));
+  return ["account", "account_billing", "browser", "claude_browser_sync"].includes(String(sourceId || ""));
 }
 
 function subscriptionCostMissingReasonKey(providerId, sourceId) {
@@ -3036,6 +3046,7 @@ function subscriptionCostMissingReasonKey(providerId, sourceId) {
 function subscriptionQuality(sourceId, monthlyCost, meta = {}) {
   const sourceType = meta.priceSourceType || sourceId;
   if (sourceId === "local_settings") return "manual";
+  if (sourceId === "account_billing") return Number(monthlyCost || 0) > 0 ? "automatic" : "estimated";
   if (meta.priceType === "official_starting_list_price" && ["official_pricing_page", "cached_official_snapshot"].includes(sourceType)) return "officialStarting";
   if (["official_pricing_page", "cached_official_snapshot"].includes(sourceType)) return "official";
   if (meta.costStatus === "catalog" || meta.catalogReviewedAt || sourceId === "bundled_catalog" || /public_catalog$/u.test(String(sourceId || ""))) return "catalog";
@@ -3747,6 +3758,7 @@ function subscriptionSourceAuditRows(provider, subscription) {
   const detectedPrice = subscription?.monthlyCost > 0 && subscription?.quality === "automatic";
   const officialSource = subscription?.source === "official_pricing_page" || subscription?.source === "cached_official_snapshot";
   const bundledSource = subscription?.source === "bundled_catalog" || subscription?.quality === "catalog";
+  const accountBillingStatus = subscriptionAccountBillingAuditStatus(subscription, detectedPrice);
 
   if (["claudeCode", "anthropic"].includes(providerId)) {
     rows.push({
@@ -3756,10 +3768,8 @@ function subscriptionSourceAuditRows(provider, subscription) {
         : t("subscriptions.sourceAudit.notConfigured")
     });
     rows.push({
-      source: subscriptionSourceLabel("claude_browser_sync"),
-      status: source === "claude_browser_sync" && detectedPrice
-        ? t("subscriptions.sourceAudit.safePriceDetected")
-        : t("subscriptions.sourceAudit.browserNoPrice")
+      source: subscriptionSourceLabel("account_billing"),
+      status: accountBillingStatus
     });
     rows.push({
       source: subscriptionSourceLabel("official_pricing_page"),
@@ -3784,10 +3794,8 @@ function subscriptionSourceAuditRows(provider, subscription) {
         : t("subscriptions.sourceAudit.notConfigured")
     });
     rows.push({
-      source: subscriptionSourceLabel("browser"),
-      status: source === "browser" && detectedPrice
-        ? t("subscriptions.sourceAudit.safePriceDetected")
-        : t("subscriptions.sourceAudit.notAvailable")
+      source: subscriptionSourceLabel("account_billing"),
+      status: accountBillingStatus
     });
     rows.push({
       source: subscriptionSourceLabel("official_pricing_page"),
@@ -3809,6 +3817,21 @@ function subscriptionSourceAuditRows(provider, subscription) {
     status: detectedPrice ? t("subscriptions.sourceAudit.safePriceDetected") : t("subscriptions.sourceAudit.notAvailable")
   });
   return rows;
+}
+
+function subscriptionAccountBillingAuditStatus(subscription, detectedPrice) {
+  const source = subscription?.source || "";
+  const status = subscription?.accountBillingStatus || (
+    ["account", "account_billing", "browser", "claude_browser_sync"].includes(source) && detectedPrice ? "available" : null
+  );
+  if (status === "available" && (detectedPrice || subscription?.actualBillingKnown)) {
+    return t("subscriptions.sourceAudit.safePriceDetected");
+  }
+  if (status === "expired") return t("subscriptions.sourceAudit.accountSourceExpired");
+  if (["missing", "unavailable", "parse_failed"].includes(status)) {
+    return t("subscriptions.sourceAudit.accountSourceUnavailable");
+  }
+  return t("subscriptions.sourceAudit.notAvailable");
 }
 
 function renderFableQuotaContext(provider, rows) {

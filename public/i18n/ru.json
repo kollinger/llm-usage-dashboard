@@ -835,7 +835,8 @@
       "browser": "источник аккаунта браузера",
       "official_pricing_page": "официальная страница цен",
       "cached_official_snapshot": "кэшированный официальный снимок",
-      "bundled_catalog": "встроенный каталог"
+      "bundled_catalog": "встроенный каталог",
+      "account_billing": "источник учетной записи/биллинга"
     },
     "catalogReviewed": "Каталог проверен {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "нет в этом запуске",
       "notAvailable": "нет безопасного источника цены только для чтения",
       "notUsed": "не используется",
-      "officialListPrice": "официальная прайс-лист цена"
+      "officialListPrice": "официальная прайс-лист цена",
+      "accountSourceExpired": "срок действия источника учетной записи истек",
+      "accountSourceUnavailable": "источник учетной записи недоступен"
     },
     "officialListPriceNote": "Официальная прайс-лист цена; фактический счет может отличаться из-за НДС/налогов, годовых скидок, мест, купонов, региональных цен или Enterprise-контрактов.",
     "fetched": "Получено {time}",

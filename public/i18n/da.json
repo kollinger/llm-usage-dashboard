@@ -835,7 +835,8 @@
       "browser": "browserkontokilde",
       "official_pricing_page": "officiel prisside",
       "cached_official_snapshot": "cachet officielt snapshot",
-      "bundled_catalog": "indbygget katalog"
+      "bundled_catalog": "indbygget katalog",
+      "account_billing": "konto-/faktureringskilde"
     },
     "catalogReviewed": "Katalog gennemgået {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "ikke til stede i denne kørsel",
       "notAvailable": "ingen sikker skrivebeskyttet priskilde tilgængelig",
       "notUsed": "ikke brugt",
-      "officialListPrice": "officiel listepris"
+      "officialListPrice": "officiel listepris",
+      "accountSourceExpired": "kontokilde udløbet",
+      "accountSourceUnavailable": "kontokilde ikke tilgængelig"
     },
     "officialListPriceNote": "Officiel listepris; faktisk fakturering kan afvige pga. moms/skatter, års-rabatter, seats, kuponer, regionale priser eller Enterprise-aftaler.",
     "fetched": "Hentet {time}",

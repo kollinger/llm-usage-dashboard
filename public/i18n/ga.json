@@ -835,7 +835,8 @@
       "browser": "foinse chuntais bhrabhsalaí",
       "official_pricing_page": "leathanach praghsála oifigiúil",
       "cached_official_snapshot": "seat oifigiúil taiscthe",
-      "bundled_catalog": "catalóg chuachta"
+      "bundled_catalog": "catalóg chuachta",
+      "account_billing": "foinse cuntais/billeála"
     },
     "catalogReviewed": "Athbhreithníodh an catalóg ar {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "níl sé sa rith seo",
       "notAvailable": "níl foinse phraghais shábháilte inléite amháin ar fáil",
       "notUsed": "níl in úsáid",
-      "officialListPrice": "praghas liosta oifigiúil"
+      "officialListPrice": "praghas liosta oifigiúil",
+      "accountSourceExpired": "tá foinse an chuntais imithe in éag",
+      "accountSourceUnavailable": "níl foinse an chuntais ar fáil"
     },
     "officialListPriceNote": "Praghas liosta oifigiúil; d’fhéadfadh billeáil iarbhír athrú mar gheall ar CBL/cánacha, lascainí bliantúla, suíocháin, cúpóin, praghsáil réigiúnach nó conarthaí Enterprise.",
     "fetched": "Faighte {time}",

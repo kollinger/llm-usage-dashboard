@@ -302,6 +302,40 @@ const genericCodexOfficialSubscription = normalizeSubscription({
   priceVariant: "from",
   actualBillingKnown: false
 }, {}, "codex");
+const accountBillingSubscription = normalizeSubscription({
+  planType: "Pro 20x",
+  monthlyCost: 200,
+  currency: "USD",
+  source: "account_billing",
+  priceSourceType: "account_billing",
+  sourceUrl: "https://chatgpt.com/account/billing",
+  fetchedAt: "${today}T10:00:00Z",
+  planKey: "pro 20x",
+  parserStatus: "parsed",
+  actualBillingKnown: true,
+  accountBillingStatus: "available",
+  accountBillingFetchedAt: "${today}T10:00:00Z",
+  accountBillingParserStatus: "parsed",
+  accountBillingSourceType: "browser_account_snapshot"
+}, {}, "codex");
+const expiredAccountBillingSubscription = normalizeSubscription({
+  planType: "Pro",
+  monthlyCost: 100,
+  currency: "USD",
+  source: "official_pricing_page",
+  priceSourceType: "official_pricing_page",
+  sourceUrl: "https://developers.openai.com/codex/pricing",
+  fetchedAt: "${today}T10:00:00Z",
+  planKey: "pro",
+  parserStatus: "parsed",
+  priceType: "official_starting_list_price",
+  priceVariant: "from",
+  actualBillingKnown: false,
+  accountBillingStatus: "expired",
+  accountBillingFetchedAt: "2026-06-01T10:00:00Z",
+  accountBillingParserStatus: "expired",
+  accountBillingSourceType: "browser_account_snapshot"
+}, {}, "codex");
 const detectedSubscriptionCard = renderSubscriptionPricingCard({
   provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
   subscription: detectedSubscription,
@@ -310,6 +344,16 @@ const detectedSubscriptionCard = renderSubscriptionPricingCard({
 const genericCodexOfficialCard = renderSubscriptionPricingCard({
   provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
   subscription: genericCodexOfficialSubscription,
+  previous: null
+});
+const accountBillingCard = renderSubscriptionPricingCard({
+  provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
+  subscription: accountBillingSubscription,
+  previous: null
+});
+const expiredAccountBillingCard = renderSubscriptionPricingCard({
+  provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
+  subscription: expiredAccountBillingSubscription,
   previous: null
 });
 const genericCodexOfficialProviderSummary = renderProviderSubscription({ subscription: genericCodexOfficialSubscription });
@@ -541,6 +585,17 @@ JSON.stringify({
     genericCodexOfficialProviderSummary.includes("Official starting list price") &&
     genericCodexOfficialProviderSummary.includes("Actual billing known: no") &&
     !genericCodexOfficialCard.includes("<strong>$100.00/mo</strong>"),
+  accountBillingActual:
+    accountBillingSubscription.quality === "automatic" &&
+    accountBillingCard.includes("$200.00/mo") &&
+    accountBillingCard.includes("account/billing source") &&
+    accountBillingCard.includes("trusted monthly price detected") &&
+    accountBillingCard.includes("<dd>yes</dd>"),
+  expiredAccountBillingAudit:
+    expiredAccountBillingSubscription.quality === "officialStarting" &&
+    expiredAccountBillingCard.includes("from $100.00/mo") &&
+    expiredAccountBillingCard.includes("account source expired") &&
+    expiredAccountBillingCard.includes("<dd>no</dd>"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
 	  sourceBarsUseProviderColors:
@@ -705,6 +760,8 @@ JSON.stringify({
   assert.equal(result.detectedSubscriptionCardShowsCost, true);
   assert.equal(result.detectedSubscriptionCardSourceAudit, true);
   assert.equal(result.genericCodexProStartingPrice, true);
+  assert.equal(result.accountBillingActual, true);
+  assert.equal(result.expiredAccountBillingAudit, true);
   assert.equal(result.aliasesHiddenByDefault, true);
   assert.equal(result.aliasesCollapsedInDebug, true);
   assert.equal(result.sourceBarsUseProviderColors, true);
