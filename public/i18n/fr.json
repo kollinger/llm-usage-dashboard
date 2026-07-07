@@ -835,7 +835,8 @@
       "browser": "source de compte navigateur",
       "official_pricing_page": "page tarifaire officielle",
       "cached_official_snapshot": "instantané officiel en cache",
-      "bundled_catalog": "catalogue embarqué"
+      "bundled_catalog": "catalogue embarqué",
+      "account_billing": "source compte/facturation"
     },
     "catalogReviewed": "Catalogue vérifié le {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "absent de cette exécution",
       "notAvailable": "aucune source de prix sûre en lecture seule disponible",
       "notUsed": "non utilisé",
-      "officialListPrice": "prix catalogue officiel"
+      "officialListPrice": "prix catalogue officiel",
+      "accountSourceExpired": "source de compte expirée",
+      "accountSourceUnavailable": "source de compte indisponible"
     },
     "officialListPriceNote": "Prix catalogue officiel ; la facturation réelle peut varier avec TVA/taxes, remises annuelles, sièges, coupons, prix régionaux ou contrats Enterprise.",
     "fetched": "Lu {time}",

@@ -835,7 +835,8 @@
       "browser": "zrodlo konta przegladarki",
       "official_pricing_page": "oficjalna strona cen",
       "cached_official_snapshot": "buforowany oficjalny snapshot",
-      "bundled_catalog": "wbudowany katalog"
+      "bundled_catalog": "wbudowany katalog",
+      "account_billing": "źródło konta/rozliczeń"
     },
     "catalogReviewed": "Katalog sprawdzono {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "brak w tym uruchomieniu",
       "notAvailable": "brak bezpiecznego źródła ceny tylko do odczytu",
       "notUsed": "nieużywane",
-      "officialListPrice": "oficjalna cena katalogowa"
+      "officialListPrice": "oficjalna cena katalogowa",
+      "accountSourceExpired": "źródło konta wygasło",
+      "accountSourceUnavailable": "źródło konta niedostępne"
     },
     "officialListPriceNote": "Oficjalna cena katalogowa; rzeczywisty rachunek może się różnić przez VAT/podatki, rabaty roczne, stanowiska, kupony, ceny regionalne lub umowy Enterprise.",
     "fetched": "Pobrano {time}",

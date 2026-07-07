@@ -32,6 +32,7 @@ const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
+const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
@@ -80,6 +81,7 @@ const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || 
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
 const SUBSCRIPTION_HISTORY_VERSION = 1;
 const SUBSCRIPTION_CATALOG_REVIEW_DATE = "2026-07-07";
+const ACCOUNT_BILLING_STALE_MS = envMs("ACCOUNT_BILLING_STALE_SECONDS", 7 * 24 * 60 * 60);
 const OFFICIAL_PRICING_CACHE_MS = envMs("OFFICIAL_SUBSCRIPTION_PRICING_CACHE_SECONDS", 6 * 60 * 60);
 const OFFICIAL_PRICING_FETCH_TIMEOUT_MS = envMs("OFFICIAL_SUBSCRIPTION_PRICING_FETCH_TIMEOUT_SECONDS", 8);
 const OFFICIAL_SUBSCRIPTION_PRICING_SOURCES = {
@@ -159,6 +161,49 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
     }
   ]
 };
+const ACCOUNT_BILLING_PROVIDER_ALIASES = {
+  codex: "codex",
+  chatgpt: "openai",
+  "chat gpt": "openai",
+  openai: "openai",
+  claude: "anthropic",
+  anthropic: "anthropic",
+  claude_code: "claudeCode",
+  "claude code": "claudeCode",
+  claudecode: "claudeCode",
+  claudeCode: "claudeCode"
+};
+const ACCOUNT_BILLING_PROVIDER_IDS = new Set(["codex", "openai", "claudeCode", "anthropic"]);
+const ACCOUNT_BILLING_SAFE_SOURCE_TYPES = new Set([
+  "account_billing",
+  "browser_account_snapshot",
+  "local_account_endpoint",
+  "sanitized_snapshot",
+  "billing_page"
+]);
+const ACCOUNT_BILLING_CONFIDENCE_LEVELS = new Set(["high", "medium", "low"]);
+const ACCOUNT_BILLING_PARSER_STATUSES = new Set([
+  "parsed",
+  "missing",
+  "expired",
+  "unavailable",
+  "parse_failed",
+  "redacted",
+  "unsupported_period"
+]);
+const ACCOUNT_BILLING_FORBIDDEN_KEY_PATTERN =
+  /(?:authorization|bearer|cookie|cookies|token|tokens|secret|session|password|credential|invoice|pdf|address|email|customer|account[_-]?id|payment|card|last4)/i;
+const ACCOUNT_BILLING_MAX_SOURCE_URL_LENGTH = 512;
+const ACCOUNT_BILLING_REASON_CODES = new Set([
+  "account_billing_source_unavailable",
+  "account_billing_source_missing",
+  "account_billing_source_parse_failed",
+  "account_billing_source_unreadable",
+  "account_billing_source_expired",
+  "account_billing_amount_missing",
+  "account_billing_unsupported_period",
+  "account_billing_provider_missing"
+]);
 const LIVE_METRICS_SAMPLE_MS = 5000;
 const LIVE_METRICS_HISTORY_POINTS = 90;
 const LIVE_METRICS_TOKEN_MIN_WINDOW_MS = 30_000;
@@ -469,8 +514,22 @@ async function readUsageDashboard({ force = false } = {}) {
   return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
-    const [subscriptions, officialPricing, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollamaRaw, openaiRaw, anthropicRaw] = await Promise.all([
+    const [
+      subscriptions,
+      accountBilling,
+      officialPricing,
+      codexRaw,
+      copilotRaw,
+      claudeCodeRaw,
+      geminiRaw,
+      ollamaRaw,
+      openaiRaw,
+      anthropicRaw
+    ] = await Promise.all([
       readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
+      readAccountBillingSnapshots().catch(() =>
+        accountBillingSnapshotUnavailable("unavailable", "account_billing_source_unavailable")
+      ),
       readOfficialSubscriptionPricing().catch((error) => ({
         version: 1,
         fetchedAt: null,
@@ -486,13 +545,25 @@ async function readUsageDashboard({ force = false } = {}) {
       readAnthropicUsage().catch((error) => providerError("anthropic", error))
     ]);
 
-    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex", officialPricing);
-    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot", officialPricing);
-    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode, "claudeCode", officialPricing);
-    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini", officialPricing);
+    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex", officialPricing, accountBilling);
+    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot", officialPricing, accountBilling);
+    const claudeCode = mergeProviderSubscription(
+      claudeCodeRaw,
+      subscriptions.claudeCode,
+      "claudeCode",
+      officialPricing,
+      accountBilling
+    );
+    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini", officialPricing, accountBilling);
     const ollama = ollamaRaw;
-    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai", officialPricing);
-    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic, "anthropic", officialPricing);
+    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai", officialPricing, accountBilling);
+    const anthropic = mergeProviderSubscription(
+      anthropicRaw,
+      subscriptions.anthropic,
+      "anthropic",
+      officialPricing,
+      accountBilling
+    );
     await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
     const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]);
 
@@ -1543,6 +1614,267 @@ async function saveSubscriptionSettings(settings) {
   await fsp.writeFile(SUBSCRIPTION_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
 }
 
+async function readAccountBillingSnapshots() {
+  let parsed;
+  try {
+    parsed = JSON.parse(await fsp.readFile(ACCOUNT_BILLING_SNAPSHOTS_FILE, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return accountBillingSnapshotUnavailable("missing", "account_billing_source_missing");
+    }
+    if (error instanceof SyntaxError) {
+      return accountBillingSnapshotUnavailable("parse_failed", "account_billing_source_parse_failed");
+    }
+    return accountBillingSnapshotUnavailable("unavailable", "account_billing_source_unreadable");
+  }
+  return sanitizeAccountBillingSnapshots(parsed);
+}
+
+function accountBillingSnapshotUnavailable(status, reason) {
+  const normalizedStatus = normalizeAccountBillingParserStatus(status) || "unavailable";
+  return {
+    version: 1,
+    source: "account_billing",
+    status: normalizedStatus,
+    reason: accountBillingShortString(reason, "account_billing_source_unavailable"),
+    fetchedAt: null,
+    providers: {},
+    errors: {
+      account_billing: accountBillingShortString(reason, "account_billing_source_unavailable")
+    }
+  };
+}
+
+function sanitizeAccountBillingSnapshots(raw, options = {}) {
+  const source = raw && typeof raw === "object" ? raw : {};
+  const nowMs = Number.isFinite(options.nowMs) ? options.nowMs : Date.now();
+  const fetchedAt = normalizeOptionalDate(source.fetchedAt || source.updatedAt || source.capturedAt) || null;
+  const entries = accountBillingSnapshotEntries(source);
+  const providers = {};
+  for (const { providerId, value } of entries) {
+    const normalized = sanitizeAccountBillingProviderSnapshot(value, providerId, { fetchedAt }, nowMs);
+    if (normalized) providers[providerId] = normalized;
+  }
+  const status = Object.values(providers).some((entry) => entry.status === "available")
+    ? "available"
+    : normalizeAccountBillingParserStatus(source.status) || (entries.length ? "unavailable" : "missing");
+  return {
+    version: 1,
+    source: "account_billing",
+    status,
+    reason: accountBillingReasonCode(source.reason || source.error || "", null),
+    fetchedAt,
+    providers
+  };
+}
+
+function accountBillingSnapshotEntries(source) {
+  const entries = [];
+  if (source.provider || source.providerId || source.id) {
+    const providerId = normalizeAccountBillingProviderId(source.provider || source.providerId || source.id);
+    if (providerId) entries.push({ providerId, value: source });
+  }
+
+  const providers = source.providers || source.accounts || source.billing || null;
+  if (Array.isArray(providers)) {
+    for (const entry of providers) {
+      const providerId = normalizeAccountBillingProviderId(entry?.provider || entry?.providerId || entry?.id);
+      if (providerId) entries.push({ providerId, value: entry });
+    }
+  } else if (providers && typeof providers === "object") {
+    for (const [key, value] of Object.entries(providers)) {
+      const providerId = normalizeAccountBillingProviderId(value?.provider || value?.providerId || value?.id || key);
+      if (providerId) entries.push({ providerId, value });
+    }
+  }
+
+  for (const [key, value] of Object.entries(source)) {
+    const providerId = normalizeAccountBillingProviderId(key);
+    if (providerId && value && typeof value === "object") entries.push({ providerId, value });
+  }
+
+  return entries;
+}
+
+function normalizeAccountBillingProviderId(value) {
+  const original = String(value || "").trim();
+  if (!original) return null;
+  if (ACCOUNT_BILLING_PROVIDER_ALIASES[original]) return ACCOUNT_BILLING_PROVIDER_ALIASES[original];
+  const normalized = normalizeSubscriptionPlanKey(original).replace(/\s+/g, "_");
+  const providerId = ACCOUNT_BILLING_PROVIDER_ALIASES[normalized] || ACCOUNT_BILLING_PROVIDER_ALIASES[normalized.replace(/_/g, "")];
+  return ACCOUNT_BILLING_PROVIDER_IDS.has(providerId) ? providerId : null;
+}
+
+function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, nowMs = Date.now()) {
+  if (!raw || typeof raw !== "object" || !ACCOUNT_BILLING_PROVIDER_IDS.has(providerId)) return null;
+  const redacted = accountBillingHasForbiddenKey(raw);
+  const fetchedAt =
+    normalizeOptionalDate(raw.fetchedAt || raw.updatedAt || raw.capturedAt || raw.syncedAt || raw.dataUpdatedAt) ||
+    rootMeta.fetchedAt ||
+    null;
+  const explicitStatus = normalizeAccountBillingParserStatus(raw.status);
+  const sourceType = normalizeAccountBillingSourceType(raw.sourceType || raw.source_type || raw.source || "account_billing");
+  const parserStatus = normalizeAccountBillingParserStatus(raw.parserStatus || raw.parser_status || explicitStatus) || "parsed";
+  const planType = accountBillingShortString(raw.plan || raw.planType || raw.plan_type || raw.planName || raw.plan_name, null);
+  const period = normalizeAccountBillingPeriod(raw.period || raw.billingPeriod || raw.billing_period || "month");
+  const amount = accountBillingAmount(raw);
+  const base = {
+    providerId,
+    source: "account_billing",
+    sourceType,
+    priceSourceType: "account_billing",
+    planType,
+    planKey: normalizeSubscriptionPlanKey(planType),
+    monthlyCost: 0,
+    amount: 0,
+    currency: normalizeCurrency(raw.currency || raw.amount?.currency || "EUR"),
+    period,
+    sourceUrl: sanitizeAccountBillingSourceUrl(raw.sourceUrl || raw.source_url || raw.url),
+    fetchedAt,
+    confidence: normalizeAccountBillingConfidence(raw.confidence),
+    parserStatus,
+    actualBillingKnown: false,
+    costStatus: "account_billing",
+    redacted
+  };
+
+  if (["missing", "expired", "unavailable", "parse_failed"].includes(explicitStatus)) {
+    return {
+      ...base,
+      status: explicitStatus,
+      parserStatus: explicitStatus,
+      unavailableReason: accountBillingReasonCode(
+        raw.reason || raw.error,
+        `account_billing_source_${explicitStatus}`
+      )
+    };
+  }
+
+  if (period !== "month") {
+    return {
+      ...base,
+      status: "unavailable",
+      parserStatus: "unsupported_period",
+      unavailableReason: "account_billing_unsupported_period"
+    };
+  }
+
+  if (fetchedAt && nowMs - Date.parse(fetchedAt) > ACCOUNT_BILLING_STALE_MS) {
+    return {
+      ...base,
+      status: "expired",
+      parserStatus: "expired",
+      unavailableReason: "account_billing_source_expired"
+    };
+  }
+
+  if (!(amount > 0)) {
+    return {
+      ...base,
+      status: "missing",
+      parserStatus: parserStatus === "parsed" ? "missing" : parserStatus,
+      unavailableReason: accountBillingReasonCode(raw.reason || raw.error, "account_billing_amount_missing")
+    };
+  }
+
+  return {
+    ...base,
+    status: "available",
+    monthlyCost: amount,
+    amount,
+    parserStatus: parserStatus === "missing" ? "parsed" : parserStatus,
+    actualBillingKnown: true,
+    unavailableReason: null
+  };
+}
+
+function accountBillingAmount(raw) {
+  const direct = positiveAmount(
+    raw.amount?.value ??
+      raw.amount ??
+      raw.monthlyCost ??
+      raw.monthly_cost ??
+      raw.subscriptionCost ??
+      raw.subscription_cost ??
+      raw.monthlyPrice ??
+      raw.monthly_price
+  );
+  if (direct > 0) return direct;
+  const cents = positiveAmount(
+    raw.amountCents ??
+      raw.amount_cents ??
+      raw.monthlyCostCents ??
+      raw.monthly_cost_cents ??
+      raw.monthlyPriceCents ??
+      raw.monthly_price_cents ??
+      raw.unitAmount ??
+      raw.unit_amount
+  );
+  return cents > 0 ? cents / 100 : 0;
+}
+
+function normalizeAccountBillingPeriod(value) {
+  const normalized = normalizeSubscriptionPlanKey(value);
+  if (!normalized || ["month", "monthly", "mo", "per month", "p1m"].includes(normalized)) return "month";
+  if (["year", "yearly", "annual", "annually", "per year", "p1y"].includes(normalized)) return "year";
+  return normalized.slice(0, 40) || "unknown";
+}
+
+function normalizeAccountBillingSourceType(value) {
+  const normalized = normalizeSubscriptionPlanKey(value).replace(/\s+/g, "_");
+  return ACCOUNT_BILLING_SAFE_SOURCE_TYPES.has(normalized) ? normalized : "account_billing";
+}
+
+function normalizeAccountBillingConfidence(value) {
+  const normalized = normalizeSubscriptionPlanKey(value);
+  return ACCOUNT_BILLING_CONFIDENCE_LEVELS.has(normalized) ? normalized : "medium";
+}
+
+function normalizeAccountBillingParserStatus(value) {
+  const normalized = normalizeSubscriptionPlanKey(value).replace(/\s+/g, "_");
+  return ACCOUNT_BILLING_PARSER_STATUSES.has(normalized) ? normalized : null;
+}
+
+function sanitizeAccountBillingSourceUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    url.username = "";
+    url.password = "";
+    url.search = "";
+    url.hash = "";
+    url.pathname = url.pathname
+      .split("/")
+      .map((segment) => (/^[A-Za-z0-9_-]{24,}$/.test(segment) ? ":id" : segment))
+      .join("/");
+    return url.toString().slice(0, ACCOUNT_BILLING_MAX_SOURCE_URL_LENGTH);
+  } catch {
+    return null;
+  }
+}
+
+function accountBillingHasForbiddenKey(value, depth = 0) {
+  if (!value || typeof value !== "object" || depth > 8) return false;
+  for (const [key, child] of Object.entries(value)) {
+    if (ACCOUNT_BILLING_FORBIDDEN_KEY_PATTERN.test(key)) return true;
+    if (child && typeof child === "object" && accountBillingHasForbiddenKey(child, depth + 1)) return true;
+  }
+  return false;
+}
+
+function accountBillingReasonCode(value, fallback = "account_billing_source_unavailable") {
+  const normalized = String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if (!normalized) return fallback;
+  return ACCOUNT_BILLING_REASON_CODES.has(normalized) ? normalized : fallback;
+}
+
+function accountBillingShortString(value, fallback) {
+  const text = String(value || "").trim();
+  return text ? text.slice(0, 180) : fallback;
+}
+
 async function readOfficialSubscriptionPricing() {
   return readThroughCache(officialSubscriptionPricingCache, OFFICIAL_PRICING_CACHE_MS, async () => {
     const previous = await readStoredOfficialSubscriptionPricing().catch(() => null);
@@ -1911,14 +2243,20 @@ function validateSubscriptionHistory(history) {
   }
 }
 
-function mergeProviderSubscription(provider, subscription, providerId = provider?.id, officialPricing = null) {
+function mergeProviderSubscription(provider, subscription, providerId = provider?.id, officialPricing = null, accountBilling = null) {
   if (!provider || provider.status === "error") return provider;
-  if (!hasSubscriptionValue(subscription)) return enrichProviderSubscriptionFromCatalog(provider, providerId, officialPricing);
+  const accountSubscription = accountBillingSubscriptionPlan(providerId, provider, accountBilling);
+  if (accountSubscription?.monthlyCost > 0 && accountSubscription.actualBillingKnown) {
+    return mergeAccountBillingSubscription(provider, providerId, accountSubscription);
+  }
+  if (!hasSubscriptionValue(subscription)) {
+    return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog(provider, providerId, officialPricing), providerId, accountBilling);
+  }
   const sourcePlan = String(provider.planType || "").trim();
   const planType = subscription.planType || sourcePlan || null;
   const monthlyCost = positiveAmount(subscription.monthlyCost);
   if (!(monthlyCost > 0)) {
-    return enrichProviderSubscriptionFromCatalog({
+    return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog({
       ...provider,
       planType,
       planSource: subscription.planType ? "local_settings" : provider.planSource || null,
@@ -1927,7 +2265,7 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
         planType,
         planSource: subscription.planType ? "local_settings" : provider.planSource || null
       }
-    }, providerId, officialPricing);
+    }, providerId, officialPricing), providerId, accountBilling);
   }
   const mergedSubscription = {
     planType,
@@ -1945,7 +2283,105 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
     subscription: mergedSubscription
   };
   if (provider._usageEvents) merged._usageEvents = provider._usageEvents;
+  return attachAccountBillingStatus(merged, providerId, accountBilling);
+}
+
+function mergeAccountBillingSubscription(provider, providerId, accountSubscription) {
+  const planType = accountSubscription.planType || provider.planType || provider.latest?.planType || null;
+  const mergedSubscription = {
+    ...accountSubscription,
+    planType,
+    source: "account_billing",
+    planSource: accountSubscription.planType ? "account_billing" : provider.planSource || null,
+    priceSourceType: "account_billing",
+    actualBillingKnown: true,
+    costStatus: "account_billing",
+    accountBillingStatus: "available",
+    accountBillingReason: null,
+    accountBillingFetchedAt: accountSubscription.fetchedAt || null,
+    accountBillingParserStatus: accountSubscription.parserStatus || "parsed",
+    accountBillingSourceType: accountSubscription.sourceType || "account_billing"
+  };
+  const merged = {
+    ...provider,
+    planType,
+    planSource: accountSubscription.planType ? "account_billing" : provider.planSource || null,
+    subscription: mergedSubscription
+  };
+  if (provider._usageEvents) merged._usageEvents = provider._usageEvents;
   return merged;
+}
+
+function attachAccountBillingStatus(provider, providerId, accountBilling) {
+  if (!provider?.subscription || provider.status === "error") return provider;
+  const status = accountBillingProviderStatus(providerId, accountBilling);
+  if (!status) return provider;
+  return {
+    ...provider,
+    subscription: {
+      ...provider.subscription,
+      accountBillingStatus: status.status,
+      accountBillingReason: status.reason,
+      accountBillingFetchedAt: status.fetchedAt,
+      accountBillingParserStatus: status.parserStatus,
+      accountBillingSourceType: status.sourceType
+    }
+  };
+}
+
+function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
+  const entry = accountBillingProviderEntry(providerId, accountBilling);
+  if (!entry || entry.status !== "available" || !(entry.monthlyCost > 0)) return null;
+  return {
+    planType: entry.planType || provider?.planType || provider?.latest?.planType || null,
+    monthlyCost: entry.monthlyCost,
+    amount: entry.amount,
+    currency: entry.currency,
+    period: entry.period,
+    source: "account_billing",
+    sourceType: entry.sourceType,
+    priceSourceType: "account_billing",
+    sourceUrl: entry.sourceUrl,
+    fetchedAt: entry.fetchedAt,
+    updatedAt: entry.fetchedAt,
+    confidence: entry.confidence,
+    parserStatus: entry.parserStatus || "parsed",
+    planKey: entry.planKey,
+    actualBillingKnown: true,
+    costStatus: "account_billing",
+    redacted: Boolean(entry.redacted)
+  };
+}
+
+function accountBillingProviderStatus(providerId, accountBilling) {
+  if (!ACCOUNT_BILLING_PROVIDER_IDS.has(providerId) && !subscriptionCatalogFamily(providerId)) return null;
+  const entry = accountBillingProviderEntry(providerId, accountBilling);
+  if (entry) {
+    return {
+      status: entry.status || "unavailable",
+      reason: entry.unavailableReason || null,
+      fetchedAt: entry.fetchedAt || null,
+      parserStatus: entry.parserStatus || entry.status || "unknown",
+      sourceType: entry.sourceType || "account_billing"
+    };
+  }
+  if (!accountBilling || typeof accountBilling !== "object") return null;
+  return {
+    status: accountBilling.status || "missing",
+    reason: accountBilling.reason || "account_billing_provider_missing",
+    fetchedAt: accountBilling.fetchedAt || null,
+    parserStatus: accountBilling.status || "missing",
+    sourceType: "account_billing"
+  };
+}
+
+function accountBillingProviderEntry(providerId, accountBilling) {
+  if (!accountBilling?.providers || typeof accountBilling.providers !== "object") return null;
+  if (accountBilling.providers[providerId]) return accountBilling.providers[providerId];
+  const family = subscriptionCatalogFamily(providerId);
+  if (family === "openai") return accountBilling.providers.openai || null;
+  if (family === "anthropic") return accountBilling.providers.anthropic || null;
+  return null;
 }
 
 function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.id, officialPricing = null) {
@@ -5958,6 +6394,8 @@ module.exports = {
     parseOpenAiCodexPricingPage,
     parseClaudePricingPage,
     officialSubscriptionPlan,
-    mergeProviderSubscription
+    mergeProviderSubscription,
+    sanitizeAccountBillingSnapshots,
+    accountBillingSubscriptionPlan
   }
 };

@@ -835,7 +835,8 @@
       "browser": "浏览器账户来源",
       "official_pricing_page": "官方价格页",
       "cached_official_snapshot": "缓存的官方快照",
-      "bundled_catalog": "内置目录"
+      "bundled_catalog": "内置目录",
+      "account_billing": "账号/账单来源"
     },
     "catalogReviewed": "目录已于 {date} 审核",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "本次运行中不存在",
       "notAvailable": "没有可用的安全只读价格来源",
       "notUsed": "未使用",
-      "officialListPrice": "官方标价"
+      "officialListPrice": "官方标价",
+      "accountSourceExpired": "账号来源已过期",
+      "accountSourceUnavailable": "账号来源不可用"
     },
     "officialListPriceNote": "官方标价；实际账单可能因增值税/税费、年付折扣、席位、优惠券、区域价格或企业合同而不同。",
     "fetched": "读取于 {time}",

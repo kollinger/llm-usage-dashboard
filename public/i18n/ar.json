@@ -835,7 +835,8 @@
       "browser": "مصدر حساب المتصفح",
       "official_pricing_page": "صفحة تسعير رسمية",
       "cached_official_snapshot": "لقطة رسمية مخزنة",
-      "bundled_catalog": "فهرس مضمّن"
+      "bundled_catalog": "فهرس مضمّن",
+      "account_billing": "مصدر الحساب/الفوترة"
     },
     "catalogReviewed": "تمت مراجعة الكتالوج في {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "غير موجود في هذه الجولة",
       "notAvailable": "لا يتوفر مصدر آمن للقراءة فقط للسعر",
       "notUsed": "غير مستخدم",
-      "officialListPrice": "سعر قائمة رسمي"
+      "officialListPrice": "سعر قائمة رسمي",
+      "accountSourceExpired": "انتهت صلاحية مصدر الحساب",
+      "accountSourceUnavailable": "مصدر الحساب غير متاح"
     },
     "officialListPriceNote": "سعر قائمة رسمي؛ قد تختلف الفاتورة الفعلية بسبب الضرائب أو خصومات السنة أو المقاعد أو القسائم أو الأسعار الإقليمية أو عقود المؤسسات.",
     "fetched": "جُلب {time}",

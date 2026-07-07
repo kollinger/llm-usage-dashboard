@@ -837,7 +837,8 @@
       "browser": "Browser-Account-Quelle",
       "official_pricing_page": "offizielle Pricing-Seite",
       "cached_official_snapshot": "gecachter offizieller Snapshot",
-      "bundled_catalog": "gebündelter Katalog"
+      "bundled_catalog": "gebündelter Katalog",
+      "account_billing": "Account-/Billing-Quelle"
     },
     "catalogReviewed": "Katalog geprüft am {date}",
     "catalogFallbackNote": "Der Monatspreis kommt aus dem Katalog-Fallback; schreibgeschützte App-/Account-Quellen liefern Plan-, Limit- oder Guthabendaten, aber keinen belastbaren Monatspreis.",
@@ -860,7 +861,9 @@
       "notConfigured": "in diesem Lauf nicht vorhanden",
       "notAvailable": "keine sichere schreibgeschützte Preisquelle verfügbar",
       "notUsed": "nicht verwendet",
-      "officialListPrice": "offizieller Listenpreis"
+      "officialListPrice": "offizieller Listenpreis",
+      "accountSourceExpired": "Account-Quelle abgelaufen",
+      "accountSourceUnavailable": "Account-Quelle nicht verfügbar"
     },
     "officialListPriceNote": "Offizieller Listenpreis; die tatsächliche Abrechnung kann wegen USt./Steuern, Jahresrabatten, Seats, Coupons, regionalen Preisen oder Enterprise-Verträgen abweichen.",
     "fetched": "Gelesen {time}",

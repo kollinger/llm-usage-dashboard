@@ -835,7 +835,8 @@
       "browser": "webblasarens kontokalla",
       "official_pricing_page": "officiell prissida",
       "cached_official_snapshot": "cachelagrad officiell snapshot",
-      "bundled_catalog": "inbäddad katalog"
+      "bundled_catalog": "inbäddad katalog",
+      "account_billing": "konto-/faktureringskälla"
     },
     "catalogReviewed": "Katalog granskad {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "inte med i denna körning",
       "notAvailable": "ingen säker skrivskyddad priskälla tillgänglig",
       "notUsed": "används inte",
-      "officialListPrice": "officiellt listpris"
+      "officialListPrice": "officiellt listpris",
+      "accountSourceExpired": "kontokällan har löpt ut",
+      "accountSourceUnavailable": "kontokällan är inte tillgänglig"
     },
     "officialListPriceNote": "Officiellt listpris; faktisk fakturering kan skilja sig på grund av moms/skatter, års-rabatter, seats, kuponger, regionala priser eller Enterprise-avtal.",
     "fetched": "Hämtat {time}",

@@ -835,7 +835,8 @@
       "browser": "zdroj uctu prehliadaca",
       "official_pricing_page": "oficiálna stránka cien",
       "cached_official_snapshot": "uložený oficiálny snapshot",
-      "bundled_catalog": "pribalený katalóg"
+      "bundled_catalog": "pribalený katalóg",
+      "account_billing": "zdroj účtu/fakturácie"
     },
     "catalogReviewed": "Katalóg skontrolovaný {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "v tomto behu nie je prítomné",
       "notAvailable": "nie je dostupný bezpečný zdroj ceny iba na čítanie",
       "notUsed": "nepoužité",
-      "officialListPrice": "oficiálna katalógová cena"
+      "officialListPrice": "oficiálna katalógová cena",
+      "accountSourceExpired": "zdroj účtu vypršal",
+      "accountSourceUnavailable": "zdroj účtu nie je dostupný"
     },
     "officialListPriceNote": "Oficiálna katalógová cena; skutočné účtovanie sa môže líšiť kvôli DPH/daniam, ročným zľavám, miestam, kupónom, regionálnym cenám alebo Enterprise zmluvám.",
     "fetched": "Načítané {time}",

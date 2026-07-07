@@ -835,7 +835,8 @@
       "browser": "bongeszofiok-forras",
       "official_pricing_page": "hivatalos ároldal",
       "cached_official_snapshot": "gyorsítótárazott hivatalos pillanatkép",
-      "bundled_catalog": "beépített katalógus"
+      "bundled_catalog": "beépített katalógus",
+      "account_billing": "fiók-/számlázási forrás"
     },
     "catalogReviewed": "Katalógus ellenőrizve: {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "ebben a futásban nincs jelen",
       "notAvailable": "nem érhető el biztonságos, csak olvasható árforrás",
       "notUsed": "nincs használva",
-      "officialListPrice": "hivatalos listaár"
+      "officialListPrice": "hivatalos listaár",
+      "accountSourceExpired": "a fiókforrás lejárt",
+      "accountSourceUnavailable": "a fiókforrás nem érhető el"
     },
     "officialListPriceNote": "Hivatalos listaár; a tényleges számla eltérhet ÁFA/adók, éves kedvezmények, licencek, kuponok, regionális árak vagy Enterprise szerződések miatt.",
     "fetched": "Lekérve {time}",

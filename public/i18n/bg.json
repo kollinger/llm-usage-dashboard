@@ -835,7 +835,8 @@
       "browser": "източник от браузърен акаунт",
       "official_pricing_page": "официална ценова страница",
       "cached_official_snapshot": "кеширан официален snapshot",
-      "bundled_catalog": "вграден каталог"
+      "bundled_catalog": "вграден каталог",
+      "account_billing": "източник за акаунт/фактуриране"
     },
     "catalogReviewed": "Каталогът е прегледан на {date}",
     "costReasons": {
@@ -860,7 +861,9 @@
       "notConfigured": "не присъства в това изпълнение",
       "notAvailable": "няма безопасен източник само за четене за цена",
       "notUsed": "не се използва",
-      "officialListPrice": "официална каталожна цена"
+      "officialListPrice": "официална каталожна цена",
+      "accountSourceExpired": "източникът на акаунта е изтекъл",
+      "accountSourceUnavailable": "източникът на акаунта не е наличен"
     },
     "officialListPriceNote": "Официална каталожна цена; реалното таксуване може да се различава заради ДДС/данъци, годишни отстъпки, места, купони, регионални цени или Enterprise договори.",
     "fetched": "Изтеглено {time}",
