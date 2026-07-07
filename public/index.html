@@ -36,7 +36,8 @@
         </div>
       </header>
 
-      <section class="summary-strip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel">
+      <div class="dashboard-layout" id="dashboardLayout">
+      <section class="summary-strip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel" data-dashboard-panel-id="overview" data-dashboard-panel-label-key="summary.ariaLabel">
         <div class="metric-tile">
           <span data-i18n="summary.fiveHourOpen">5h frei</span>
           <strong id="fiveHourOpen">--</strong>
@@ -59,9 +60,7 @@
         </div>
       </section>
 
-      <section class="provider-view-notice" id="providerViewNotice" role="status" aria-live="polite" aria-atomic="true" hidden></section>
-
-      <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel">
+      <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel" data-dashboard-panel-id="diagnostics" data-dashboard-panel-label-key="diagnostics.heading">
         <div class="panel-heading diagnostics-heading">
           <div>
             <p class="eyebrow" data-i18n="diagnostics.eyebrow">Lokale Quellen</p>
@@ -77,10 +76,12 @@
         <div class="diagnostics-instance-list" id="sourceDiagnosticsInstances"></div>
       </section>
 
-      <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
-      <p class="layout-live-region" id="layoutLiveRegion" aria-live="polite" aria-atomic="true"></p>
+      <section class="provider-section" data-dashboard-panel-id="providers" data-dashboard-panel-label-key="providers.gridAria">
+        <section class="provider-view-notice" id="providerViewNotice" role="status" aria-live="polite" aria-atomic="true" hidden></section>
+        <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
+      </section>
 
-      <section class="usage-layout">
+      <section class="usage-layout" data-dashboard-panel-id="token-history" data-dashboard-panel-label-key="chart.heading">
         <div class="panel chart-panel">
           <div class="panel-heading chart-heading">
             <div class="chart-heading-main">
@@ -102,7 +103,7 @@
         </div>
       </section>
 
-      <section class="panel split-panel token-mix-panel">
+      <section class="panel split-panel token-mix-panel" data-dashboard-panel-id="token-mix" data-dashboard-panel-label-key="tokenMix.heading">
         <div>
           <p class="eyebrow" data-i18n="tokenMix.eyebrow">Token Mix</p>
           <h2 data-i18n="tokenMix.heading">Geloggte Token-Verarbeitung</h2>
@@ -110,7 +111,7 @@
         <dl class="token-list" id="tokenList"></dl>
       </section>
 
-      <section class="panel live-gauges-panel" id="liveGaugesSection" aria-label="Live-Auslastung" data-i18n-aria-label="liveMetrics.ariaLabel">
+      <section class="panel live-gauges-panel" id="liveGaugesSection" aria-label="Live-Auslastung" data-i18n-aria-label="liveMetrics.ariaLabel" data-dashboard-panel-id="live" data-dashboard-panel-label-key="liveMetrics.heading">
         <div class="panel-heading live-gauges-heading">
           <div>
             <p class="eyebrow" data-i18n="liveMetrics.eyebrow">Live</p>
@@ -131,7 +132,7 @@
         </div>
       </section>
 
-      <section class="panel price-panel">
+      <section class="panel price-panel" data-dashboard-panel-id="pricing" data-dashboard-panel-label-key="pricing.heading">
         <div class="panel-heading price-panel-heading">
           <div>
             <p class="eyebrow" data-i18n="pricing.eyebrow">API-Kosten</p>
@@ -166,6 +167,8 @@
         <div class="price-view-panel" id="pricingUsedModels" hidden></div>
         <div class="price-view-panel" id="pricingSubscriptionCosts" hidden></div>
       </section>
+      </div>
+      <p class="layout-live-region" id="layoutLiveRegion" aria-live="polite" aria-atomic="true"></p>
     </main>
 
     <dialog id="loginDialog" class="modal">

@@ -29,7 +29,7 @@
     "edit": "Edit layout",
     "done": "Done",
     "reset": "Default order",
-    "resetDone": "Default provider order restored.",
+    "resetDone": "Default dashboard order restored.",
     "dragHandle": "Move {name}",
     "grabbed": "Moving {name}. Use arrow keys to move, Enter or Space to drop, Escape to cancel.",
     "moved": "{name} moved to position {position} of {total}.",

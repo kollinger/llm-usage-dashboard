@@ -8,10 +8,15 @@ const state = {
   refreshIndicator: false,
   showAllProviders: false,
   layoutEditMode: false,
+  dashboardSectionOrder: [],
   providerOrder: [],
+  keyboardDragSectionId: null,
+  keyboardOriginalDashboardSectionOrder: null,
   keyboardDragProviderId: null,
   keyboardOriginalProviderOrder: null,
+  draggingSectionId: null,
   draggingProviderId: null,
+  dashboardPointerDrag: null,
   pointerDrag: null,
   chartRendered: false,
   chartScrollToLatest: true,
@@ -42,6 +47,7 @@ const state = {
 
 const els = {
   appShell: document.querySelector("main.app-shell"),
+  dashboardLayout: document.getElementById("dashboardLayout"),
   providerGrid: document.getElementById("providerGrid"),
   providerViewNotice: document.getElementById("providerViewNotice"),
   sourceDiagnosticsSection: document.getElementById("sourceDiagnosticsSection"),
@@ -213,7 +219,17 @@ const PRICING_CATALOG_VERSION = "2026.07.06";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
+const DASHBOARD_SECTION_ORDER_STORAGE_KEY = "llmUsage.dashboardSectionOrder";
 const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
+const DEFAULT_DASHBOARD_SECTION_ORDER = [
+  "overview",
+  "providers",
+  "live",
+  "token-history",
+  "token-mix",
+  "pricing",
+  "diagnostics"
+];
 const LANGUAGE_OPTIONS = [
   { code: "bg", flag: "🇧🇬", label: "Български", locale: "bg-BG" },
   { code: "cs", flag: "🇨🇿", label: "Čeština", locale: "cs-CZ" },
@@ -1344,6 +1360,8 @@ init();
 async function init() {
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
+  loadDashboardSectionOrderPreference();
+  applyDashboardSectionOrder();
   loadProviderOrderPreference();
   loadUsageProjectionModePreference();
   bindEvents();
@@ -1368,7 +1386,7 @@ function bindEvents() {
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
   els.layoutEditBtn?.addEventListener("click", toggleLayoutEditMode);
-  els.layoutResetBtn?.addEventListener("click", resetProviderOrder);
+  els.layoutResetBtn?.addEventListener("click", resetLayoutOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
@@ -1379,6 +1397,15 @@ function bindEvents() {
   els.settingsDialog.addEventListener("click", closeDialogOnBackdrop);
   els.sourceDiagnosticsSection?.addEventListener("click", handleSourceActionClick);
   els.settingsDialog?.addEventListener("click", handleSourceActionClick);
+  els.dashboardLayout?.addEventListener("dragstart", handleDashboardSectionDragStart);
+  els.dashboardLayout?.addEventListener("dragover", handleDashboardSectionDragOver);
+  els.dashboardLayout?.addEventListener("drop", handleDashboardSectionDrop);
+  els.dashboardLayout?.addEventListener("dragend", endDashboardSectionDrag);
+  els.dashboardLayout?.addEventListener("pointerdown", handleDashboardSectionPointerDown);
+  els.dashboardLayout?.addEventListener("pointermove", handleDashboardSectionPointerMove);
+  els.dashboardLayout?.addEventListener("pointerup", handleDashboardSectionPointerUp);
+  els.dashboardLayout?.addEventListener("pointercancel", cancelDashboardSectionPointerDrag);
+  els.dashboardLayout?.addEventListener("keydown", handleDashboardSectionKeyboardReorder);
   els.providerGrid?.addEventListener("dragstart", handleProviderDragStart);
   els.providerGrid?.addEventListener("dragover", handleProviderDragOver);
   els.providerGrid?.addEventListener("drop", handleProviderDrop);
@@ -1553,6 +1580,7 @@ function rerenderLanguageSensitiveViews() {
     renderLocked();
   } else {
     updateProviderFilterControl([], []);
+    updateDashboardLayoutMode();
     updateLayoutControls([], []);
     renderSourceDiagnostics();
     renderLiveGauges(state.systemMetrics);
@@ -1593,6 +1621,15 @@ function loadProviderFilterPreference() {
     state.showAllProviders = localStorage.getItem(PROVIDER_FILTER_STORAGE_KEY) === "true";
   } catch {
     state.showAllProviders = false;
+  }
+}
+
+function loadDashboardSectionOrderPreference() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DASHBOARD_SECTION_ORDER_STORAGE_KEY) || "[]");
+    state.dashboardSectionOrder = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+  } catch {
+    state.dashboardSectionOrder = [];
   }
 }
 
@@ -1651,22 +1688,198 @@ function toggleProviderFilter() {
 
 function toggleLayoutEditMode() {
   state.layoutEditMode = !state.layoutEditMode;
+  state.keyboardDragSectionId = null;
+  state.keyboardOriginalDashboardSectionOrder = null;
   state.keyboardDragProviderId = null;
   state.keyboardOriginalProviderOrder = null;
+  endDashboardSectionDrag();
+  cleanupDashboardSectionPointerDrag();
   clearProviderDropTarget();
   removeProviderDragGhost();
-  if (state.usage) render();
-  else updateLayoutControls([], []);
+  if (state.usage) {
+    render();
+  } else {
+    updateDashboardLayoutMode();
+    updateLayoutControls([], []);
+    refreshIcons();
+  }
 }
 
-function resetProviderOrder() {
+function resetLayoutOrder() {
   const providers = state.usage ? buildProviders(state.usage) : [];
+  state.keyboardDragSectionId = null;
+  state.keyboardOriginalDashboardSectionOrder = null;
   state.keyboardDragProviderId = null;
   state.keyboardOriginalProviderOrder = null;
+  state.draggingSectionId = null;
   state.providerOrder = providers.map((provider) => provider.id);
   saveProviderOrder();
+  applyDashboardSectionOrder(DEFAULT_DASHBOARD_SECTION_ORDER, { persist: true });
   announceLayoutChange(t("layout.resetDone"));
-  if (state.usage) render();
+  if (state.usage) {
+    render();
+  } else {
+    updateDashboardLayoutMode();
+    updateLayoutControls([], []);
+    refreshIcons();
+  }
+}
+
+function dashboardSectionIds() {
+  return Array.from(els.dashboardLayout?.querySelectorAll(":scope > [data-dashboard-panel-id]") || [])
+    .map((panel) => panel.dataset.dashboardPanelId)
+    .filter(Boolean);
+}
+
+function normalizeDashboardSectionOrder(order) {
+  const panelIds = dashboardSectionIds();
+  const validIds = new Set(panelIds);
+  const normalized = [];
+  for (const id of Array.isArray(order) && order.length ? order : DEFAULT_DASHBOARD_SECTION_ORDER) {
+    if (validIds.has(id) && !normalized.includes(id)) normalized.push(id);
+  }
+  for (const id of DEFAULT_DASHBOARD_SECTION_ORDER) {
+    if (validIds.has(id) && !normalized.includes(id)) normalized.push(id);
+  }
+  for (const id of panelIds) {
+    if (!normalized.includes(id)) normalized.push(id);
+  }
+  return normalized;
+}
+
+function saveDashboardSectionOrder() {
+  try {
+    localStorage.setItem(DASHBOARD_SECTION_ORDER_STORAGE_KEY, JSON.stringify(state.dashboardSectionOrder));
+  } catch {
+    // Keep the edited order for this session if storage is unavailable.
+  }
+}
+
+function applyDashboardSectionOrder(nextOrder = state.dashboardSectionOrder, { persist = false } = {}) {
+  if (!els.dashboardLayout) return;
+  state.dashboardSectionOrder = normalizeDashboardSectionOrder(nextOrder);
+  const panelsById = new Map(
+    Array.from(els.dashboardLayout.querySelectorAll(":scope > [data-dashboard-panel-id]")).map((panel) => [panel.dataset.dashboardPanelId, panel])
+  );
+  for (const id of state.dashboardSectionOrder) {
+    const panel = panelsById.get(id);
+    if (panel) els.dashboardLayout.appendChild(panel);
+  }
+  if (persist) saveDashboardSectionOrder();
+  updateDashboardLayoutMode();
+}
+
+function dashboardPanelById(sectionId) {
+  const selector = `[data-dashboard-panel-id="${escapeSelectorValue(sectionId)}"]`;
+  return els.dashboardLayout?.querySelector(`:scope > ${selector}`);
+}
+
+function currentVisibleDashboardSectionIds() {
+  return dashboardSectionIds().filter((id) => {
+    const panel = dashboardPanelById(id);
+    return panel && !panel.hidden;
+  });
+}
+
+function moveDashboardSectionRelativeToTarget(draggedId, targetId, afterTarget = false) {
+  if (!els.dashboardLayout || draggedId === targetId) return false;
+  const sectionIds = dashboardSectionIds();
+  const nextOrder = normalizeDashboardSectionOrder(state.dashboardSectionOrder);
+  const fromIndex = nextOrder.indexOf(draggedId);
+  const targetIndex = nextOrder.indexOf(targetId);
+  if (!sectionIds.includes(draggedId) || !sectionIds.includes(targetId) || fromIndex === -1 || targetIndex === -1) return false;
+  let insertIndex = targetIndex + (afterTarget ? 1 : 0);
+  nextOrder.splice(fromIndex, 1);
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  nextOrder.splice(Math.max(0, Math.min(insertIndex, nextOrder.length)), 0, draggedId);
+  applyDashboardSectionOrder(nextOrder, { persist: true });
+  return true;
+}
+
+function moveDashboardSectionByVisibleDelta(sectionId, delta) {
+  const visibleIds = currentVisibleDashboardSectionIds();
+  const fromIndex = visibleIds.indexOf(sectionId);
+  const toIndex = fromIndex + delta;
+  if (fromIndex === -1 || toIndex < 0 || toIndex >= visibleIds.length) return false;
+  return moveDashboardSectionRelativeToTarget(sectionId, visibleIds[toIndex], delta > 0);
+}
+
+function dashboardPanelFromEvent(event) {
+  return event.target?.closest?.("#dashboardLayout > [data-dashboard-panel-id]");
+}
+
+function dashboardSectionHandleFromEvent(event) {
+  return event.target?.closest?.("[data-dashboard-panel-drag-handle]");
+}
+
+function dashboardSectionName(sectionId) {
+  const panel = dashboardPanelById(sectionId);
+  if (!panel) return sectionId;
+  const labelKey = panel.dataset.dashboardPanelLabelKey;
+  return labelKey
+    ? t(labelKey, {}, panel.getAttribute("aria-label") || sectionId)
+    : panel.getAttribute("aria-label") || panel.querySelector("h2")?.textContent?.trim() || sectionId;
+}
+
+function dashboardSectionPosition(sectionId) {
+  const visibleIds = currentVisibleDashboardSectionIds();
+  const index = visibleIds.indexOf(sectionId);
+  return { position: index + 1, total: visibleIds.length };
+}
+
+function announceDashboardSectionMove(sectionId, key = "layout.moved") {
+  const { position, total } = dashboardSectionPosition(sectionId);
+  announceLayoutChange(t(key, { name: dashboardSectionName(sectionId), position, total }));
+}
+
+function focusDashboardSectionHandle(sectionId) {
+  window.requestAnimationFrame(() => {
+    const selector = `[data-dashboard-panel-drag-handle][data-dashboard-panel-id="${escapeSelectorValue(sectionId)}"]`;
+    els.dashboardLayout?.querySelector(selector)?.focus();
+  });
+}
+
+function renderDashboardSectionDragHandle(sectionId, index, total) {
+  const name = dashboardSectionName(sectionId);
+  const active = state.keyboardDragSectionId === sectionId;
+  return `
+    <button
+      type="button"
+      class="dashboard-drag-handle${active ? " is-active" : ""}"
+      data-dashboard-panel-drag-handle
+      data-dashboard-panel-id="${escapeHtml(sectionId)}"
+      aria-label="${escapeHtml(t("layout.dragHandle", { name }))}"
+      aria-pressed="${active}"
+      title="${escapeHtml(t("layout.dragHandle", { name }))}"
+    >
+      <i data-lucide="grip-vertical"></i>
+      <span class="layout-position">${escapeHtml(`${index + 1}/${total}`)}</span>
+    </button>
+  `;
+}
+
+function updateDashboardLayoutMode() {
+  if (!els.dashboardLayout) return;
+  els.dashboardLayout.classList.toggle("layout-edit-mode", state.layoutEditMode);
+  const visibleIds = currentVisibleDashboardSectionIds();
+  const visibleIndexById = new Map(visibleIds.map((id, index) => [id, index]));
+  for (const panel of els.dashboardLayout.querySelectorAll(":scope > [data-dashboard-panel-id]")) {
+    const sectionId = panel.dataset.dashboardPanelId;
+    const visibleIndex = visibleIndexById.get(sectionId);
+    const existingHandle = panel.querySelector(":scope > [data-dashboard-panel-drag-handle]");
+    if (!state.layoutEditMode || visibleIndex === undefined) {
+      panel.removeAttribute("draggable");
+      existingHandle?.remove();
+      continue;
+    }
+    panel.setAttribute("draggable", "true");
+    const handleMarkup = renderDashboardSectionDragHandle(sectionId, visibleIndex, visibleIds.length);
+    if (existingHandle) {
+      existingHandle.outerHTML = handleMarkup;
+    } else {
+      panel.insertAdjacentHTML("afterbegin", handleMarkup);
+    }
+  }
 }
 
 function normalizeProviderOrder(order, providerIds) {
@@ -1776,7 +1989,7 @@ function escapeSelectorValue(value) {
 }
 
 function handleProviderDragStart(event) {
-  if (!state.layoutEditMode) return;
+  if (!state.layoutEditMode || state.draggingSectionId || dashboardSectionHandleFromEvent(event)) return;
   const handle = providerHandleFromEvent(event);
   const card = providerCardFromEvent(event);
   if (!handle || !card) {
@@ -1794,7 +2007,7 @@ function handleProviderDragStart(event) {
 }
 
 function handleProviderDragOver(event) {
-  if (!state.layoutEditMode || !state.draggingProviderId) return;
+  if (!state.layoutEditMode || !state.draggingProviderId || state.draggingSectionId) return;
   const card = providerCardFromEvent(event);
   if (!card || card.dataset.providerId === state.draggingProviderId) {
     clearProviderDropTarget();
@@ -1807,7 +2020,7 @@ function handleProviderDragOver(event) {
 }
 
 function handleProviderDrop(event) {
-  if (!state.layoutEditMode) return;
+  if (!state.layoutEditMode || state.draggingSectionId) return;
   const card = providerCardFromEvent(event);
   const draggedId = state.draggingProviderId || event.dataTransfer?.getData("text/plain");
   if (!card || !draggedId || card.dataset.providerId === draggedId) {
@@ -1851,7 +2064,7 @@ function clearProviderDropTarget(exceptCard = null) {
 }
 
 function handleProviderPointerDown(event) {
-  if (!state.layoutEditMode) return;
+  if (!state.layoutEditMode || state.dashboardPointerDrag || dashboardSectionHandleFromEvent(event)) return;
   const handle = providerHandleFromEvent(event);
   const card = providerCardFromEvent(event);
   if (!handle || !card) return;
@@ -1875,7 +2088,7 @@ function handleProviderPointerDown(event) {
 
 function handleProviderPointerMove(event) {
   const drag = state.pointerDrag;
-  if (!drag || drag.pointerId !== event.pointerId) return;
+  if (!drag || drag.pointerId !== event.pointerId || state.dashboardPointerDrag) return;
   const dx = event.clientX - drag.startX;
   const dy = event.clientY - drag.startY;
   if (!drag.active && Math.hypot(dx, dy) < 6) return;
@@ -1955,6 +2168,7 @@ function removeProviderDragGhost() {
 
 function handleProviderKeyboardReorder(event) {
   if (!state.layoutEditMode) return;
+  if (dashboardSectionHandleFromEvent(event)) return;
   const handle = providerHandleFromEvent(event);
   if (!handle) return;
   const providerId = handle.dataset.providerId;
@@ -2001,6 +2215,225 @@ function handleProviderKeyboardReorder(event) {
     announceProviderMove(providerId);
     render();
     focusProviderHandle(providerId);
+  }
+}
+
+function handleDashboardSectionDragStart(event) {
+  if (!state.layoutEditMode || state.draggingProviderId) return;
+  const handle = dashboardSectionHandleFromEvent(event);
+  const panel = dashboardPanelFromEvent(event);
+  if (!handle || !panel) return;
+  state.draggingSectionId = panel.dataset.dashboardPanelId;
+  panel.classList.add("is-dragging");
+  try {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", state.draggingSectionId);
+  } catch {
+    // Drag data is advisory; state.draggingSectionId is the source of truth.
+  }
+}
+
+function handleDashboardSectionDragOver(event) {
+  if (!state.layoutEditMode || !state.draggingSectionId || state.draggingProviderId) return;
+  const panel = dashboardPanelFromEvent(event);
+  if (!panel || panel.dataset.dashboardPanelId === state.draggingSectionId) {
+    clearDashboardSectionDropTarget();
+    return;
+  }
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+  const placement = resolveDropPlacement(panel, event.clientX, event.clientY);
+  setDashboardSectionDropTarget(panel, placement.after);
+}
+
+function handleDashboardSectionDrop(event) {
+  if (!state.layoutEditMode || state.draggingProviderId) return;
+  const panel = dashboardPanelFromEvent(event);
+  const draggedId = state.draggingSectionId || event.dataTransfer?.getData("text/plain");
+  if (!panel || !draggedId || panel.dataset.dashboardPanelId === draggedId) {
+    endDashboardSectionDrag();
+    return;
+  }
+  event.preventDefault();
+  const placement = resolveDropPlacement(panel, event.clientX, event.clientY);
+  const moved = moveDashboardSectionRelativeToTarget(draggedId, panel.dataset.dashboardPanelId, placement.after);
+  endDashboardSectionDrag();
+  if (moved) {
+    announceDashboardSectionMove(draggedId, "layout.dropped");
+    focusDashboardSectionHandle(draggedId);
+    refreshIcons();
+  }
+}
+
+function endDashboardSectionDrag() {
+  state.draggingSectionId = null;
+  els.dashboardLayout?.querySelectorAll(".is-dragging").forEach((panel) => panel.classList.remove("is-dragging"));
+  clearDashboardSectionDropTarget();
+}
+
+function setDashboardSectionDropTarget(panel, after) {
+  clearDashboardSectionDropTarget(panel);
+  panel.classList.add("is-drop-target", after ? "is-drop-after" : "is-drop-before");
+}
+
+function clearDashboardSectionDropTarget(exceptPanel = null) {
+  els.dashboardLayout?.querySelectorAll(".is-drop-target").forEach((panel) => {
+    if (panel === exceptPanel) return;
+    panel.classList.remove("is-drop-target", "is-drop-before", "is-drop-after");
+  });
+}
+
+function handleDashboardSectionPointerDown(event) {
+  if (!state.layoutEditMode || state.pointerDrag) return;
+  const handle = dashboardSectionHandleFromEvent(event);
+  const panel = dashboardPanelFromEvent(event);
+  if (!handle || !panel) return;
+  event.preventDefault();
+  state.dashboardPointerDrag = {
+    id: panel.dataset.dashboardPanelId,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    targetId: null,
+    after: false,
+    active: false,
+    handle
+  };
+  try {
+    handle.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is best effort; document.elementFromPoint still drives the drop target.
+  }
+}
+
+function handleDashboardSectionPointerMove(event) {
+  const drag = state.dashboardPointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId || state.pointerDrag) return;
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  if (!drag.active && Math.hypot(dx, dy) < 6) return;
+  event.preventDefault();
+  if (!drag.active) {
+    drag.active = true;
+    createDashboardSectionDragGhost(drag.id, event.clientX, event.clientY);
+    dashboardPanelById(drag.id)?.classList.add("is-dragging");
+  }
+  moveDashboardSectionDragGhost(event.clientX, event.clientY);
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("#dashboardLayout > [data-dashboard-panel-id]");
+  if (!target || target.dataset.dashboardPanelId === drag.id) {
+    clearDashboardSectionDropTarget();
+    drag.targetId = null;
+    return;
+  }
+  const placement = resolveDropPlacement(target, event.clientX, event.clientY);
+  drag.targetId = target.dataset.dashboardPanelId;
+  drag.after = placement.after;
+  setDashboardSectionDropTarget(target, placement.after);
+}
+
+function handleDashboardSectionPointerUp(event) {
+  const drag = state.dashboardPointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const moved = drag.active && drag.targetId ? moveDashboardSectionRelativeToTarget(drag.id, drag.targetId, drag.after) : false;
+  cleanupDashboardSectionPointerDrag();
+  if (moved) {
+    announceDashboardSectionMove(drag.id, "layout.dropped");
+    focusDashboardSectionHandle(drag.id);
+    refreshIcons();
+  }
+}
+
+function cancelDashboardSectionPointerDrag(event) {
+  if (event && state.dashboardPointerDrag?.pointerId !== event.pointerId) return;
+  cleanupDashboardSectionPointerDrag();
+}
+
+function cleanupDashboardSectionPointerDrag() {
+  removeDashboardSectionDragGhost();
+  state.dashboardPointerDrag = null;
+  endDashboardSectionDrag();
+}
+
+function createDashboardSectionDragGhost(sectionId, clientX, clientY) {
+  removeDashboardSectionDragGhost();
+  const panel = dashboardPanelById(sectionId);
+  if (!panel) return;
+  const rect = panel.getBoundingClientRect();
+  const ghost = panel.cloneNode(true);
+  ghost.classList.add("dashboard-drag-ghost");
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.maxHeight = `${Math.min(rect.height, 320)}px`;
+  document.body.appendChild(ghost);
+  state.dashboardPointerDrag.ghost = ghost;
+  moveDashboardSectionDragGhost(clientX, clientY);
+}
+
+function moveDashboardSectionDragGhost(clientX, clientY) {
+  const ghost = state.dashboardPointerDrag?.ghost;
+  if (!ghost) return;
+  ghost.style.transform = `translate(${clientX + 12}px, ${clientY + 12}px)`;
+}
+
+function removeDashboardSectionDragGhost() {
+  if (!state.dashboardPointerDrag?.ghost) return;
+  state.dashboardPointerDrag.ghost.remove();
+  state.dashboardPointerDrag.ghost = null;
+}
+
+function handleDashboardSectionKeyboardReorder(event) {
+  if (!state.layoutEditMode) return;
+  const handle = dashboardSectionHandleFromEvent(event);
+  if (!handle) return;
+  const sectionId = handle.dataset.dashboardPanelId;
+  const isGrabbed = state.keyboardDragSectionId === sectionId;
+
+  if (!isGrabbed && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    state.keyboardDragSectionId = sectionId;
+    state.keyboardOriginalDashboardSectionOrder = state.dashboardSectionOrder.slice();
+    announceDashboardSectionMove(sectionId, "layout.grabbed");
+    updateDashboardLayoutMode();
+    refreshIcons();
+    focusDashboardSectionHandle(sectionId);
+    return;
+  }
+
+  if (!isGrabbed) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (state.keyboardOriginalDashboardSectionOrder) {
+      applyDashboardSectionOrder(state.keyboardOriginalDashboardSectionOrder, { persist: true });
+    }
+    state.keyboardDragSectionId = null;
+    state.keyboardOriginalDashboardSectionOrder = null;
+    announceLayoutChange(t("layout.cancelled"));
+    updateDashboardLayoutMode();
+    refreshIcons();
+    focusDashboardSectionHandle(sectionId);
+    return;
+  }
+
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    state.keyboardDragSectionId = null;
+    state.keyboardOriginalDashboardSectionOrder = null;
+    announceDashboardSectionMove(sectionId, "layout.dropped");
+    updateDashboardLayoutMode();
+    refreshIcons();
+    focusDashboardSectionHandle(sectionId);
+    return;
+  }
+
+  const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+  if (!direction) return;
+  event.preventDefault();
+  const moved = moveDashboardSectionByVisibleDelta(sectionId, direction);
+  if (moved) {
+    announceDashboardSectionMove(sectionId);
+    refreshIcons();
+    focusDashboardSectionHandle(sectionId);
   }
 }
 
@@ -2242,7 +2675,10 @@ function renderLocked() {
   els.pricingMeta.textContent = "--";
   state.chartRendered = false;
   state.layoutEditMode = false;
+  state.keyboardDragSectionId = null;
+  state.keyboardOriginalDashboardSectionOrder = null;
   els.providerGrid.classList.remove("layout-edit-mode");
+  updateDashboardLayoutMode();
   updateProviderViewNotice([], []);
   updateProviderFilterControl([], []);
   updateLayoutControls([], []);
@@ -2260,6 +2696,7 @@ function render() {
   els.providerGrid.innerHTML = visibleProviders.length
     ? visibleProviders.map((provider, index) => renderProvider(provider, index, visibleProviders.length)).join("")
     : renderNoActiveProviders();
+  applyDashboardSectionOrder();
   updateProviderViewNotice(providers);
   updateProviderFilterControl(providers, visibleProviders);
   updateLayoutControls(providers, visibleProviders);
@@ -3093,12 +3530,13 @@ function updateProviderViewNotice(providers) {
 function updateLayoutControls(providers, visibleProviders) {
   if (!els.layoutEditBtn) return;
   const label = state.layoutEditMode ? t("layout.done") : t("layout.edit");
-  els.layoutEditBtn.disabled = !providers.length;
+  const visibleSections = currentVisibleDashboardSectionIds();
+  els.layoutEditBtn.disabled = !providers.length && !visibleSections.length;
   els.layoutEditBtn.setAttribute("aria-label", label);
   els.layoutEditBtn.setAttribute("title", label);
   els.layoutEditBtn.setAttribute("aria-pressed", String(state.layoutEditMode));
   if (els.layoutResetBtn) {
-    els.layoutResetBtn.hidden = !state.layoutEditMode || !visibleProviders.length;
+    els.layoutResetBtn.hidden = !state.layoutEditMode || (!visibleProviders.length && !visibleSections.length);
     els.layoutResetBtn.textContent = t("layout.reset");
   }
 }

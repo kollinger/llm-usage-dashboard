@@ -29,7 +29,7 @@
     "edit": "Layout bearbeiten",
     "done": "Fertig",
     "reset": "Standardreihenfolge",
-    "resetDone": "Standardreihenfolge der Anbieter wiederhergestellt.",
+    "resetDone": "Standardreihenfolge des Dashboards wiederhergestellt.",
     "dragHandle": "{name} verschieben",
     "grabbed": "{name} wird verschoben. Mit Pfeiltasten bewegen, mit Enter oder Leertaste ablegen, mit Escape abbrechen.",
     "moved": "{name} auf Position {position} von {total} verschoben.",

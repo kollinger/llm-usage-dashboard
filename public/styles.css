@@ -425,6 +425,17 @@ a {
   gap: 14px;
 }
 
+.dashboard-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.dashboard-layout > [data-dashboard-panel-id] {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+}
+
 .layout-live-region {
   position: absolute;
   width: 1px;
@@ -453,24 +464,43 @@ a {
   padding-top: 54px;
 }
 
-.provider-card.is-dragging {
+.provider-card.is-dragging,
+.dashboard-layout > [data-dashboard-panel-id].is-dragging {
   opacity: 0.52;
 }
 
-.provider-card.is-drop-target {
+.provider-card.is-drop-target,
+.dashboard-layout > [data-dashboard-panel-id].is-drop-target {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(35, 116, 92, 0.14);
 }
 
-.provider-card.is-drop-before {
+.provider-card.is-drop-before,
+.dashboard-layout > [data-dashboard-panel-id].is-drop-before {
   transform: translateY(-2px);
 }
 
-.provider-card.is-drop-after {
+.provider-card.is-drop-after,
+.dashboard-layout > [data-dashboard-panel-id].is-drop-after {
   transform: translateY(2px);
 }
 
-.provider-drag-handle {
+.dashboard-layout.layout-edit-mode > [data-dashboard-panel-id] {
+  outline: 1px dashed rgba(35, 116, 92, 0.28);
+  outline-offset: 3px;
+  transition: box-shadow 120ms ease, opacity 120ms ease, outline-color 120ms ease, transform 120ms ease;
+}
+
+.dashboard-layout.layout-edit-mode > .summary-strip,
+.dashboard-layout.layout-edit-mode > .provider-section,
+.dashboard-layout.layout-edit-mode > .provider-grid,
+.dashboard-layout.layout-edit-mode > .usage-layout,
+.dashboard-layout.layout-edit-mode > .panel {
+  padding-top: 58px;
+}
+
+.provider-drag-handle,
+.dashboard-drag-handle {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -489,25 +519,30 @@ a {
 }
 
 .provider-drag-handle:active,
-.provider-drag-handle.is-active {
+.provider-drag-handle.is-active,
+.dashboard-drag-handle:active,
+.dashboard-drag-handle.is-active {
   cursor: grabbing;
   border-color: var(--green);
   color: var(--green);
   box-shadow: 0 0 0 3px rgba(35, 116, 92, 0.12);
 }
 
-.provider-drag-handle svg {
+.provider-drag-handle svg,
+.dashboard-drag-handle svg {
   width: 18px;
   height: 18px;
 }
 
-.provider-position {
+.provider-position,
+.layout-position {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 800;
 }
 
-.provider-drag-ghost {
+.provider-drag-ghost,
+.dashboard-drag-ghost {
   position: fixed;
   top: 0;
   left: 0;
@@ -516,6 +551,10 @@ a {
   opacity: 0.82;
   box-shadow: var(--shadow);
   transform-origin: top left;
+}
+
+.dashboard-drag-ghost {
+  overflow: hidden;
 }
 
 .provider-head {
@@ -3142,6 +3181,7 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .provider-card,
+  .dashboard-layout > [data-dashboard-panel-id],
   .diagnostic-state-card,
   .source-card,
   .icon-button.is-loading svg {
@@ -3150,7 +3190,9 @@ select {
   }
 
   .provider-card.is-drop-before,
-  .provider-card.is-drop-after {
+  .provider-card.is-drop-after,
+  .dashboard-layout > [data-dashboard-panel-id].is-drop-before,
+  .dashboard-layout > [data-dashboard-panel-id].is-drop-after {
     transform: none;
   }
 }
