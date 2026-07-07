@@ -30,6 +30,9 @@ const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
 const NOTIFICATION_TEST_POLL_INTERVAL_MS = 5 * 1000; // 5 seconds for test-pending checks
 const NOTIFICATION_REQUEST_TIMEOUT_MS = 90 * 1000; // Local usage scans can take 25-30s on real data.
+const NOTIFICATION_LANGUAGE_STORAGE_KEY = "llmUsage.language";
+const NOTIFICATION_FALLBACK_LANGUAGE = "de";
+const NOTIFICATION_I18N_DIR = path.join(__dirname, "..", "public", "i18n");
 const UPDATE_POLL_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const UPDATE_REQUEST_POLL_INTERVAL_MS = 5 * 1000;
 const SQLITE_BINARY = "/usr/bin/sqlite3";
@@ -243,15 +246,143 @@ function alertKey(alert) {
   return `${alert.windowLabel}:${alert.type}`;
 }
 
-function buildNotificationBody(alert) {
-  if (alert.type === "hard_limit") {
-    return `${Math.round(alert.usedPercent)}% used. Limit nearly exhausted.`;
+function normalizeNotificationLanguage(language) {
+  const base = String(language || "")
+    .trim()
+    .toLowerCase()
+    .split(/[_.-]/)[0];
+  if (!base) return null;
+  return fsSync.existsSync(path.join(NOTIFICATION_I18N_DIR, `${base}.json`)) ? base : null;
+}
+
+const notificationTranslationCache = new Map();
+
+function readNotificationTranslations(language) {
+  const normalized = normalizeNotificationLanguage(language) || NOTIFICATION_FALLBACK_LANGUAGE;
+  if (notificationTranslationCache.has(normalized)) return notificationTranslationCache.get(normalized);
+  try {
+    const translations = JSON.parse(fsSync.readFileSync(path.join(NOTIFICATION_I18N_DIR, `${normalized}.json`), "utf8"));
+    notificationTranslationCache.set(normalized, translations);
+    return translations;
+  } catch {
+    if (normalized !== NOTIFICATION_FALLBACK_LANGUAGE) return readNotificationTranslations(NOTIFICATION_FALLBACK_LANGUAGE);
+    notificationTranslationCache.set(normalized, {});
+    return {};
   }
-  const parts = [`${Math.round(alert.usedPercent)}% used, pace projects ${alert.projectedPercent}%.`];
+}
+
+function notificationTranslationValue(translations, key) {
+  return String(key || "")
+    .split(".")
+    .reduce((current, part) => (current && typeof current === "object" ? current[part] : undefined), translations);
+}
+
+function notificationT(language, key, values = {}) {
+  const translations = readNotificationTranslations(language);
+  const fallbackTranslations = language === NOTIFICATION_FALLBACK_LANGUAGE ? translations : readNotificationTranslations(NOTIFICATION_FALLBACK_LANGUAGE);
+  const template = notificationTranslationValue(translations, key) ?? notificationTranslationValue(fallbackTranslations, key) ?? key;
+  return String(template).replace(/\{(\w+)\}/g, (_match, name) => values[name] ?? "");
+}
+
+async function getNotificationLanguage() {
+  const candidates = [];
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    try {
+      candidates.push(await mainWindow.webContents.executeJavaScript(
+        `(() => {
+          try {
+            return localStorage.getItem(${JSON.stringify(NOTIFICATION_LANGUAGE_STORAGE_KEY)}) ||
+              document.documentElement.lang ||
+              navigator.language ||
+              "";
+          } catch {
+            return "";
+          }
+        })()`,
+        true
+      ));
+    } catch {
+      // The window may still be loading; fall through to app/system locale.
+    }
+  }
+  candidates.push(app.getLocale?.(), process.env.LANG, NOTIFICATION_FALLBACK_LANGUAGE);
+  for (const candidate of candidates) {
+    const normalized = normalizeNotificationLanguage(candidate);
+    if (normalized) return normalized;
+  }
+  return NOTIFICATION_FALLBACK_LANGUAGE;
+}
+
+function notificationWindowKey(alert) {
+  const raw = String(alert?.windowKey || alert?.window_key || alert?.key || alert?.windowLabel || alert?.label || "")
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+  if (!raw) return "generic";
+  if (/fable/.test(raw)) return "fable";
+  if (/sonnet/.test(raw)) return "sonnetOnly";
+  if (/design/.test(raw)) return "claudeDesign";
+  if (/5h|five_hour|fivehour|current_session|session|primary/.test(raw)) return "fiveHour";
+  if (/week|weekly|seven_day|7d|woche|all_models|secondary/.test(raw)) return "weekly";
+  return "generic";
+}
+
+function localizedNotificationWindowLabel(alert, language) {
+  const key = notificationWindowKey(alert);
+  const translationKey = {
+    fiveHour: "settings.notifications.nativeWindowFiveHour",
+    weekly: "settings.notifications.nativeWindowWeekly",
+    fable: "settings.notifications.nativeWindowFable",
+    sonnetOnly: "settings.notifications.nativeWindowSonnetOnly",
+    claudeDesign: "settings.notifications.nativeWindowClaudeDesign",
+    generic: "settings.notifications.nativeWindowGeneric"
+  }[key] || "settings.notifications.nativeWindowGeneric";
+  return notificationT(language, translationKey);
+}
+
+function formatNotificationDuration(minutes, language) {
+  const totalMinutes = Math.max(0, Math.round(Number(minutes) || 0));
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  if (hours > 0 && remainingMinutes > 0) {
+    return notificationT(language, "settings.notifications.nativeDurationHoursMinutes", {
+      hours,
+      minutes: remainingMinutes
+    });
+  }
+  if (hours > 0) {
+    return notificationT(language, "settings.notifications.nativeDurationHours", { hours });
+  }
+  return notificationT(language, "settings.notifications.nativeDurationMinutes", { minutes: remainingMinutes });
+}
+
+function buildNotificationTitle(alert, language) {
+  return notificationT(language, "settings.notifications.nativeAlertTitle", {
+    window: localizedNotificationWindowLabel(alert, language)
+  });
+}
+
+function buildNotificationBody(alert, language) {
+  const usedPercent = Math.round(Number(alert.usedPercent) || 0);
+  if (alert.type === "hard_limit") {
+    return [
+      notificationT(language, "settings.notifications.nativeUsedPercent", { percent: usedPercent }),
+      notificationT(language, "settings.notifications.nativeHardLimit")
+    ].join(" ");
+  }
+  const projectedPercent = Math.round(Number(alert.projectedPercent) || 0);
+  const parts = [
+    notificationT(language, "settings.notifications.nativePacingProjected", {
+      usedPercent,
+      projectedPercent
+    })
+  ];
   if (alert.exhaustInMinutes !== null && alert.exhaustInMinutes >= 0) {
-    const h = Math.floor(alert.exhaustInMinutes / 60);
-    const m = alert.exhaustInMinutes % 60;
-    parts.push(`Estimated exhaustion in ${h > 0 ? `${h}h ` : ""}${m}m.`);
+    parts.push(notificationT(language, "settings.notifications.nativeEstimatedExhaustion", {
+      time: formatNotificationDuration(alert.exhaustInMinutes, language)
+    }));
   }
   return parts.join(" ");
 }
@@ -665,6 +796,7 @@ async function checkNotifications(port) {
     lastAlertCount = data.alerts.length;
     lastAlerts = data.alerts;
     const now = Date.now();
+    const notificationLanguage = await getNotificationLanguage();
     for (const alert of data.alerts) {
       const key = alertKey(alert);
       const lastShown = notificationCooldowns.get(key) || 0;
@@ -674,8 +806,8 @@ async function checkNotifications(port) {
       }
       notificationCooldowns.set(key, now);
       if (notificationSupported) {
-        const title = `Limit warning: ${alert.windowLabel}`;
-        const body = buildNotificationBody(alert);
+        const title = buildNotificationTitle(alert, notificationLanguage);
+        const body = buildNotificationBody(alert, notificationLanguage);
         const delivery = await showNativeNotification({ title, body, silent: false }, () => {
           if (dashboardPort) showDashboardWindow(dashboardPort);
         });
@@ -729,9 +861,10 @@ async function fireTestNotification() {
     return;
   }
   try {
+    const notificationLanguage = await getNotificationLanguage();
     const delivery = await showNativeNotification({
-      title: "LLM Usage Dashboard - Test",
-      body: "Desktop notifications are working correctly.",
+      title: notificationT(notificationLanguage, "settings.notifications.testTitle"),
+      body: notificationT(notificationLanguage, "settings.notifications.testBody"),
       silent: false
     }, () => {
       if (dashboardPort) showDashboardWindow(dashboardPort);
@@ -1086,21 +1219,48 @@ async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
         }
         if (url.includes("/overage_spend_limit")) billingPayload.overageLimit = payload;
         if (url.includes("/prepaid/credits")) billingPayload.prepaidCredits = payload;
+        const subscription = findClaudeSubscriptionCandidate(payload);
+        if (subscription) billingPayload.subscription = subscription;
         const credits = buildClaudeCreditsFromBillingParts(billingPayload);
-        if (credits) return { status: "available", reason: null, credits, usage: billingPayload.usage || null };
+        if (credits || subscription) {
+          return {
+            status: "available",
+            reason: null,
+            credits: credits || null,
+            subscription: subscription || null,
+            usage: billingPayload.usage || null
+          };
+        }
         if (findUsageCreditsCandidate(payload)) {
           return { status: "available", reason: null, billingPayload: payload, usage: billingPayload.usage || null };
         }
         continue;
       }
       const credits = extractClaudeCreditsFromHtml(text);
-      if (credits) return { status: "available", reason: null, credits, usage: billingPayload.usage || null };
+      const subscription = extractClaudeSubscriptionFromHtml(text);
+      if (credits || subscription) {
+        return {
+          status: "available",
+          reason: null,
+          credits: credits || null,
+          subscription: subscription || null,
+          usage: billingPayload.usage || null
+        };
+      }
     } catch {
       // Try the next endpoint candidate.
     }
   }
   const credits = buildClaudeCreditsFromBillingParts(billingPayload);
-  if (credits || billingPayload.usage) return { status: "available", reason: null, credits: credits || null, usage: billingPayload.usage || null };
+  if (credits || billingPayload.subscription || billingPayload.usage) {
+    return {
+      status: "available",
+      reason: null,
+      credits: credits || null,
+      subscription: billingPayload.subscription || null,
+      usage: billingPayload.usage || null
+    };
+  }
   return { status: "missing", reason: "claude_billing_data_unavailable" };
 }
 
@@ -1229,6 +1389,149 @@ function normalizeClaudeCurrency(value) {
   return /^[A-Z]{3}$/.test(currency) ? currency : "EUR";
 }
 
+const CLAUDE_BROWSER_SUBSCRIPTION_PLAN_KEYS = new Set([
+  "free",
+  "pro",
+  "claude pro",
+  "max",
+  "claude max",
+  "max 5x",
+  "claude max 5x",
+  "max 20x",
+  "claude max 20x",
+  "20x",
+  "team",
+  "claude team",
+  "enterprise",
+  "claude enterprise",
+  "business"
+]);
+
+function findClaudeSubscriptionCandidate(value, options = {}, seen = new Set()) {
+  if (!value || typeof value !== "object") return null;
+  if (seen.has(value)) return null;
+  seen.add(value);
+  const direct = sanitizeClaudeSubscriptionCandidate(value, options);
+  if (direct) return direct;
+  const explicitNested = [
+    value.subscription,
+    value.billing?.subscription,
+    value.account?.subscription
+  ];
+  for (const candidate of explicitNested) {
+    const match = findClaudeSubscriptionCandidate(candidate, { explicitPath: true }, seen);
+    if (match) return match;
+  }
+  const scopedNested = [
+    value.account,
+    value.billing
+  ];
+  for (const candidate of scopedNested) {
+    const match = findClaudeSubscriptionCandidate(candidate, {}, seen);
+    if (match) return match;
+  }
+  const entries = Array.isArray(value) ? value : Object.values(value);
+  for (const entry of entries) {
+    const match = findClaudeSubscriptionCandidate(entry, {}, seen);
+    if (match) return match;
+  }
+  return null;
+}
+
+function sanitizeClaudeSubscriptionCandidate(candidate, options = {}) {
+  if (!candidate || typeof candidate !== "object") return null;
+  const explicitPlanType = explicitClaudeSubscriptionPlan(candidate);
+  const planType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const hasSubscriptionScope = Boolean(options.explicitPath || explicitPlanType);
+  if (!hasSubscriptionScope) return null;
+  if (planType && !isKnownClaudeBrowserSubscriptionPlan(planType)) return null;
+  const monthlyCost = positiveCurrencyAmount(
+    candidate.monthlyCost ??
+      candidate.monthly_cost ??
+      candidate.subscriptionCost ??
+      candidate.subscription_cost ??
+      candidate.monthlyPrice ??
+      candidate.monthly_price ??
+      candidate.priceMonthly ??
+      candidate.price_monthly ??
+      candidate.price?.monthly ??
+      (options.explicitPath ? candidate.price?.amount : undefined)
+  );
+  const monthlyCostCents = positiveCurrencyAmount(
+    candidate.monthlyCostCents ??
+      candidate.monthly_cost_cents ??
+      candidate.monthlyPriceCents ??
+      candidate.monthly_price_cents ??
+      candidate.subscriptionCostCents ??
+      candidate.subscription_cost_cents ??
+      (options.explicitPath ? candidate.unitAmount ?? candidate.unit_amount : undefined)
+  );
+  const normalizedCost = monthlyCost || (monthlyCostCents ? monthlyCostCents / 100 : 0);
+  if (!planType && !(normalizedCost > 0)) return null;
+  return {
+    planType: planType || null,
+    monthlyCost: normalizedCost,
+    currency: normalizeClaudeCurrency(candidate.currency || candidate.price?.currency),
+    source: "claude_browser_sync",
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function explicitClaudeSubscriptionPlan(candidate) {
+  const planObject = candidate?.plan && typeof candidate.plan === "object" ? candidate.plan : null;
+  return firstNonEmptyString(
+    candidate.planType,
+    candidate.plan_type,
+    planObject?.planType,
+    planObject?.plan_type,
+    planObject?.type,
+    planObject?.name,
+    planObject?.displayName,
+    planObject?.display_name,
+    planObject?.tier,
+    typeof candidate.plan === "object" ? "" : candidate.plan,
+    candidate.subscriptionType,
+    candidate.subscription_type,
+    candidate.subscriptionPlan,
+    candidate.subscription_plan
+  );
+}
+
+function fallbackClaudeSubscriptionPlan(candidate) {
+  return firstNonEmptyString(
+    candidate.tier,
+    candidate.name,
+    candidate.displayName
+  );
+}
+
+function isKnownClaudeBrowserSubscriptionPlan(planType) {
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  return Boolean(planKey && CLAUDE_BROWSER_SUBSCRIPTION_PLAN_KEYS.has(planKey));
+}
+
+function normalizeSubscriptionPlanKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function positiveCurrencyAmount(value) {
+  const amount = Number(value);
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
+}
+
+function firstNonEmptyString(...values) {
+  for (const value of values) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
 function findUsageCreditsCandidate(value) {
   if (!value || typeof value !== "object") return null;
   if (
@@ -1274,6 +1577,21 @@ function extractClaudeCreditsFromHtml(text) {
   try {
     const parsed = JSON.parse(snippet);
     return findUsageCreditsCandidate(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function extractClaudeSubscriptionFromHtml(text) {
+  const snippet = extractJsonObjectAroundNeedles(text, [
+    "subscriptionCost", "subscription_cost", "monthlyCost", "monthly_cost",
+    "monthlyPrice", "monthly_price", "priceMonthly", "subscriptionPlan",
+    "subscription_plan", "subscriptionType", "subscription_type"
+  ]);
+  if (!snippet) return null;
+  try {
+    const parsed = JSON.parse(snippet);
+    return findClaudeSubscriptionCandidate(parsed);
   } catch {
     return null;
   }

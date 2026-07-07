@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Total des jetons enregistrés",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Jour record : {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "Coût API total",
+      "totalScope": "Périmètre",
+      "totalStatus": "État du coût",
+      "totalComplete": "Complet",
+      "totalPartial": "Partiel",
+      "totalUnknown": "Inconnu",
+      "totalMixed": "Devises mixtes",
+      "totalPartialNote": "Certaines lignes affichées n’ont pas de prix API fiable ; le total est donc partiel.",
+      "totalUnknownNote": "Aucune ligne affichée n’a de prix API fiable.",
+      "totalMixedNote": "Les lignes affichées utilisent plusieurs devises ; aucun total n’est calculé.",
+      "totalRow": "Coût API total"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} j {hours} h",
       "hoursMinutes": "{hours} h {minutes} min",
       "minutes": "{minutes} min"
+    },
+    "gauge": {
+      "title": "Utilisation actuelle",
+      "projectedValue": "{percent}% projeté",
+      "unavailable": "Projection indisponible",
+      "aria": "Utilisation finale projetée pour {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Alerte de limite : {window}",
+      "nativeUsedPercent": "{percent}% utilisés.",
+      "nativeHardLimit": "La limite est presque épuisée.",
+      "nativePacingProjected": "{usedPercent}% utilisés ; le rythme actuel projette {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Épuisement estimé dans {time}.",
+      "nativeDurationHoursMinutes": "{hours} h {minutes} min",
+      "nativeDurationHours": "{hours} h",
+      "nativeDurationMinutes": "{minutes} min",
+      "nativeWindowFiveHour": "Fenêtre de 5 heures",
+      "nativeWindowWeekly": "Limite hebdomadaire",
+      "nativeWindowFable": "Limite Fable",
+      "nativeWindowSonnetOnly": "Limite Sonnet uniquement",
+      "nativeWindowClaudeDesign": "Limite Claude Design",
+      "nativeWindowGeneric": "Limite"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Mettez à jour la source catalogue/compte ou ajoutez une estimation de secours dans Advanced."
-    }
+    },
+    "planSource": "Forfait/limites depuis {source}",
+    "planSourceLabel": "Source du forfait/des limites",
+    "catalogFallbackNote": "Le prix mensuel vient du catalogue de secours; les sources app/compte en lecture seule fournissent forfait, limites ou crédits, mais pas de prix mensuel fiable."
   }
 }

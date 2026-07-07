@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Iš viso įrašyti žetonai",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Rekordinė diena: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "Bendra API kaina",
+      "totalScope": "Apimtis",
+      "totalStatus": "Kainos būsena",
+      "totalComplete": "Pilna",
+      "totalPartial": "Dalinė",
+      "totalUnknown": "Nežinoma",
+      "totalMixed": "Mišrios valiutos",
+      "totalPartialNote": "Kai kurios rodomos eilutės neturi patikimos API kainos, todėl suma yra dalinė.",
+      "totalUnknownNote": "Nė viena rodoma eilutė neturi patikimos API kainos.",
+      "totalMixedNote": "Rodomos eilutės naudoja kelias valiutas; suma neskaičiuojama.",
+      "totalRow": "Bendra API kaina"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} d {hours} val.",
       "hoursMinutes": "{hours} val. {minutes} min.",
       "minutes": "{minutes} min."
+    },
+    "gauge": {
+      "title": "Dabartinis naudojimas",
+      "projectedValue": "prognozuojama {percent}%",
+      "unavailable": "Prognozė nepasiekiama",
+      "aria": "{label} prognozuojamas galutinis naudojimas"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Limito įspėjimas: {window}",
+      "nativeUsedPercent": "Panaudota {percent}%.",
+      "nativeHardLimit": "Limitas beveik išnaudotas.",
+      "nativePacingProjected": "Panaudota {usedPercent}%; dabartinis tempas prognozuoja {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Numatomas išnaudojimas po {time}.",
+      "nativeDurationHoursMinutes": "{hours} val. {minutes} min.",
+      "nativeDurationHours": "{hours} val.",
+      "nativeDurationMinutes": "{minutes} min.",
+      "nativeWindowFiveHour": "5 valandų langas",
+      "nativeWindowWeekly": "Savaitės limitas",
+      "nativeWindowFable": "Fable limitas",
+      "nativeWindowSonnetOnly": "Tik Sonnet limitas",
+      "nativeWindowClaudeDesign": "Claude Design limitas",
+      "nativeWindowGeneric": "Limitas"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Atnaujinkite katalogo / paskyros šaltinį arba pridėkite atsarginį įvertį skiltyje Advanced."
-    }
+    },
+    "planSource": "Planas/limitai iš {source}",
+    "planSourceLabel": "Plano/limitų šaltinis",
+    "catalogFallbackNote": "Mėnesio kaina yra katalogo atsarginė reikšmė; tik skaitomi programos/paskyros šaltiniai pateikia plano, limitų ar kreditų duomenis, bet ne patikimą mėnesio kainą."
   }
 }

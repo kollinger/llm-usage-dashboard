@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "إجمالي التوكنات المسجلة",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "يوم قياسي: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "إجمالي تكلفة API",
+      "totalScope": "النطاق",
+      "totalStatus": "حالة التكلفة",
+      "totalComplete": "كامل",
+      "totalPartial": "جزئي",
+      "totalUnknown": "غير معروف",
+      "totalMixed": "عملات مختلطة",
+      "totalPartialNote": "بعض الصفوف المعروضة لا تملك سعر API موثوقا، لذلك يكون الإجمالي جزئيا.",
+      "totalUnknownNote": "لا يوجد أي صف معروض يملك سعر API موثوقا.",
+      "totalMixedNote": "الصفوف المعروضة تستخدم عدة عملات؛ لذلك لا يتم حساب إجمالي.",
+      "totalRow": "إجمالي تكلفة API"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} يوم {hours} س",
       "hoursMinutes": "{hours} س {minutes} د",
       "minutes": "{minutes} د"
+    },
+    "gauge": {
+      "title": "الاستخدام الحالي",
+      "projectedValue": "{percent}% متوقع",
+      "unavailable": "التوقع غير متاح",
+      "aria": "الاستخدام النهائي المتوقع لـ {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "تحذير الحد: {window}",
+      "nativeUsedPercent": "تم استخدام {percent}%.",
+      "nativeHardLimit": "الحد شارف على النفاد.",
+      "nativePacingProjected": "تم استخدام {usedPercent}%؛ الوتيرة الحالية تتوقع {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "الاستهلاك المتوقع ينفد خلال {time}.",
+      "nativeDurationHoursMinutes": "{hours} س {minutes} د",
+      "nativeDurationHours": "{hours} س",
+      "nativeDurationMinutes": "{minutes} د",
+      "nativeWindowFiveHour": "نافذة 5 ساعات",
+      "nativeWindowWeekly": "الحد الأسبوعي",
+      "nativeWindowFable": "حد Fable",
+      "nativeWindowSonnetOnly": "حد Sonnet فقط",
+      "nativeWindowClaudeDesign": "حد Claude Design",
+      "nativeWindowGeneric": "حد"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "حدّث مصدر الكتالوج/الحساب أو أضف تقديرًا احتياطيًا من Advanced."
-    }
+    },
+    "planSource": "الخطة/الحدود من {source}",
+    "planSourceLabel": "مصدر الخطة/الحدود",
+    "catalogFallbackNote": "السعر الشهري من بديل الكتالوج؛ مصادر التطبيق/الحساب للقراءة فقط توفر بيانات الخطة أو الحدود أو الرصيد، لكنها لا توفر سعرا شهريا موثوقا."
   }
 }

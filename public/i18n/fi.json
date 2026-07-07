@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Lokitetut tokenit yhteensä",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Ennätyspäivä: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "API-kustannukset yhteensä",
+      "totalScope": "Laajuus",
+      "totalStatus": "Kustannuksen tila",
+      "totalComplete": "Täydellinen",
+      "totalPartial": "Osittainen",
+      "totalUnknown": "Tuntematon",
+      "totalMixed": "Useita valuuttoja",
+      "totalPartialNote": "Osalta näytetyistä riveistä puuttuu luotettava API-hinta, joten summa on osittainen.",
+      "totalUnknownNote": "Yhdelläkään näytetyllä rivillä ei ole luotettavaa API-hintaa.",
+      "totalMixedNote": "Näytetyt rivit käyttävät useita valuuttoja; summaa ei lasketa.",
+      "totalRow": "API-kustannukset yhteensä"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} pv {hours} h",
       "hoursMinutes": "{hours} h {minutes} min",
       "minutes": "{minutes} min"
+    },
+    "gauge": {
+      "title": "Nykyinen käyttö",
+      "projectedValue": "{percent}% ennuste",
+      "unavailable": "Ennuste ei ole saatavilla",
+      "aria": "Kohteen {label} ennustettu loppukäyttö"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Rajoitusvaroitus: {window}",
+      "nativeUsedPercent": "{percent}% käytetty.",
+      "nativeHardLimit": "Raja on lähes käytetty.",
+      "nativePacingProjected": "{usedPercent}% käytetty; nykyinen tahti ennustaa {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Arvioitu loppuminen {time} kuluttua.",
+      "nativeDurationHoursMinutes": "{hours} h {minutes} min",
+      "nativeDurationHours": "{hours} h",
+      "nativeDurationMinutes": "{minutes} min",
+      "nativeWindowFiveHour": "5 tunnin ikkuna",
+      "nativeWindowWeekly": "Viikkoraja",
+      "nativeWindowFable": "Fable-raja",
+      "nativeWindowSonnetOnly": "Vain Sonnet -raja",
+      "nativeWindowClaudeDesign": "Claude Design -raja",
+      "nativeWindowGeneric": "Raja"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Päivitä katalogi-/tililähde tai lisää varmistusarvio Advanced-osiossa."
-    }
+    },
+    "planSource": "Paketti/rajat lähteestä {source}",
+    "planSourceLabel": "Paketin/rajojen lähde",
+    "catalogFallbackNote": "Kuukausihinta on katalogin varaarvo; vain luku -tilassa olevat sovellus-/tililähteet antavat paketti-, raja- tai saldotietoja, mutta eivät luotettua kuukausihintaa."
   }
 }

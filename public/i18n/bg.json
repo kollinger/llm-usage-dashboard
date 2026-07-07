@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Общо записани токени",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Рекорден ден: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "Обща цена за API",
+      "totalScope": "Обхват",
+      "totalStatus": "Състояние на цената",
+      "totalComplete": "Пълна",
+      "totalPartial": "Частична",
+      "totalUnknown": "Неизвестна",
+      "totalMixed": "Смесени валути",
+      "totalPartialNote": "Някои показани редове нямат надеждна API цена, затова общата сума е частична.",
+      "totalUnknownNote": "Нито един показан ред няма надеждна API цена.",
+      "totalMixedNote": "Показаните редове използват няколко валути; обща сума не се изчислява.",
+      "totalRow": "Обща цена за API"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} д {hours} ч",
       "hoursMinutes": "{hours} ч {minutes} мин",
       "minutes": "{minutes} мин"
+    },
+    "gauge": {
+      "title": "Текущо използване",
+      "projectedValue": "прогнозно {percent}%",
+      "unavailable": "Прогнозата не е налична",
+      "aria": "Прогнозно крайно използване за {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Предупреждение за лимит: {window}",
+      "nativeUsedPercent": "Използвани {percent}%.",
+      "nativeHardLimit": "Лимитът е почти изчерпан.",
+      "nativePacingProjected": "Използвани {usedPercent}%; текущото темпо прогнозира {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Очаквано изчерпване след {time}.",
+      "nativeDurationHoursMinutes": "{hours} ч {minutes} мин",
+      "nativeDurationHours": "{hours} ч",
+      "nativeDurationMinutes": "{minutes} мин",
+      "nativeWindowFiveHour": "5-часов прозорец",
+      "nativeWindowWeekly": "Седмичен лимит",
+      "nativeWindowFable": "Лимит Fable",
+      "nativeWindowSonnetOnly": "Лимит само за Sonnet",
+      "nativeWindowClaudeDesign": "Лимит Claude Design",
+      "nativeWindowGeneric": "Лимит"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Актуализирайте каталожния/акаунт източник или добавете резервна оценка в Advanced."
-    }
+    },
+    "planSource": "План/лимити от {source}",
+    "planSourceLabel": "Източник на план/лимити",
+    "catalogFallbackNote": "Месечната цена е резервна стойност от каталога; read-only източниците от приложението/акаунта дават план, лимити или кредити, но не и надеждна месечна цена."
   }
 }

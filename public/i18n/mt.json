@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Tokens illoggjati b’kollox",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Jum rekord: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "Spiża API totali",
+      "totalScope": "Ambitu",
+      "totalStatus": "Status tal-ispiża",
+      "totalComplete": "Komplut",
+      "totalPartial": "Parzjali",
+      "totalUnknown": "Mhux magħruf",
+      "totalMixed": "Muniti mħallta",
+      "totalPartialNote": "Xi ringieli murija m’għandhomx prezz API affidabbli, għalhekk it-total huwa parzjali.",
+      "totalUnknownNote": "L-ebda ringiela murija m’għandha prezz API affidabbli.",
+      "totalMixedNote": "Ir-ringieli murija jużaw diversi muniti; ma jiġi kkalkulat l-ebda total.",
+      "totalRow": "Spiża API totali"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} j {hours} sieg",
       "hoursMinutes": "{hours} sieg {minutes} min",
       "minutes": "{minutes} min"
+    },
+    "gauge": {
+      "title": "Użu kurrenti",
+      "projectedValue": "{percent}% previst",
+      "unavailable": "Il-projezzjoni mhix disponibbli",
+      "aria": "Użu finali previst għal {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Twissija tal-limitu: {window}",
+      "nativeUsedPercent": "Intuża {percent}%.",
+      "nativeHardLimit": "Il-limitu kważi ntuża kollu.",
+      "nativePacingProjected": "Intuża {usedPercent}%; ir-ritmu attwali jbassar {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Eżawriment stmat fi {time}.",
+      "nativeDurationHoursMinutes": "{hours} s {minutes} min",
+      "nativeDurationHours": "{hours} s",
+      "nativeDurationMinutes": "{minutes} min",
+      "nativeWindowFiveHour": "Tieqa ta' 5 sigħat",
+      "nativeWindowWeekly": "Limitu ta' kull ġimgħa",
+      "nativeWindowFable": "Limitu Fable",
+      "nativeWindowSonnetOnly": "Limitu Sonnet biss",
+      "nativeWindowClaudeDesign": "Limitu Claude Design",
+      "nativeWindowGeneric": "Limitu"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Aġġorna s-sors tal-katalgu/kont jew żid stima ta' riżerva f'Advanced."
-    }
+    },
+    "planSource": "Pjan/limiti minn {source}",
+    "planSourceLabel": "Sors tal-pjan/limiti",
+    "catalogFallbackNote": "Il-prezz ta’ kull xahar huwa fallback tal-katalgu; sorsi tal-app/kont read-only jagħtu dejta tal-pjan, limiti jew krediti, iżda mhux prezz ta’ kull xahar affidabbli."
   }
 }

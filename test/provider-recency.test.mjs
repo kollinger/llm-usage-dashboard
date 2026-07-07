@@ -14,6 +14,7 @@ const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 await assertProviderVisibility();
 await assertFrontendUsageIntelligence();
+await assertNotificationLocalizationRegression();
 await assertUpdateSettingsAlwaysOn();
 await assertCodexSparkRateLimitDoesNotMoveGpt55Usage();
 
@@ -249,20 +250,51 @@ const daily = [
   }
 ];
 const local = {
+  daily,
   totals: {
     last24h: { totalTokens: 1234 },
     last7d: { totalTokens: 3456 },
-    allTime: { totalTokens: 7890 }
+    allTime: { totalTokens: 789 }
   }
 };
 state.chartTimeFilter = "h24";
 const h24Total = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "h24")).totalTokens;
 state.chartTimeFilter = "today";
 const todayTotal = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "today")).totalTokens;
+const todaySummaryTotal = usageTotalsForToday({ daily }, []).totalTokens;
+const recordDay = findRecordDay(daily);
+renderSummary([], local, filterDailyByRange(daily, "today"));
+const renderedTokensToday = document.getElementById("tokensToday").textContent;
+const renderedTokensTotal = document.getElementById("tokensTotal").textContent;
+const renderedRecordDayNote = document.getElementById("recordDay").textContent;
 const models = summarizeModelUsageForDaily(daily);
 const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" }, {}, "codex");
 const detectedSubscription = normalizeSubscription(null, { planType: "Pro", source: "codex_app_server" }, "codex");
 const missingCatalogSubscription = normalizeSubscription(null, { planType: "Enterprise", source: "codex_app_server" }, "codex");
+const claudeCatalogSubscription = normalizeSubscription(null, { planType: "Max", source: "claude_statusline" }, "claudeCode");
+const detectedSubscriptionCard = renderSubscriptionPricingCard({
+  provider: { id: "codex", name: "Codex", accent: providerMeta.codex.accent },
+  subscription: detectedSubscription,
+  previous: null
+});
+const usedModelPricingHtml = renderUsedModelPricingView(daily);
+const unknownModelPricingHtml = renderUsedModelPricingView([
+  {
+    date: "${today}",
+    totalTokens: 25,
+    sources: [
+      { id: "local", totalTokens: 25, models: [{ model: "unpriced-local-model", inputTokens: 10, outputTokens: 15, totalTokens: 25 }] }
+    ]
+  }
+]);
+const mixedApiCostSummary = summarizeUsedModelApiCost([
+  { cost: { costed: true, eur: 1, currency: "EUR" } },
+  { cost: { costed: true, eur: 2, currency: "USD" } }
+]);
+const partialApiCostSummary = summarizeUsedModelApiCost([
+  { cost: { costed: true, eur: 1, currency: "EUR" } },
+  { cost: { costed: false, eur: null } }
+]);
 const noWindowLimit = { usedPercent: 85 };
 const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString();
 const okFiveHourReset = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
@@ -299,6 +331,19 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
   totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
 }));
 const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
+const logoSamples = [
+  renderProviderMark("Z.AI"),
+  renderProviderMark("MiniMax"),
+  renderProviderMark("DeepSeek"),
+  renderProviderMark("Alibaba"),
+  renderProviderMark("xAI"),
+  renderProviderMark("Mistral"),
+  renderProviderMark("StepFun"),
+  renderProviderMark("OpenAI"),
+  renderProviderMark("Anthropic"),
+  renderProviderMark("GitHub Copilot"),
+  renderProviderMark("Google")
+].join("");
 const mixedCurrencySubscriptionCard = renderSubscriptionPricingCard({
   provider: { name: "Codex" },
   subscription: detectedSubscription,
@@ -313,8 +358,23 @@ JSON.stringify({
   filters: CHART_FILTERS,
   h24Total,
   todayTotal,
+  todaySummaryTotal,
+  recordDayTokens: recordDay?.totalTokens,
+  recordDayLabel: t("summary.tokensTotal"),
+  renderedTokensToday,
+  renderedTokensTotal,
+  renderedRecordDayNote,
   topModel: models[0]?.model,
   topModelCosted: models[0]?.cost?.costed,
+  usedModelPricingHasTotal:
+    usedModelPricingHtml.includes("API cost total") &&
+    usedModelPricingHtml.includes("<tfoot>") &&
+    usedModelPricingHtml.includes("Cost status"),
+  unknownModelPricingHonest: unknownModelPricingHtml.includes("No displayed row has a trusted API price"),
+  mixedApiCostStatus: mixedApiCostSummary.status,
+  mixedApiCostNote: mixedApiCostSummary.note,
+  partialApiCostStatus: partialApiCostSummary.status,
+  partialApiCostNote: partialApiCostSummary.note,
   manualQuality: manualSubscription.quality,
   detectedQuality: detectedSubscription.quality,
   detectedCost: detectedSubscription.monthlyCost,
@@ -323,6 +383,7 @@ JSON.stringify({
 	  missingCatalogQuality: missingCatalogSubscription.quality,
 	  missingCatalogStatus: missingCatalogSubscription.costStatus,
 	  missingCatalogReason: renderProviderSubscription({ subscription: missingCatalogSubscription }),
+  claudeCatalogCopy: renderProviderSubscription({ subscription: claudeCatalogSubscription }),
 	  limitOk: limitDisplayStatus(okFiveHourLimit),
 	  limitNoWindow: limitDisplayStatus(noWindowLimit),
 	  limitEarlyWeekRisk: limitDisplayStatus(earlyWeekLimit),
@@ -332,23 +393,42 @@ JSON.stringify({
 	  limitUnknown: limitDisplayStatus({ status: "unavailable" }),
 	  limitOkLabel: t("limits.status.ok"),
 	  limitRiskLabel: t("limits.status.risk"),
-	  catalogQualityLabel: t("subscriptions.quality.catalog"),
+  catalogQualityLabel: t("subscriptions.quality.catalog"),
 	  manualQualityLabel: t("subscriptions.quality.manual"),
 	  manualSourceLabel: subscriptionSourceLabel("local_settings"),
+  detectedSubscriptionCardShowsCost:
+    detectedSubscriptionCard.includes("$100.00/mo") &&
+    detectedSubscriptionCard.includes("Catalog value"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
 	  sourceBarsUseProviderColors:
 	    sourceBarsHtml.includes("--accent: " + providerMeta.codex.accent) &&
 	    sourceBarsHtml.includes("--accent: " + providerMeta.claudeCode.accent),
 	  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
+  providerCardHasLogo: providerCardHtml.includes("provider-mark-claudeCode"),
+  logoSamplesCoverCatalogProviders:
+    logoSamples.includes("provider-mark-zai") &&
+    logoSamples.includes("provider-mark-minimax") &&
+    logoSamples.includes("provider-mark-deepseek") &&
+    logoSamples.includes("provider-mark-alibaba") &&
+    logoSamples.includes("provider-mark-xai") &&
+    logoSamples.includes("provider-mark-mistral") &&
+    logoSamples.includes("provider-mark-stepfun") &&
+    logoSamples.includes("provider-mark-openai") &&
+    logoSamples.includes("provider-mark-anthropic") &&
+    logoSamples.includes("provider-mark-copilot") &&
+    logoSamples.includes("provider-mark-gemini"),
 	  riskLimitBarUsesProviderAccent:
 	    riskLimitBarHtml.includes("--accent: " + providerMeta.codex.accent) &&
 	    !riskLimitBarHtml.includes("--accent: #b76b00"),
+  riskLimitBarHasProjectionGauge:
+    riskLimitBarHtml.includes("limit-projection-gauge") &&
+    riskLimitBarHtml.includes("Current Usage") &&
+    riskLimitBarHtml.includes("100%") &&
+    riskLimitBarHtml.includes("projected"),
 	  fableLimitRowVisible:
 	    claudeWithFableHtml.includes(">Fable<") &&
 	    claudeWithFableHtml.includes("--accent: " + providerMeta.claudeCode.accent),
-	  allRangeHidesTotalTile: shouldShowTotalTokensTile("all") === false,
-	  weekRangeShowsTotalTile: shouldShowTotalTokensTile("week") === true,
 	  mixedCurrencyDeltaUnknown: mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
   sameCurrencyDeltaShown: sameCurrencySubscriptionCard.includes("$20.00")
 });`,
@@ -359,8 +439,21 @@ JSON.stringify({
   assert.deepEqual(result.filters, ["h24", "today", "week", "month", "all"]);
   assert.equal(result.h24Total, 1234);
   assert.equal(result.todayTotal, 222);
+  assert.equal(result.todaySummaryTotal, 222);
+  assert.equal(result.recordDayTokens, 500);
+  assert.equal(result.recordDayLabel, "Logged tokens total");
+  assert.equal(result.renderedTokensToday, "222");
+  assert.equal(result.renderedTokensTotal, "789");
+  assert.equal(result.renderedRecordDayNote.includes("Record day:"), true);
+  assert.equal(result.renderedRecordDayNote.includes("500"), true);
   assert.equal(result.topModel, "claude-fable-5");
   assert.equal(result.topModelCosted, true);
+  assert.equal(result.usedModelPricingHasTotal, true);
+  assert.equal(result.unknownModelPricingHonest, true);
+  assert.equal(result.mixedApiCostStatus, "mixed");
+  assert.equal(result.mixedApiCostNote.includes("multiple currencies"), true);
+  assert.equal(result.partialApiCostStatus, "partial");
+  assert.equal(result.partialApiCostNote.includes("partial"), true);
   assert.equal(result.manualQuality, "manual");
   assert.equal(result.detectedQuality, "catalog");
   assert.equal(result.detectedCost, 100);
@@ -369,6 +462,8 @@ JSON.stringify({
   assert.equal(result.missingCatalogQuality, "estimated");
   assert.equal(result.missingCatalogStatus, "catalog_missing");
   assert.equal(result.missingCatalogReason.includes("Codex app-server exposed the plan"), true);
+  assert.equal(result.claudeCatalogCopy.includes("Plan/limits from Claude Code statusline"), true);
+  assert.equal(result.claudeCatalogCopy.includes("Monthly price is a catalog fallback"), true);
   assert.equal(result.limitOk, "ok");
   assert.equal(result.limitNoWindow, "unknown");
   assert.equal(result.limitEarlyWeekRisk, "risk");
@@ -381,16 +476,79 @@ JSON.stringify({
   assert.equal(result.catalogQualityLabel, "Catalog value");
   assert.equal(result.manualQualityLabel, "Saved fallback estimate");
   assert.equal(result.manualSourceLabel, "saved fallback");
+  assert.equal(result.detectedSubscriptionCardShowsCost, true);
   assert.equal(result.aliasesHiddenByDefault, true);
   assert.equal(result.aliasesCollapsedInDebug, true);
   assert.equal(result.sourceBarsUseProviderColors, true);
   assert.equal(result.providerCardUsesProviderAccent, true);
+  assert.equal(result.providerCardHasLogo, true);
+  assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
+  assert.equal(result.riskLimitBarHasProjectionGauge, true);
   assert.equal(result.fableLimitRowVisible, true);
-  assert.equal(result.allRangeHidesTotalTile, true);
-  assert.equal(result.weekRangeShowsTotalTile, true);
   assert.equal(result.mixedCurrencyDeltaUnknown, true);
   assert.equal(result.sameCurrencyDeltaShown, true);
+
+  const browserSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
+    subscription: { planType: "Max", monthlyPrice: 100, currency: "USD" }
+  });
+  assert.equal(browserSnapshot.status, "available");
+  assert.equal(browserSnapshot.subscription.planType, "Max");
+  assert.equal(browserSnapshot.subscription.monthlyCost, 100);
+  assert.equal(browserSnapshot.subscription.source, "claude_browser_sync");
+
+  const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
+    subscription: { name: "Claude Max", unit_amount: 10000, currency: "USD" }
+  });
+  assert.equal(browserScopedSnapshot.status, "available");
+  assert.equal(browserScopedSnapshot.subscription.planType, "Claude Max");
+  assert.equal(browserScopedSnapshot.subscription.monthlyCost, 100);
+
+  const prepaidCreditsSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
+    billingPayload: {
+      prepaidCredits: {
+        line_items: [{ name: "Prepaid credits", unit_amount: 2000, currency: "USD" }]
+      }
+    }
+  });
+  assert.equal(prepaidCreditsSnapshot.status, "missing");
+  assert.equal(prepaidCreditsSnapshot.subscription, null);
+}
+
+async function assertNotificationLocalizationRegression() {
+  const electronMain = await readFile(path.join(rootDir, "electron", "main.js"), "utf8");
+  const deTranslations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "de.json"), "utf8"));
+  const nativeNotificationCopy = [
+    "nativeAlertTitle",
+    "nativeUsedPercent",
+    "nativeHardLimit",
+    "nativePacingProjected",
+    "nativeEstimatedExhaustion",
+    "nativeWindowFiveHour",
+    "nativeWindowWeekly"
+  ].map((key) => deTranslations.settings.notifications[key]).join("\n");
+
+  for (const fragment of [
+    "Limit warning:",
+    "Limit nearly exhausted",
+    "pace projects",
+    "Estimated exhaustion in",
+    "% used"
+  ]) {
+    assert.equal(electronMain.includes(fragment), false, `Electron native notifications must not hardcode English fragment: ${fragment}`);
+    assert.equal(nativeNotificationCopy.includes(fragment), false, `German native notification copy must not contain English fragment: ${fragment}`);
+  }
+  assert.equal(electronMain.includes("settings.notifications.nativeAlertTitle"), true);
+  assert.equal(electronMain.includes("settings.notifications.nativePacingProjected"), true);
+  assert.equal(deTranslations.settings.notifications.nativeAlertTitle, "Limit-Warnung: {window}");
+  assert.equal(deTranslations.settings.notifications.nativeWindowWeekly, "Wochenlimit");
+
+  const reset = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const alerts = _test.buildNotificationAlerts(
+    { hardLimitPercent: 80, pacingPercent: 90 },
+    { codex: { limits: { weekly: { key: "weekly", label: "Weekly Codex limit", usedPercent: 85, windowMinutes: 10080, resetsAt: reset } } } }
+  );
+  assert.equal(alerts[0]?.windowKey, "weekly");
 }
 
 function assertUpdateSettingsAlwaysOn() {

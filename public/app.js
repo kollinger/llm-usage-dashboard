@@ -151,6 +151,57 @@ const providerMeta = {
   ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
 
+const providerBrandMeta = {
+  codex: { label: "Codex", mark: "Cx", accent: providerMeta.codex.accent },
+  codexSpark: { label: "Codex Spark", mark: "Sp", accent: providerMeta.codexSpark.accent },
+  copilot: { label: "GitHub Copilot", mark: "GH", accent: providerMeta.copilot.accent },
+  claudeCode: { label: "Claude Code", mark: "Cl", accent: providerMeta.claudeCode.accent },
+  anthropic: { label: "Anthropic", mark: "An", accent: providerMeta.anthropic.accent },
+  openai: { label: "OpenAI", mark: "AI", accent: providerMeta.openai.accent },
+  gemini: { label: "Google Gemini", mark: "G", accent: providerMeta.gemini.accent },
+  ollama: { label: "Ollama", mark: "Ol", accent: providerMeta.ollama.accent },
+  minimax: { label: "MiniMax", mark: "MM", accent: "#2459d8" },
+  deepseek: { label: "DeepSeek", mark: "DS", accent: "#4d63d8" },
+  alibaba: { label: "Alibaba / Qwen", mark: "Q", accent: "#d86a1d" },
+  zai: { label: "Z.AI / GLM", mark: "Z", accent: "#48505a" },
+  xai: { label: "xAI", mark: "x", accent: "#111827" },
+  mistral: { label: "Mistral", mark: "Mi", accent: "#c76619" },
+  stepfun: { label: "StepFun", mark: "St", accent: "#1e7c75" },
+  local: { label: "Local", mark: "Lo", accent: providerMeta.codex.accent }
+};
+
+const providerBrandAliases = new Map([
+  ["codex", "codex"],
+  ["openaicodex", "openai"],
+  ["codexspark", "codexSpark"],
+  ["spark", "codexSpark"],
+  ["githubcopilot", "copilot"],
+  ["copilot", "copilot"],
+  ["claudecode", "claudeCode"],
+  ["claude", "claudeCode"],
+  ["anthropic", "anthropic"],
+  ["anthropicapi", "anthropic"],
+  ["openai", "openai"],
+  ["openaigpt", "openai"],
+  ["google", "gemini"],
+  ["googlegemini", "gemini"],
+  ["gemini", "gemini"],
+  ["ollama", "ollama"],
+  ["minimax", "minimax"],
+  ["deepseek", "deepseek"],
+  ["alibaba", "alibaba"],
+  ["qwen", "alibaba"],
+  ["alibabaqwen", "alibaba"],
+  ["zai", "zai"],
+  ["glm", "zai"],
+  ["zaiglm", "zai"],
+  ["xai", "xai"],
+  ["grok", "xai"],
+  ["mistral", "mistral"],
+  ["stepfun", "stepfun"],
+  ["local", "local"]
+]);
+
 const USD_PER_EUR = 1.1448;
 const FX_DATE = "2026-07-03";
 const PRICING_DATE = "2026-07-06";
@@ -2198,7 +2249,7 @@ function renderSourceTotalBars(daily) {
         const width = Math.max(0.8, (source.totalTokens / max) * 100);
         return `
           <div class="source-bar-row" title="${escapeHtml(`${sourceLabel(source.id)} · ${formatTokens(source.totalTokens)} · ${formatSharePercent(share)}`)}">
-            <span class="source-bar-name">${escapeHtml(sourceLabel(source.id))}</span>
+            <span class="source-bar-name">${renderProviderInlineLabel(source.id, sourceLabel(source.id), { size: "xs" })}</span>
             <span class="source-bar-track" aria-hidden="true">
               <span class="source-bar-fill" style="--bar-width: ${width}; --accent: ${chartSourceColor(source.id)}"></span>
             </span>
@@ -2354,7 +2405,7 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   const planType = String(source.planType || fallbackSource.planType || "").trim();
   let sourceId = source.source || fallbackSource.source || null;
   const updatedAt = source.updatedAt || fallbackSource.updatedAt || null;
-  const planSource = source.planSource || fallbackSource.planSource || (sourceId !== fallbackSource.source ? fallbackSource.source : null);
+  let planSource = source.planSource || fallbackSource.planSource || (sourceId !== fallbackSource.source ? fallbackSource.source : null);
   const catalog = monthlyCost > 0 ? null : publicSubscriptionPlan(providerId, planType);
   let currency = source.currency || fallbackSource.currency || "EUR";
   let catalogReviewedAt = source.catalogReviewedAt || null;
@@ -2364,6 +2415,9 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
     currency = catalog.currency;
+    if (!planSource && fallbackSource.source && catalog.source !== fallbackSource.source) {
+      planSource = fallbackSource.source;
+    }
     sourceId = catalog.source;
     catalogReviewedAt = SUBSCRIPTION_CATALOG_REVIEW_DATE;
     sourceUrl = catalog.sourceUrl;
@@ -2647,6 +2701,65 @@ function sourceLabel(id) {
   return providerMeta[id]?.name || (id === "local" ? t("providers.local.name") : id);
 }
 
+function providerBrand(value, fallback = {}) {
+  const key = providerBrandKey(value);
+  const brand = key ? providerBrandMeta[key] : null;
+  if (brand) return { key, ...brand };
+  const label = String(fallback.label || value || "Provider").trim() || "Provider";
+  return {
+    key: "generic",
+    label,
+    mark: fallback.mark || providerInitials(label),
+    accent: fallback.accent || "#6f7c76"
+  };
+}
+
+function providerBrandKey(value) {
+  const compact = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "");
+  return providerBrandAliases.get(compact) || null;
+}
+
+function providerInitials(value) {
+  const words = String(value || "Provider")
+    .replace(/[./_-]+/gu, " ")
+    .trim()
+    .split(/\s+/u)
+    .filter(Boolean);
+  if (!words.length) return "P";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+}
+
+function renderProviderMark(value, options = {}) {
+  const brand = providerBrand(value, options);
+  const size = options.size || "md";
+  const label = options.label || brand.label;
+  return `
+    <span
+      class="provider-mark provider-mark-${escapeHtml(size)} provider-mark-${escapeHtml(brand.key)}"
+      style="--mark-accent: ${escapeHtml(options.accent || brand.accent)}"
+      title="${escapeHtml(label)}"
+      aria-label="${escapeHtml(label)}"
+      role="img"
+    >
+      <span>${escapeHtml(brand.mark)}</span>
+    </span>
+  `;
+}
+
+function renderProviderInlineLabel(value, label, options = {}) {
+  const text = label || sourceLabel(value);
+  return `
+    <span class="provider-inline-label">
+      ${renderProviderMark(value, { ...options, label: text, size: options.size || "xs" })}
+      <span>${escapeHtml(text)}</span>
+    </span>
+  `;
+}
+
 function providerKicker(id) {
   const meta = providerMeta[id];
   return meta ? t(meta.kickerKey, {}, meta.name) : id;
@@ -2869,12 +2982,15 @@ function renderProvider(provider, index = 0, total = 1) {
     <article class="provider-card" data-provider-id="${escapeHtml(provider.id)}" role="listitem" draggable="${state.layoutEditMode ? "true" : "false"}" style="--provider-accent: ${escapeHtml(provider.accent)}">
       ${state.layoutEditMode ? renderProviderDragHandle(provider, index, total) : ""}
       <div class="provider-head">
-        <div>
-          <p class="eyebrow">${escapeHtml(provider.kicker || provider.id)}</p>
-          <h2 class="provider-name">
-            ${escapeHtml(provider.name)}
-            ${provider.planType ? `<span class="plan-badge">${escapeHtml(provider.planType)}</span>` : ""}
-          </h2>
+        <div class="provider-identity">
+          ${renderProviderMark(provider.id, { label: provider.name, accent: provider.accent, size: "lg" })}
+          <div>
+            <p class="eyebrow">${escapeHtml(provider.kicker || provider.id)}</p>
+            <h2 class="provider-name">
+              ${escapeHtml(provider.name)}
+              ${provider.planType ? `<span class="plan-badge">${escapeHtml(provider.planType)}</span>` : ""}
+            </h2>
+          </div>
         </div>
         <span class="status-pill ${statusClass}">${statusText(provider.status)}</span>
       </div>
@@ -2922,6 +3038,12 @@ function renderProviderSubscription(provider) {
   const details = [
     subscription.planType ? t("subscriptions.plan", { plan: subscription.planType }) : "",
     subscription.source ? t("subscriptions.source", { source: subscriptionSourceLabel(subscription.source) }) : "",
+    subscription.planSource && subscription.planSource !== subscription.source
+      ? t("subscriptions.planSource", { source: subscriptionSourceLabel(subscription.planSource) })
+      : "",
+    subscription.quality === "catalog" && subscription.planSource
+      ? t("subscriptions.catalogFallbackNote")
+      : "",
     subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : "",
     subscription.catalogReviewedAt ? t("subscriptions.catalogReviewed", { date: subscription.catalogReviewedAt }) : "",
     subscription.costStatus === "catalog_missing" ? subscriptionCostMissingText(subscription) : "",
@@ -3008,7 +3130,7 @@ function renderLimitBars(provider) {
     : normalizeLimitRows({ fiveHour: provider.fiveHour, weekly: provider.weekly });
   if (!rows.length) return "";
   return `
-    <div class="limit-bars">
+    <div class="limit-bars${rows.length > 1 ? " limit-bars-grid" : ""}">
       ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
       <p class="limit-status-note">${escapeHtml(t("limits.paceLegend"))}</p>
     </div>
@@ -3027,21 +3149,64 @@ function renderLimitBar(row, accent) {
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
   const pace = limitPaceAssessment(row);
+  const gauge = renderLimitProjectionGauge(row, accent);
   return `
     <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
         <strong>${escapeHtml(row.label)}</strong>
         <span>${escapeHtml(value)}</span>
       </div>
-      ${
-        hasUsedPercent
-          ? `<div class="limit-bar-track" aria-hidden="true">
-              <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${accent}"></span>
-            </div>`
-          : ""
-      }
-      ${detail ? `<p class="limit-detail">${escapeHtml(detail)}</p>` : ""}
-      <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
+      <div class="limit-bar-body">
+        <div class="limit-bar-usage">
+          ${
+            hasUsedPercent
+              ? `<div class="limit-bar-track" aria-hidden="true">
+                  <span class="limit-bar-fill" style="--percent: ${used}; --accent: ${accent}"></span>
+                </div>`
+              : ""
+          }
+          ${detail ? `<p class="limit-detail">${escapeHtml(detail)}</p>` : ""}
+          <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
+        </div>
+        ${gauge}
+      </div>
+    </div>
+  `;
+}
+
+function renderLimitProjectionGauge(row, accent) {
+  const projected = limitProjectedEndPercent(row);
+  const hasProjection = Number.isFinite(projected);
+  const clamped = hasProjection ? Math.max(0, Math.min(160, projected)) : 0;
+  const gaugeLeft = (clamped / 160) * 100;
+  const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
+  const value = hasProjection
+    ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
+    : t("limits.gauge.unavailable");
+  const ariaNow = hasProjection ? ` aria-valuenow="${escapeHtml(String(Math.round(clamped)))}"` : "";
+  return `
+    <div
+      class="limit-projection-gauge limit-gauge-${escapeHtml(status)}"
+      role="meter"
+      aria-valuemin="0"
+      aria-valuemax="160"
+      ${ariaNow}
+      aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
+      style="--gauge-position: ${clamped}; --gauge-left: ${gaugeLeft}; --accent: ${escapeHtml(accent)}"
+    >
+      <div class="limit-gauge-head">
+        <span>${escapeHtml(t("limits.gauge.title"))}</span>
+        <strong>${escapeHtml(value)}</strong>
+      </div>
+      <div class="limit-gauge-track" aria-hidden="true">
+        <span class="limit-gauge-target"></span>
+        <span class="limit-gauge-needle"></span>
+      </div>
+      <div class="limit-gauge-scale" aria-hidden="true">
+        <span>0%</span>
+        <span>100%</span>
+        <span>160%</span>
+      </div>
     </div>
   `;
 }
@@ -3166,6 +3331,29 @@ function limitPaceAssessment(limit, nowMs = Date.now()) {
   };
 }
 
+function limitProjectedEndPercent(limit, nowMs = Date.now()) {
+  if (!limit || limit.status === "unavailable") return null;
+  const used = finiteUiNumberOrNull(limit.usedPercent);
+  if (used === null) return null;
+  if (used >= 99.5) return Math.max(100, used);
+  const windowMinutes = finiteUiNumberOrNull(limit.windowMinutes ?? limit.window_minutes);
+  if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return null;
+  const resetMs = Date.parse(limit.resetsAt);
+  if (!Number.isFinite(resetMs)) return null;
+  const windowMs = windowMinutes * 60 * 1000;
+  const startMs = resetMs - windowMs;
+  if (!Number.isFinite(startMs) || nowMs <= startMs || nowMs >= resetMs) return null;
+  const elapsedFraction = (nowMs - startMs) / windowMs;
+  return elapsedFraction > 0 ? used / elapsedFraction : null;
+}
+
+function limitProjectionStatus(projectedPercent) {
+  if (!Number.isFinite(projectedPercent)) return "unknown";
+  if (projectedPercent >= 120) return "full";
+  if (projectedPercent > 100) return "risk";
+  return "ok";
+}
+
 function limitPaceUnavailable(reason) {
   return {
     status: "unknown",
@@ -3176,6 +3364,11 @@ function limitPaceUnavailable(reason) {
 function formatPacePercent(value) {
   const rounded = Math.round(Math.abs(Number(value) || 0));
   return String(Math.max(1, rounded));
+}
+
+function formatGaugePercent(value) {
+  const number = Math.round(Number(value) || 0);
+  return String(Math.max(0, number));
 }
 
 function formatDurationCompact(ms) {
@@ -3203,22 +3396,24 @@ function renderSummary(providers, local, filteredDaily = []) {
   els.fiveHourOpen.textContent = percentAverage(withFiveHour.map((p) => p.fiveHour.remainingPercent));
   els.weeklyOpen.textContent = percentAverage(withWeekly.map((p) => p.weekly.remainingPercent));
   if (els.tokensRangeLabel) {
-    els.tokensRangeLabel.textContent = t("summary.tokensRange", { range: chartRangeLabel(state.chartTimeFilter) });
+    els.tokensRangeLabel.textContent = t("summary.tokensToday");
   }
-  const rangeTotals = usageTotalsForSelectedRange(local, filteredDaily);
-  els.tokensToday.textContent = formatTokens(rangeTotals.totalTokens);
+  const todayTotals = usageTotalsForToday(local, filteredDaily);
+  els.tokensToday.textContent = formatTokens(todayTotals.totalTokens);
   if (els.tokensRangeNote) {
-    const note = chartRangeNote(state.chartTimeFilter);
-    els.tokensRangeNote.textContent = note;
-    els.tokensRangeNote.hidden = !note;
+    els.tokensRangeNote.textContent = t("summary.rangeNotes.today");
+    els.tokensRangeNote.hidden = false;
   }
-  if (els.tokensTotalTile) els.tokensTotalTile.hidden = !shouldShowTotalTokensTile(state.chartTimeFilter);
-  els.tokensTotal.textContent = formatTokens(local?.totals?.allTime?.totalTokens);
+  if (els.tokensTotalTile) els.tokensTotalTile.hidden = false;
+  const allTimeTokens = Number(local?.totals?.allTime?.totalTokens);
+  els.tokensTotal.textContent = Number.isFinite(allTimeTokens) ? formatTokens(allTimeTokens) : "--";
   renderRecordDay(local?.daily || []);
 }
 
-function shouldShowTotalTokensTile(rangeKey) {
-  return rangeKey !== "all";
+function usageTotalsForToday(local, filteredDaily = []) {
+  const daily = Array.isArray(local?.daily) ? local.daily : null;
+  const todayRows = daily ? filterDailyByRange(daily, "today") : filteredDaily;
+  return sumDailyUsageTotals(todayRows);
 }
 
 function usageTotalsForSelectedRange(local, filteredDaily = []) {
@@ -3267,15 +3462,19 @@ function chartRangeNote(filter = state.chartTimeFilter) {
 function renderRecordDay(daily) {
   const record = findRecordDay(daily);
   if (!record) {
-    els.recordDay.textContent = "";
-    els.recordDay.hidden = true;
+    if (els.recordDay) {
+      els.recordDay.textContent = "";
+      els.recordDay.hidden = true;
+    }
     return;
   }
-  els.recordDay.textContent = t("summary.recordDay", {
-    date: formatFullDate(record.date),
-    tokens: formatTokens(record.totalTokens)
-  });
-  els.recordDay.hidden = false;
+  if (els.recordDay) {
+    els.recordDay.textContent = t("summary.recordDay", {
+      date: formatFullDate(record.date),
+      tokens: formatTokens(record.totalTokens)
+    });
+    els.recordDay.hidden = false;
+  }
 }
 
 function findRecordDay(daily) {
@@ -3736,10 +3935,13 @@ function renderPricing(local, filteredDaily = [], providers = []) {
       return `
         <tr>
           <td>
-            <div class="model-cell">
-              <strong>${escapeHtml(price.model)}</strong>
-              <span>${escapeHtml(price.provider)}</span>
-              ${price.china ? `<em class="china-badge">${escapeHtml(t("pricing.chinaBadge"))}</em>` : ""}
+            <div class="model-cell model-cell-with-mark">
+              ${renderProviderMark(price.provider, { label: price.provider, size: "sm" })}
+              <div>
+                <strong>${escapeHtml(price.model)}</strong>
+                <span>${escapeHtml(price.provider)}</span>
+                ${price.china ? `<em class="china-badge">${escapeHtml(t("pricing.chinaBadge"))}</em>` : ""}
+              </div>
             </div>
           </td>
           <td class="score-cell">${renderQualityScore(price)}</td>
@@ -3784,11 +3986,27 @@ function renderUsedModelPricingView(filteredDaily) {
   if (!rows.length) {
     return `<div class="pricing-empty">${escapeHtml(t("pricing.usedModels.empty"))}</div>`;
   }
+  const costSummary = summarizeUsedModelApiCost(rows);
   return `
     <div class="pricing-view-heading">
       <h3>${escapeHtml(t("pricing.usedModels.heading", { range: chartRangeLabel(state.chartTimeFilter) }))}</h3>
       <p>${escapeHtml(t("pricing.usedModels.description"))}</p>
     </div>
+    <div class="api-cost-summary" data-status="${escapeHtml(costSummary.status)}">
+      <div>
+        <span>${escapeHtml(t("pricing.usedModels.totalLabel"))}</span>
+        <strong>${escapeHtml(costSummary.valueLabel)}</strong>
+      </div>
+      <div>
+        <span>${escapeHtml(t("pricing.usedModels.totalScope"))}</span>
+        <strong>${escapeHtml(chartRangeLabel(state.chartTimeFilter))}</strong>
+      </div>
+      <div>
+        <span>${escapeHtml(t("pricing.usedModels.totalStatus"))}</span>
+        <strong>${escapeHtml(costSummary.statusLabel)}</strong>
+      </div>
+    </div>
+    ${costSummary.note ? `<p class="cost-summary-note">${escapeHtml(costSummary.note)}</p>` : ""}
     <div class="price-table-wrap">
       <table class="price-table used-model-table">
         <thead>
@@ -3803,6 +4021,13 @@ function renderUsedModelPricingView(filteredDaily) {
           </tr>
         </thead>
         <tbody>${rows.map(renderUsedModelPricingRow).join("")}</tbody>
+        <tfoot>
+          <tr class="used-model-total-row">
+            <th scope="row" colspan="5">${escapeHtml(t("pricing.usedModels.totalRow"))}</th>
+            <td class="numeric cost-cell">${escapeHtml(costSummary.valueLabel)}</td>
+            <td>${escapeHtml(costSummary.statusLabel)}</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   `;
@@ -3813,9 +4038,12 @@ function renderUsedModelPricingRow(row) {
   return `
     <tr>
       <th scope="row">
-        <div class="model-cell">
-          <strong>${escapeHtml(row.model)}</strong>
-          <span>${escapeHtml(sourceLabel(row.sourceId))}</span>
+        <div class="model-cell model-cell-with-mark">
+          ${renderProviderMark(row.sourceId, { label: sourceLabel(row.sourceId), size: "sm" })}
+          <div>
+            <strong>${escapeHtml(row.model)}</strong>
+            <span>${escapeHtml(sourceLabel(row.sourceId))}</span>
+          </div>
         </div>
       </th>
       <td class="numeric">${escapeHtml(formatTokens(row.inputTokens))}</td>
@@ -3826,6 +4054,49 @@ function renderUsedModelPricingRow(row) {
       <td>${escapeHtml(priceLabel)}</td>
     </tr>
   `;
+}
+
+function summarizeUsedModelApiCost(rows) {
+  let unknownRows = 0;
+  const costedRows = [];
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const cost = row?.cost || {};
+    const amount = Number(cost.eur);
+    if (cost.costed && Number.isFinite(amount)) {
+      costedRows.push({
+        amount,
+        currency: normalizeCurrencyCode(cost.currency || "EUR")
+      });
+    } else {
+      unknownRows += 1;
+    }
+  }
+  const currencies = new Set(costedRows.map((row) => row.currency));
+  if (currencies.size > 1) {
+    return {
+      status: "mixed",
+      valueLabel: t("pricing.unknown"),
+      statusLabel: t("pricing.usedModels.totalMixed"),
+      note: t("pricing.usedModels.totalMixedNote")
+    };
+  }
+  if (!costedRows.length) {
+    return {
+      status: "unknown",
+      valueLabel: t("pricing.notPriced"),
+      statusLabel: t("pricing.usedModels.totalUnknown"),
+      note: t("pricing.usedModels.totalUnknownNote")
+    };
+  }
+  const currency = costedRows[0].currency || "EUR";
+  const total = costedRows.reduce((sum, row) => sum + row.amount, 0);
+  const partial = unknownRows > 0;
+  return {
+    status: partial ? "partial" : "complete",
+    valueLabel: currency === "EUR" ? formatEuro(total) : formatMoney(total, currency),
+    statusLabel: t(`pricing.usedModels.${partial ? "totalPartial" : "totalComplete"}`),
+    note: partial ? t("pricing.usedModels.totalPartialNote") : ""
+  };
 }
 
 function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, providers) {
@@ -3868,7 +4139,7 @@ function renderSubscriptionPricingCard({ provider, subscription, previous }) {
   return `
     <article class="subscription-cost-card subscription-quality-${escapeHtml(quality)}">
       <div class="subscription-cost-head">
-        <span>${escapeHtml(provider.name)}</span>
+        ${renderProviderInlineLabel(provider.id, provider.name, { accent: provider.accent, size: "xs" })}
         <strong>${escapeHtml(currentCost)}</strong>
       </div>
       <p>${escapeHtml(subscription?.planType ? t("subscriptions.plan", { plan: subscription.planType }) : t("subscriptions.planUnknown"))}</p>
@@ -3880,6 +4151,10 @@ function renderSubscriptionPricingCard({ provider, subscription, previous }) {
         <div>
           <dt>${escapeHtml(t("subscriptions.sourceLabel"))}</dt>
           <dd>${escapeHtml(subscription?.source ? subscriptionSourceLabel(subscription.source) : t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.planSourceLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.planSource ? subscriptionSourceLabel(subscription.planSource) : t("pricing.unknown"))}</dd>
         </div>
         <div>
           <dt>${escapeHtml(t("pricing.subscriptions.previous"))}</dt>
@@ -4280,7 +4555,7 @@ function renderModelWindowSummary(daily) {
 }
 
 function renderModelUsageRow(row) {
-  const source = row.sourceId ? ` <small>${escapeHtml(sourceLabel(row.sourceId))}</small>` : "";
+  const source = row.sourceId ? ` <small>${renderProviderInlineLabel(row.sourceId, sourceLabel(row.sourceId), { size: "tiny" })}</small>` : "";
   return `
     <tr>
       <th scope="row">${escapeHtml(row.model)}${source}</th>
@@ -4735,6 +5010,7 @@ function renderChartLegend(sourceIds) {
       (id) => `
         <span class="chart-legend-item">
           <span class="chart-legend-swatch" style="background: ${chartSourceColor(id)}"></span>
+          ${renderProviderMark(id, { label: sourceLabel(id), size: "tiny" })}
           <span>${escapeHtml(sourceLabel(id))}</span>
         </span>
       `

@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Loggede tokens i alt",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Rekorddag: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "API-omkostninger i alt",
+      "totalScope": "Omfang",
+      "totalStatus": "Omkostningsstatus",
+      "totalComplete": "Komplet",
+      "totalPartial": "Delvis",
+      "totalUnknown": "Ukendt",
+      "totalMixed": "Blandede valutaer",
+      "totalPartialNote": "Nogle viste rækker har ingen pålidelig API-pris, så totalen er delvis.",
+      "totalUnknownNote": "Ingen viste rækker har en pålidelig API-pris.",
+      "totalMixedNote": "De viste rækker bruger flere valutaer; der beregnes ingen total.",
+      "totalRow": "API-omkostninger i alt"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} d {hours} t",
       "hoursMinutes": "{hours} t {minutes} min",
       "minutes": "{minutes} min"
+    },
+    "gauge": {
+      "title": "Aktuelt forbrug",
+      "projectedValue": "{percent}% forventet",
+      "unavailable": "Projektion utilgængelig",
+      "aria": "Forventet slutforbrug for {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Grænseadvarsel: {window}",
+      "nativeUsedPercent": "{percent}% brugt.",
+      "nativeHardLimit": "Grænsen er næsten opbrugt.",
+      "nativePacingProjected": "{usedPercent}% brugt; nuværende tempo estimerer {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Forventet opbrugt om {time}.",
+      "nativeDurationHoursMinutes": "{hours} t {minutes} min",
+      "nativeDurationHours": "{hours} t",
+      "nativeDurationMinutes": "{minutes} min",
+      "nativeWindowFiveHour": "5-timers vindue",
+      "nativeWindowWeekly": "Ugentlig grænse",
+      "nativeWindowFable": "Fable-grænse",
+      "nativeWindowSonnetOnly": "Kun Sonnet-grænse",
+      "nativeWindowClaudeDesign": "Claude Design-grænse",
+      "nativeWindowGeneric": "Grænse"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Opdater katalog-/kontokilden, eller tilføj et Advanced-reserveestimat."
-    }
+    },
+    "planSource": "Plan/grænser fra {source}",
+    "planSourceLabel": "Plan-/grænsekilde",
+    "catalogFallbackNote": "Månedsprisen er et katalogfallback; skrivebeskyttede app-/kontokilder giver plan-, grænse- eller kreditdata, men ingen betroet månedspris."
   }
 }

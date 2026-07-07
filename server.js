@@ -2801,7 +2801,8 @@ async function readClaudeCodeUsage(options = {}) {
   const apiUsage = directApiUsage || browserSyncedApiUsage;
   const apiUsageSource = directApiUsage ? "claude_api" : browserSyncedApiUsage ? "claude_browser_sync" : null;
   const apiUsageUpdatedAt = apiUsage?.updatedAt || null;
-  const planType = statusline?.planType || authStatus?.planType || null;
+  const browserSubscription = browserCredits?.subscription || null;
+  const planType = browserSubscription?.planType || statusline?.planType || authStatus?.planType || null;
   const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
   const resolvedCredits = hasUsageCredits(browserCredits?.credits) ? browserCredits.credits : statusline?.credits || null;
   let resolvedLimits = statusline?.limits || null;
@@ -2923,10 +2924,23 @@ async function readClaudeCodeUsage(options = {}) {
     limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt,
     planType,
+    subscription: browserSubscription
+      ? {
+          ...browserSubscription,
+          planType: browserSubscription.planType || planType,
+          source: browserSubscription.source || "claude_browser_sync"
+        }
+      : null,
     credits: resolvedCredits,
     creditRows: buildCreditRows(resolvedCredits),
     limitSource,
-    planSource: statusline?.planType ? "claude_statusline" : authStatus?.planType ? "claude_auth_status" : null,
+    planSource: browserSubscription?.planType
+      ? "claude_browser_sync"
+      : statusline?.planType
+        ? "claude_statusline"
+        : authStatus?.planType
+          ? "claude_auth_status"
+          : null,
     creditSource: hasUsageCredits(browserCredits?.credits) ? browserCredits?.source || "browser" : statusline?.credits ? "claude_statusline" : null,
     message: claudeCodeStatusMessage(statusline, limitSource),
     byModel: Array.from(modelMap.entries())
@@ -4974,18 +4988,147 @@ function normalizeClaudeBrowserCreditsSnapshot(payload) {
   const extractedCredits = extractUsageCredits(payload?.credits) || extractUsageCredits(payload?.billingPayload) || payload?.credits || null;
   const credits = sanitizeUsageCredits(extractedCredits);
   const updatedAt = normalizeOptionalDate(payload?.updatedAt) || new Date().toISOString();
+  const subscription = normalizeClaudeBrowserSubscriptionSnapshot(payload, updatedAt);
   return {
-    status: normalizeClaudeBrowserCreditsStatus(payload?.status, credits),
+    status: normalizeClaudeBrowserCreditsStatus(payload?.status, credits, subscription),
     reason: String(payload?.reason || "").trim() || null,
     source: String(payload?.source || "").trim() || null,
     cookieName: String(payload?.cookieName || "").trim() || null,
     updatedAt,
+    subscription,
     credits: hasUsageCredits(credits) ? credits : null,
     usage: normalizeClaudeBrowserUsageSnapshot(
       payload?.usage || payload?.usagePayload || payload?.billingPayload?.usage,
       updatedAt
     )
   };
+}
+
+function normalizeClaudeBrowserSubscriptionSnapshot(payload, fallbackUpdatedAt) {
+  const explicitCandidates = [
+    payload?.subscription,
+    payload?.billingPayload?.subscription,
+    payload?.billingPayload?.account?.subscription,
+    payload?.billingPayload?.billing?.subscription
+  ];
+  for (const candidate of explicitCandidates) {
+    const subscription = sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, { explicitPath: true });
+    if (subscription) return subscription;
+  }
+  const scopedCandidates = [
+    payload?.billingPayload?.account,
+    payload?.billingPayload?.billing,
+    payload?.billingPayload
+  ];
+  for (const candidate of scopedCandidates) {
+    const subscription = sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt);
+    if (subscription) return subscription;
+  }
+  return null;
+}
+
+const CLAUDE_BROWSER_SUBSCRIPTION_PLAN_KEYS = new Set([
+  "free",
+  "pro",
+  "claude pro",
+  "max",
+  "claude max",
+  "max 5x",
+  "claude max 5x",
+  "max 20x",
+  "claude max 20x",
+  "20x",
+  "team",
+  "claude team",
+  "enterprise",
+  "claude enterprise",
+  "business"
+]);
+
+function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, options = {}) {
+  if (!candidate || typeof candidate !== "object") return null;
+  const explicitPlanType = explicitClaudeSubscriptionPlan(candidate);
+  const planType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const hasSubscriptionScope = Boolean(options.explicitPath || explicitPlanType);
+  if (!hasSubscriptionScope) return null;
+  if (planType && !isKnownClaudeBrowserSubscriptionPlan(planType)) return null;
+  const monthlyCost = positiveAmount(
+    candidate.monthlyCost ??
+      candidate.monthly_cost ??
+      candidate.subscriptionCost ??
+      candidate.subscription_cost ??
+      candidate.monthlyPrice ??
+      candidate.monthly_price ??
+      candidate.priceMonthly ??
+      candidate.price_monthly ??
+      candidate.price?.monthly ??
+      (options.explicitPath ? candidate.price?.amount : undefined)
+  );
+  const monthlyCostCents = positiveAmount(
+    candidate.monthlyCostCents ??
+      candidate.monthly_cost_cents ??
+      candidate.monthlyPriceCents ??
+      candidate.monthly_price_cents ??
+      candidate.subscriptionCostCents ??
+      candidate.subscription_cost_cents ??
+      (options.explicitPath ? candidate.unitAmount ?? candidate.unit_amount : undefined)
+  );
+  const normalizedCost = monthlyCost || (monthlyCostCents ? monthlyCostCents / 100 : 0);
+  if (!planType && !(normalizedCost > 0)) return null;
+  return {
+    planType: planType || null,
+    monthlyCost: normalizedCost,
+    currency: normalizeCurrency(candidate.currency || candidate.price?.currency || "EUR"),
+    source: "claude_browser_sync",
+    updatedAt: normalizeOptionalDate(candidate.updatedAt || candidate.updated_at) || fallbackUpdatedAt
+  };
+}
+
+function explicitClaudeSubscriptionPlan(candidate) {
+  const planObject = candidate?.plan && typeof candidate.plan === "object" ? candidate.plan : null;
+  return firstNonEmptyString(
+    candidate.planType,
+    candidate.plan_type,
+    planObject?.planType,
+    planObject?.plan_type,
+    planObject?.type,
+    planObject?.name,
+    planObject?.displayName,
+    planObject?.display_name,
+    planObject?.tier,
+    typeof candidate.plan === "object" ? "" : candidate.plan,
+    candidate.subscriptionType,
+    candidate.subscription_type,
+    candidate.subscriptionPlan,
+    candidate.subscription_plan
+  );
+}
+
+function fallbackClaudeSubscriptionPlan(candidate) {
+  return firstNonEmptyString(
+    candidate.tier,
+    candidate.name,
+    candidate.displayName
+  );
+}
+
+function isKnownClaudeBrowserSubscriptionPlan(planType) {
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  return Boolean(
+    planKey &&
+      (CLAUDE_BROWSER_SUBSCRIPTION_PLAN_KEYS.has(planKey) ||
+        PUBLIC_SUBSCRIPTION_PLAN_CATALOG.anthropic.some((entry) =>
+          entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)
+        ))
+  );
+}
+
+function firstNonEmptyString(...values) {
+  for (const value of values) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+  return "";
 }
 
 function normalizeClaudeBrowserUsageSnapshot(payload, fallbackUpdatedAt) {
@@ -4999,8 +5142,9 @@ function normalizeClaudeBrowserUsageSnapshot(payload, fallbackUpdatedAt) {
   };
 }
 
-function normalizeClaudeBrowserCreditsStatus(value, credits) {
+function normalizeClaudeBrowserCreditsStatus(value, credits, subscription = null) {
   if (hasUsageCredits(credits)) return "available";
+  if (subscription?.planType || subscription?.monthlyCost > 0) return "available";
   const normalized = String(value || "").trim().toLowerCase();
   if (["available", "missing", "expired", "error", "unsupported"].includes(normalized)) return normalized;
   return "missing";
@@ -5402,13 +5546,14 @@ function buildNotificationAlerts(settings, usageMap) {
   const now = Date.now();
   const windows = collectNotificationWindows(usageMap);
   for (const win of windows) {
-    const { label, usedPercent, windowMinutes, resetsAt } = win;
+    const { key: windowKey, label, usedPercent, windowMinutes, resetsAt } = win;
     if (!Number.isFinite(usedPercent) || usedPercent < 0) continue;
 
     // Hard limit check
     if (usedPercent >= settings.hardLimitPercent) {
       alerts.push({
         type: "hard_limit",
+        windowKey,
         windowLabel: label,
         usedPercent,
         resetsAt: resetsAt || null
@@ -5435,6 +5580,7 @@ function buildNotificationAlerts(settings, usageMap) {
           : 0;
         alerts.push({
           type: "pacing",
+          windowKey,
           windowLabel: label,
           usedPercent,
           projectedPercent: Math.round(projectedPercent),
@@ -5474,9 +5620,16 @@ function collectNotificationWindows(usageMap) {
         win.usedPercent ?? win.used_percent ?? win.usage_percentage ?? null;
       const resetsAt = win.resetsAt ?? win.reset_at ?? null;
       const windowMinutes = win.windowMinutes ?? win.window_minutes ?? null;
+      const rawKey = win.key ?? win.windowKey ?? win.window_key ?? win.name ?? win.limitName ?? win.limitLabel ?? win.label;
       const label = win.label ?? win.limitLabel ?? win.name ?? win.limitName ?? "Limit";
       if (usedPercent !== null && Number.isFinite(Number(usedPercent))) {
-        windows.push({ label, usedPercent: Number(usedPercent), windowMinutes: Number(windowMinutes || 0), resetsAt });
+        windows.push({
+          key: quotaWindowKey(rawKey || label),
+          label,
+          usedPercent: Number(usedPercent),
+          windowMinutes: Number(windowMinutes || 0),
+          resetsAt
+        });
       }
     }
   }
@@ -5524,6 +5677,8 @@ module.exports = {
     buildAiLoadScore,
     buildSourceDiagnosticsPayload,
     sanitizeUpdateSettings,
-    mergeUpdateSettingsPatch
+    mergeUpdateSettingsPatch,
+    normalizeClaudeBrowserCreditsSnapshot,
+    buildNotificationAlerts
   }
 };

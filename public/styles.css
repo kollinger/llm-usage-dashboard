@@ -2,6 +2,7 @@
   color-scheme: light;
   --bg: #f6f7f4;
   --ink: #17201b;
+  --ink-muted: #4d5a53;
   --muted: #66716b;
   --line: #dfe5dd;
   --panel: #ffffff;
@@ -524,6 +525,76 @@ a {
   gap: 12px;
 }
 
+.provider-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.provider-mark.provider-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 26px;
+  aspect-ratio: 1;
+  border-radius: 7px;
+  background: var(--mark-accent, var(--green));
+  color: #fff;
+  box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.12);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.provider-mark.provider-mark span {
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+}
+
+.provider-mark-lg {
+  width: 34px;
+  border-radius: 9px;
+  font-size: 0.8rem;
+}
+
+.provider-mark-sm {
+  width: 28px;
+  border-radius: 8px;
+}
+
+.provider-mark-xs {
+  width: 20px;
+  border-radius: 6px;
+  font-size: 0.62rem;
+}
+
+.provider-mark-tiny {
+  width: 16px;
+  border-radius: 5px;
+  font-size: 0.55rem;
+}
+
+.provider-mark-xai {
+  text-transform: lowercase;
+}
+
+.provider-inline-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.provider-inline-label > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .provider-name {
   margin: 0;
   font-size: 1.05rem;
@@ -627,9 +698,22 @@ a {
   gap: 10px;
 }
 
+.limit-bars-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: start;
+}
+
 .limit-bar {
   display: grid;
-  gap: 5px;
+  min-width: 0;
+  gap: 7px;
+}
+
+.limit-bar-body,
+.limit-bar-usage {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
 }
 
 .limit-bar-top {
@@ -703,11 +787,77 @@ a {
 }
 
 .limit-status-note {
+  grid-column: 1 / -1;
   margin: 0;
   color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 760;
   line-height: 1.3;
+}
+
+.limit-projection-gauge {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.limit-gauge-head,
+.limit-gauge-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.limit-gauge-head span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.limit-gauge-head strong {
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.limit-gauge-track {
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d9eee7 0 62.5%, #ffe8bc 62.5% 78%, #f4cfd6 78% 100%);
+}
+
+.limit-gauge-target {
+  position: absolute;
+  left: 62.5%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: rgba(23, 32, 27, 0.72);
+  transform: translateX(-1px);
+}
+
+.limit-gauge-needle {
+  position: absolute;
+  left: calc(var(--gauge-left, 0) * 1%);
+  top: -3px;
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--accent, var(--green));
+  box-shadow: 0 0 0 2px #fff, 0 3px 8px rgba(23, 32, 27, 0.2);
+  transform: translateX(-50%);
+}
+
+.limit-gauge-scale {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
 }
 
 .credit-rows {
@@ -1054,6 +1204,10 @@ a {
 
 .source-bar-name {
   color: var(--ink);
+}
+
+.source-bar-name .provider-inline-label {
+  max-width: 100%;
 }
 
 .source-bar-value {
@@ -1765,13 +1919,31 @@ a {
   gap: 4px 8px;
 }
 
+.model-cell-with-mark {
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-content: start;
+}
+
+.model-cell-with-mark > .provider-mark {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.model-cell-with-mark > div {
+  display: grid;
+  grid-column: 2;
+  min-width: 0;
+  gap: 2px;
+}
+
 .model-cell strong {
   grid-column: 1;
   grid-row: 1;
   font-size: 0.96rem;
 }
 
-.model-cell span {
+.model-cell > span:not(.provider-mark),
+.model-cell > div > span {
   grid-column: 1;
   grid-row: 2;
   color: var(--muted);
@@ -1784,6 +1956,10 @@ a {
   color: var(--muted);
   font-size: 0.72rem;
   line-height: 1.25;
+}
+
+.model-cell small .provider-inline-label {
+  vertical-align: middle;
 }
 
 .alias-details {
@@ -1878,6 +2054,41 @@ a {
 
 .used-model-table {
   min-width: 860px;
+}
+
+.api-cost-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin-bottom: 12px;
+}
+
+.api-cost-summary > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8faf7;
+}
+
+.api-cost-summary span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.api-cost-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.used-model-total-row th,
+.used-model-total-row td {
+  border-top: 2px solid var(--ink);
+  background: #f8faf7;
+  font-weight: 900;
 }
 
 .subscription-cost-summary,

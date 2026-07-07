@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Összes naplózott token",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Rekordnap: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "API-költség összesen",
+      "totalScope": "Hatókör",
+      "totalStatus": "Költségállapot",
+      "totalComplete": "Teljes",
+      "totalPartial": "Részleges",
+      "totalUnknown": "Ismeretlen",
+      "totalMixed": "Vegyes pénznemek",
+      "totalPartialNote": "Néhány megjelenített sorhoz nincs megbízható API-ár, ezért az összeg részleges.",
+      "totalUnknownNote": "Egyetlen megjelenített sorhoz sincs megbízható API-ár.",
+      "totalMixedNote": "A megjelenített sorok több pénznemet használnak; összeg nem kerül kiszámításra.",
+      "totalRow": "API-költség összesen"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} n {hours} o",
       "hoursMinutes": "{hours} o {minutes} p",
       "minutes": "{minutes} p"
+    },
+    "gauge": {
+      "title": "Aktuális használat",
+      "projectedValue": "{percent}% előrejelzés",
+      "unavailable": "Előrejelzés nem érhető el",
+      "aria": "{label} előrejelzett végső használata"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Limitfigyelmeztetés: {window}",
+      "nativeUsedPercent": "{percent}% felhasználva.",
+      "nativeHardLimit": "A limit majdnem kimerült.",
+      "nativePacingProjected": "{usedPercent}% felhasználva; a jelenlegi tempó {projectedPercent}%-ot jelez előre.",
+      "nativeEstimatedExhaustion": "Becsült kimerülés {time} múlva.",
+      "nativeDurationHoursMinutes": "{hours} ó {minutes} p",
+      "nativeDurationHours": "{hours} ó",
+      "nativeDurationMinutes": "{minutes} p",
+      "nativeWindowFiveHour": "5 órás ablak",
+      "nativeWindowWeekly": "Heti limit",
+      "nativeWindowFable": "Fable-limit",
+      "nativeWindowSonnetOnly": "Csak Sonnet-limit",
+      "nativeWindowClaudeDesign": "Claude Design-limit",
+      "nativeWindowGeneric": "Limit"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Frissítse a katalógus-/fiókforrást, vagy adjon meg egy tartalék becslést az Advanced részben."
-    }
+    },
+    "planSource": "Csomag/limitek innen: {source}",
+    "planSourceLabel": "Csomag-/limitforrás",
+    "catalogFallbackNote": "A havi ár katalógusos tartalékérték; az írásvédett app-/fiókforrások csomag-, limit- vagy kreditét adatot adnak, de nem megbízható havi árat."
   }
 }

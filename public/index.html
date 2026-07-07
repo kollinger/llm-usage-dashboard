@@ -210,8 +210,8 @@
             <span data-i18n="settings.notifications.enabled">Benachrichtigungen aktivieren</span>
           </label>
           <div class="notification-permission-notice" id="notificationPermissionNotice" hidden role="status" aria-live="polite">
-            <strong id="notificationPermissionNoticeTitle" data-i18n="settings.notifications.systemGuideTitle">System notifications need attention</strong>
-            <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Allow notifications for LLM Usage Dashboard in system settings, restart the app if you just changed the setting, then run the test again.</span>
+            <strong id="notificationPermissionNoticeTitle" data-i18n="settings.notifications.systemGuideTitle">System-Mitteilungen brauchen Aufmerksamkeit</strong>
+            <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Erlaube Mitteilungen für LLM Usage Dashboard in den Systemeinstellungen, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.</span>
           </div>
           <div id="notificationThresholds" class="notification-thresholds" hidden>
             <p class="settings-desc" data-i18n="settings.notifications.thresholdsHelp">Tempo-Warnung nutzt die aktuelle Verbrauchsrate, harte Grenze nutzt den gemessenen Verbrauch im jeweiligen 5h-/Wochenlimit.</p>
@@ -225,43 +225,43 @@
             </label>
           </div>
           <details class="settings-advanced">
-            <summary data-i18n="settings.notifications.diagTitle">Notification diagnostics</summary>
+            <summary data-i18n="settings.notifications.diagTitle">Benachrichtigungsdiagnose</summary>
             <div class="notification-diagnostics" id="notificationDiagnostics">
               <dl class="diag-list" id="notificationDiagList">
-                <dt data-i18n="settings.notifications.diagLastCheck">Last check</dt>
+                <dt data-i18n="settings.notifications.diagLastCheck">Letzte Prüfung</dt>
                 <dd id="notificationDiagLastCheck">--</dd>
-                <dt data-i18n="settings.notifications.diagDuration">Duration</dt>
+                <dt data-i18n="settings.notifications.diagDuration">Dauer</dt>
                 <dd id="notificationDiagDuration">--</dd>
-                <dt data-i18n="settings.notifications.diagAlerts">Alerts found</dt>
+                <dt data-i18n="settings.notifications.diagAlerts">Gefundene Warnungen</dt>
                 <dd id="notificationDiagAlerts">--</dd>
-                <dt data-i18n="settings.notifications.diagLastShown">Last notification shown</dt>
+                <dt data-i18n="settings.notifications.diagLastShown">Letzte Benachrichtigung gesendet</dt>
                 <dd id="notificationDiagLastShown">--</dd>
-                <dt data-i18n="settings.notifications.diagSkipped">Skip reason</dt>
+                <dt data-i18n="settings.notifications.diagSkipped">Übersprungen wegen</dt>
                 <dd id="notificationDiagSkipped">--</dd>
-                <dt data-i18n="settings.notifications.diagError">Last error</dt>
+                <dt data-i18n="settings.notifications.diagError">Letzter Fehler</dt>
                 <dd id="notificationDiagError">--</dd>
-                <dt data-i18n="settings.notifications.diagSupported">Notifications supported</dt>
+                <dt data-i18n="settings.notifications.diagSupported">Benachrichtigungen unterstützt</dt>
                 <dd id="notificationDiagSupported">--</dd>
-                <dt data-i18n="settings.notifications.diagPermission">Browser permission</dt>
+                <dt data-i18n="settings.notifications.diagPermission">Browser-Berechtigung</dt>
                 <dd id="notificationDiagPermission">--</dd>
-                <dt data-i18n="settings.notifications.diagNativeDelivery">macOS native delivery</dt>
+                <dt data-i18n="settings.notifications.diagNativeDelivery">Native Systemzustellung</dt>
                 <dd id="notificationDiagNativeDelivery">--</dd>
               </dl>
               <div class="diag-test-row">
-                <button type="button" class="text-button" id="notificationSettingsBtn" data-i18n="settings.notifications.openSettingsBtn">Open macOS notification settings</button>
-                <button type="button" class="text-button" id="notificationTestBtn" data-i18n="settings.notifications.testBtn">Send test notification</button>
+                <button type="button" class="text-button" id="notificationSettingsBtn" data-i18n="settings.notifications.openSettingsBtn">System-Mitteilungen öffnen</button>
+                <button type="button" class="text-button" id="notificationTestBtn" data-i18n="settings.notifications.testBtn">Test-Benachrichtigung senden</button>
                 <p class="settings-desc" id="notificationTestStatus" hidden></p>
               </div>
               <div class="notification-test-preview" id="notificationTestPreview" hidden role="status" aria-live="polite">
-                <strong id="notificationTestPreviewTitle" data-i18n="settings.notifications.inAppTestTitle">In-app test notification</strong>
-                <span id="notificationTestPreviewBody" data-i18n="settings.notifications.inAppTestBody">This confirms the button can show an in-app fallback.</span>
+                <strong id="notificationTestPreviewTitle" data-i18n="settings.notifications.inAppTestTitle">In-App-Testbenachrichtigung</strong>
+                <span id="notificationTestPreviewBody" data-i18n="settings.notifications.inAppTestBody">Dieser In-App-Fallback bestätigt, dass der Test lief.</span>
               </div>
               <details class="diag-last-test" id="notificationLastTestDetails" hidden>
-                <summary data-i18n="settings.notifications.testResultLabel">Last test result</summary>
+                <summary data-i18n="settings.notifications.testResultLabel">Letztes Testergebnis</summary>
                 <dl class="diag-list">
-                  <dt data-i18n="settings.notifications.testResultAt">At</dt>
+                  <dt data-i18n="settings.notifications.testResultAt">Zeitpunkt</dt>
                   <dd id="notificationLastTestAt">--</dd>
-                  <dt data-i18n="settings.notifications.testResultOutcome">Outcome</dt>
+                  <dt data-i18n="settings.notifications.testResultOutcome">Ergebnis</dt>
                   <dd id="notificationLastTestResult">--</dd>
                 </dl>
               </details>

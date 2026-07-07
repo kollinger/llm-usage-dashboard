@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Iomlán tokens logáilte",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Lá is airde: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "Costas API iomlán",
+      "totalScope": "Raon",
+      "totalStatus": "Stádas costais",
+      "totalComplete": "Iomlán",
+      "totalPartial": "Páirteach",
+      "totalUnknown": "Anaithnid",
+      "totalMixed": "Airgeadraí measctha",
+      "totalPartialNote": "Níl praghas API iontaofa ag cuid de na línte ar taispeáint, mar sin tá an t-iomlán páirteach.",
+      "totalUnknownNote": "Níl praghas API iontaofa ag aon líne ar taispeáint.",
+      "totalMixedNote": "Úsáideann na línte ar taispeáint il-airgeadraí; ní ríomhtar iomlán.",
+      "totalRow": "Costas API iomlán"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} l {hours} u",
       "hoursMinutes": "{hours} u {minutes} n",
       "minutes": "{minutes} n"
+    },
+    "gauge": {
+      "title": "Úsáid reatha",
+      "projectedValue": "{percent}% réamh-mheasta",
+      "unavailable": "Níl an réamh-mheastachán ar fáil",
+      "aria": "Úsáid deiridh réamh-mheasta do {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Rabhadh teorann: {window}",
+      "nativeUsedPercent": "{percent}% úsáidte.",
+      "nativeHardLimit": "Tá an teorainn beagnach ídithe.",
+      "nativePacingProjected": "{usedPercent}% úsáidte; réamh-mheastar {projectedPercent}% leis an luas reatha.",
+      "nativeEstimatedExhaustion": "Ídiú measta i gceann {time}.",
+      "nativeDurationHoursMinutes": "{hours} u {minutes} nóim",
+      "nativeDurationHours": "{hours} u",
+      "nativeDurationMinutes": "{minutes} nóim",
+      "nativeWindowFiveHour": "Fuinneog 5 uair",
+      "nativeWindowWeekly": "Teorainn sheachtainiúil",
+      "nativeWindowFable": "Teorainn Fable",
+      "nativeWindowSonnetOnly": "Teorainn Sonnet amháin",
+      "nativeWindowClaudeDesign": "Teorainn Claude Design",
+      "nativeWindowGeneric": "Teorainn"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Nuashonraigh foinse an chatalóige/an chuntais nó cuir meastachán cúltaca Advanced leis."
-    }
+    },
+    "planSource": "Plean/teorainneacha ó {source}",
+    "planSourceLabel": "Foinse plean/teorainneacha",
+    "catalogFallbackNote": "Is luach cúltaca ón gcatalóg é an praghas míosúil; tugann foinsí aip/cuntais léite amháin sonraí plean, teorainneacha nó creidmheasa, ach ní praghas míosúil iontaofa."
   }
 }

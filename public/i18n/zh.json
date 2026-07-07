@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "记录的令牌总数",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "最高记录日：{date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "API 成本总计",
+      "totalScope": "范围",
+      "totalStatus": "成本状态",
+      "totalComplete": "完整",
+      "totalPartial": "部分",
+      "totalUnknown": "未知",
+      "totalMixed": "混合货币",
+      "totalPartialNote": "部分显示行没有可信的 API 价格，因此总计为部分值。",
+      "totalUnknownNote": "没有任何显示行包含可信的 API 价格。",
+      "totalMixedNote": "显示行使用多种货币；不会计算总计。",
+      "totalRow": "API 成本总计"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days}天 {hours}小时",
       "hoursMinutes": "{hours}小时 {minutes}分钟",
       "minutes": "{minutes}分钟"
+    },
+    "gauge": {
+      "title": "当前用量",
+      "projectedValue": "预计 {percent}%",
+      "unavailable": "无法预测",
+      "aria": "{label} 的预计窗口结束用量"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "限额警告：{window}",
+      "nativeUsedPercent": "已使用 {percent}%。",
+      "nativeHardLimit": "限额即将耗尽。",
+      "nativePacingProjected": "已使用 {usedPercent}%；当前速度预计达到 {projectedPercent}%。",
+      "nativeEstimatedExhaustion": "预计将在 {time} 后耗尽。",
+      "nativeDurationHoursMinutes": "{hours} 小时 {minutes} 分钟",
+      "nativeDurationHours": "{hours} 小时",
+      "nativeDurationMinutes": "{minutes} 分钟",
+      "nativeWindowFiveHour": "5 小时窗口",
+      "nativeWindowWeekly": "每周限额",
+      "nativeWindowFable": "Fable 限额",
+      "nativeWindowSonnetOnly": "仅 Sonnet 限额",
+      "nativeWindowClaudeDesign": "Claude Design 限额",
+      "nativeWindowGeneric": "限额"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "更新目录/账户来源，或在 Advanced 中添加备用估算。"
-    }
+    },
+    "planSource": "计划/限额来自 {source}",
+    "planSourceLabel": "计划/限额来源",
+    "catalogFallbackNote": "月费来自目录备用值；只读应用/账户来源提供计划、限额或额度数据，但不提供可信的月费价格。"
   }
 }

@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "API cost total",
+      "totalScope": "Scope",
+      "totalStatus": "Cost status",
+      "totalComplete": "Complete",
+      "totalPartial": "Partial",
+      "totalUnknown": "Unknown",
+      "totalMixed": "Mixed currencies",
+      "totalPartialNote": "Some displayed rows have no trusted API price, so the total is partial.",
+      "totalUnknownNote": "No displayed row has a trusted API price.",
+      "totalMixedNote": "Displayed rows use multiple currencies; no total is calculated.",
+      "totalRow": "API cost total"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -385,6 +396,12 @@
       "unknown": "Unknown"
     },
     "paceLegend": "Bars keep provider identity colors; pace messages show whether current usage can last until reset.",
+    "gauge": {
+      "title": "Current Usage",
+      "projectedValue": "{percent}% projected",
+      "unavailable": "Projection unavailable",
+      "aria": "{label} projected end usage"
+    },
     "pace": {
       "remaining": "At current pace about {percent}% remains by reset.",
       "shortfall": "At current pace about {percent}% is missing by reset.",
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Limit warning: {window}",
+      "nativeUsedPercent": "{percent}% used.",
+      "nativeHardLimit": "Limit nearly exhausted.",
+      "nativePacingProjected": "{usedPercent}% used; current pace projects {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Estimated exhaustion in {time}.",
+      "nativeDurationHoursMinutes": "{hours}h {minutes}m",
+      "nativeDurationHours": "{hours}h",
+      "nativeDurationMinutes": "{minutes}m",
+      "nativeWindowFiveHour": "5-hour window",
+      "nativeWindowWeekly": "Weekly limit",
+      "nativeWindowFable": "Fable limit",
+      "nativeWindowSonnetOnly": "Sonnet-only limit",
+      "nativeWindowClaudeDesign": "Claude Design limit",
+      "nativeWindowGeneric": "Limit"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -745,9 +776,11 @@
     "planUnknown": "Plan unknown",
     "costUnknown": "Cost unknown",
     "source": "Source: {source}",
+    "planSource": "Plan/limits from {source}",
     "updated": "Updated {time}",
     "qualityLabel": "Cost quality",
     "sourceLabel": "Source",
+    "planSourceLabel": "Plan/limit source",
     "quality": {
       "automatic": "Automatically detected",
       "manual": "Saved fallback estimate",
@@ -775,6 +808,7 @@
       "browser": "browser account source"
     },
     "catalogReviewed": "Catalog reviewed {date}",
+    "catalogFallbackNote": "Monthly price is a catalog fallback; read-only app/account sources provide plan, limit, or credit data but no trusted monthly price.",
     "costReasons": {
       "catalogMissing": "No trusted catalog or account price matched this detected plan.",
       "catalogMissingCodexAppServer": "Codex app-server exposed the plan, but not a monthly price; no trusted catalog price matched it.",

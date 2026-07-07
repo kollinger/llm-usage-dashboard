@@ -42,7 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Skupaj zabeleženi tokeni",
-    "recordDay": "Record day: {date} · {tokens}",
+    "recordDay": "Rekordni dan: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
     "rangeNotes": {
@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Used models in {range}",
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
-      "empty": "No model-level token data is available for the selected range."
+      "empty": "No model-level token data is available for the selected range.",
+      "totalLabel": "Skupni strošek API",
+      "totalScope": "Obseg",
+      "totalStatus": "Stanje stroška",
+      "totalComplete": "Popolno",
+      "totalPartial": "Delno",
+      "totalUnknown": "Neznano",
+      "totalMixed": "Mešane valute",
+      "totalPartialNote": "Nekatere prikazane vrstice nimajo zaupanja vredne cene API, zato je skupni znesek delen.",
+      "totalUnknownNote": "Nobena prikazana vrstica nima zaupanja vredne cene API.",
+      "totalMixedNote": "Prikazane vrstice uporabljajo več valut; skupni znesek se ne izračuna.",
+      "totalRow": "Skupni strošek API"
     },
     "subscriptions": {
       "heading": "Subscription and fixed costs in {range}",
@@ -402,6 +413,12 @@
       "daysHours": "{days} d {hours} h",
       "hoursMinutes": "{hours} h {minutes} min",
       "minutes": "{minutes} min"
+    },
+    "gauge": {
+      "title": "Trenutna uporaba",
+      "projectedValue": "predvideno {percent}%",
+      "unavailable": "Projekcija ni na voljo",
+      "aria": "Predvidena končna uporaba za {label}"
     }
   },
   "tokens": {
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native banners are not reliably confirmed with this build. Check system notifications, allow LLM Usage Dashboard, then test again after restarting the app.",
       "systemGuideTestFailed": "The last native notification attempt reported a failure. Check system notifications, restart the app, then run the test again.",
       "systemGuideAfterTest": "If no real system banner appeared, check system notifications, allow LLM Usage Dashboard, restart the app, then send the test again.",
-      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window."
+      "thresholdsHelp": "Pacing uses the current consumption rate; hard warning uses measured consumption in the relevant 5h or weekly provider window.",
+      "nativeAlertTitle": "Opozorilo o omejitvi: {window}",
+      "nativeUsedPercent": "Porabljeno {percent}%.",
+      "nativeHardLimit": "Omejitev je skoraj izčrpana.",
+      "nativePacingProjected": "Porabljeno {usedPercent}%; trenutni tempo napoveduje {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Predvidena izčrpanost čez {time}.",
+      "nativeDurationHoursMinutes": "{hours} h {minutes} min",
+      "nativeDurationHours": "{hours} h",
+      "nativeDurationMinutes": "{minutes} min",
+      "nativeWindowFiveHour": "5-urno okno",
+      "nativeWindowWeekly": "Tedenska omejitev",
+      "nativeWindowFable": "Omejitev Fable",
+      "nativeWindowSonnetOnly": "Omejitev samo Sonnet",
+      "nativeWindowClaudeDesign": "Omejitev Claude Design",
+      "nativeWindowGeneric": "Omejitev"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -784,6 +815,9 @@
     },
     "costActions": {
       "addFallback": "Posodobite vir kataloga/računa ali dodajte rezervno oceno v razdelku Advanced."
-    }
+    },
+    "planSource": "Paket/omejitve iz {source}",
+    "planSourceLabel": "Vir paketa/omejitev",
+    "catalogFallbackNote": "Mesečna cena je rezervna vrednost iz kataloga; viri aplikacije/računa samo za branje dajejo podatke o paketu, omejitvah ali kreditih, ne pa zaupanja vredne mesečne cene."
   }
 }

@@ -243,7 +243,18 @@
     "usedModels": {
       "heading": "Genutzte Modelle in {range}",
       "description": "Tatsächlich geloggte Modellnutzung, soweit möglich mit dem lokalen Preiskatalog abgeglichen.",
-      "empty": "Für den gewählten Zeitraum sind keine Modell-Token verfügbar."
+      "empty": "Für den gewählten Zeitraum sind keine Modell-Token verfügbar.",
+      "totalLabel": "API-Kosten gesamt",
+      "totalScope": "Geltungsbereich",
+      "totalStatus": "Kostenstatus",
+      "totalComplete": "Vollständig",
+      "totalPartial": "Teilweise",
+      "totalUnknown": "Unbekannt",
+      "totalMixed": "Gemischte Währungen",
+      "totalPartialNote": "Einige angezeigte Zeilen haben keinen vertrauenswürdigen API-Preis; die Summe ist daher teilweise.",
+      "totalUnknownNote": "Keine angezeigte Zeile hat einen vertrauenswürdigen API-Preis.",
+      "totalMixedNote": "Die angezeigten Zeilen verwenden mehrere Währungen; es wird keine Summe berechnet.",
+      "totalRow": "API-Kosten gesamt"
     },
     "subscriptions": {
       "heading": "Abo- und Fixkosten in {range}",
@@ -385,6 +396,12 @@
       "unknown": "Unbekannt"
     },
     "paceLegend": "Balken behalten die Anbieterfarben; Tempo-Hinweise zeigen, ob die Nutzung bis zum Reset reicht.",
+    "gauge": {
+      "title": "Aktuelle Nutzung",
+      "projectedValue": "{percent}% projiziert",
+      "unavailable": "Projektion nicht verfügbar",
+      "aria": "{label} projizierte Endnutzung"
+    },
     "pace": {
       "remaining": "Bei aktuellem Tempo bleiben bis zum Reset ca. {percent}% übrig.",
       "shortfall": "Bei aktuellem Tempo fehlen bis zum Reset ca. {percent}%.",
@@ -491,7 +508,21 @@
       "systemGuideNativeUnverified": "Native Banner sind mit diesem Build nicht verlässlich bestätigt. Prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard und teste nach einem App-Neustart erneut.",
       "systemGuideTestFailed": "Der letzte native Notification-Versuch meldete einen Fehler. Prüfe die System-Mitteilungen, starte die App neu und teste erneut.",
       "systemGuideAfterTest": "Wenn kein echter System-Banner sichtbar wurde, prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard, starte die App neu und sende den Test noch einmal.",
-      "thresholdsHelp": "Tempo nutzt die aktuelle Verbrauchsrate; harte Warnung nutzt den gemessenen Verbrauch im jeweiligen 5h- oder Wochenfenster."
+      "thresholdsHelp": "Tempo nutzt die aktuelle Verbrauchsrate; harte Warnung nutzt den gemessenen Verbrauch im jeweiligen 5h- oder Wochenfenster.",
+      "nativeAlertTitle": "Limit-Warnung: {window}",
+      "nativeUsedPercent": "{percent}% verbraucht.",
+      "nativeHardLimit": "Limit fast erschöpft.",
+      "nativePacingProjected": "{usedPercent}% verbraucht; aktuelles Tempo projiziert {projectedPercent}%.",
+      "nativeEstimatedExhaustion": "Geschätzte Erschöpfung in {time}.",
+      "nativeDurationHoursMinutes": "{hours} Std. {minutes} Min.",
+      "nativeDurationHours": "{hours} Std.",
+      "nativeDurationMinutes": "{minutes} Min.",
+      "nativeWindowFiveHour": "5-Stunden-Fenster",
+      "nativeWindowWeekly": "Wochenlimit",
+      "nativeWindowFable": "Fable-Limit",
+      "nativeWindowSonnetOnly": "Nur-Sonnet-Limit",
+      "nativeWindowClaudeDesign": "Claude-Design-Limit",
+      "nativeWindowGeneric": "Limit"
     },
     "subscriptions": {
       "title": "Abo-Kosten",
@@ -745,9 +776,11 @@
     "planUnknown": "Plan unbekannt",
     "costUnknown": "Kosten unbekannt",
     "source": "Quelle: {source}",
+    "planSource": "Plan/Limits aus {source}",
     "updated": "Stand {time}",
     "qualityLabel": "Kostenqualität",
     "sourceLabel": "Quelle",
+    "planSourceLabel": "Plan-/Limit-Quelle",
     "quality": {
       "automatic": "Automatisch erkannt",
       "manual": "Gespeicherte Fallback-Schätzung",
@@ -775,6 +808,7 @@
       "browser": "Browser-Account-Quelle"
     },
     "catalogReviewed": "Katalog geprüft am {date}",
+    "catalogFallbackNote": "Der Monatspreis kommt aus dem Katalog-Fallback; schreibgeschützte App-/Account-Quellen liefern Plan-, Limit- oder Guthabendaten, aber keinen belastbaren Monatspreis.",
     "costReasons": {
       "catalogMissing": "Kein vertrauenswürdiger Katalog- oder Account-Preis passt zu diesem erkannten Plan.",
       "catalogMissingCodexAppServer": "Der Codex-App-Server hat den Plan geliefert, aber keinen Monatspreis; kein vertrauenswürdiger Katalogpreis passt dazu.",
