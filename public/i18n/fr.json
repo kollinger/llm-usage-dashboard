@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Modèle inconnu"
+    },
+    "breakdown": {
+      "total": "Somme",
+      "provider": "Fournisseur",
+      "model": "Modèle"
+    },
+    "breakdownToggleAria": "Répartition des tokens"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Source du quota Fable",
+      "available": "Le quota Fable distinct était lisible par machine et s’affiche sur sa propre ligne.",
+      "unavailable": "La barre d’état Claude, les données navigateur/compte et les journaux locaux n’exposent aucun quota Fable distinct ; aucun quota synthétique n’est affiché."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limite atteinte",
       "unknown": "Inconnu"
     },
-    "paceLegend": "Les barres gardent les couleurs des fournisseurs; les messages de rythme indiquent si l usage tiendra jusqu a la reinitialisation.",
     "pace": {
       "remaining": "Au rythme actuel, environ {percent}% restera a la reinitialisation.",
       "shortfall": "Au rythme actuel, il manquera environ {percent}% a la reinitialisation.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% projeté",
       "unavailable": "Projection indisponible",
       "aria": "Utilisation finale projetée pour {label}"
+    },
+    "viewToggleAria": "Visualisation de l'utilisation actuelle",
+    "view": {
+      "tachometer": "Jauge",
+      "bar": "Barre"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Forfait/limites depuis {source}",
     "planSourceLabel": "Source du forfait/des limites",
-    "catalogFallbackNote": "Le prix mensuel vient du catalogue de secours; les sources app/compte en lecture seule fournissent forfait, limites ou crédits, mais pas de prix mensuel fiable."
+    "catalogFallbackNote": "Le prix mensuel vient du catalogue de secours; les sources app/compte en lecture seule fournissent forfait, limites ou crédits, mais pas de prix mensuel fiable.",
+    "sourceAudit": {
+      "heading": "Sources de prix en lecture seule",
+      "safePriceDetected": "prix mensuel fiable détecté",
+      "planOnlyNoPrice": "plan/limites seulement ; aucun prix mensuel exposé",
+      "browserNoPrice": "vérifié ; aucun prix mensuel fiable exposé",
+      "catalogFallback": "prix de secours du catalogue",
+      "notConfigured": "absent de cette exécution",
+      "notAvailable": "aucune source de prix sûre en lecture seule disponible",
+      "notUsed": "non utilisé"
+    }
   }
 }

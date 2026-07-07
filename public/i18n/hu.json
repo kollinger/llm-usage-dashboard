@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Ismeretlen modell"
+    },
+    "breakdown": {
+      "total": "Összes",
+      "provider": "Szolgáltató",
+      "model": "Modell"
+    },
+    "breakdownToggleAria": "Tokenbontás"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable kvóta forrása",
+      "available": "A külön Fable kvóta géppel olvasható volt, és saját sorként jelenik meg.",
+      "unavailable": "A Claude állapotsor, a böngésző-/fiókadatok és a helyi naplók nem adtak külön Fable kvótát; szintetikus kvóta nem jelenik meg."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "A savok megtartjak a szolgaltatoi szineket; a tempo-uzenetek mutatjak, kitart-e a hasznalat a visszaallitasig.",
     "pace": {
       "remaining": "A jelenlegi tempoval a visszaallitasig kb. {percent}% marad.",
       "shortfall": "A jelenlegi tempoval a visszaallitasig kb. {percent}% hianyzik.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% előrejelzés",
       "unavailable": "Előrejelzés nem érhető el",
       "aria": "{label} előrejelzett végső használata"
+    },
+    "viewToggleAria": "Aktuális használat megjelenítése",
+    "view": {
+      "tachometer": "Mérő",
+      "bar": "Sáv"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Csomag/limitek innen: {source}",
     "planSourceLabel": "Csomag-/limitforrás",
-    "catalogFallbackNote": "A havi ár katalógusos tartalékérték; az írásvédett app-/fiókforrások csomag-, limit- vagy kreditét adatot adnak, de nem megbízható havi árat."
+    "catalogFallbackNote": "A havi ár katalógusos tartalékérték; az írásvédett app-/fiókforrások csomag-, limit- vagy kreditét adatot adnak, de nem megbízható havi árat.",
+    "sourceAudit": {
+      "heading": "Csak olvasható árforrások",
+      "safePriceDetected": "megbízható havi ár észlelve",
+      "planOnlyNoPrice": "csak csomag/korlátok; havi ár nincs megadva",
+      "browserNoPrice": "ellenőrizve; nincs megbízható havi ár",
+      "catalogFallback": "katalógus tartalékár",
+      "notConfigured": "ebben a futásban nincs jelen",
+      "notAvailable": "nem érhető el biztonságos, csak olvasható árforrás",
+      "notUsed": "nincs használva"
+    }
   }
 }

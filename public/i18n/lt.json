@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Nežinomas modelis"
+    },
+    "breakdown": {
+      "total": "Iš viso",
+      "provider": "Teikėjas",
+      "model": "Modelis"
+    },
+    "breakdownToggleAria": "Žetonų skaidymas"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable kvotos šaltinis",
+      "available": "Atskira Fable kvota buvo mašiniškai skaitoma ir rodoma atskiroje eilutėje.",
+      "unavailable": "Claude būsenos eilutė, naršyklės/paskyros duomenys ir vietiniai žurnalai nepateikė atskiros Fable kvotos; sintetinė kvota nerodoma."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Juostos islaiko tiekejo spalvas; tempo zinutes rodo, ar naudojimas uzteks iki atstatymo.",
     "pace": {
       "remaining": "Dabartiniu tempu iki atstatymo liks apie {percent}%.",
       "shortfall": "Dabartiniu tempu iki atstatymo truks apie {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "prognozuojama {percent}%",
       "unavailable": "Prognozė nepasiekiama",
       "aria": "{label} prognozuojamas galutinis naudojimas"
+    },
+    "viewToggleAria": "Dabartinio naudojimo vizualizacija",
+    "view": {
+      "tachometer": "Matuoklis",
+      "bar": "Juosta"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Planas/limitai iš {source}",
     "planSourceLabel": "Plano/limitų šaltinis",
-    "catalogFallbackNote": "Mėnesio kaina yra katalogo atsarginė reikšmė; tik skaitomi programos/paskyros šaltiniai pateikia plano, limitų ar kreditų duomenis, bet ne patikimą mėnesio kainą."
+    "catalogFallbackNote": "Mėnesio kaina yra katalogo atsarginė reikšmė; tik skaitomi programos/paskyros šaltiniai pateikia plano, limitų ar kreditų duomenis, bet ne patikimą mėnesio kainą.",
+    "sourceAudit": {
+      "heading": "Tik skaitomi kainų šaltiniai",
+      "safePriceDetected": "aptikta patikima mėnesio kaina",
+      "planOnlyNoPrice": "tik planas/limitai; mėnesio kaina nepateikta",
+      "browserNoPrice": "patikrinta; patikima mėnesio kaina nepateikta",
+      "catalogFallback": "katalogo atsarginė kaina",
+      "notConfigured": "šiame vykdyme nėra",
+      "notAvailable": "nėra saugaus tik skaitomo kainos šaltinio",
+      "notUsed": "nenaudojama"
+    }
   }
 }

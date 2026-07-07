@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Samhail anaithnid"
+    },
+    "breakdown": {
+      "total": "Iomlán",
+      "provider": "Soláthraí",
+      "model": "Samhail"
+    },
+    "breakdownToggleAria": "Miondealú comharthaí"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Foinse cuóta Fable",
+      "available": "Bhí cuóta Fable ar leith inléite ag meaisín agus taispeántar é mar líne dá chuid féin.",
+      "unavailable": "Níor nocht líne stádais Claude, sonraí brabhsálaí/cuntais ná logaí áitiúla cuóta Fable ar leith; ní thaispeántar cuóta sintéiseach."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Coinnionn na barra dathanna an tsolathrai; taispeanann teachtaireachtai luais an mairfidh an usaid go dti an t-athshocru.",
     "pace": {
       "remaining": "Ag an luas reatha beidh thart ar {percent}% fagtha ag an athshocru.",
       "shortfall": "Ag an luas reatha beidh thart ar {percent}% in easnamh ag an athshocru.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% réamh-mheasta",
       "unavailable": "Níl an réamh-mheastachán ar fáil",
       "aria": "Úsáid deiridh réamh-mheasta do {label}"
+    },
+    "viewToggleAria": "Léirshamhlú úsáide reatha",
+    "view": {
+      "tachometer": "Tomhas",
+      "bar": "Barra"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plean/teorainneacha ó {source}",
     "planSourceLabel": "Foinse plean/teorainneacha",
-    "catalogFallbackNote": "Is luach cúltaca ón gcatalóg é an praghas míosúil; tugann foinsí aip/cuntais léite amháin sonraí plean, teorainneacha nó creidmheasa, ach ní praghas míosúil iontaofa."
+    "catalogFallbackNote": "Is luach cúltaca ón gcatalóg é an praghas míosúil; tugann foinsí aip/cuntais léite amháin sonraí plean, teorainneacha nó creidmheasa, ach ní praghas míosúil iontaofa.",
+    "sourceAudit": {
+      "heading": "Foinsí praghais inléite amháin",
+      "safePriceDetected": "aimsíodh praghas míosúil iontaofa",
+      "planOnlyNoPrice": "plean/teorainneacha amháin; níl praghas míosúil nochta",
+      "browserNoPrice": "seiceáilte; níl praghas míosúil iontaofa nochta",
+      "catalogFallback": "praghas cúltaca catalóige",
+      "notConfigured": "níl sé sa rith seo",
+      "notAvailable": "níl foinse phraghais shábháilte inléite amháin ar fáil",
+      "notUsed": "níl in úsáid"
+    }
   }
 }

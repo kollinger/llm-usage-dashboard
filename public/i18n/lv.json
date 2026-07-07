@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Nezināms modelis"
+    },
+    "breakdown": {
+      "total": "Kopā",
+      "provider": "Pakalpojumu sniedzējs",
+      "model": "Modelis"
+    },
+    "breakdownToggleAria": "Tokenu sadalījums"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable kvotas avots",
+      "available": "Atsevišķa Fable kvota bija mašīnlasāma un tiek rādīta savā rindā.",
+      "unavailable": "Claude statusa josla, pārlūka/konta dati un lokālie žurnāli neatklāja atsevišķu Fable kvotu; sintētiska kvota netiek rādīta."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Joslas saglaba piegadataju krasas; tempa zinojumi rada, vai lietojums pietiks lidz atiestatei.",
     "pace": {
       "remaining": "Pie pasreizeja tempa lidz atiestatei paliks ap {percent}%.",
       "shortfall": "Pie pasreizeja tempa lidz atiestatei pietruks ap {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "prognoze {percent}%",
       "unavailable": "Prognoze nav pieejama",
       "aria": "{label} prognozētais beigu lietojums"
+    },
+    "viewToggleAria": "Pašreizējā lietojuma vizualizācija",
+    "view": {
+      "tachometer": "Mērītājs",
+      "bar": "Josla"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plāns/limiti no {source}",
     "planSourceLabel": "Plāna/limitu avots",
-    "catalogFallbackNote": "Mēneša cena ir kataloga rezerves vērtība; tikai lasāmi lietotnes/konta avoti sniedz plāna, limitu vai kredītu datus, bet ne uzticamu mēneša cenu."
+    "catalogFallbackNote": "Mēneša cena ir kataloga rezerves vērtība; tikai lasāmi lietotnes/konta avoti sniedz plāna, limitu vai kredītu datus, bet ne uzticamu mēneša cenu.",
+    "sourceAudit": {
+      "heading": "Tikai lasāmi cenu avoti",
+      "safePriceDetected": "atrasta uzticama mēneša cena",
+      "planOnlyNoPrice": "tikai plāns/limiti; mēneša cena nav pieejama",
+      "browserNoPrice": "pārbaudīts; uzticama mēneša cena nav pieejama",
+      "catalogFallback": "kataloga rezerves cena",
+      "notConfigured": "nav šajā izpildē",
+      "notAvailable": "nav droša tikai lasāma cenu avota",
+      "notUsed": "netiek izmantots"
+    }
   }
 }

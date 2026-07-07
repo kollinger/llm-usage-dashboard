@@ -249,6 +249,16 @@ const daily = [
     ]
   }
 ];
+const multiProviderDaily = [
+  {
+    date: "${today}",
+    totalTokens: 750,
+    sources: [
+      { id: "codex", totalTokens: 300, models: [{ model: "gpt-5.5", inputTokens: 160, cachedInputTokens: 20, outputTokens: 120, totalTokens: 300 }] },
+      { id: "claudeCode", totalTokens: 450, models: [{ model: "claude-fable-5", inputTokens: 260, cachedInputTokens: 40, outputTokens: 150, totalTokens: 450 }] }
+    ]
+  }
+];
 const local = {
   daily,
   totals: {
@@ -300,6 +310,7 @@ const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOStrin
 const okFiveHourReset = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
 const earlyWeekLimit = { usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset };
 const okFiveHourLimit = { usedPercent: 10, windowMinutes: 300, resetsAt: okFiveHourReset };
+const defaultUsageProjectionMode = state.usageProjectionMode;
 const sourceBarsHtml = renderSourceTotalBars([
   {
     date: "${today}",
@@ -310,6 +321,17 @@ const sourceBarsHtml = renderSourceTotalBars([
     ]
   }
 ]);
+state.chartBreakdownMode = "provider";
+renderChart(multiProviderDaily);
+const providerBreakdownChartHtml = els.chart.innerHTML;
+const providerBreakdownLegendHtml = els.chartLegend.innerHTML;
+state.chartBreakdownMode = "model";
+renderChart(multiProviderDaily);
+const modelBreakdownChartHtml = els.chart.innerHTML;
+const modelBreakdownLegendHtml = els.chartLegend.innerHTML;
+state.chartBreakdownMode = "total";
+renderChart(multiProviderDaily);
+const totalBreakdownChartHtml = els.chart.innerHTML;
 const providerCardHtml = renderProvider({
   id: "claudeCode",
   name: "Claude Code",
@@ -322,6 +344,13 @@ const providerCardHtml = renderProvider({
   apiTokens: 100,
   message: "Logged tokens"
 });
+const limitBarsHtml = renderLimitBars({
+  accent: providerMeta.codex.accent,
+  limitRows: [
+    { label: "5h", usedPercent: 10, remainingPercent: 90, windowMinutes: 300, resetsAt: okFiveHourReset },
+    { label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }
+  ]
+});
 const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", {
   status: "live",
   planType: "max",
@@ -330,6 +359,13 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
   },
   totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
 }));
+const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
+let storedProjectionMode = "";
+localStorage.setItem = (key, value) => {
+  if (key === USAGE_PROJECTION_MODE_STORAGE_KEY) storedProjectionMode = value;
+};
+setUsageProjectionMode("bar");
+const projectionModeAfterToggle = state.usageProjectionMode;
 const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
 const logoSamples = [
   renderProviderMark("Z.AI"),
@@ -399,36 +435,87 @@ JSON.stringify({
   detectedSubscriptionCardShowsCost:
     detectedSubscriptionCard.includes("$100.00/mo") &&
     detectedSubscriptionCard.includes("Catalog value"),
+  detectedSubscriptionCardSourceAudit:
+    detectedSubscriptionCard.includes("Read-only price sources") &&
+    detectedSubscriptionCard.includes("plan/limits only; no monthly price exposed") &&
+    detectedSubscriptionCard.includes("catalog fallback price"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
 	  sourceBarsUseProviderColors:
 	    sourceBarsHtml.includes("--accent: " + providerMeta.codex.accent) &&
 	    sourceBarsHtml.includes("--accent: " + providerMeta.claudeCode.accent),
+  providerBreakdownSegments:
+    providerBreakdownChartHtml.includes('fill="' + providerMeta.codex.accent + '"') &&
+    providerBreakdownChartHtml.includes('fill="' + providerMeta.claudeCode.accent + '"') &&
+    providerBreakdownLegendHtml.includes("Codex") &&
+    providerBreakdownLegendHtml.includes("Claude Code"),
+  modelBreakdownSegments:
+    modelBreakdownChartHtml.includes("gpt-5.5") &&
+    modelBreakdownChartHtml.includes("claude-fable-5") &&
+    modelBreakdownLegendHtml.includes("gpt-5.5") &&
+    modelBreakdownLegendHtml.includes("claude-fable-5") &&
+    modelBreakdownLegendHtml.includes("provider-mark-codex") &&
+    modelBreakdownLegendHtml.includes("provider-mark-claudeCode"),
+  totalBreakdownSegment:
+    totalBreakdownChartHtml.includes("Total") &&
+    chartTokenSegmentEntries(multiProviderDaily, "total")[0].label === "Total",
 	  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
-  providerCardHasLogo: providerCardHtml.includes("provider-mark-claudeCode"),
+  providerCardHasLogo:
+    providerCardHtml.includes("provider-mark-claudeCode") &&
+    providerCardHtml.includes("assets/provider-logos/claude-code.svg"),
+  providerCardFableQuotaAudit:
+    providerCardHtml.includes("Fable quota source") &&
+    providerCardHtml.includes("no synthetic quota is shown"),
   logoSamplesCoverCatalogProviders:
     logoSamples.includes("provider-mark-zai") &&
+    logoSamples.includes("assets/provider-logos/zai.svg") &&
     logoSamples.includes("provider-mark-minimax") &&
+    logoSamples.includes("assets/provider-logos/minimax.svg") &&
     logoSamples.includes("provider-mark-deepseek") &&
+    logoSamples.includes("assets/provider-logos/deepseek.svg") &&
     logoSamples.includes("provider-mark-alibaba") &&
+    logoSamples.includes("assets/provider-logos/qwen.svg") &&
     logoSamples.includes("provider-mark-xai") &&
+    logoSamples.includes("assets/provider-logos/xai.svg") &&
     logoSamples.includes("provider-mark-mistral") &&
+    logoSamples.includes("assets/provider-logos/mistral.svg") &&
     logoSamples.includes("provider-mark-stepfun") &&
+    logoSamples.includes("assets/provider-logos/stepfun.svg") &&
     logoSamples.includes("provider-mark-openai") &&
+    logoSamples.includes("assets/provider-logos/openai.svg") &&
     logoSamples.includes("provider-mark-anthropic") &&
+    logoSamples.includes("assets/provider-logos/anthropic.svg") &&
     logoSamples.includes("provider-mark-copilot") &&
-    logoSamples.includes("provider-mark-gemini"),
+    logoSamples.includes("assets/provider-logos/github-copilot.svg") &&
+    logoSamples.includes("provider-mark-gemini") &&
+    logoSamples.includes("assets/provider-logos/gemini.svg"),
 	  riskLimitBarUsesProviderAccent:
-	    riskLimitBarHtml.includes("--accent: " + providerMeta.codex.accent) &&
-	    !riskLimitBarHtml.includes("--accent: #b76b00"),
-  riskLimitBarHasProjectionGauge:
-    riskLimitBarHtml.includes("limit-projection-gauge") &&
-    riskLimitBarHtml.includes("Current Usage") &&
+	    riskLimitTachometerHtml.includes("--accent: " + providerMeta.codex.accent) &&
+	    !riskLimitTachometerHtml.includes("--accent: #b76b00"),
+  defaultUsageProjectionMode,
+  projectionModeAfterToggle,
+  storedProjectionMode,
+  invalidProjectionModeFallsBack: normalizeUsageProjectionMode("bogus"),
+  limitBarsHasProjectionToggle:
+    limitBarsHtml.includes("usage-projection-toggle") &&
+    limitBarsHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
+    limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\""),
+  rejectedPaceLegendRemoved: !limitBarsHtml.includes("limit-status-note"),
+  riskLimitBarHasTachometerGauge:
+    riskLimitTachometerHtml.includes("limit-tachometer-gauge") &&
+    riskLimitTachometerHtml.includes("limit-tachometer-svg") &&
+    riskLimitTachometerHtml.includes("100%") &&
+    riskLimitTachometerHtml.includes("projected"),
+  riskLimitBarHasProjectionBarMode:
+    riskLimitBarHtml.includes("limit-projection-bar") &&
+    !riskLimitBarHtml.includes("limit-tachometer-gauge") &&
     riskLimitBarHtml.includes("100%") &&
     riskLimitBarHtml.includes("projected"),
 	  fableLimitRowVisible:
 	    claudeWithFableHtml.includes(">Fable<") &&
 	    claudeWithFableHtml.includes("--accent: " + providerMeta.claudeCode.accent),
+  fableQuotaAvailableAudit:
+    claudeWithFableHtml.includes("Distinct Fable quota was machine-readable"),
 	  mixedCurrencyDeltaUnknown: mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
   sameCurrencyDeltaShown: sameCurrencySubscriptionCard.includes("$20.00")
 });`,
@@ -477,15 +564,28 @@ JSON.stringify({
   assert.equal(result.manualQualityLabel, "Saved fallback estimate");
   assert.equal(result.manualSourceLabel, "saved fallback");
   assert.equal(result.detectedSubscriptionCardShowsCost, true);
+  assert.equal(result.detectedSubscriptionCardSourceAudit, true);
   assert.equal(result.aliasesHiddenByDefault, true);
   assert.equal(result.aliasesCollapsedInDebug, true);
   assert.equal(result.sourceBarsUseProviderColors, true);
+  assert.equal(result.providerBreakdownSegments, true);
+  assert.equal(result.modelBreakdownSegments, true);
+  assert.equal(result.totalBreakdownSegment, true);
   assert.equal(result.providerCardUsesProviderAccent, true);
   assert.equal(result.providerCardHasLogo, true);
+  assert.equal(result.providerCardFableQuotaAudit, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
-  assert.equal(result.riskLimitBarHasProjectionGauge, true);
+  assert.equal(result.defaultUsageProjectionMode, "tachometer");
+  assert.equal(result.projectionModeAfterToggle, "bar");
+  assert.equal(result.storedProjectionMode, "bar");
+  assert.equal(result.invalidProjectionModeFallsBack, "tachometer");
+  assert.equal(result.limitBarsHasProjectionToggle, true);
+  assert.equal(result.rejectedPaceLegendRemoved, true);
+  assert.equal(result.riskLimitBarHasTachometerGauge, true);
+  assert.equal(result.riskLimitBarHasProjectionBarMode, true);
   assert.equal(result.fableLimitRowVisible, true);
+  assert.equal(result.fableQuotaAvailableAudit, true);
   assert.equal(result.mixedCurrencyDeltaUnknown, true);
   assert.equal(result.sameCurrencyDeltaShown, true);
 

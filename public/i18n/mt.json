@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Mudell mhux magħruf"
+    },
+    "breakdown": {
+      "total": "Kollox",
+      "provider": "Fornitur",
+      "model": "Mudell"
+    },
+    "breakdownToggleAria": "Tqassim tat-tokens"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Sors tal-kwota Fable",
+      "available": "Kwota Fable separata kienet tinqara mill-magna u tidher bħala ringiela tagħha.",
+      "unavailable": "Il-linja tal-istatus Claude, id-data tal-browser/kont u l-logs lokali ma wrewx kwota Fable separata; ma tintweriex kwota sintetika."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Il-bars izommu l-kuluri tal-fornitur; il-messaggi tar-ritmu juru jekk l-uzu jasalx sal-reset.",
     "pace": {
       "remaining": "Bir-ritmu attwali jibqa madwar {percent}% sal-reset.",
       "shortfall": "Bir-ritmu attwali jonqos madwar {percent}% sal-reset.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% previst",
       "unavailable": "Il-projezzjoni mhix disponibbli",
       "aria": "Użu finali previst għal {label}"
+    },
+    "viewToggleAria": "Viżwalizzazzjoni tal-użu attwali",
+    "view": {
+      "tachometer": "Arloġġ",
+      "bar": "Strixxa"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Pjan/limiti minn {source}",
     "planSourceLabel": "Sors tal-pjan/limiti",
-    "catalogFallbackNote": "Il-prezz ta’ kull xahar huwa fallback tal-katalgu; sorsi tal-app/kont read-only jagħtu dejta tal-pjan, limiti jew krediti, iżda mhux prezz ta’ kull xahar affidabbli."
+    "catalogFallbackNote": "Il-prezz ta’ kull xahar huwa fallback tal-katalgu; sorsi tal-app/kont read-only jagħtu dejta tal-pjan, limiti jew krediti, iżda mhux prezz ta’ kull xahar affidabbli.",
+    "sourceAudit": {
+      "heading": "Sorsi tal-prezz għall-qari biss",
+      "safePriceDetected": "instab prezz ta’ kull xahar affidabbli",
+      "planOnlyNoPrice": "pjan/limiti biss; ebda prezz ta’ kull xahar espost",
+      "browserNoPrice": "iċċekkjat; ebda prezz ta’ kull xahar affidabbli espost",
+      "catalogFallback": "prezz ta’ riżerva mill-katalgu",
+      "notConfigured": "mhux preżenti f’din it-tħaddima",
+      "notAvailable": "m’hemmx sors sigur tal-prezz għall-qari biss",
+      "notUsed": "mhux użat"
+    }
   }
 }

@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Άγνωστο μοντέλο"
+    },
+    "breakdown": {
+      "total": "Σύνολο",
+      "provider": "Πάροχος",
+      "model": "Μοντέλο"
+    },
+    "breakdownToggleAria": "Ανάλυση token"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Πηγή ορίου Fable",
+      "available": "Το ξεχωριστό όριο Fable ήταν μηχανικά αναγνώσιμο και εμφανίζεται σε δική του σειρά.",
+      "unavailable": "Η γραμμή κατάστασης Claude, τα δεδομένα προγράμματος περιήγησης/λογαριασμού και τα τοπικά αρχεία καταγραφής δεν εξέθεσαν ξεχωριστό όριο Fable· δεν εμφανίζεται τεχνητό όριο."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Οι μπαρες κρατουν τα χρωματα παροχου· τα μηνυματα ρυθμου δειχνουν αν η χρηση κρατα ως την επαναφορα.",
     "pace": {
       "remaining": "Με τον τρεχοντα ρυθμο θα μεινει περιπου {percent}% στην επαναφορα.",
       "shortfall": "Με τον τρεχοντα ρυθμο θα λειπει περιπου {percent}% στην επαναφορα.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% προβολή",
       "unavailable": "Η προβολή δεν είναι διαθέσιμη",
       "aria": "Προβλεπόμενη τελική χρήση για {label}"
+    },
+    "viewToggleAria": "Οπτικοποίηση τρέχουσας χρήσης",
+    "view": {
+      "tachometer": "Μετρητής",
+      "bar": "Γραμμή"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Πλάνο/όρια από {source}",
     "planSourceLabel": "Πηγή πλάνου/ορίων",
-    "catalogFallbackNote": "Η μηνιαία τιμή είναι εφεδρική τιμή καταλόγου· οι read-only πηγές εφαρμογής/λογαριασμού παρέχουν πλάνο, όρια ή credits, αλλά όχι αξιόπιστη μηνιαία τιμή."
+    "catalogFallbackNote": "Η μηνιαία τιμή είναι εφεδρική τιμή καταλόγου· οι read-only πηγές εφαρμογής/λογαριασμού παρέχουν πλάνο, όρια ή credits, αλλά όχι αξιόπιστη μηνιαία τιμή.",
+    "sourceAudit": {
+      "heading": "Πηγές τιμής μόνο για ανάγνωση",
+      "safePriceDetected": "εντοπίστηκε αξιόπιστη μηνιαία τιμή",
+      "planOnlyNoPrice": "μόνο πρόγραμμα/όρια· δεν εκτίθεται μηνιαία τιμή",
+      "browserNoPrice": "ελέγχθηκε· δεν εκτίθεται αξιόπιστη μηνιαία τιμή",
+      "catalogFallback": "εφεδρική τιμή καταλόγου",
+      "notConfigured": "δεν υπάρχει σε αυτήν την εκτέλεση",
+      "notAvailable": "δεν υπάρχει ασφαλής πηγή τιμής μόνο για ανάγνωση",
+      "notUsed": "δεν χρησιμοποιείται"
+    }
   }
 }

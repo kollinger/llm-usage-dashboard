@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Неизвестная модель"
+    },
+    "breakdown": {
+      "total": "Всего",
+      "provider": "Провайдер",
+      "model": "Модель"
+    },
+    "breakdownToggleAria": "Разбивка токенов"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Источник квоты Fable",
+      "available": "Отдельная квота Fable была машинно читаемой и показана отдельной строкой.",
+      "unavailable": "Строка состояния Claude, данные браузера/аккаунта и локальные журналы не раскрыли отдельную квоту Fable; синтетическая квота не показывается."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Полосы сохраняют цвета провайдеров; сообщения о темпе показывают, хватит ли квоты до сброса.",
     "pace": {
       "remaining": "При текущем темпе к сбросу останется около {percent}%.",
       "shortfall": "При текущем темпе к сбросу не хватит около {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "прогноз {percent}%",
       "unavailable": "Прогноз недоступен",
       "aria": "Прогнозируемое итоговое использование для {label}"
+    },
+    "viewToggleAria": "Визуализация текущего использования",
+    "view": {
+      "tachometer": "Индикатор",
+      "bar": "Полоса"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "План/лимиты из {source}",
     "planSourceLabel": "Источник плана/лимитов",
-    "catalogFallbackNote": "Месячная цена берется из резервного каталога; источники приложения/аккаунта только для чтения дают план, лимиты или кредиты, но не надежную месячную цену."
+    "catalogFallbackNote": "Месячная цена берется из резервного каталога; источники приложения/аккаунта только для чтения дают план, лимиты или кредиты, но не надежную месячную цену.",
+    "sourceAudit": {
+      "heading": "Источники цены только для чтения",
+      "safePriceDetected": "обнаружена надежная месячная цена",
+      "planOnlyNoPrice": "только план/лимиты; месячная цена не раскрыта",
+      "browserNoPrice": "проверено; надежная месячная цена не раскрыта",
+      "catalogFallback": "резервная цена из каталога",
+      "notConfigured": "нет в этом запуске",
+      "notAvailable": "нет безопасного источника цены только для чтения",
+      "notUsed": "не используется"
+    }
   }
 }

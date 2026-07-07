@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Onbekend model"
+    },
+    "breakdown": {
+      "total": "Totaal",
+      "provider": "Aanbieder",
+      "model": "Modellen"
+    },
+    "breakdownToggleAria": "Tokenuitsplitsing"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Bron voor Fable-quotum",
+      "available": "Een apart Fable-quotum was machineleesbaar en wordt als eigen rij getoond.",
+      "unavailable": "Claude-statusregel, browser-/accountgegevens en lokale logs gaven geen apart Fable-quotum; er wordt geen synthetisch quotum getoond."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limiet bereikt",
       "unknown": "Onbekend"
     },
-    "paceLegend": "Balken behouden providerkleuren; tempoberichten tonen of het gebruik tot de reset meegaat.",
     "pace": {
       "remaining": "In het huidige tempo blijft bij reset ongeveer {percent}% over.",
       "shortfall": "In het huidige tempo ontbreekt bij reset ongeveer {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% geprojecteerd",
       "unavailable": "Projectie niet beschikbaar",
       "aria": "Geprojecteerd eindgebruik voor {label}"
+    },
+    "viewToggleAria": "Visualisatie van huidig gebruik",
+    "view": {
+      "tachometer": "Meter",
+      "bar": "Balk"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plan/limieten van {source}",
     "planSourceLabel": "Bron plan/limieten",
-    "catalogFallbackNote": "De maandprijs is een catalogusfallback; alleen-lezen app-/accountbronnen leveren plan-, limiet- of kredietdata, maar geen betrouwbare maandprijs."
+    "catalogFallbackNote": "De maandprijs is een catalogusfallback; alleen-lezen app-/accountbronnen leveren plan-, limiet- of kredietdata, maar geen betrouwbare maandprijs.",
+    "sourceAudit": {
+      "heading": "Alleen-lezen prijsbronnen",
+      "safePriceDetected": "betrouwbare maandprijs gedetecteerd",
+      "planOnlyNoPrice": "alleen plan/limieten; geen maandprijs zichtbaar",
+      "browserNoPrice": "gecontroleerd; geen betrouwbare maandprijs zichtbaar",
+      "catalogFallback": "catalogusfallbackprijs",
+      "notConfigured": "niet aanwezig in deze run",
+      "notAvailable": "geen veilige alleen-lezen prijsbron beschikbaar",
+      "notUsed": "niet gebruikt"
+    }
   }
 }

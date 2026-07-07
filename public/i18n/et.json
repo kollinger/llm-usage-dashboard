@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Tundmatu mudel"
+    },
+    "breakdown": {
+      "total": "Kokku",
+      "provider": "Pakkuja",
+      "model": "Mudel"
+    },
+    "breakdownToggleAria": "Tokenite jaotus"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable kvoodi allikas",
+      "available": "Eraldi Fable kvoot oli masinloetav ja kuvatakse oma reana.",
+      "unavailable": "Claude’i olekurida, brauseri/konto andmed ja kohalikud logid ei avaldanud eraldi Fable kvooti; sünteetilist kvooti ei kuvata."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Ribad hoiavad pakkuja varve; tempoteated naitavad, kas kasutus kestab lahtestamiseni.",
     "pace": {
       "remaining": "Praeguse tempoga jaab lahtestamisel alles umbes {percent}%.",
       "shortfall": "Praeguse tempoga jaab lahtestamisel puudu umbes {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% prognoos",
       "unavailable": "Prognoos pole saadaval",
       "aria": "{label} prognoositud lõppkasutus"
+    },
+    "viewToggleAria": "Praeguse kasutuse visualiseerimine",
+    "view": {
+      "tachometer": "Mõõdik",
+      "bar": "Riba"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plaan/piirangud allikast {source}",
     "planSourceLabel": "Plaani/piirangute allikas",
-    "catalogFallbackNote": "Kuutasu pärineb kataloogi varuväärtusest; ainult loetavad rakenduse/konto allikad annavad plaani, piirangute või krediidi andmeid, kuid mitte usaldusväärset kuuhinda."
+    "catalogFallbackNote": "Kuutasu pärineb kataloogi varuväärtusest; ainult loetavad rakenduse/konto allikad annavad plaani, piirangute või krediidi andmeid, kuid mitte usaldusväärset kuuhinda.",
+    "sourceAudit": {
+      "heading": "Ainult loetavad hinnaallikad",
+      "safePriceDetected": "usaldusväärne kuuhind tuvastatud",
+      "planOnlyNoPrice": "ainult plaan/piirangud; kuuhinda ei avaldata",
+      "browserNoPrice": "kontrollitud; usaldusväärset kuuhinda ei avaldata",
+      "catalogFallback": "kataloogi varuhind",
+      "notConfigured": "selles jooksus puudub",
+      "notAvailable": "turvalist ainult loetavat hinnaallikat pole",
+      "notUsed": "ei kasutata"
+    }
   }
 }

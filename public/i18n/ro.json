@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Model necunoscut"
+    },
+    "breakdown": {
+      "total": "Sumă",
+      "provider": "Furnizor",
+      "model": "Modele"
+    },
+    "breakdownToggleAria": "Defalcare tokenuri"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Sursa cotei Fable",
+      "available": "Cota Fable distinctă a fost citibilă automat și este afișată pe propriul rând.",
+      "unavailable": "Linia de stare Claude, datele browserului/contului și logurile locale nu au expus o cotă Fable distinctă; nu se afișează o cotă sintetică."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Barele pastreaza culorile furnizorului; mesajele de ritm arata daca utilizarea ajunge pana la resetare.",
     "pace": {
       "remaining": "La ritmul actual raman aproximativ {percent}% la resetare.",
       "shortfall": "La ritmul actual lipsesc aproximativ {percent}% la resetare.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% proiectat",
       "unavailable": "Proiecția nu este disponibilă",
       "aria": "Utilizarea finală proiectată pentru {label}"
+    },
+    "viewToggleAria": "Vizualizarea utilizării curente",
+    "view": {
+      "tachometer": "Indicator",
+      "bar": "Bară"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plan/limite din {source}",
     "planSourceLabel": "Sursă plan/limite",
-    "catalogFallbackNote": "Prețul lunar este o valoare de rezervă din catalog; sursele aplicației/contului doar citire oferă plan, limite sau credite, dar nu un preț lunar de încredere."
+    "catalogFallbackNote": "Prețul lunar este o valoare de rezervă din catalog; sursele aplicației/contului doar citire oferă plan, limite sau credite, dar nu un preț lunar de încredere.",
+    "sourceAudit": {
+      "heading": "Surse de preț doar pentru citire",
+      "safePriceDetected": "preț lunar de încredere detectat",
+      "planOnlyNoPrice": "doar plan/limite; nu este expus preț lunar",
+      "browserNoPrice": "verificat; nu este expus preț lunar de încredere",
+      "catalogFallback": "preț de rezervă din catalog",
+      "notConfigured": "nu este prezent în această rulare",
+      "notAvailable": "nu există sursă sigură de preț doar pentru citire",
+      "notUsed": "neutilizat"
+    }
   }
 }

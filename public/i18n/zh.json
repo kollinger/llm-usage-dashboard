@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "未知模型"
+    },
+    "breakdown": {
+      "total": "总计",
+      "provider": "提供商",
+      "model": "模型"
+    },
+    "breakdownToggleAria": "令牌明细"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable 配额来源",
+      "available": "独立 Fable 配额可被机器读取，并显示为单独一行。",
+      "unavailable": "Claude 状态行、浏览器/账户数据和本地日志未暴露独立 Fable 配额；不会显示合成配额。"
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "已达上限",
       "unknown": "未知"
     },
-    "paceLegend": "条形保留提供商识别颜色；速度提示显示当前用量是否能撑到重置。",
     "pace": {
       "remaining": "按当前速度，重置时约剩余 {percent}%。",
       "shortfall": "按当前速度，重置时约缺少 {percent}%。",
@@ -419,6 +430,11 @@
       "projectedValue": "预计 {percent}%",
       "unavailable": "无法预测",
       "aria": "{label} 的预计窗口结束用量"
+    },
+    "viewToggleAria": "当前使用情况可视化",
+    "view": {
+      "tachometer": "仪表盘",
+      "bar": "条形"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "计划/限额来自 {source}",
     "planSourceLabel": "计划/限额来源",
-    "catalogFallbackNote": "月费来自目录备用值；只读应用/账户来源提供计划、限额或额度数据，但不提供可信的月费价格。"
+    "catalogFallbackNote": "月费来自目录备用值；只读应用/账户来源提供计划、限额或额度数据，但不提供可信的月费价格。",
+    "sourceAudit": {
+      "heading": "只读价格来源",
+      "safePriceDetected": "已检测到可信月费",
+      "planOnlyNoPrice": "仅有套餐/限制；未暴露月费",
+      "browserNoPrice": "已检查；未暴露可信月费",
+      "catalogFallback": "目录兜底价格",
+      "notConfigured": "本次运行中不存在",
+      "notAvailable": "没有可用的安全只读价格来源",
+      "notUsed": "未使用"
+    }
   }
 }

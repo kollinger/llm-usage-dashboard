@@ -111,8 +111,15 @@
       "range": "Modellmix {range}",
       "topTokens": "Nach Tokens vorn: {model} · {tokens}",
       "topCost": "Nach API-Äquivalent vorn: {model} · {cost}",
-      "costUnknown": "API-äquivalente Kosten sind für diese Modelle nicht verfügbar."
-    }
+      "costUnknown": "API-äquivalente Kosten sind für diese Modelle nicht verfügbar.",
+      "unknown": "Unbekanntes Modell"
+    },
+    "breakdown": {
+      "total": "Gesamt",
+      "provider": "Anbieter",
+      "model": "Modell"
+    },
+    "breakdownToggleAria": "Token-Aufschlüsselung"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub-Copilot-CLI-Nutzung wird erst nach Session-Ende geschrieben; Live-Quota hängt vom lokalen Copilot CLI ab. Der Stand kann daher während offener Sessions oder bei fehlgeschlagener Abfrage verzögert sein.",
       "gemini": "Gemini lokal aktualisiert sich nur, wenn lokale Logdateien neue Nutzungsmetadaten enthalten.",
       "ollama": "Ollama aktualisiert sich nur, wenn Anfragen über den lokalen Proxy bzw. die Logdatei des Dashboards laufen."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable-Quota-Quelle",
+      "available": "Eine eigene Fable-Quota war maschinenlesbar und wird als eigene Zeile gezeigt.",
+      "unavailable": "Claude-Statusline, Browser-/Account-Daten und lokale Logs liefern keine eigene Fable-Quota; es wird keine synthetische Quota angezeigt."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit erreicht",
       "unknown": "Unbekannt"
     },
-    "paceLegend": "Balken behalten die Anbieterfarben; Tempo-Hinweise zeigen, ob die Nutzung bis zum Reset reicht.",
     "gauge": {
       "title": "Aktuelle Nutzung",
       "projectedValue": "{percent}% projiziert",
@@ -419,6 +430,11 @@
       "daysHours": "{days} T {hours} Std.",
       "hoursMinutes": "{hours} Std. {minutes} Min.",
       "minutes": "{minutes} Min."
+    },
+    "viewToggleAria": "Visualisierung der aktuellen Nutzung",
+    "view": {
+      "tachometer": "Tacho",
+      "bar": "Balken"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "costActions": {
       "addFallback": "Aktualisiere Katalog/Account-Quelle oder nutze Advanced-Fallback-Schätzung."
+    },
+    "sourceAudit": {
+      "heading": "Schreibgeschützte Preisquellen",
+      "safePriceDetected": "belastbarer Monatspreis erkannt",
+      "planOnlyNoPrice": "nur Plan/Limits; kein Monatspreis verfügbar",
+      "browserNoPrice": "geprüft; kein belastbarer Monatspreis verfügbar",
+      "catalogFallback": "Katalog-Fallback-Preis",
+      "notConfigured": "in diesem Lauf nicht vorhanden",
+      "notAvailable": "keine sichere schreibgeschützte Preisquelle verfügbar",
+      "notUsed": "nicht verwendet"
     }
   }
 }

@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Neznámý model"
+    },
+    "breakdown": {
+      "total": "Celkem",
+      "provider": "Poskytovatel",
+      "model": "Modely"
+    },
+    "breakdownToggleAria": "Rozdělení tokenů"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Zdroj kvóty Fable",
+      "available": "Samostatná kvóta Fable je strojově čitelná a zobrazuje se jako vlastní řádek.",
+      "unavailable": "Statusline Claude, data prohlížeče/účtu ani lokální logy neodhalily samostatnou kvótu Fable; syntetická kvóta se nezobrazuje."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Pruhy si ponechaji barvy poskytovatelu; zpravy o tempu ukazuji, zda vyuziti vydrzi do resetu.",
     "pace": {
       "remaining": "Pri soucasnem tempu zustane do resetu asi {percent}%.",
       "shortfall": "Pri soucasnem tempu bude do resetu chybet asi {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "projekce {percent}%",
       "unavailable": "Projekce není dostupná",
       "aria": "Projektované koncové využití pro {label}"
+    },
+    "viewToggleAria": "Vizualizace aktuálního využití",
+    "view": {
+      "tachometer": "Tachometr",
+      "bar": "Pruh"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plán/limity z {source}",
     "planSourceLabel": "Zdroj plánu/limitů",
-    "catalogFallbackNote": "Měsíční cena je náhradní hodnota z katalogu; read-only zdroje aplikace/účtu poskytují plán, limity nebo kredity, ale ne ověřenou měsíční cenu."
+    "catalogFallbackNote": "Měsíční cena je náhradní hodnota z katalogu; read-only zdroje aplikace/účtu poskytují plán, limity nebo kredity, ale ne ověřenou měsíční cenu.",
+    "sourceAudit": {
+      "heading": "Zdroje cen jen pro čtení",
+      "safePriceDetected": "zjištěna důvěryhodná měsíční cena",
+      "planOnlyNoPrice": "jen plán/limity; měsíční cena není dostupná",
+      "browserNoPrice": "zkontrolováno; důvěryhodná měsíční cena není dostupná",
+      "catalogFallback": "záložní cena z katalogu",
+      "notConfigured": "v tomto běhu není přítomno",
+      "notAvailable": "není dostupný bezpečný zdroj ceny jen pro čtení",
+      "notUsed": "nepoužito"
+    }
   }
 }

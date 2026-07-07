@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Ukendt model"
+    },
+    "breakdown": {
+      "total": "I alt",
+      "provider": "Udbyder",
+      "model": "Modeller"
+    },
+    "breakdownToggleAria": "Tokenopdeling"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable-kvotekilde",
+      "available": "En særskilt Fable-kvote var maskinlæsbar og vises som sin egen række.",
+      "unavailable": "Claude-statuslinjen, browser-/kontodata og lokale logs eksponerede ikke en særskilt Fable-kvote; der vises ingen syntetisk kvote."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Bjalker beholder udbyderfarver; tempobeskeder viser, om forbruget holder til nulstilling.",
     "pace": {
       "remaining": "Med nuvaerende tempo er der cirka {percent}% tilbage ved nulstilling.",
       "shortfall": "Med nuvaerende tempo mangler der cirka {percent}% ved nulstilling.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% forventet",
       "unavailable": "Projektion utilgængelig",
       "aria": "Forventet slutforbrug for {label}"
+    },
+    "viewToggleAria": "Visualisering af aktuel brug",
+    "view": {
+      "tachometer": "Måler",
+      "bar": "Bjælke"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plan/grænser fra {source}",
     "planSourceLabel": "Plan-/grænsekilde",
-    "catalogFallbackNote": "Månedsprisen er et katalogfallback; skrivebeskyttede app-/kontokilder giver plan-, grænse- eller kreditdata, men ingen betroet månedspris."
+    "catalogFallbackNote": "Månedsprisen er et katalogfallback; skrivebeskyttede app-/kontokilder giver plan-, grænse- eller kreditdata, men ingen betroet månedspris.",
+    "sourceAudit": {
+      "heading": "Skrivebeskyttede priskilder",
+      "safePriceDetected": "pålidelig månedlig pris fundet",
+      "planOnlyNoPrice": "kun plan/grænser; ingen månedlig pris eksponeret",
+      "browserNoPrice": "kontrolleret; ingen pålidelig månedlig pris eksponeret",
+      "catalogFallback": "reservepris fra katalog",
+      "notConfigured": "ikke til stede i denne kørsel",
+      "notAvailable": "ingen sikker skrivebeskyttet priskilde tilgængelig",
+      "notUsed": "ikke brugt"
+    }
   }
 }

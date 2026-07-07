@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "نموذج غير معروف"
+    },
+    "breakdown": {
+      "total": "الإجمالي",
+      "provider": "الموفر",
+      "model": "النموذج"
+    },
+    "breakdownToggleAria": "تفصيل الرموز"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "مصدر حصة Fable",
+      "available": "حصة Fable المستقلة قابلة للقراءة آليًا وتظهر كسطر منفصل.",
+      "unavailable": "لم تعرض حالة Claude أو بيانات المتصفح/الحساب أو السجلات المحلية حصة Fable مستقلة؛ لا يتم عرض حصة مصطنعة."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "تحتفظ الاشرطة بالوان المزوّد؛ وتوضح رسائل الوتيرة ما اذا كان الاستخدام سيكفي حتى اعادة الضبط.",
     "pace": {
       "remaining": "بالوتيرة الحالية سيبقى نحو {percent}% عند اعادة الضبط.",
       "shortfall": "بالوتيرة الحالية سينقص نحو {percent}% عند اعادة الضبط.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% متوقع",
       "unavailable": "التوقع غير متاح",
       "aria": "الاستخدام النهائي المتوقع لـ {label}"
+    },
+    "viewToggleAria": "تصور الاستخدام الحالي",
+    "view": {
+      "tachometer": "مؤشر",
+      "bar": "شريط"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "الخطة/الحدود من {source}",
     "planSourceLabel": "مصدر الخطة/الحدود",
-    "catalogFallbackNote": "السعر الشهري من بديل الكتالوج؛ مصادر التطبيق/الحساب للقراءة فقط توفر بيانات الخطة أو الحدود أو الرصيد، لكنها لا توفر سعرا شهريا موثوقا."
+    "catalogFallbackNote": "السعر الشهري من بديل الكتالوج؛ مصادر التطبيق/الحساب للقراءة فقط توفر بيانات الخطة أو الحدود أو الرصيد، لكنها لا توفر سعرا شهريا موثوقا.",
+    "sourceAudit": {
+      "heading": "مصادر السعر للقراءة فقط",
+      "safePriceDetected": "تم اكتشاف سعر شهري موثوق",
+      "planOnlyNoPrice": "الخطة/الحدود فقط؛ لا يظهر سعر شهري",
+      "browserNoPrice": "تم الفحص؛ لا يظهر سعر شهري موثوق",
+      "catalogFallback": "سعر احتياطي من الكتالوج",
+      "notConfigured": "غير موجود في هذه الجولة",
+      "notAvailable": "لا يتوفر مصدر آمن للقراءة فقط للسعر",
+      "notUsed": "غير مستخدم"
+    }
   }
 }

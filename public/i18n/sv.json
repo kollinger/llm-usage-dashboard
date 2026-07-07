@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Okänd modell"
+    },
+    "breakdown": {
+      "total": "Totalt",
+      "provider": "Leverantör",
+      "model": "Modell"
+    },
+    "breakdownToggleAria": "Tokenuppdelning"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Källa för Fable-kvot",
+      "available": "En separat Fable-kvot var maskinläsbar och visas som en egen rad.",
+      "unavailable": "Claude-statusraden, webbläsar-/kontodata och lokala loggar visade ingen separat Fable-kvot; ingen syntetisk kvot visas."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Grans nadd",
       "unknown": "Okant"
     },
-    "paceLegend": "Staplar behaller leverantorsfarger; taktmeddelanden visar om anvandningen racker till aterstallning.",
     "pace": {
       "remaining": "I nuvarande takt finns cirka {percent}% kvar vid aterstallning.",
       "shortfall": "I nuvarande takt saknas cirka {percent}% vid aterstallning.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% prognos",
       "unavailable": "Prognos inte tillgänglig",
       "aria": "Prognostiserad slutanvändning för {label}"
+    },
+    "viewToggleAria": "Visualisering av aktuell användning",
+    "view": {
+      "tachometer": "Mätare",
+      "bar": "Stapel"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plan/gränser från {source}",
     "planSourceLabel": "Källa för plan/gränser",
-    "catalogFallbackNote": "Månadspriset är en katalogreserv; skrivskyddade app-/kontokällor ger plan-, gräns- eller kreditdata, men inget tillförlitligt månadspris."
+    "catalogFallbackNote": "Månadspriset är en katalogreserv; skrivskyddade app-/kontokällor ger plan-, gräns- eller kreditdata, men inget tillförlitligt månadspris.",
+    "sourceAudit": {
+      "heading": "Skrivskyddade priskällor",
+      "safePriceDetected": "tillförlitligt månadspris upptäckt",
+      "planOnlyNoPrice": "endast plan/gränser; inget månadspris visas",
+      "browserNoPrice": "kontrollerat; inget tillförlitligt månadspris visas",
+      "catalogFallback": "reservpris från katalogen",
+      "notConfigured": "inte med i denna körning",
+      "notAvailable": "ingen säker skrivskyddad priskälla tillgänglig",
+      "notUsed": "används inte"
+    }
   }
 }

@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Unknown model"
+    },
+    "breakdown": {
+      "total": "Total",
+      "provider": "Provider",
+      "model": "Model"
+    },
+    "breakdownToggleAria": "Token breakdown"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable quota source",
+      "available": "Distinct Fable quota was machine-readable and is shown as its own row.",
+      "unavailable": "Claude statusline, browser/account data, and local logs did not expose a distinct Fable quota; no synthetic quota is shown."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Bars keep provider identity colors; pace messages show whether current usage can last until reset.",
     "gauge": {
       "title": "Current Usage",
       "projectedValue": "{percent}% projected",
@@ -419,6 +430,11 @@
       "daysHours": "{days}d {hours}h",
       "hoursMinutes": "{hours}h {minutes}m",
       "minutes": "{minutes}m"
+    },
+    "viewToggleAria": "Current usage visualization",
+    "view": {
+      "tachometer": "Tacho",
+      "bar": "Bar"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "costActions": {
       "addFallback": "Update the catalog/account source or add an Advanced fallback estimate."
+    },
+    "sourceAudit": {
+      "heading": "Read-only price sources",
+      "safePriceDetected": "trusted monthly price detected",
+      "planOnlyNoPrice": "plan/limits only; no monthly price exposed",
+      "browserNoPrice": "checked; no trusted monthly price exposed",
+      "catalogFallback": "catalog fallback price",
+      "notConfigured": "not present in this run",
+      "notAvailable": "no safe read-only price source available",
+      "notUsed": "not used"
     }
   }
 }

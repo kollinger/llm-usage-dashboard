@@ -555,6 +555,36 @@ a {
   line-height: 1;
 }
 
+.provider-logo {
+  display: block;
+  width: 62%;
+  height: 62%;
+  background: currentColor;
+  mask: var(--provider-logo-url) center / contain no-repeat;
+  -webkit-mask: var(--provider-logo-url) center / contain no-repeat;
+}
+
+.provider-mark-logo {
+  background: color-mix(in srgb, var(--mark-accent, var(--green)) 12%, #fff);
+  color: var(--mark-accent, var(--green));
+  border: 1px solid color-mix(in srgb, var(--mark-accent, var(--green)) 26%, var(--line));
+  box-shadow: none;
+}
+
+.provider-mark-codex,
+.provider-mark-gemini,
+.provider-mark-xai {
+  background: #141816;
+  color: #fff;
+  border-color: #141816;
+}
+
+.provider-mark-fallback {
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+}
+
 .provider-mark-lg {
   width: 34px;
   border-radius: 9px;
@@ -699,8 +729,37 @@ a {
 }
 
 .limit-bars-grid {
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
+}
+
+.limit-bars-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.limit-bars-head > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.usage-projection-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.usage-projection-mode-btn {
+  min-height: 26px;
+  padding: 4px 9px;
+  font-size: 0.7rem;
 }
 
 .limit-bar {
@@ -798,7 +857,8 @@ a {
 .limit-projection-gauge {
   display: grid;
   min-width: 0;
-  gap: 4px;
+  gap: 5px;
+  color: var(--ink);
 }
 
 .limit-gauge-head,
@@ -858,6 +918,94 @@ a {
   font-size: 0.62rem;
   font-weight: 760;
   font-variant-numeric: tabular-nums;
+}
+
+.limit-tachometer-gauge {
+  justify-items: stretch;
+}
+
+.limit-tachometer-shell {
+  position: relative;
+  min-height: 126px;
+  padding: 0 2px;
+}
+
+.limit-tachometer-svg {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.limit-tachometer-zone {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 15;
+}
+
+.limit-tachometer-zone-ok {
+  stroke: #cfece2;
+  stroke-dasharray: 100 60;
+}
+
+.limit-tachometer-zone-risk {
+  stroke: #ffdca2;
+  stroke-dasharray: 25 135;
+  stroke-dashoffset: -100;
+}
+
+.limit-tachometer-zone-full {
+  stroke: #efb8c2;
+  stroke-dasharray: 35 125;
+  stroke-dashoffset: -125;
+}
+
+.limit-tachometer-target {
+  stroke: rgba(23, 32, 27, 0.72);
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.limit-tachometer-needle {
+  stroke: var(--accent, var(--green));
+  stroke-linecap: round;
+  stroke-width: 4;
+  filter: drop-shadow(0 2px 3px rgba(23, 32, 27, 0.24));
+}
+
+.limit-tachometer-readout {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  left: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.limit-tachometer-readout strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 920;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.limit-tachometer-readout span {
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 860;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.limit-projection-bar {
+  align-self: end;
 }
 
 .credit-rows {
@@ -968,6 +1116,69 @@ a {
   grid-column: 1 / -1;
   color: var(--muted);
   font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.subscription-source-audit,
+.provider-source-audit {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.subscription-source-audit strong,
+.provider-source-audit strong {
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.subscription-source-audit ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subscription-source-audit li {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: 8px;
+  align-items: start;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.subscription-source-audit li span,
+.subscription-source-audit li em {
+  min-width: 0;
+}
+
+.subscription-source-audit li em {
+  color: var(--ink);
+  font-style: normal;
+  font-weight: 820;
+}
+
+.provider-source-audit {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.provider-source-audit span {
+  color: var(--muted);
+  font-size: 0.76rem;
   font-weight: 760;
   line-height: 1.3;
 }
@@ -1138,6 +1349,11 @@ a {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.chart-breakdown-toggle {
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
 }
 
 .chart-mode-btn {
@@ -2737,8 +2953,19 @@ select {
 
   .provider-grid,
   .summary-strip,
-  .live-gauge-grid {
+  .live-gauge-grid,
+  .limit-bars-grid {
     grid-template-columns: 1fr;
+  }
+
+  .limit-bars-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .usage-projection-toggle {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .diagnostics-status-grid {
@@ -2762,6 +2989,11 @@ select {
 
   .chart-mode-toggle {
     width: 100%;
+  }
+
+  .chart-breakdown-toggle {
+    padding-left: 0;
+    border-left: 0;
   }
 
   .source-bars,

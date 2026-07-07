@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Неизвестен модел"
+    },
+    "breakdown": {
+      "total": "Общо",
+      "provider": "Доставчик",
+      "model": "Модел"
+    },
+    "breakdownToggleAria": "Разбивка на токени"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Източник за квота Fable",
+      "available": "Отделната квота Fable е машинно четима и се показва като собствен ред.",
+      "unavailable": "Статусът на Claude, данните от браузър/акаунт и локалните логове не показаха отделна квота Fable; не се показва изкуствена квота."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Лентите пазят цветовете на доставчика; съобщенията за темпо показват дали употребата ще стигне до нулирането.",
     "pace": {
       "remaining": "При текущото темпо ще останат около {percent}% при нулиране.",
       "shortfall": "При текущото темпо ще липсват около {percent}% при нулиране.",
@@ -419,6 +430,11 @@
       "projectedValue": "прогнозно {percent}%",
       "unavailable": "Прогнозата не е налична",
       "aria": "Прогнозно крайно използване за {label}"
+    },
+    "viewToggleAria": "Визуализация на текущото използване",
+    "view": {
+      "tachometer": "Тахометър",
+      "bar": "Лента"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "План/лимити от {source}",
     "planSourceLabel": "Източник на план/лимити",
-    "catalogFallbackNote": "Месечната цена е резервна стойност от каталога; read-only източниците от приложението/акаунта дават план, лимити или кредити, но не и надеждна месечна цена."
+    "catalogFallbackNote": "Месечната цена е резервна стойност от каталога; read-only източниците от приложението/акаунта дават план, лимити или кредити, но не и надеждна месечна цена.",
+    "sourceAudit": {
+      "heading": "Източници за цена само за четене",
+      "safePriceDetected": "открита е надеждна месечна цена",
+      "planOnlyNoPrice": "само план/лимити; месечна цена не е изложена",
+      "browserNoPrice": "проверено; няма надеждна месечна цена",
+      "catalogFallback": "резервна цена от каталога",
+      "notConfigured": "не присъства в това изпълнение",
+      "notAvailable": "няма безопасен източник само за четене за цена",
+      "notUsed": "не се използва"
+    }
   }
 }

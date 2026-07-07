@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Neznan model"
+    },
+    "breakdown": {
+      "total": "Skupaj",
+      "provider": "Ponudnik",
+      "model": "Modeli"
+    },
+    "breakdownToggleAria": "Razčlenitev žetonov"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Vir kvote Fable",
+      "available": "Ločena kvota Fable je bila strojno berljiva in je prikazana v svoji vrstici.",
+      "unavailable": "Claude statusna vrstica, podatki brskalnika/računa in lokalni dnevniki niso razkrili ločene kvote Fable; sintetična kvota ni prikazana."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Vrstice ohranijo barve ponudnika; sporocila tempa pokazejo, ali bo poraba zdrzala do ponastavitve.",
     "pace": {
       "remaining": "Pri trenutnem tempu bo ob ponastavitvi ostalo priblizno {percent}%.",
       "shortfall": "Pri trenutnem tempu bo ob ponastavitvi manjkalo priblizno {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "predvideno {percent}%",
       "unavailable": "Projekcija ni na voljo",
       "aria": "Predvidena končna uporaba za {label}"
+    },
+    "viewToggleAria": "Vizualizacija trenutne uporabe",
+    "view": {
+      "tachometer": "Merilnik",
+      "bar": "Trak"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Paket/omejitve iz {source}",
     "planSourceLabel": "Vir paketa/omejitev",
-    "catalogFallbackNote": "Mesečna cena je rezervna vrednost iz kataloga; viri aplikacije/računa samo za branje dajejo podatke o paketu, omejitvah ali kreditih, ne pa zaupanja vredne mesečne cene."
+    "catalogFallbackNote": "Mesečna cena je rezervna vrednost iz kataloga; viri aplikacije/računa samo za branje dajejo podatke o paketu, omejitvah ali kreditih, ne pa zaupanja vredne mesečne cene.",
+    "sourceAudit": {
+      "heading": "Viri cen samo za branje",
+      "safePriceDetected": "zaznana zanesljiva mesečna cena",
+      "planOnlyNoPrice": "samo paket/omejitve; mesečna cena ni razkrita",
+      "browserNoPrice": "preverjeno; zanesljiva mesečna cena ni razkrita",
+      "catalogFallback": "nadomestna cena iz kataloga",
+      "notConfigured": "ni prisotno v tem zagonu",
+      "notAvailable": "varen vir cene samo za branje ni na voljo",
+      "notUsed": "ni uporabljeno"
+    }
   }
 }

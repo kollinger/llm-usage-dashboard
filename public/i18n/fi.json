@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Tuntematon malli"
+    },
+    "breakdown": {
+      "total": "Yhteensä",
+      "provider": "Palveluntarjoaja",
+      "model": "Malli"
+    },
+    "breakdownToggleAria": "Tokenien erittely"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fable-kiintiön lähde",
+      "available": "Erillinen Fable-kiintiö oli koneluettava ja näytetään omana rivinään.",
+      "unavailable": "Claude-tilarivi, selain-/tilitiedot ja paikalliset lokit eivät paljastaneet erillistä Fable-kiintiötä; synteettistä kiintiötä ei näytetä."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Palkit sailyttavat tarjoajavarit; tahtiviestit nayttavat, riittaako kaytto nollaukseen asti.",
     "pace": {
       "remaining": "Nykyisella tahdilla nollauksessa jaa noin {percent}%.",
       "shortfall": "Nykyisella tahdilla nollauksessa puuttuu noin {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% ennuste",
       "unavailable": "Ennuste ei ole saatavilla",
       "aria": "Kohteen {label} ennustettu loppukäyttö"
+    },
+    "viewToggleAria": "Nykyisen käytön visualisointi",
+    "view": {
+      "tachometer": "Mittari",
+      "bar": "Palkki"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Paketti/rajat lähteestä {source}",
     "planSourceLabel": "Paketin/rajojen lähde",
-    "catalogFallbackNote": "Kuukausihinta on katalogin varaarvo; vain luku -tilassa olevat sovellus-/tililähteet antavat paketti-, raja- tai saldotietoja, mutta eivät luotettua kuukausihintaa."
+    "catalogFallbackNote": "Kuukausihinta on katalogin varaarvo; vain luku -tilassa olevat sovellus-/tililähteet antavat paketti-, raja- tai saldotietoja, mutta eivät luotettua kuukausihintaa.",
+    "sourceAudit": {
+      "heading": "Vain luku -hintalähteet",
+      "safePriceDetected": "luotettava kuukausihinta havaittu",
+      "planOnlyNoPrice": "vain tilaus/rajat; kuukausihintaa ei näy",
+      "browserNoPrice": "tarkistettu; luotettavaa kuukausihintaa ei näy",
+      "catalogFallback": "luettelon varahinta",
+      "notConfigured": "ei mukana tässä ajossa",
+      "notAvailable": "turvallista vain luku -hintalähdettä ei ole",
+      "notUsed": "ei käytössä"
+    }
   }
 }

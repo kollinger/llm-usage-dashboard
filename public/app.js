@@ -16,7 +16,9 @@ const state = {
   chartRendered: false,
   chartScrollToLatest: true,
   chartMode: "tokens",
+  chartBreakdownMode: "total",
   chartTimeFilter: "all",
+  usageProjectionMode: "tachometer",
   pricingView: "api",
   pricingSort: { key: "total", direction: "desc" },
   language: "en",
@@ -119,6 +121,7 @@ const els = {
   recordDay: document.getElementById("recordDay"),
   chartTitle: document.getElementById("chartTitle"),
   chartModeToggle: document.getElementById("chartModeToggle"),
+  chartBreakdownToggle: document.getElementById("chartBreakdownToggle"),
   chart: document.getElementById("chart"),
   chartFilterBar: document.getElementById("chartFilterBar"),
   chartLegend: document.getElementById("chartLegend"),
@@ -152,21 +155,21 @@ const providerMeta = {
 };
 
 const providerBrandMeta = {
-  codex: { label: "Codex", mark: "Cx", accent: providerMeta.codex.accent },
-  codexSpark: { label: "Codex Spark", mark: "Sp", accent: providerMeta.codexSpark.accent },
-  copilot: { label: "GitHub Copilot", mark: "GH", accent: providerMeta.copilot.accent },
-  claudeCode: { label: "Claude Code", mark: "Cl", accent: providerMeta.claudeCode.accent },
-  anthropic: { label: "Anthropic", mark: "An", accent: providerMeta.anthropic.accent },
-  openai: { label: "OpenAI", mark: "AI", accent: providerMeta.openai.accent },
-  gemini: { label: "Google Gemini", mark: "G", accent: providerMeta.gemini.accent },
+  codex: { label: "Codex", mark: "Cx", logo: "codex.svg", accent: providerMeta.codex.accent },
+  codexSpark: { label: "Codex Spark", mark: "Sp", logo: "codex.svg", accent: providerMeta.codexSpark.accent },
+  copilot: { label: "GitHub Copilot", mark: "GH", logo: "github-copilot.svg", accent: providerMeta.copilot.accent },
+  claudeCode: { label: "Claude Code", mark: "Cl", logo: "claude-code.svg", accent: providerMeta.claudeCode.accent },
+  anthropic: { label: "Anthropic", mark: "An", logo: "anthropic.svg", accent: providerMeta.anthropic.accent },
+  openai: { label: "OpenAI", mark: "AI", logo: "openai.svg", accent: providerMeta.openai.accent },
+  gemini: { label: "Google Gemini", mark: "G", logo: "gemini.svg", accent: providerMeta.gemini.accent },
   ollama: { label: "Ollama", mark: "Ol", accent: providerMeta.ollama.accent },
-  minimax: { label: "MiniMax", mark: "MM", accent: "#2459d8" },
-  deepseek: { label: "DeepSeek", mark: "DS", accent: "#4d63d8" },
-  alibaba: { label: "Alibaba / Qwen", mark: "Q", accent: "#d86a1d" },
-  zai: { label: "Z.AI / GLM", mark: "Z", accent: "#48505a" },
-  xai: { label: "xAI", mark: "x", accent: "#111827" },
-  mistral: { label: "Mistral", mark: "Mi", accent: "#c76619" },
-  stepfun: { label: "StepFun", mark: "St", accent: "#1e7c75" },
+  minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: "#2459d8" },
+  deepseek: { label: "DeepSeek", mark: "DS", logo: "deepseek.svg", accent: "#4d63d8" },
+  alibaba: { label: "Alibaba / Qwen", mark: "Q", logo: "qwen.svg", accent: "#d86a1d" },
+  zai: { label: "Z.AI / GLM", mark: "Z", logo: "zai.svg", accent: "#48505a" },
+  xai: { label: "xAI", mark: "x", logo: "xai.svg", accent: "#111827" },
+  mistral: { label: "Mistral", mark: "Mi", logo: "mistral.svg", accent: "#c76619" },
+  stepfun: { label: "StepFun", mark: "St", logo: "stepfun.svg", accent: "#1e7c75" },
   local: { label: "Local", mark: "Lo", accent: providerMeta.codex.accent }
 };
 
@@ -246,6 +249,11 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
+const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
+const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
+const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
+const LIMIT_GAUGE_MAX_PERCENT = 160;
+const LIMIT_GAUGE_TARGET_PERCENT = 100;
 const USAGE_POLL_INTERVAL_MS = 60_000;
 const SYSTEM_LIVE_POLL_INTERVAL_MS = 5_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
@@ -1314,6 +1322,7 @@ async function init() {
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
   loadProviderOrderPreference();
+  loadUsageProjectionModePreference();
   bindEvents();
   refreshIcons();
   await loadAuth();
@@ -1392,9 +1401,23 @@ function bindEvents() {
   });
   els.loginForm.addEventListener("submit", login);
   els.appShell.addEventListener("click", (e) => {
+    const projectionModeBtn = e.target.closest("[data-usage-projection-mode]");
+    if (projectionModeBtn) {
+      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode);
+      return;
+    }
     const modeBtn = e.target.closest("[data-chart-mode]");
     if (modeBtn) {
       state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
+      state.chartScrollToLatest = true;
+      if (state.usage) render();
+      return;
+    }
+    const breakdownBtn = e.target.closest("[data-chart-breakdown]");
+    if (breakdownBtn) {
+      state.chartBreakdownMode = CHART_BREAKDOWN_MODES.includes(breakdownBtn.dataset.chartBreakdown)
+        ? breakdownBtn.dataset.chartBreakdown
+        : "total";
       state.chartScrollToLatest = true;
       if (state.usage) render();
       return;
@@ -1555,6 +1578,30 @@ function loadProviderOrderPreference() {
   } catch {
     state.providerOrder = [];
   }
+}
+
+function normalizeUsageProjectionMode(mode) {
+  return USAGE_PROJECTION_MODES.includes(mode) ? mode : "tachometer";
+}
+
+function loadUsageProjectionModePreference() {
+  try {
+    state.usageProjectionMode = normalizeUsageProjectionMode(localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY));
+  } catch {
+    state.usageProjectionMode = "tachometer";
+  }
+}
+
+function setUsageProjectionMode(mode) {
+  const nextMode = normalizeUsageProjectionMode(mode);
+  if (state.usageProjectionMode === nextMode) return;
+  state.usageProjectionMode = nextMode;
+  try {
+    localStorage.setItem(USAGE_PROJECTION_MODE_STORAGE_KEY, nextMode);
+  } catch {
+    // Ignore storage failures; the selected view still changes for this session.
+  }
+  if (state.usage) render();
 }
 
 function toggleProviderFilter() {
@@ -2138,6 +2185,7 @@ function renderLocked() {
   els.recordDay.hidden = true;
   if (els.chartTitle) els.chartTitle.textContent = t("chart.heading");
   if (els.chartModeToggle) els.chartModeToggle.innerHTML = "";
+  if (els.chartBreakdownToggle) els.chartBreakdownToggle.innerHTML = "";
   els.chart.innerHTML = "";
   els.chartLegend.innerHTML = "";
   els.chartFilterBar.innerHTML = "";
@@ -2190,6 +2238,10 @@ function render() {
   if (els.chartModeToggle) {
     els.chartModeToggle.innerHTML = renderChartModeToggle();
   }
+  if (els.chartBreakdownToggle) {
+    els.chartBreakdownToggle.hidden = state.chartMode === "costs";
+    els.chartBreakdownToggle.innerHTML = state.chartMode === "costs" ? "" : renderChartBreakdownToggle();
+  }
   els.chartFilterBar.innerHTML = renderChartFilterBar(allDaily);
   if (state.chartMode === "costs") {
     renderCostChart(filteredDaily);
@@ -2227,6 +2279,19 @@ function renderChartModeToggle() {
       return `
         <button type="button" class="chart-mode-btn${active ? " active" : ""}" data-chart-mode="${mode}" aria-pressed="${active}">
           ${escapeHtml(t(`chart.mode.${mode}`))}
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderChartBreakdownToggle() {
+  return CHART_BREAKDOWN_MODES
+    .map((mode) => {
+      const active = state.chartBreakdownMode === mode;
+      return `
+        <button type="button" class="chart-mode-btn${active ? " active" : ""}" data-chart-breakdown="${mode}" aria-pressed="${active}">
+          ${escapeHtml(t(`chart.breakdown.${mode}`))}
         </button>
       `;
     })
@@ -2737,15 +2802,18 @@ function renderProviderMark(value, options = {}) {
   const brand = providerBrand(value, options);
   const size = options.size || "md";
   const label = options.label || brand.label;
+  const logo = brand.logo
+    ? `<span class="provider-logo" style="--provider-logo-url: url('${escapeHtml(`assets/provider-logos/${brand.logo}`)}')" aria-hidden="true"></span>`
+    : `<span class="provider-mark-fallback">${escapeHtml(brand.mark)}</span>`;
   return `
     <span
-      class="provider-mark provider-mark-${escapeHtml(size)} provider-mark-${escapeHtml(brand.key)}"
+      class="provider-mark provider-mark-${escapeHtml(size)} provider-mark-${escapeHtml(brand.key)}${brand.logo ? " provider-mark-logo" : " provider-mark-initials"}"
       style="--mark-accent: ${escapeHtml(options.accent || brand.accent)}"
       title="${escapeHtml(label)}"
       aria-label="${escapeHtml(label)}"
       role="img"
     >
-      <span>${escapeHtml(brand.mark)}</span>
+      ${logo}
     </span>
   `;
 }
@@ -2999,6 +3067,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
+      ${renderFableQuotaAudit(provider)}
       <div class="provider-foot">
         ${provider.foot
           .map(renderProviderFootRow)
@@ -3054,6 +3123,96 @@ function renderProviderSubscription(provider) {
       ${qualityMarkup}
       <strong>${escapeHtml(cost)}</strong>
       ${details.length ? `<small>${escapeHtml(details.join(" · "))}</small>` : ""}
+      ${renderSubscriptionSourceAudit(provider, subscription)}
+    </div>
+  `;
+}
+
+function renderSubscriptionSourceAudit(provider, subscription) {
+  const rows = subscriptionSourceAuditRows(provider, subscription);
+  if (!rows.length) return "";
+  return `
+    <div class="subscription-source-audit">
+      <strong>${escapeHtml(t("subscriptions.sourceAudit.heading"))}</strong>
+      <ul>
+        ${rows
+          .map((row) => `
+            <li>
+              <span>${escapeHtml(row.source)}</span>
+              <em>${escapeHtml(row.status)}</em>
+            </li>
+          `)
+          .join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function subscriptionSourceAuditRows(provider, subscription) {
+  const providerId = provider?.id || "";
+  const source = subscription?.source || "";
+  const planSource = subscription?.planSource || source;
+  const rows = [];
+  const detectedPrice = subscription?.monthlyCost > 0 && subscription?.quality === "automatic";
+
+  if (["claudeCode", "anthropic"].includes(providerId)) {
+    rows.push({
+      source: subscriptionSourceLabel("claude_statusline"),
+      status: planSource === "claude_statusline"
+        ? t("subscriptions.sourceAudit.planOnlyNoPrice")
+        : t("subscriptions.sourceAudit.notConfigured")
+    });
+    rows.push({
+      source: subscriptionSourceLabel("claude_browser_sync"),
+      status: source === "claude_browser_sync" && detectedPrice
+        ? t("subscriptions.sourceAudit.safePriceDetected")
+        : t("subscriptions.sourceAudit.browserNoPrice")
+    });
+    rows.push({
+      source: subscriptionSourceLabel("anthropic_public_catalog"),
+      status: subscription?.quality === "catalog"
+        ? t("subscriptions.sourceAudit.catalogFallback")
+        : t("subscriptions.sourceAudit.notUsed")
+    });
+    return rows;
+  }
+
+  if (["codex", "codexSpark", "openai"].includes(providerId)) {
+    rows.push({
+      source: subscriptionSourceLabel("codex_app_server"),
+      status: planSource === "codex_app_server"
+        ? t("subscriptions.sourceAudit.planOnlyNoPrice")
+        : t("subscriptions.sourceAudit.notConfigured")
+    });
+    rows.push({
+      source: subscriptionSourceLabel("browser"),
+      status: source === "browser" && detectedPrice
+        ? t("subscriptions.sourceAudit.safePriceDetected")
+        : t("subscriptions.sourceAudit.notAvailable")
+    });
+    rows.push({
+      source: subscriptionSourceLabel("openai_public_catalog"),
+      status: subscription?.quality === "catalog"
+        ? t("subscriptions.sourceAudit.catalogFallback")
+        : t("subscriptions.sourceAudit.notUsed")
+    });
+    return rows;
+  }
+
+  rows.push({
+    source: subscription?.source ? subscriptionSourceLabel(subscription.source) : t("pricing.unknown"),
+    status: detectedPrice ? t("subscriptions.sourceAudit.safePriceDetected") : t("subscriptions.sourceAudit.notAvailable")
+  });
+  return rows;
+}
+
+function renderFableQuotaAudit(provider) {
+  if (provider.id !== "claudeCode") return "";
+  const hasFableLimit = (provider.limitRows || []).some((row) => row.key === "fable");
+  return `
+    <div class="provider-source-audit fable-quota-audit">
+      <strong>${escapeHtml(t("providers.fableQuotaAudit.heading"))}</strong>
+      <span>${escapeHtml(hasFableLimit ? t("providers.fableQuotaAudit.available") : t("providers.fableQuotaAudit.unavailable"))}</span>
     </div>
   `;
 }
@@ -3131,8 +3290,31 @@ function renderLimitBars(provider) {
   if (!rows.length) return "";
   return `
     <div class="limit-bars${rows.length > 1 ? " limit-bars-grid" : ""}">
+      ${renderUsageProjectionModeToggle()}
       ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
-      <p class="limit-status-note">${escapeHtml(t("limits.paceLegend"))}</p>
+    </div>
+  `;
+}
+
+function renderUsageProjectionModeToggle() {
+  return `
+    <div class="limit-bars-head">
+      <span>${escapeHtml(t("limits.gauge.title"))}</span>
+      <div class="usage-projection-toggle" role="group" aria-label="${escapeHtml(t("limits.viewToggleAria"))}">
+        ${USAGE_PROJECTION_MODES.map((mode) => {
+          const active = state.usageProjectionMode === mode;
+          return `
+            <button
+              type="button"
+              class="chart-mode-btn usage-projection-mode-btn${active ? " active" : ""}"
+              data-usage-projection-mode="${mode}"
+              aria-pressed="${active}"
+            >
+              ${escapeHtml(t(`limits.view.${mode}`))}
+            </button>
+          `;
+        }).join("")}
+      </div>
     </div>
   `;
 }
@@ -3149,7 +3331,7 @@ function renderLimitBar(row, accent) {
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
   const pace = limitPaceAssessment(row);
-  const gauge = renderLimitProjectionGauge(row, accent);
+  const gauge = renderLimitProjectionVisualization(row, accent);
   return `
     <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
@@ -3174,11 +3356,66 @@ function renderLimitBar(row, accent) {
   `;
 }
 
+function renderLimitProjectionVisualization(row, accent) {
+  return state.usageProjectionMode === "bar"
+    ? renderLimitProjectionBar(row, accent)
+    : renderLimitProjectionGauge(row, accent);
+}
+
 function renderLimitProjectionGauge(row, accent) {
   const projected = limitProjectedEndPercent(row);
   const hasProjection = Number.isFinite(projected);
-  const clamped = hasProjection ? Math.max(0, Math.min(160, projected)) : 0;
-  const gaugeLeft = (clamped / 160) * 100;
+  const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
+  const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
+  const value = hasProjection
+    ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
+    : t("limits.gauge.unavailable");
+  const needleStart = gaugePoint(clamped, 64);
+  const needleEnd = gaugePoint(clamped, 91);
+  const targetStart = gaugePoint(LIMIT_GAUGE_TARGET_PERCENT, 76);
+  const targetEnd = gaugePoint(LIMIT_GAUGE_TARGET_PERCENT, 92);
+  const ariaNow = hasProjection ? ` aria-valuenow="${escapeHtml(String(Math.round(clamped)))}"` : "";
+  return `
+    <div
+      class="limit-projection-gauge limit-tachometer-gauge limit-gauge-${escapeHtml(status)}"
+      role="meter"
+      aria-valuemin="0"
+      aria-valuemax="${LIMIT_GAUGE_MAX_PERCENT}"
+      ${ariaNow}
+      aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
+      style="--gauge-position: ${clamped}; --accent: ${escapeHtml(accent)}"
+    >
+      <div class="limit-tachometer-shell" aria-hidden="true">
+        <svg class="limit-tachometer-svg" viewBox="0 0 220 136" focusable="false">
+          <path class="limit-tachometer-zone limit-tachometer-zone-ok" d="M 24 104 A 86 86 0 0 1 196 104" pathLength="${LIMIT_GAUGE_MAX_PERCENT}" />
+          <path class="limit-tachometer-zone limit-tachometer-zone-risk" d="M 24 104 A 86 86 0 0 1 196 104" pathLength="${LIMIT_GAUGE_MAX_PERCENT}" />
+          <path class="limit-tachometer-zone limit-tachometer-zone-full" d="M 24 104 A 86 86 0 0 1 196 104" pathLength="${LIMIT_GAUGE_MAX_PERCENT}" />
+          <line class="limit-tachometer-target" x1="${targetStart.x}" y1="${targetStart.y}" x2="${targetEnd.x}" y2="${targetEnd.y}" />
+          ${
+            hasProjection
+              ? `<line class="limit-tachometer-needle" x1="${needleStart.x}" y1="${needleStart.y}" x2="${needleEnd.x}" y2="${needleEnd.y}" />`
+              : ""
+          }
+        </svg>
+        <div class="limit-tachometer-readout">
+          <strong>${escapeHtml(value)}</strong>
+          <span>${escapeHtml(row.label)}</span>
+        </div>
+      </div>
+      <div class="limit-gauge-scale" aria-hidden="true">
+        <span>0%</span>
+        <span>100%</span>
+        <span>${LIMIT_GAUGE_MAX_PERCENT}%</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderLimitProjectionBar(row, accent) {
+  const projected = limitProjectedEndPercent(row);
+  const hasProjection = Number.isFinite(projected);
+  const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
+  const gaugeLeft = (clamped / LIMIT_GAUGE_MAX_PERCENT) * 100;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
   const value = hasProjection
     ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
@@ -3186,16 +3423,16 @@ function renderLimitProjectionGauge(row, accent) {
   const ariaNow = hasProjection ? ` aria-valuenow="${escapeHtml(String(Math.round(clamped)))}"` : "";
   return `
     <div
-      class="limit-projection-gauge limit-gauge-${escapeHtml(status)}"
+      class="limit-projection-gauge limit-projection-bar limit-gauge-${escapeHtml(status)}"
       role="meter"
       aria-valuemin="0"
-      aria-valuemax="160"
+      aria-valuemax="${LIMIT_GAUGE_MAX_PERCENT}"
       ${ariaNow}
       aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
       style="--gauge-position: ${clamped}; --gauge-left: ${gaugeLeft}; --accent: ${escapeHtml(accent)}"
     >
       <div class="limit-gauge-head">
-        <span>${escapeHtml(t("limits.gauge.title"))}</span>
+        <span>${escapeHtml(row.label)}</span>
         <strong>${escapeHtml(value)}</strong>
       </div>
       <div class="limit-gauge-track" aria-hidden="true">
@@ -3205,10 +3442,23 @@ function renderLimitProjectionGauge(row, accent) {
       <div class="limit-gauge-scale" aria-hidden="true">
         <span>0%</span>
         <span>100%</span>
-        <span>160%</span>
+        <span>${LIMIT_GAUGE_MAX_PERCENT}%</span>
       </div>
     </div>
   `;
+}
+
+function gaugePoint(percent, radius) {
+  const clamped = Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, percent));
+  const angle = Math.PI - (clamped / LIMIT_GAUGE_MAX_PERCENT) * Math.PI;
+  return {
+    x: roundGaugeCoordinate(110 + Math.cos(angle) * radius),
+    y: roundGaugeCoordinate(104 - Math.sin(angle) * radius)
+  };
+}
+
+function roundGaugeCoordinate(value) {
+  return Math.round(value * 100) / 100;
 }
 
 function renderLimitRemaining(resetsAt) {
@@ -4143,6 +4393,7 @@ function renderSubscriptionPricingCard({ provider, subscription, previous }) {
         <strong>${escapeHtml(currentCost)}</strong>
       </div>
       <p>${escapeHtml(subscription?.planType ? t("subscriptions.plan", { plan: subscription.planType }) : t("subscriptions.planUnknown"))}</p>
+      ${renderSubscriptionSourceAudit(provider, subscription)}
       <dl>
         <div>
           <dt>${escapeHtml(t("subscriptions.qualityLabel"))}</dt>
@@ -4688,7 +4939,7 @@ function renderChart(daily) {
   const axisY = height - 64;
   const dateLabelY = height - 42;
   const chartHeight = axisY - chartTop;
-  const sourceIds = chartSourcesInUse(daily);
+  const segmentEntries = chartTokenSegmentEntries(daily, state.chartBreakdownMode);
   const max = Math.max(...daily.map((d) => d.totalTokens), 1);
   const scale = chartTokenScale(max);
   const visibleDays = Math.min(daily.length, viewportWidth >= 1200 ? 21 : 16);
@@ -4706,7 +4957,7 @@ function renderChart(daily) {
       const x = pad + index * (barWidth + barGap);
       const label = formatChartDate(d.date);
       const fullLabel = formatFullDate(d.date);
-      const segments = chartSegmentsForDay(d, sourceIds);
+      const segments = chartSegmentsForDay(d, segmentEntries);
       const visibleSegments = chartVisibleSegments(segments, scale.max, chartHeight);
       let yCursor = axisY;
       const segmentRects = visibleSegments
@@ -4730,8 +4981,8 @@ function renderChart(daily) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSourceColor(segment.id)}">
-              <title>${escapeHtml(`${fullLabel} · ${sourceLabel(segment.id)} · ${formatTokens(segment.totalTokens)}`)}</title>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSegmentColor(segment)}">
+              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${formatTokens(segment.totalTokens)}`)}</title>
             </rect>
           `;
         })
@@ -4761,7 +5012,7 @@ function renderChart(daily) {
     </svg>
     </div>
   `;
-  els.chartLegend.innerHTML = renderChartLegend(sourceIds);
+  els.chartLegend.innerHTML = renderChartLegend(segmentEntries);
   finishChartRenderScroll(previousScrollLeft, wasPinnedToEnd);
 }
 
@@ -5004,18 +5255,38 @@ function chartVisibleCostSegments(segments, max, chartHeight) {
   return withHeights;
 }
 
-function renderChartLegend(sourceIds) {
-  return sourceIds
+function renderChartLegend(entries) {
+  return entries
+    .map(chartLegendEntry)
     .map(
-      (id) => `
+      (entry) => `
         <span class="chart-legend-item">
-          <span class="chart-legend-swatch" style="background: ${chartSourceColor(id)}"></span>
-          ${renderProviderMark(id, { label: sourceLabel(id), size: "tiny" })}
-          <span>${escapeHtml(sourceLabel(id))}</span>
+          <span class="chart-legend-swatch" style="background: ${escapeHtml(entry.color)}"></span>
+          ${entry.markId ? renderProviderMark(entry.markId, { label: entry.providerLabel || entry.label, size: "tiny" }) : ""}
+          <span>${escapeHtml(entry.label)}</span>
         </span>
       `
     )
     .join("");
+}
+
+function chartLegendEntry(entry) {
+  if (typeof entry === "string") {
+    return {
+      id: entry,
+      label: sourceLabel(entry),
+      providerLabel: sourceLabel(entry),
+      markId: entry,
+      color: chartSourceColor(entry)
+    };
+  }
+  return {
+    id: entry.id,
+    label: entry.label,
+    providerLabel: entry.providerLabel,
+    markId: entry.markId,
+    color: entry.color || chartSourceColor(entry.sourceId || entry.id)
+  };
 }
 
 function renderCostSummary(daily, subscriptionHistory) {
@@ -5229,6 +5500,31 @@ function chartSourcesInUse(daily) {
   ];
 }
 
+function chartTokenSegmentEntries(daily, mode) {
+  if (mode === "model") return chartModelSegmentsInUse(daily);
+  if (mode === "provider") {
+    return chartSourcesInUse(daily).map((id) => ({
+      id,
+      type: "provider",
+      sourceId: id,
+      markId: id,
+      label: sourceLabel(id),
+      providerLabel: sourceLabel(id),
+      color: chartSourceColor(id)
+    }));
+  }
+  return [
+    {
+      id: "total",
+      type: "total",
+      sourceId: "local",
+      markId: null,
+      label: t("chart.breakdown.total"),
+      color: "#5f6f68"
+    }
+  ];
+}
+
 function chartSourceTotals(daily) {
   const totals = new Map();
   for (const day of daily) {
@@ -5253,13 +5549,124 @@ function chartSourceTotals(daily) {
   ];
 }
 
-function chartSegmentsForDay(day, sourceIds) {
+function chartModelSegmentsInUse(daily) {
+  const entries = new Map();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    for (const source of Array.isArray(day.sources) ? day.sources : []) {
+      const sourceId = source.id || "local";
+      const models = Array.isArray(source.models) ? source.models : [];
+      if (!models.length && Number(source.totalTokens || 0) > 0) {
+        addChartModelSegment(entries, sourceId, t("chart.models.unknown"), Number(source.totalTokens || 0));
+      }
+      for (const model of models) {
+        const totalTokens = modelRowTotalTokens(model);
+        if (!totalTokens) continue;
+        addChartModelSegment(entries, sourceId, model.model || t("chart.models.unknown"), totalTokens);
+      }
+    }
+  }
+  if (!entries.size) {
+    return [{
+      id: "model:local:unknown",
+      type: "model",
+      sourceId: "local",
+      markId: "local",
+      label: t("chart.models.unknown"),
+      providerLabel: sourceLabel("local"),
+      color: chartModelColor("local", "unknown"),
+      totalTokens: 0
+    }];
+  }
+  return Array.from(entries.values()).sort(compareChartModelSegments);
+}
+
+function addChartModelSegment(entries, sourceId, modelName, totalTokens) {
+  const label = String(modelName || t("chart.models.unknown")).trim() || t("chart.models.unknown");
+  const id = `model:${sourceId}:${canonicalModelName(label) || "unknown"}`;
+  const existing = entries.get(id);
+  if (existing) {
+    existing.totalTokens += totalTokens;
+    return;
+  }
+  entries.set(id, {
+    id,
+    type: "model",
+    sourceId,
+    markId: sourceId,
+    label,
+    providerLabel: sourceLabel(sourceId),
+    color: chartModelColor(sourceId, label),
+    totalTokens
+  });
+}
+
+function compareChartModelSegments(left, right) {
+  const leftSource = chartSourceOrder.indexOf(left.sourceId);
+  const rightSource = chartSourceOrder.indexOf(right.sourceId);
+  const sourceCompare =
+    (leftSource === -1 ? Number.MAX_SAFE_INTEGER : leftSource) -
+    (rightSource === -1 ? Number.MAX_SAFE_INTEGER : rightSource);
+  if (sourceCompare) return sourceCompare;
+  if (right.totalTokens !== left.totalTokens) return right.totalTokens - left.totalTokens;
+  return left.label.localeCompare(right.label, currentLocale(), { numeric: true, sensitivity: "base" });
+}
+
+function modelRowTotalTokens(model) {
+  const explicit = Number(model?.totalTokens);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit;
+  return [
+    model?.inputTokens,
+    model?.cachedInputTokens,
+    model?.cacheCreationInputTokens,
+    model?.outputTokens,
+    model?.reasoningOutputTokens
+  ].reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+}
+
+function chartSegmentsForDay(day, entries) {
+  if (entries.length === 1 && entries[0]?.type === "total") {
+    const totalTokens = Number(day.totalTokens || 0);
+    return totalTokens > 0
+      ? [{ ...entries[0], totalTokens }]
+      : [];
+  }
   const sources = Array.isArray(day.sources) ? day.sources : [];
-  if (!sources.length) return [{ id: "local", totalTokens: day.totalTokens || 0 }];
+  if (!sources.length) {
+    const localEntry = entries.find((entry) => entry.id === "local" || entry.sourceId === "local") || {
+      id: "local",
+      type: "provider",
+      sourceId: "local",
+      markId: "local",
+      label: sourceLabel("local"),
+      color: chartSourceColor("local")
+    };
+    return Number(day.totalTokens || 0) > 0 ? [{ ...localEntry, totalTokens: day.totalTokens || 0 }] : [];
+  }
+  if (entries.some((entry) => entry.type === "model")) {
+    const byId = new Map();
+    for (const source of sources) {
+      const sourceId = source.id || "local";
+      const models = Array.isArray(source.models) ? source.models : [];
+      if (!models.length && Number(source.totalTokens || 0) > 0) {
+        const id = `model:${sourceId}:unknown`;
+        byId.set(id, Number(byId.get(id) || 0) + Number(source.totalTokens || 0));
+      }
+      for (const model of models) {
+        const label = String(model.model || t("chart.models.unknown")).trim() || t("chart.models.unknown");
+        const totalTokens = modelRowTotalTokens(model);
+        if (!totalTokens) continue;
+        const id = `model:${sourceId}:${canonicalModelName(label) || "unknown"}`;
+        byId.set(id, Number(byId.get(id) || 0) + totalTokens);
+      }
+    }
+    return entries
+      .map((entry) => ({ ...entry, totalTokens: Number(byId.get(entry.id) || 0) }))
+      .filter((entry) => entry.totalTokens > 0);
+  }
   const byId = new Map(sources.map((source) => [source.id, Number(source.totalTokens || 0)]));
-  return sourceIds
-    .map((id) => ({ id, totalTokens: byId.get(id) || 0 }))
-    .filter((source) => source.totalTokens > 0);
+  return entries
+    .map((entry) => ({ ...entry, totalTokens: byId.get(entry.sourceId) || 0 }))
+    .filter((entry) => entry.totalTokens > 0);
 }
 
 function chartVisibleSegments(segments, max, chartHeight) {
@@ -5306,6 +5713,52 @@ function roundedRectPath(x, y, width, height, topLeft, topRight, bottomRight, bo
     tl ? `Q ${x} ${y} ${x + tl} ${y}` : `L ${x} ${y}`,
     "Z"
   ].join(" ");
+}
+
+function chartSegmentColor(segment) {
+  return segment?.color || chartSourceColor(segment?.sourceId || segment?.id);
+}
+
+function chartModelColor(sourceId, model) {
+  const base = chartSourceColor(sourceId);
+  const variants = [0, 0.22, -0.18, 0.38, -0.3, 0.12, -0.08];
+  const variant = variants[Math.abs(hashString(`${sourceId}:${model}`)) % variants.length];
+  if (variant === 0) return base;
+  return mixHexColor(base, variant > 0 ? "#ffffff" : "#000000", Math.abs(variant));
+}
+
+function hashString(value) {
+  let hash = 0;
+  for (const char of String(value || "")) {
+    hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+  }
+  return hash;
+}
+
+function mixHexColor(left, right, weight) {
+  const a = hexToRgb(left) || hexToRgb("#66716b");
+  const b = hexToRgb(right) || hexToRgb("#ffffff");
+  const ratio = Math.max(0, Math.min(1, Number(weight) || 0));
+  return rgbToHex({
+    r: Math.round(a.r * (1 - ratio) + b.r * ratio),
+    g: Math.round(a.g * (1 - ratio) + b.g * ratio),
+    b: Math.round(a.b * (1 - ratio) + b.b * ratio)
+  });
+}
+
+function hexToRgb(value) {
+  const match = String(value || "").trim().match(/^#?([a-f0-9]{6})$/iu);
+  if (!match) return null;
+  const hex = match[1];
+  return {
+    r: Number.parseInt(hex.slice(0, 2), 16),
+    g: Number.parseInt(hex.slice(2, 4), 16),
+    b: Number.parseInt(hex.slice(4, 6), 16)
+  };
+}
+
+function rgbToHex({ r, g, b }) {
+  return `#${[r, g, b].map((value) => Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0")).join("")}`;
 }
 
 function chartSourceColor(id) {

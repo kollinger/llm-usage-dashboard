@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Modelo desconhecido"
+    },
+    "breakdown": {
+      "total": "Soma",
+      "provider": "Fornecedor",
+      "model": "Modelo"
+    },
+    "breakdownToggleAria": "Detalhe de tokens"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Fonte de quota Fable",
+      "available": "A quota Fable distinta era legível por máquina e é apresentada como linha própria.",
+      "unavailable": "A linha de estado Claude, os dados do navegador/conta e os registos locais não expuseram uma quota Fable distinta; não é apresentada quota sintética."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limite atingido",
       "unknown": "Desconhecido"
     },
-    "paceLegend": "As barras mantem as cores do fornecedor; as mensagens de ritmo mostram se o uso dura ate ao reset.",
     "pace": {
       "remaining": "Ao ritmo atual restara cerca de {percent}% no reset.",
       "shortfall": "Ao ritmo atual faltara cerca de {percent}% no reset.",
@@ -419,6 +430,11 @@
       "projectedValue": "{percent}% projetado",
       "unavailable": "Projeção indisponível",
       "aria": "Uso final projetado para {label}"
+    },
+    "viewToggleAria": "Visualização da utilização atual",
+    "view": {
+      "tachometer": "Indicador",
+      "bar": "Barra"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plano/limites de {source}",
     "planSourceLabel": "Fonte do plano/limites",
-    "catalogFallbackNote": "O preço mensal é um fallback do catálogo; fontes de app/conta somente leitura fornecem plano, limites ou créditos, mas não um preço mensal confiável."
+    "catalogFallbackNote": "O preço mensal é um fallback do catálogo; fontes de app/conta somente leitura fornecem plano, limites ou créditos, mas não um preço mensal confiável.",
+    "sourceAudit": {
+      "heading": "Fontes de preço só de leitura",
+      "safePriceDetected": "preço mensal fiável detetado",
+      "planOnlyNoPrice": "apenas plano/limites; nenhum preço mensal exposto",
+      "browserNoPrice": "verificado; nenhum preço mensal fiável exposto",
+      "catalogFallback": "preço de recurso do catálogo",
+      "notConfigured": "não presente nesta execução",
+      "notAvailable": "nenhuma fonte segura de preço só de leitura disponível",
+      "notUsed": "não usado"
+    }
   }
 }

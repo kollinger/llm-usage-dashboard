@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Nieznany model"
+    },
+    "breakdown": {
+      "total": "Razem",
+      "provider": "Dostawca",
+      "model": "Modele"
+    },
+    "breakdownToggleAria": "Podział tokenów"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Źródło limitu Fable",
+      "available": "Oddzielny limit Fable był odczytywalny maszynowo i jest pokazany jako osobny wiersz.",
+      "unavailable": "Statusline Claude, dane przeglądarki/konta i lokalne logi nie ujawniły oddzielnego limitu Fable; syntetyczny limit nie jest pokazywany."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Slupki zachowuja kolory dostawcow; komunikaty tempa pokazuja, czy uzycie wystarczy do resetu.",
     "pace": {
       "remaining": "Przy obecnym tempie do resetu zostanie okolo {percent}%.",
       "shortfall": "Przy obecnym tempie do resetu zabraknie okolo {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "prognoza {percent}%",
       "unavailable": "Prognoza niedostępna",
       "aria": "Prognozowane końcowe użycie dla {label}"
+    },
+    "viewToggleAria": "Wizualizacja bieżącego użycia",
+    "view": {
+      "tachometer": "Wskaźnik",
+      "bar": "Pasek"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plan/limity z {source}",
     "planSourceLabel": "Źródło planu/limitów",
-    "catalogFallbackNote": "Cena miesięczna pochodzi z katalogu awaryjnego; źródła aplikacji/konta tylko do odczytu podają plan, limity lub kredyty, ale nie zaufaną cenę miesięczną."
+    "catalogFallbackNote": "Cena miesięczna pochodzi z katalogu awaryjnego; źródła aplikacji/konta tylko do odczytu podają plan, limity lub kredyty, ale nie zaufaną cenę miesięczną.",
+    "sourceAudit": {
+      "heading": "Źródła cen tylko do odczytu",
+      "safePriceDetected": "wykryto wiarygodną cenę miesięczną",
+      "planOnlyNoPrice": "tylko plan/limity; brak ceny miesięcznej",
+      "browserNoPrice": "sprawdzono; brak wiarygodnej ceny miesięcznej",
+      "catalogFallback": "cena zastępcza z katalogu",
+      "notConfigured": "brak w tym uruchomieniu",
+      "notAvailable": "brak bezpiecznego źródła ceny tylko do odczytu",
+      "notUsed": "nieużywane"
+    }
   }
 }

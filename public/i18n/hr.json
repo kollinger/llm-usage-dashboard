@@ -111,8 +111,15 @@
       "range": "{range} model mix",
       "topTokens": "Top by tokens: {model} · {tokens}",
       "topCost": "Top by API-equivalent cost: {model} · {cost}",
-      "costUnknown": "API-equivalent cost unavailable for these models."
-    }
+      "costUnknown": "API-equivalent cost unavailable for these models.",
+      "unknown": "Nepoznat model"
+    },
+    "breakdown": {
+      "total": "Ukupno",
+      "provider": "Pružatelj",
+      "model": "Modeli"
+    },
+    "breakdownToggleAria": "Raščlamba tokena"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -327,6 +334,11 @@
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
+    },
+    "fableQuotaAudit": {
+      "heading": "Izvor Fable kvote",
+      "available": "Zasebna Fable kvota bila je strojno čitljiva i prikazana je kao vlastiti red.",
+      "unavailable": "Claude statusline, podaci preglednika/računa i lokalni zapisnici nisu izložili zasebnu Fable kvotu; sintetička kvota se ne prikazuje."
     }
   },
   "status": {
@@ -395,7 +407,6 @@
       "full": "Limit reached",
       "unknown": "Unknown"
     },
-    "paceLegend": "Trake zadrzavaju boje pruzatelja; poruke tempa pokazuju hoce li potrosnja trajati do resetiranja.",
     "pace": {
       "remaining": "Trenutnim tempom do resetiranja ostaje oko {percent}%.",
       "shortfall": "Trenutnim tempom do resetiranja nedostaje oko {percent}%.",
@@ -419,6 +430,11 @@
       "projectedValue": "projicirano {percent}%",
       "unavailable": "Projekcija nije dostupna",
       "aria": "Projicirana završna uporaba za {label}"
+    },
+    "viewToggleAria": "Vizualizacija trenutne upotrebe",
+    "view": {
+      "tachometer": "Mjerač",
+      "bar": "Traka"
     }
   },
   "tokens": {
@@ -818,6 +834,16 @@
     },
     "planSource": "Plan/limiti iz {source}",
     "planSourceLabel": "Izvor plana/limita",
-    "catalogFallbackNote": "Mjesečna cijena je zamjenska kataloška vrijednost; read-only izvori aplikacije/računa daju podatke o planu, limitima ili kreditima, ali ne pouzdanu mjesečnu cijenu."
+    "catalogFallbackNote": "Mjesečna cijena je zamjenska kataloška vrijednost; read-only izvori aplikacije/računa daju podatke o planu, limitima ili kreditima, ali ne pouzdanu mjesečnu cijenu.",
+    "sourceAudit": {
+      "heading": "Izvori cijene samo za čitanje",
+      "safePriceDetected": "otkrivena je pouzdana mjesečna cijena",
+      "planOnlyNoPrice": "samo plan/ograničenja; mjesečna cijena nije izložena",
+      "browserNoPrice": "provjereno; pouzdana mjesečna cijena nije izložena",
+      "catalogFallback": "rezervna cijena iz kataloga",
+      "notConfigured": "nije prisutno u ovom pokretanju",
+      "notAvailable": "nema sigurnog izvora cijene samo za čitanje",
+      "notUsed": "ne koristi se"
+    }
   }
 }
