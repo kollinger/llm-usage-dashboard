@@ -120,7 +120,7 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "bundled_catalog",
+      priceType: "official_list_price",
       priceVariant: "pro_5x",
       tierVariant: "pro_5x",
       actualBillingKnown: false
@@ -131,7 +131,7 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "bundled_catalog",
+      priceType: "official_list_price",
       priceVariant: "pro_20x",
       tierVariant: "pro_20x",
       actualBillingKnown: false
@@ -146,18 +146,26 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
       monthlyCost: 100,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://claude.com/pricing"
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_starting_list_price",
+      priceVariant: "from",
+      tierVariant: null,
+      actualBillingKnown: false
     },
     {
-      aliases: ["max 20x", "max-20x", "20x"],
+      aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://claude.com/pricing"
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_list_price",
+      priceVariant: "max_20x",
+      tierVariant: "max_20x",
+      actualBillingKnown: false
     }
   ]
 };
@@ -1973,7 +1981,23 @@ function parseClaudePricingPage(html, meta = {}) {
       dataPlan: "max_5x_monthly",
       aliases: ["max", "claude max", "max 5x", "max-5x"],
       sourceUrl: meta.sourceUrl,
-      fetchedAt: meta.fetchedAt
+      fetchedAt: meta.fetchedAt,
+      priceType: "official_starting_list_price",
+      priceVariant: "from",
+      tierVariant: null,
+      actualBillingKnown: false
+    }),
+    officialPricingEntryFromDataPlan(html, {
+      planKey: "max 20x",
+      planName: "Claude Max 20x",
+      dataPlan: "max_20x_monthly",
+      aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt,
+      priceType: "official_list_price",
+      priceVariant: "max_20x",
+      tierVariant: "max_20x",
+      actualBillingKnown: false
     })
   ].filter(Boolean);
   return {
@@ -2435,7 +2459,9 @@ function officialSubscriptionPlan(providerId, planType, officialPricing) {
   if (!entry && family === "openai" && planKey === "pro 5x") {
     entry = entries.find((candidate) => candidate.planKey === "pro");
   }
-  if (!entry) return null;
+  if (!entry) {
+    return officialSubscriptionPlanVariantFromCatalog(providerId, planType, officialPricing);
+  }
   const familyMeta = officialPricing.families[family] || {};
   const official = {
     ...entry,
@@ -2455,6 +2481,27 @@ function officialSubscriptionPlan(providerId, planType, officialPricing) {
     };
   }
   return official;
+}
+
+function officialSubscriptionPlanVariantFromCatalog(providerId, planType, officialPricing) {
+  const family = subscriptionCatalogFamily(providerId);
+  const familyMeta = family ? officialPricing?.families?.[family] || null : null;
+  if (!familyMeta || familyMeta.parserStatus === "parse_failed") return null;
+
+  const catalog = publicSubscriptionPlan(providerId, planType);
+  const isConcreteVariant = Boolean(catalog?.tierVariant || catalog?.priceVariant) && catalog?.priceVariant !== "from";
+  if (!catalog || !isConcreteVariant || !(catalog.monthlyCost > 0)) return null;
+
+  return {
+    ...catalog,
+    planKey: normalizeSubscriptionPlanKey(planType),
+    source: familyMeta.source || "official_pricing_page",
+    sourceUrl: familyMeta.sourceUrl || catalog.sourceUrl,
+    fetchedAt: familyMeta.fetchedAt || catalog.fetchedAt,
+    parserStatus: familyMeta.parserStatus || "parsed",
+    priceType: "official_list_price",
+    actualBillingKnown: false
+  };
 }
 
 function publicSubscriptionPlan(providerId, planType) {
