@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Live-rate, rullande 60 s"
   },
   "pricing": {
     "eyebrow": "API-kostnader",
@@ -339,6 +340,14 @@
       "heading": "Källa för Fable-kvot",
       "available": "En separat Fable-kvot var maskinläsbar och visas som en egen rad.",
       "unavailable": "Claude-statusraden, webbläsar-/kontodata och lokala loggar visade ingen separat Fable-kvot; ingen syntetisk kvot visas."
+    },
+    "freshness": {
+      "ariaLabel": "Datatid för leverantör",
+      "usage": "Användning {time}",
+      "limits": "Gränser {time}",
+      "prices": "Priser {time}",
+      "catalog": "Katalog {date}",
+      "unknown": "Datatid okänd"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Sparad fallbackuppskattning",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Katalogvärde"
+      "catalog": "Katalogvärde",
+      "official": "Officiellt listpris"
     },
     "sources": {
       "local_settings": "sparad fallback",
+      "account": "konto-/faktureringskälla",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropics offentliga prenumerationskatalog",
       "claude_browser_sync": "Claude webblasare-/kontosynk",
       "claude_api": "Claude kontoanvandnings-API",
-      "browser": "webblasarens kontokalla"
+      "browser": "webblasarens kontokalla",
+      "official_pricing_page": "officiell prissida",
+      "cached_official_snapshot": "cachelagrad officiell snapshot",
+      "bundled_catalog": "inbäddad katalog"
     },
     "catalogReviewed": "Katalog granskad {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "reservpris från katalogen",
       "notConfigured": "inte med i denna körning",
       "notAvailable": "ingen säker skrivskyddad priskälla tillgänglig",
-      "notUsed": "används inte"
+      "notUsed": "används inte",
+      "officialListPrice": "officiellt listpris"
+    },
+    "officialListPriceNote": "Officiellt listpris; faktisk fakturering kan skilja sig på grund av moms/skatter, års-rabatter, seats, kuponger, regionala priser eller Enterprise-avtal.",
+    "fetched": "Hämtat {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plannyckel: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Typ av priskälla",
+    "sourceUrlLabel": "Käll-URL",
+    "fetchedLabel": "Hämt-/datatid",
+    "planKeyLabel": "Plannyckel",
+    "parserStatusLabel": "Parserstatus",
+    "parserStatuses": {
+      "parsed": "tolkad",
+      "parse_failed": "tolkning misslyckades",
+      "cached_after_fetch_error": "cache efter hämtningsfel",
+      "bundled": "inbäddad fallback",
+      "missing": "saknas",
+      "unknown": "okänd"
     }
   }
 }

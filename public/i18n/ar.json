@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "معدل مباشر متحرك 60 ث"
   },
   "pricing": {
     "eyebrow": "تكاليف API",
@@ -339,6 +340,14 @@
       "heading": "مصدر حصة Fable",
       "available": "حصة Fable المستقلة قابلة للقراءة آليًا وتظهر كسطر منفصل.",
       "unavailable": "لم تعرض حالة Claude أو بيانات المتصفح/الحساب أو السجلات المحلية حصة Fable مستقلة؛ لا يتم عرض حصة مصطنعة."
+    },
+    "freshness": {
+      "ariaLabel": "وقت بيانات المزوّد",
+      "usage": "الاستخدام {time}",
+      "limits": "الحدود {time}",
+      "prices": "الأسعار {time}",
+      "catalog": "الفهرس {date}",
+      "unknown": "وقت البيانات غير معروف"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "قيمة من الكتالوج"
+      "catalog": "قيمة من الكتالوج",
+      "official": "سعر قائمة رسمي"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "مصدر الحساب/الفوترة",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "كتالوج اشتراكات Anthropic العام",
       "claude_browser_sync": "مزامنة متصفح/حساب Claude",
       "claude_api": "واجهة استخدام حساب Claude",
-      "browser": "مصدر حساب المتصفح"
+      "browser": "مصدر حساب المتصفح",
+      "official_pricing_page": "صفحة تسعير رسمية",
+      "cached_official_snapshot": "لقطة رسمية مخزنة",
+      "bundled_catalog": "فهرس مضمّن"
     },
     "catalogReviewed": "تمت مراجعة الكتالوج في {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "سعر احتياطي من الكتالوج",
       "notConfigured": "غير موجود في هذه الجولة",
       "notAvailable": "لا يتوفر مصدر آمن للقراءة فقط للسعر",
-      "notUsed": "غير مستخدم"
+      "notUsed": "غير مستخدم",
+      "officialListPrice": "سعر قائمة رسمي"
+    },
+    "officialListPriceNote": "سعر قائمة رسمي؛ قد تختلف الفاتورة الفعلية بسبب الضرائب أو خصومات السنة أو المقاعد أو القسائم أو الأسعار الإقليمية أو عقود المؤسسات.",
+    "fetched": "جُلب {time}",
+    "sourceUrl": "الرابط: {url}",
+    "planKey": "مفتاح الخطة: {key}",
+    "parserStatus": "المحلل: {status}",
+    "priceSourceTypeLabel": "نوع مصدر السعر",
+    "sourceUrlLabel": "رابط المصدر",
+    "fetchedLabel": "وقت الجلب/البيانات",
+    "planKeyLabel": "مفتاح الخطة",
+    "parserStatusLabel": "حالة المحلل",
+    "parserStatuses": {
+      "parsed": "تم التحليل",
+      "parse_failed": "فشل التحليل",
+      "cached_after_fetch_error": "مخزن بعد خطأ جلب",
+      "bundled": "بديل مضمّن",
+      "missing": "مفقود",
+      "unknown": "غير معروف"
     }
   }
 }

@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Живая скорость, скользящие 60 с"
   },
   "pricing": {
     "eyebrow": "Расходы API",
@@ -339,6 +340,14 @@
       "heading": "Источник квоты Fable",
       "available": "Отдельная квота Fable была машинно читаемой и показана отдельной строкой.",
       "unavailable": "Строка состояния Claude, данные браузера/аккаунта и локальные журналы не раскрыли отдельную квоту Fable; синтетическая квота не показывается."
+    },
+    "freshness": {
+      "ariaLabel": "Время данных провайдера",
+      "usage": "Использование {time}",
+      "limits": "Лимиты {time}",
+      "prices": "Цены {time}",
+      "catalog": "Каталог {date}",
+      "unknown": "Время данных неизвестно"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Значение из каталога"
+      "catalog": "Значение из каталога",
+      "official": "Официальная прайс-лист цена"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "источник аккаунта/биллинга",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "публичный каталог подписок Anthropic",
       "claude_browser_sync": "синхронизация браузера/аккаунта Claude",
       "claude_api": "API использования аккаунта Claude",
-      "browser": "источник аккаунта браузера"
+      "browser": "источник аккаунта браузера",
+      "official_pricing_page": "официальная страница цен",
+      "cached_official_snapshot": "кэшированный официальный снимок",
+      "bundled_catalog": "встроенный каталог"
     },
     "catalogReviewed": "Каталог проверен {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "резервная цена из каталога",
       "notConfigured": "нет в этом запуске",
       "notAvailable": "нет безопасного источника цены только для чтения",
-      "notUsed": "не используется"
+      "notUsed": "не используется",
+      "officialListPrice": "официальная прайс-лист цена"
+    },
+    "officialListPriceNote": "Официальная прайс-лист цена; фактический счет может отличаться из-за НДС/налогов, годовых скидок, мест, купонов, региональных цен или Enterprise-контрактов.",
+    "fetched": "Получено {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Ключ плана: {key}",
+    "parserStatus": "Парсер: {status}",
+    "priceSourceTypeLabel": "Тип источника цены",
+    "sourceUrlLabel": "URL источника",
+    "fetchedLabel": "Время получения/данных",
+    "planKeyLabel": "Ключ плана",
+    "parserStatusLabel": "Статус парсера",
+    "parserStatuses": {
+      "parsed": "разобрано",
+      "parse_failed": "ошибка разбора",
+      "cached_after_fetch_error": "кэш после ошибки получения",
+      "bundled": "встроенный резерв",
+      "missing": "отсутствует",
+      "unknown": "неизвестно"
     }
   }
 }

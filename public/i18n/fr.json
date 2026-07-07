@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Débit live glissant 60 s"
   },
   "pricing": {
     "eyebrow": "Coûts API",
@@ -339,6 +340,14 @@
       "heading": "Source du quota Fable",
       "available": "Le quota Fable distinct était lisible par machine et s’affiche sur sa propre ligne.",
       "unavailable": "La barre d’état Claude, les données navigateur/compte et les journaux locaux n’exposent aucun quota Fable distinct ; aucun quota synthétique n’est affiché."
+    },
+    "freshness": {
+      "ariaLabel": "Horodatage des données fournisseur",
+      "usage": "Usage {time}",
+      "limits": "Limites {time}",
+      "prices": "Prix {time}",
+      "catalog": "Catalogue {date}",
+      "unknown": "Heure des données inconnue"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Estimation de secours enregistree",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Valeur du catalogue"
+      "catalog": "Valeur du catalogue",
+      "official": "Prix catalogue officiel"
     },
     "sources": {
       "local_settings": "secours enregistre",
+      "account": "source de compte/facturation",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "catalogue public des abonnements Anthropic",
       "claude_browser_sync": "Synchronisation navigateur/compte Claude",
       "claude_api": "API d utilisation du compte Claude",
-      "browser": "source de compte navigateur"
+      "browser": "source de compte navigateur",
+      "official_pricing_page": "page tarifaire officielle",
+      "cached_official_snapshot": "instantané officiel en cache",
+      "bundled_catalog": "catalogue embarqué"
     },
     "catalogReviewed": "Catalogue vérifié le {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "prix de secours du catalogue",
       "notConfigured": "absent de cette exécution",
       "notAvailable": "aucune source de prix sûre en lecture seule disponible",
-      "notUsed": "non utilisé"
+      "notUsed": "non utilisé",
+      "officialListPrice": "prix catalogue officiel"
+    },
+    "officialListPriceNote": "Prix catalogue officiel ; la facturation réelle peut varier avec TVA/taxes, remises annuelles, sièges, coupons, prix régionaux ou contrats Enterprise.",
+    "fetched": "Lu {time}",
+    "sourceUrl": "URL : {url}",
+    "planKey": "Clé de plan : {key}",
+    "parserStatus": "Parseur : {status}",
+    "priceSourceTypeLabel": "Type de source prix",
+    "sourceUrlLabel": "URL source",
+    "fetchedLabel": "Heure de lecture/données",
+    "planKeyLabel": "Clé de plan",
+    "parserStatusLabel": "Statut du parseur",
+    "parserStatuses": {
+      "parsed": "analysé",
+      "parse_failed": "échec analyse",
+      "cached_after_fetch_error": "cache après erreur de lecture",
+      "bundled": "fallback embarqué",
+      "missing": "manquant",
+      "unknown": "inconnu"
     }
   }
 }

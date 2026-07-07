@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Live-rate, ruchome 60 s"
   },
   "pricing": {
     "eyebrow": "Koszty API",
@@ -339,6 +340,14 @@
       "heading": "Źródło limitu Fable",
       "available": "Oddzielny limit Fable był odczytywalny maszynowo i jest pokazany jako osobny wiersz.",
       "unavailable": "Statusline Claude, dane przeglądarki/konta i lokalne logi nie ujawniły oddzielnego limitu Fable; syntetyczny limit nie jest pokazywany."
+    },
+    "freshness": {
+      "ariaLabel": "Czas danych dostawcy",
+      "usage": "Użycie {time}",
+      "limits": "Limity {time}",
+      "prices": "Ceny {time}",
+      "catalog": "Katalog {date}",
+      "unknown": "Czas danych nieznany"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Wartość z katalogu"
+      "catalog": "Wartość z katalogu",
+      "official": "Oficjalna cena katalogowa"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "źródło konta/rozliczeń",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "publiczny katalog subskrypcji Anthropic",
       "claude_browser_sync": "synchronizacja przegladarki/konta Claude",
       "claude_api": "API uzycia konta Claude",
-      "browser": "zrodlo konta przegladarki"
+      "browser": "zrodlo konta przegladarki",
+      "official_pricing_page": "oficjalna strona cen",
+      "cached_official_snapshot": "buforowany oficjalny snapshot",
+      "bundled_catalog": "wbudowany katalog"
     },
     "catalogReviewed": "Katalog sprawdzono {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "cena zastępcza z katalogu",
       "notConfigured": "brak w tym uruchomieniu",
       "notAvailable": "brak bezpiecznego źródła ceny tylko do odczytu",
-      "notUsed": "nieużywane"
+      "notUsed": "nieużywane",
+      "officialListPrice": "oficjalna cena katalogowa"
+    },
+    "officialListPriceNote": "Oficjalna cena katalogowa; rzeczywisty rachunek może się różnić przez VAT/podatki, rabaty roczne, stanowiska, kupony, ceny regionalne lub umowy Enterprise.",
+    "fetched": "Pobrano {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Klucz planu: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Typ źródła ceny",
+    "sourceUrlLabel": "URL źródła",
+    "fetchedLabel": "Czas pobrania/danych",
+    "planKeyLabel": "Klucz planu",
+    "parserStatusLabel": "Status parsera",
+    "parserStatuses": {
+      "parsed": "sparsowano",
+      "parse_failed": "parsowanie nieudane",
+      "cached_after_fetch_error": "cache po błędzie pobrania",
+      "bundled": "wbudowany fallback",
+      "missing": "brak",
+      "unknown": "nieznane"
     }
   }
 }

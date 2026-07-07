@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Živa stopa, klizno 60 s"
   },
   "pricing": {
     "eyebrow": "API troškovi",
@@ -339,6 +340,14 @@
       "heading": "Izvor Fable kvote",
       "available": "Zasebna Fable kvota bila je strojno čitljiva i prikazana je kao vlastiti red.",
       "unavailable": "Claude statusline, podaci preglednika/računa i lokalni zapisnici nisu izložili zasebnu Fable kvotu; sintetička kvota se ne prikazuje."
+    },
+    "freshness": {
+      "ariaLabel": "Vrijeme podataka pružatelja",
+      "usage": "Upotreba {time}",
+      "limits": "Limiti {time}",
+      "prices": "Cijene {time}",
+      "catalog": "Katalog {date}",
+      "unknown": "Vrijeme podataka nepoznato"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Vrijednost iz kataloga"
+      "catalog": "Vrijednost iz kataloga",
+      "official": "Službena kataloška cijena"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "izvor računa/naplate",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "javni katalog pretplata Anthropic",
       "claude_browser_sync": "sinkronizacija preglednika/racuna Claude",
       "claude_api": "API upotrebe racuna Claude",
-      "browser": "izvor racuna preglednika"
+      "browser": "izvor racuna preglednika",
+      "official_pricing_page": "službena stranica cijena",
+      "cached_official_snapshot": "spremljena službena snimka",
+      "bundled_catalog": "ugrađeni katalog"
     },
     "catalogReviewed": "Katalog pregledan {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "rezervna cijena iz kataloga",
       "notConfigured": "nije prisutno u ovom pokretanju",
       "notAvailable": "nema sigurnog izvora cijene samo za čitanje",
-      "notUsed": "ne koristi se"
+      "notUsed": "ne koristi se",
+      "officialListPrice": "službena kataloška cijena"
+    },
+    "officialListPriceNote": "Službena kataloška cijena; stvarna naplata može odstupati zbog PDV-a/poreza, godišnjih popusta, sjedala, kupona, regionalnih cijena ili Enterprise ugovora.",
+    "fetched": "Dohvaćeno {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Ključ plana: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Tip izvora cijene",
+    "sourceUrlLabel": "URL izvora",
+    "fetchedLabel": "Vrijeme dohvaćanja/podataka",
+    "planKeyLabel": "Ključ plana",
+    "parserStatusLabel": "Status parsera",
+    "parserStatuses": {
+      "parsed": "parsirano",
+      "parse_failed": "parsiranje neuspjelo",
+      "cached_after_fetch_error": "cache nakon greške dohvaćanja",
+      "bundled": "ugrađeni fallback",
+      "missing": "nedostaje",
+      "unknown": "nepoznato"
     }
   }
 }

@@ -340,6 +340,9 @@ const providerCardHtml = renderProvider({
   status: "live",
   limitRows: [],
   creditRows: [],
+  usageUpdatedAt: "${today}T10:15:00Z",
+  limitsUpdatedAt: "${today}T10:14:00Z",
+  catalogReviewedAt: "2026-07-07",
   foot: [],
   apiTokens: 100,
   message: "Logged tokens"
@@ -367,6 +370,51 @@ localStorage.setItem = (key, value) => {
 setUsageProjectionMode("bar");
 const projectionModeAfterToggle = state.usageProjectionMode;
 const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
+const zeroUsageLimit = normalizeLimitRow({ label: "Claude Code", usedPercent: "0%", remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset });
+const zeroUsageLimitHtml = renderLimitBar(zeroUsageLimit, providerMeta.claudeCode.accent);
+const emptyUsageLimit = normalizeLimitRow({ label: "Claude Code", usedPercent: "", remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset });
+const liveRateBase = Date.parse("${today}T10:00:00Z");
+const risingLiveRate = smoothedLiveTokenRateForDisplay({
+  timestamp: new Date(liveRateBase + 30_000).toISOString(),
+  tokensPerMinute: {
+    value: 900,
+    quality: "calculated",
+    input: { value: 500, quality: "calculated" },
+    output: { value: 300, quality: "calculated" },
+    cached: { value: 100, quality: "calculated" }
+  },
+  timeSeries: [
+    { timestamp: new Date(liveRateBase).toISOString(), tokensPerMinute: { total: 0, input: 0, output: 0, cached: 0 } },
+    { timestamp: new Date(liveRateBase + 15_000).toISOString(), tokensPerMinute: { total: 400, input: 220, output: 140, cached: 40 } },
+    { timestamp: new Date(liveRateBase + 30_000).toISOString(), tokensPerMinute: { total: 900, input: 500, output: 300, cached: 100 } }
+  ]
+}, liveRateBase + 31_000);
+const decayedLiveRate = smoothedLiveTokenRateForDisplay({
+  timestamp: new Date(liveRateBase).toISOString(),
+  tokensPerMinute: {
+    value: 600,
+    quality: "calculated",
+    input: { value: 300, quality: "calculated" },
+    output: { value: 300, quality: "calculated" },
+    cached: { value: 0, quality: "calculated" }
+  },
+  timeSeries: [
+    { timestamp: new Date(liveRateBase).toISOString(), tokensPerMinute: { total: 600, input: 300, output: 300, cached: 0 } }
+  ]
+}, liveRateBase + 60_000);
+const zeroLiveRate = smoothedLiveTokenRateForDisplay({
+  timestamp: new Date(liveRateBase).toISOString(),
+  tokensPerMinute: {
+    value: 0,
+    quality: "calculated",
+    input: { value: 0, quality: "calculated" },
+    output: { value: 0, quality: "calculated" },
+    cached: { value: 0, quality: "calculated" }
+  },
+  timeSeries: [
+    { timestamp: new Date(liveRateBase).toISOString(), tokensPerMinute: { total: 0, input: 0, output: 0, cached: 0 } }
+  ]
+}, liveRateBase + 10_000);
 const logoSamples = [
   renderProviderMark("Z.AI"),
   renderProviderMark("MiniMax"),
@@ -462,7 +510,12 @@ JSON.stringify({
 	  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
   providerCardHasLogo:
     providerCardHtml.includes("provider-mark-claudeCode") &&
-    providerCardHtml.includes("assets/provider-logos/claude-code.svg"),
+    providerCardHtml.includes("assets/provider-logos/claude.svg"),
+  providerCardFreshness:
+    providerCardHtml.includes("provider-freshness") &&
+    providerCardHtml.includes("Usage") &&
+    providerCardHtml.includes("Limits") &&
+    providerCardHtml.includes("Catalog"),
   providerCardFableQuotaAudit:
     providerCardHtml.includes("Fable quota source") &&
     providerCardHtml.includes("no synthetic quota is shown"),
@@ -511,6 +564,19 @@ JSON.stringify({
     !riskLimitBarHtml.includes("limit-tachometer-gauge") &&
     riskLimitBarHtml.includes("100%") &&
     riskLimitBarHtml.includes("projected"),
+  zeroUsageProjectionValid:
+    zeroUsageLimit?.usedPercent === 0 &&
+    limitProjectedEndPercent(zeroUsageLimit) === 0 &&
+    zeroUsageLimitHtml.includes("0% projected") &&
+    !zeroUsageLimitHtml.includes("Projection unavailable"),
+  emptyUsageProjectionUnavailable:
+    emptyUsageLimit === null,
+  liveRateRisesFromSamples:
+    risingLiveRate.value > 400 &&
+    risingLiveRate.value <= 900 &&
+    risingLiveRate.input.value > 0,
+  liveRateDecaysToZero: decayedLiveRate.value === 0,
+  liveRateKeepsZero: zeroLiveRate.value === 0,
 	  fableLimitRowVisible:
 	    claudeWithFableHtml.includes(">Fable<") &&
 	    claudeWithFableHtml.includes("--accent: " + providerMeta.claudeCode.accent),
@@ -545,7 +611,7 @@ JSON.stringify({
   assert.equal(result.detectedQuality, "catalog");
   assert.equal(result.detectedCost, 100);
   assert.equal(result.detectedCurrency, "USD");
-  assert.equal(result.detectedSource, "openai_public_catalog");
+  assert.equal(result.detectedSource, "bundled_catalog");
   assert.equal(result.missingCatalogQuality, "estimated");
   assert.equal(result.missingCatalogStatus, "catalog_missing");
   assert.equal(result.missingCatalogReason.includes("Codex app-server exposed the plan"), true);
@@ -573,6 +639,7 @@ JSON.stringify({
   assert.equal(result.totalBreakdownSegment, true);
   assert.equal(result.providerCardUsesProviderAccent, true);
   assert.equal(result.providerCardHasLogo, true);
+  assert.equal(result.providerCardFreshness, true);
   assert.equal(result.providerCardFableQuotaAudit, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
@@ -584,10 +651,18 @@ JSON.stringify({
   assert.equal(result.rejectedPaceLegendRemoved, true);
   assert.equal(result.riskLimitBarHasTachometerGauge, true);
   assert.equal(result.riskLimitBarHasProjectionBarMode, true);
+  assert.equal(result.zeroUsageProjectionValid, true);
+  assert.equal(result.emptyUsageProjectionUnavailable, true);
+  assert.equal(result.liveRateRisesFromSamples, true);
+  assert.equal(result.liveRateDecaysToZero, true);
+  assert.equal(result.liveRateKeepsZero, true);
   assert.equal(result.fableLimitRowVisible, true);
   assert.equal(result.fableQuotaAvailableAudit, true);
   assert.equal(result.mixedCurrencyDeltaUnknown, true);
   assert.equal(result.sameCurrencyDeltaShown, true);
+
+  const indexHtml = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
+  assert.equal(indexHtml.includes('data-price-sort="region"'), false);
 
   const browserSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     subscription: { planType: "Max", monthlyPrice: 100, currency: "USD" }
@@ -597,7 +672,7 @@ JSON.stringify({
   assert.equal(browserSnapshot.subscription.monthlyCost, 100);
   assert.equal(browserSnapshot.subscription.source, "claude_browser_sync");
 
-  const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
+const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     subscription: { name: "Claude Max", unit_amount: 10000, currency: "USD" }
   });
   assert.equal(browserScopedSnapshot.status, "available");
@@ -613,6 +688,54 @@ JSON.stringify({
   });
   assert.equal(prepaidCreditsSnapshot.status, "missing");
   assert.equal(prepaidCreditsSnapshot.subscription, null);
+
+  const openAiPricing = _test.parseOpenAiCodexPricingPage(
+    '<section><h3 class="heading-lg">Plus</h3><span class="heading-2xl">$20</span><span>/month</span></section>' +
+      '<section><h3 class="heading-lg">Pro</h3><span>From</span><span class="heading-2xl">$100</span><span>/month</span></section>',
+    { sourceUrl: "https://developers.openai.com/codex/pricing", fetchedAt: "2026-07-07T10:00:00Z" }
+  );
+  assert.equal(openAiPricing.parserStatus, "parsed");
+  assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "plus").monthlyCost, 20);
+  assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "pro").monthlyCost, 100);
+
+  const claudePricing = _test.parseClaudePricingPage(
+    '<span data-plan="pro_monthly">$20</span><div data-plan="max_5x_monthly">From $100</div>',
+    { sourceUrl: "https://claude.com/pricing", fetchedAt: "2026-07-07T10:00:00Z" }
+  );
+  assert.equal(claudePricing.parserStatus, "parsed");
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "pro").monthlyCost, 20);
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max").monthlyCost, 100);
+
+  const officialPricing = {
+    families: {
+      openai: openAiPricing,
+      anthropic: claudePricing
+    }
+  };
+  assert.equal(_test.officialSubscriptionPlan("codex", "pro", officialPricing).source, "official_pricing_page");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "max", officialPricing).monthlyCost, 100);
+  assert.equal(_test.parseOpenAiCodexPricingPage("<html>No pricing cards</html>", { sourceUrl: "https://developers.openai.com/codex/pricing" }).parserStatus, "parse_failed");
+
+  const officialMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", officialPricing);
+  assert.equal(officialMerged.subscription.source, "official_pricing_page");
+  assert.equal(officialMerged.subscription.monthlyCost, 100);
+  assert.equal(officialMerged.subscription.priceType, "official_list_price");
+  const bundledMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro 20x" }, null, "codex", officialPricing);
+  assert.equal(bundledMerged.subscription.source, "bundled_catalog");
+  assert.equal(bundledMerged.subscription.monthlyCost, 200);
+  const unknownMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Enterprise" }, null, "codex", officialPricing);
+  assert.equal(unknownMerged.subscription.monthlyCost, 0);
+  assert.equal(unknownMerged.subscription.costStatus, "catalog_missing");
+  const manualCostWins = _test.mergeProviderSubscription(
+    { id: "codex", status: "live", planType: "Pro" },
+    { planType: "Pro", monthlyCost: 88, currency: "EUR" },
+    "codex",
+    officialPricing
+  );
+  assert.equal(manualCostWins.subscription.source, "local_settings");
+  assert.equal(manualCostWins.subscription.priceSourceType, "local_settings");
+  assert.equal(manualCostWins.subscription.costStatus, "local_settings");
+  assert.equal(manualCostWins.subscription.monthlyCost, 88);
 }
 
 async function assertNotificationLocalizationRegression() {

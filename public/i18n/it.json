@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Rate live su 60 s mobili"
   },
   "pricing": {
     "eyebrow": "Costi API",
@@ -339,6 +340,14 @@
       "heading": "Fonte quota Fable",
       "available": "La quota Fable distinta era leggibile automaticamente ed è mostrata come riga propria.",
       "unavailable": "La statusline Claude, i dati browser/account e i log locali non espongono una quota Fable distinta; non viene mostrata alcuna quota sintetica."
+    },
+    "freshness": {
+      "ariaLabel": "Data dei dati provider",
+      "usage": "Uso {time}",
+      "limits": "Limiti {time}",
+      "prices": "Prezzi {time}",
+      "catalog": "Catalogo {date}",
+      "unknown": "Ora dati sconosciuta"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Stima fallback salvata",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Valore da catalogo"
+      "catalog": "Valore da catalogo",
+      "official": "Prezzo di listino ufficiale"
     },
     "sources": {
       "local_settings": "fallback salvato",
+      "account": "fonte account/fatturazione",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "catalogo pubblico degli abbonamenti Anthropic",
       "claude_browser_sync": "sync browser/account Claude",
       "claude_api": "API uso account Claude",
-      "browser": "fonte account browser"
+      "browser": "fonte account browser",
+      "official_pricing_page": "pagina prezzi ufficiale",
+      "cached_official_snapshot": "snapshot ufficiale in cache",
+      "bundled_catalog": "catalogo incluso"
     },
     "catalogReviewed": "Catalogo verificato il {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "prezzo fallback da catalogo",
       "notConfigured": "non presente in questa esecuzione",
       "notAvailable": "nessuna fonte prezzo sicura in sola lettura disponibile",
-      "notUsed": "non usato"
+      "notUsed": "non usato",
+      "officialListPrice": "prezzo di listino ufficiale"
+    },
+    "officialListPriceNote": "Prezzo di listino ufficiale; la fatturazione reale può variare per IVA/tasse, sconti annuali, posti, coupon, prezzi regionali o contratti Enterprise.",
+    "fetched": "Letto {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Chiave piano: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Tipo fonte prezzo",
+    "sourceUrlLabel": "URL fonte",
+    "fetchedLabel": "Ora fetch/dati",
+    "planKeyLabel": "Chiave piano",
+    "parserStatusLabel": "Stato parser",
+    "parserStatuses": {
+      "parsed": "analizzato",
+      "parse_failed": "analisi fallita",
+      "cached_after_fetch_error": "cache dopo errore fetch",
+      "bundled": "fallback incluso",
+      "missing": "mancante",
+      "unknown": "sconosciuto"
     }
   }
 }

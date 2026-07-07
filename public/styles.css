@@ -525,6 +525,29 @@ a {
   gap: 12px;
 }
 
+.provider-freshness {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: -2px;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.provider-freshness span {
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: var(--panel-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .provider-identity {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -729,7 +752,7 @@ a {
 }
 
 .limit-bars-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
   align-items: start;
 }
 
@@ -773,6 +796,20 @@ a {
   display: grid;
   min-width: 0;
   gap: 6px;
+}
+
+.limit-bars-mode-bar .limit-bar-body {
+  grid-template-rows: minmax(74px, auto) minmax(54px, auto);
+  height: 100%;
+}
+
+.limit-bars-mode-bar .limit-bar-usage {
+  grid-template-rows: 10px minmax(2.1em, auto) minmax(2.9em, auto);
+  align-content: start;
+}
+
+.limit-bars-mode-bar .limit-projection-bar {
+  align-self: end;
 }
 
 .limit-bar-top {
@@ -1207,6 +1244,10 @@ a {
   background: var(--green);
 }
 
+.subscription-quality-official .subscription-quality-pill {
+  background: #2e6ea6;
+}
+
 .subscription-quality-manual .subscription-quality-pill {
   background: var(--blue);
 }
@@ -1294,8 +1335,16 @@ a {
 
 .usage-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.75fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+  margin-top: 14px;
+}
+
+.token-mix-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.28fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
   margin-top: 14px;
 }
 
@@ -1719,6 +1768,7 @@ a {
   background:
     radial-gradient(circle at center, #fff 0 58%, transparent 59%),
     conic-gradient(var(--accent, var(--green)) calc(var(--percent) * 1%), #e9eee9 0);
+  transition: background 360ms ease;
 }
 
 .live-gauge-ring strong {
@@ -2031,7 +2081,7 @@ a {
 
 .price-table {
   width: 100%;
-  min-width: 1320px;
+  min-width: 1210px;
   border-collapse: collapse;
 }
 
@@ -2395,7 +2445,12 @@ a {
 .china-badge {
   grid-column: 2;
   grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
   justify-self: end;
+  max-width: 92px;
+  min-height: 0;
   border: 1px solid #d7b86c;
   border-radius: 999px;
   padding: 3px 7px;
@@ -2404,6 +2459,10 @@ a {
   font-size: 0.68rem;
   font-style: normal;
   font-weight: 850;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .limit-cell,
@@ -2909,6 +2968,10 @@ select {
   }
 
   .usage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .token-mix-panel {
     grid-template-columns: 1fr;
   }
 

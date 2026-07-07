@@ -31,6 +31,7 @@ const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
+const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
@@ -79,28 +80,40 @@ const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || 
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
 const SUBSCRIPTION_HISTORY_VERSION = 1;
 const SUBSCRIPTION_CATALOG_REVIEW_DATE = "2026-07-07";
+const OFFICIAL_PRICING_CACHE_MS = envMs("OFFICIAL_SUBSCRIPTION_PRICING_CACHE_SECONDS", 6 * 60 * 60);
+const OFFICIAL_PRICING_FETCH_TIMEOUT_MS = envMs("OFFICIAL_SUBSCRIPTION_PRICING_FETCH_TIMEOUT_SECONDS", 8);
+const OFFICIAL_SUBSCRIPTION_PRICING_SOURCES = {
+  openai: {
+    sourceUrl: "https://developers.openai.com/codex/pricing",
+    parser: parseOpenAiCodexPricingPage
+  },
+  anthropic: {
+    sourceUrl: "https://claude.com/pricing",
+    parser: parseClaudePricingPage
+  }
+};
 const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
   openai: [
     {
       aliases: ["plus", "chatgpt plus", "codex plus"],
       monthlyCost: 20,
       currency: "USD",
-      source: "openai_public_catalog",
-      sourceUrl: "https://chatgpt.com/codex/pricing/"
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
       aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
       monthlyCost: 100,
       currency: "USD",
-      source: "openai_public_catalog",
-      sourceUrl: "https://chatgpt.com/codex/pricing/"
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
       aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
       monthlyCost: 200,
       currency: "USD",
-      source: "openai_public_catalog",
-      sourceUrl: "https://chatgpt.com/codex/pricing/"
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing"
     }
   ],
   anthropic: [
@@ -108,21 +121,21 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       aliases: ["pro", "claude pro"],
       monthlyCost: 20,
       currency: "USD",
-      source: "anthropic_public_catalog",
+      source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing"
     },
     {
       aliases: ["max", "claude max", "max 5x", "max-5x"],
       monthlyCost: 100,
       currency: "USD",
-      source: "anthropic_public_catalog",
+      source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing"
     },
     {
       aliases: ["max 20x", "max-20x", "20x"],
       monthlyCost: 200,
       currency: "USD",
-      source: "anthropic_public_catalog",
+      source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing"
     }
   ]
@@ -152,6 +165,7 @@ const copilotLiveQuotaCache = createTimedCache();
 const claudeApiUsageCache = createTimedCache();
 const usageCache = createTimedCache();
 const sourceDiagnosticsCache = createTimedCache();
+const officialSubscriptionPricingCache = createTimedCache();
 let codexAppServer = null;
 let pendingTestNotification = false;
 let pendingOpenNotificationSettings = false;
@@ -436,8 +450,14 @@ async function readUsageDashboard({ force = false } = {}) {
   return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
-    const [subscriptions, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollamaRaw, openaiRaw, anthropicRaw] = await Promise.all([
+    const [subscriptions, officialPricing, codexRaw, copilotRaw, claudeCodeRaw, geminiRaw, ollamaRaw, openaiRaw, anthropicRaw] = await Promise.all([
       readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
+      readOfficialSubscriptionPricing().catch((error) => ({
+        version: 1,
+        fetchedAt: null,
+        families: {},
+        errors: { official_pricing_page: error.message || "official pricing unavailable" }
+      })),
       readCodexUsage({ sources: localSources.codex }).catch((error) => providerError("codex", error)),
       readCopilotUsage({ sources: localSources.copilot }).catch((error) => providerError("copilot", error)),
       readClaudeCodeUsage({ sources: localSources.claudeCode }).catch((error) => providerError("claudeCode", error)),
@@ -447,13 +467,13 @@ async function readUsageDashboard({ force = false } = {}) {
       readAnthropicUsage().catch((error) => providerError("anthropic", error))
     ]);
 
-    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex");
-    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot");
-    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode, "claudeCode");
-    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini");
+    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex", officialPricing);
+    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot", officialPricing);
+    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode, "claudeCode", officialPricing);
+    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini", officialPricing);
     const ollama = ollamaRaw;
-    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai");
-    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic, "anthropic");
+    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai", officialPricing);
+    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic, "anthropic", officialPricing);
     await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
     const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]);
 
@@ -1504,6 +1524,145 @@ async function saveSubscriptionSettings(settings) {
   await fsp.writeFile(SUBSCRIPTION_SETTINGS_FILE, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
 }
 
+async function readOfficialSubscriptionPricing() {
+  return readThroughCache(officialSubscriptionPricingCache, OFFICIAL_PRICING_CACHE_MS, async () => {
+    const previous = await readStoredOfficialSubscriptionPricing().catch(() => null);
+    const fetchedAt = new Date().toISOString();
+    const families = {};
+    const errors = {};
+    await Promise.all(Object.entries(OFFICIAL_SUBSCRIPTION_PRICING_SOURCES).map(async ([family, source]) => {
+      try {
+        const html = await fetchText(source.sourceUrl, { timeoutMs: OFFICIAL_PRICING_FETCH_TIMEOUT_MS });
+        const parsed = source.parser(html, { fetchedAt, sourceUrl: source.sourceUrl });
+        if (!parsed.entries.length) throw new Error("official pricing parser returned no plan prices");
+        families[family] = parsed;
+      } catch (error) {
+        errors[family] = error.message || "official pricing fetch failed";
+        const cachedFamily = previous?.families?.[family];
+        if (cachedFamily?.entries?.length) {
+          families[family] = {
+            ...cachedFamily,
+            source: "cached_official_snapshot",
+            parserStatus: "cached_after_fetch_error",
+            fetchError: errors[family]
+          };
+        }
+      }
+    }));
+    const snapshot = {
+      version: 1,
+      fetchedAt,
+      families,
+      errors
+    };
+    if (Object.values(families).some((family) => family.entries?.length)) {
+      await saveOfficialSubscriptionPricing(snapshot).catch(() => {});
+      return snapshot;
+    }
+    return previous || snapshot;
+  });
+}
+
+async function readStoredOfficialSubscriptionPricing() {
+  const text = await fsp.readFile(OFFICIAL_SUBSCRIPTION_PRICING_FILE, "utf8");
+  const parsed = JSON.parse(text);
+  return parsed && typeof parsed === "object" ? parsed : null;
+}
+
+async function saveOfficialSubscriptionPricing(snapshot) {
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(OFFICIAL_SUBSCRIPTION_PRICING_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+}
+
+function parseOpenAiCodexPricingPage(html, meta = {}) {
+  const entries = [
+    officialPricingEntryFromHtml(html, {
+      family: "openai",
+      planKey: "plus",
+      planName: "Plus",
+      aliases: ["plus", "chatgpt plus", "codex plus"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt
+    }),
+    officialPricingEntryFromHtml(html, {
+      family: "openai",
+      planKey: "pro",
+      planName: "Pro",
+      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt
+    })
+  ].filter(Boolean);
+  return {
+    source: "official_pricing_page",
+    sourceUrl: meta.sourceUrl || OFFICIAL_SUBSCRIPTION_PRICING_SOURCES.openai.sourceUrl,
+    fetchedAt: meta.fetchedAt || new Date().toISOString(),
+    parserStatus: entries.length ? "parsed" : "parse_failed",
+    entries
+  };
+}
+
+function parseClaudePricingPage(html, meta = {}) {
+  const entries = [
+    officialPricingEntryFromDataPlan(html, {
+      planKey: "pro",
+      planName: "Claude Pro",
+      dataPlan: "pro_monthly",
+      aliases: ["pro", "claude pro"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt
+    }),
+    officialPricingEntryFromDataPlan(html, {
+      planKey: "max",
+      planName: "Claude Max",
+      dataPlan: "max_5x_monthly",
+      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt
+    })
+  ].filter(Boolean);
+  return {
+    source: "official_pricing_page",
+    sourceUrl: meta.sourceUrl || OFFICIAL_SUBSCRIPTION_PRICING_SOURCES.anthropic.sourceUrl,
+    fetchedAt: meta.fetchedAt || new Date().toISOString(),
+    parserStatus: entries.length ? "parsed" : "parse_failed",
+    entries
+  };
+}
+
+function officialPricingEntryFromHtml(html, options) {
+  const planPattern = escapeRegExp(options.planName);
+  const cardPattern = new RegExp(`<h3[^>]*>\\s*${planPattern}\\s*<\\/h3>[\\s\\S]{0,2600}?((?:From\\s*)?\\$\\s*[0-9][0-9,]*(?:\\.[0-9]{2})?)\\s*<`, "i");
+  const match = String(html || "").match(cardPattern);
+  if (!match) return null;
+  return officialPricingEntryFromPriceText(match[1], options);
+}
+
+function officialPricingEntryFromDataPlan(html, options) {
+  const planPattern = escapeRegExp(options.dataPlan);
+  const dataPlanPattern = new RegExp(`data-plan=["']${planPattern}["'][^>]*>\\s*((?:From\\s*)?\\$\\s*[0-9][0-9,]*(?:\\.[0-9]{2})?)\\s*<`, "i");
+  const match = String(html || "").match(dataPlanPattern);
+  if (!match) return null;
+  return officialPricingEntryFromPriceText(match[1], options);
+}
+
+function officialPricingEntryFromPriceText(priceText, options) {
+  const monthlyCost = positiveAmount(priceText);
+  if (!(monthlyCost > 0)) return null;
+  return {
+    planKey: options.planKey,
+    planName: options.planName,
+    aliases: options.aliases || [options.planKey, options.planName],
+    monthlyCost,
+    currency: "USD",
+    source: "official_pricing_page",
+    sourceUrl: options.sourceUrl,
+    fetchedAt: options.fetchedAt || new Date().toISOString(),
+    parserStatus: "parsed",
+    priceType: "official_list_price"
+  };
+}
+
 async function readSubscriptionHistory() {
   try {
     const text = await fsp.readFile(SUBSCRIPTION_HISTORY_FILE, "utf8");
@@ -1725,16 +1884,31 @@ function validateSubscriptionHistory(history) {
   }
 }
 
-function mergeProviderSubscription(provider, subscription, providerId = provider?.id) {
+function mergeProviderSubscription(provider, subscription, providerId = provider?.id, officialPricing = null) {
   if (!provider || provider.status === "error") return provider;
-  if (!hasSubscriptionValue(subscription)) return enrichProviderSubscriptionFromCatalog(provider, providerId);
+  if (!hasSubscriptionValue(subscription)) return enrichProviderSubscriptionFromCatalog(provider, providerId, officialPricing);
   const sourcePlan = String(provider.planType || "").trim();
   const planType = subscription.planType || sourcePlan || null;
+  const monthlyCost = positiveAmount(subscription.monthlyCost);
+  if (!(monthlyCost > 0)) {
+    return enrichProviderSubscriptionFromCatalog({
+      ...provider,
+      planType,
+      planSource: subscription.planType ? "local_settings" : provider.planSource || null,
+      subscription: {
+        ...(provider.subscription && typeof provider.subscription === "object" ? provider.subscription : {}),
+        planType,
+        planSource: subscription.planType ? "local_settings" : provider.planSource || null
+      }
+    }, providerId, officialPricing);
+  }
   const mergedSubscription = {
     planType,
-    monthlyCost: subscription.monthlyCost || 0,
+    monthlyCost,
     currency: normalizeCurrency(subscription.currency || "EUR"),
-    source: "local_settings"
+    source: "local_settings",
+    costStatus: "local_settings",
+    priceSourceType: "local_settings"
   };
   const merged = {
     ...provider,
@@ -1746,7 +1920,7 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
   return merged;
 }
 
-function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.id) {
+function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.id, officialPricing = null) {
   if (!provider || provider.status === "error") return provider;
   const existing = provider.subscription && typeof provider.subscription === "object" ? provider.subscription : null;
   const explicitCost = positiveAmount(existing?.monthlyCost);
@@ -1756,7 +1930,8 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   if (!planType) return provider;
 
   const planSource = existing?.planSource || existing?.source || provider.planSource || null;
-  const catalog = publicSubscriptionPlan(providerId, planType);
+  const official = officialSubscriptionPlan(providerId, planType, officialPricing);
+  const catalog = official || publicSubscriptionPlan(providerId, planType);
   const subscription = {
     ...(existing || {}),
     planType,
@@ -1764,9 +1939,16 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
     currency: catalog ? catalog.currency : normalizeCurrency(existing?.currency || "EUR"),
     source: catalog ? catalog.source : existing?.source || planSource,
     planSource,
-    catalogReviewedAt: catalog ? SUBSCRIPTION_CATALOG_REVIEW_DATE : null,
+    updatedAt: catalog?.fetchedAt || existing?.updatedAt || null,
+    fetchedAt: catalog?.fetchedAt || null,
+    catalogReviewedAt: catalog && catalog.source === "bundled_catalog" ? SUBSCRIPTION_CATALOG_REVIEW_DATE : null,
     sourceUrl: catalog ? catalog.sourceUrl : null,
-    costStatus: catalog ? "catalog" : "catalog_missing",
+    planKey: catalog?.planKey || normalizeSubscriptionPlanKey(planType),
+    parserStatus: catalog?.parserStatus || (catalog ? "bundled" : "missing"),
+    priceType: catalog?.priceType || (catalog ? "bundled_catalog" : null),
+    priceSourceType: catalog?.source || (catalog ? "bundled_catalog" : "unknown"),
+    officialListPrice: catalog?.priceType === "official_list_price",
+    costStatus: catalog ? catalog.source : "catalog_missing",
     costReason: catalog ? null : subscriptionCostMissingReasonKey(providerId, existing?.source || planSource)
   };
 
@@ -1774,6 +1956,23 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
     ...provider,
     planType,
     subscription
+  };
+}
+
+function officialSubscriptionPlan(providerId, planType, officialPricing) {
+  const family = subscriptionCatalogFamily(providerId);
+  const entries = family ? officialPricing?.families?.[family]?.entries || [] : [];
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  if (!planKey) return null;
+  const entry = entries.find((candidate) => (candidate.aliases || []).some((alias) => normalizeSubscriptionPlanKey(alias) === planKey));
+  if (!entry) return null;
+  const familyMeta = officialPricing.families[family] || {};
+  return {
+    ...entry,
+    source: familyMeta.source || entry.source || "official_pricing_page",
+    sourceUrl: familyMeta.sourceUrl || entry.sourceUrl,
+    fetchedAt: familyMeta.fetchedAt || entry.fetchedAt,
+    parserStatus: familyMeta.parserStatus || entry.parserStatus || "parsed"
   };
 }
 
@@ -1809,6 +2008,10 @@ function normalizeSubscriptionPlanKey(value) {
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function hasSubscriptionValue(subscription) {
@@ -4787,6 +4990,32 @@ async function fetchJson(url, options = {}) {
   return json;
 }
 
+async function fetchText(url, options = {}) {
+  const { timeoutMs = EXTERNAL_FETCH_TIMEOUT_MS, ...fetchOptions } = options;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      headers: {
+        "user-agent": "LLM Usage Dashboard pricing audit (+https://github.com/kollinger/llm-usage-dashboard)",
+        accept: "text/html,application/xhtml+xml",
+        ...(fetchOptions.headers || {})
+      },
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error(`Timed out fetching ${new URL(url).hostname}`);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+  const text = await response.text();
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return text;
+}
+
 function startOllamaProxy() {
   const proxy = express();
   proxy.use(express.json({ limit: "50mb", type: "*/*" }));
@@ -5679,6 +5908,10 @@ module.exports = {
     sanitizeUpdateSettings,
     mergeUpdateSettingsPatch,
     normalizeClaudeBrowserCreditsSnapshot,
-    buildNotificationAlerts
+    buildNotificationAlerts,
+    parseOpenAiCodexPricingPage,
+    parseClaudePricingPage,
+    officialSubscriptionPlan,
+    mergeProviderSubscription
   }
 };

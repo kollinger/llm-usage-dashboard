@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Live-nopeus, liukuva 60 s"
   },
   "pricing": {
     "eyebrow": "API-kustannukset",
@@ -339,6 +340,14 @@
       "heading": "Fable-kiintiön lähde",
       "available": "Erillinen Fable-kiintiö oli koneluettava ja näytetään omana rivinään.",
       "unavailable": "Claude-tilarivi, selain-/tilitiedot ja paikalliset lokit eivät paljastaneet erillistä Fable-kiintiötä; synteettistä kiintiötä ei näytetä."
+    },
+    "freshness": {
+      "ariaLabel": "Palveluntarjoajan datan aika",
+      "usage": "Käyttö {time}",
+      "limits": "Rajat {time}",
+      "prices": "Hinnat {time}",
+      "catalog": "Katalogi {date}",
+      "unknown": "Data-aika tuntematon"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Katalogiarvo"
+      "catalog": "Katalogiarvo",
+      "official": "Virallinen listahinta"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "tilin/laskutuksen lähde",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropicin julkinen tilausluettelo",
       "claude_browser_sync": "Claude-selaimen/tilin synkronointi",
       "claude_api": "Claude-tilin kaytto-API",
-      "browser": "selaintilin lahde"
+      "browser": "selaintilin lahde",
+      "official_pricing_page": "virallinen hinnastosivu",
+      "cached_official_snapshot": "välimuistissa oleva virallinen vedos",
+      "bundled_catalog": "mukana toimitettu katalogi"
     },
     "catalogReviewed": "Katalogi tarkistettu {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "luettelon varahinta",
       "notConfigured": "ei mukana tässä ajossa",
       "notAvailable": "turvallista vain luku -hintalähdettä ei ole",
-      "notUsed": "ei käytössä"
+      "notUsed": "ei käytössä",
+      "officialListPrice": "virallinen listahinta"
+    },
+    "officialListPriceNote": "Virallinen listahinta; todellinen laskutus voi poiketa ALV:n/verojen, vuosialennusten, käyttäjäpaikkojen, kuponkien, aluehintojen tai Enterprise-sopimusten vuoksi.",
+    "fetched": "Haettu {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Paketin avain: {key}",
+    "parserStatus": "Jäsennin: {status}",
+    "priceSourceTypeLabel": "Hintalähteen tyyppi",
+    "sourceUrlLabel": "Lähde-URL",
+    "fetchedLabel": "Haku-/data-aika",
+    "planKeyLabel": "Paketin avain",
+    "parserStatusLabel": "Jäsentimen tila",
+    "parserStatuses": {
+      "parsed": "jäsennetty",
+      "parse_failed": "jäsennys epäonnistui",
+      "cached_after_fetch_error": "välimuisti hakuvirheen jälkeen",
+      "bundled": "mukana oleva varavaihtoehto",
+      "missing": "puuttuu",
+      "unknown": "tuntematon"
     }
   }
 }

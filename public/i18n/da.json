@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Live-rate, rullende 60 s"
   },
   "pricing": {
     "eyebrow": "API-omkostninger",
@@ -339,6 +340,14 @@
       "heading": "Fable-kvotekilde",
       "available": "En særskilt Fable-kvote var maskinlæsbar og vises som sin egen række.",
       "unavailable": "Claude-statuslinjen, browser-/kontodata og lokale logs eksponerede ikke en særskilt Fable-kvote; der vises ingen syntetisk kvote."
+    },
+    "freshness": {
+      "ariaLabel": "Datatidspunkt for udbyder",
+      "usage": "Forbrug {time}",
+      "limits": "Grænser {time}",
+      "prices": "Priser {time}",
+      "catalog": "Katalog {date}",
+      "unknown": "Datatid ukendt"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Katalogværdi"
+      "catalog": "Katalogværdi",
+      "official": "Officiel listepris"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "konto-/faktureringskilde",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropics offentlige abonnementskatalog",
       "claude_browser_sync": "Claude browser-/kontosynk",
       "claude_api": "Claude konto-forbrugs-API",
-      "browser": "browserkontokilde"
+      "browser": "browserkontokilde",
+      "official_pricing_page": "officiel prisside",
+      "cached_official_snapshot": "cachet officielt snapshot",
+      "bundled_catalog": "indbygget katalog"
     },
     "catalogReviewed": "Katalog gennemgået {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "reservepris fra katalog",
       "notConfigured": "ikke til stede i denne kørsel",
       "notAvailable": "ingen sikker skrivebeskyttet priskilde tilgængelig",
-      "notUsed": "ikke brugt"
+      "notUsed": "ikke brugt",
+      "officialListPrice": "officiel listepris"
+    },
+    "officialListPriceNote": "Officiel listepris; faktisk fakturering kan afvige pga. moms/skatter, års-rabatter, seats, kuponer, regionale priser eller Enterprise-aftaler.",
+    "fetched": "Hentet {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plannøgle: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Pris-kildetype",
+    "sourceUrlLabel": "Kilde-URL",
+    "fetchedLabel": "Hente-/datatid",
+    "planKeyLabel": "Plannøgle",
+    "parserStatusLabel": "Parserstatus",
+    "parserStatuses": {
+      "parsed": "parset",
+      "parse_failed": "parse fejlede",
+      "cached_after_fetch_error": "cache efter hente-fejl",
+      "bundled": "indbygget fallback",
+      "missing": "mangler",
+      "unknown": "ukendt"
     }
   }
 }

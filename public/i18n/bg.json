@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Жива скорост, 60 s плъзгащ прозорец"
   },
   "pricing": {
     "eyebrow": "API разходи",
@@ -339,6 +340,14 @@
       "heading": "Източник за квота Fable",
       "available": "Отделната квота Fable е машинно четима и се показва като собствен ред.",
       "unavailable": "Статусът на Claude, данните от браузър/акаунт и локалните логове не показаха отделна квота Fable; не се показва изкуствена квота."
+    },
+    "freshness": {
+      "ariaLabel": "Време на данните за доставчика",
+      "usage": "Употреба {time}",
+      "limits": "Лимити {time}",
+      "prices": "Цени {time}",
+      "catalog": "Каталог {date}",
+      "unknown": "Времето на данните е неизвестно"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Стойност от каталога"
+      "catalog": "Стойност от каталога",
+      "official": "Официална каталожна цена"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "източник от акаунт/таксуване",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "публичен каталог с абонаменти на Anthropic",
       "claude_browser_sync": "синхронизация на браузър/акаунт Claude",
       "claude_api": "API за употреба на акаунт Claude",
-      "browser": "източник от браузърен акаунт"
+      "browser": "източник от браузърен акаунт",
+      "official_pricing_page": "официална ценова страница",
+      "cached_official_snapshot": "кеширан официален snapshot",
+      "bundled_catalog": "вграден каталог"
     },
     "catalogReviewed": "Каталогът е прегледан на {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "резервна цена от каталога",
       "notConfigured": "не присъства в това изпълнение",
       "notAvailable": "няма безопасен източник само за четене за цена",
-      "notUsed": "не се използва"
+      "notUsed": "не се използва",
+      "officialListPrice": "официална каталожна цена"
+    },
+    "officialListPriceNote": "Официална каталожна цена; реалното таксуване може да се различава заради ДДС/данъци, годишни отстъпки, места, купони, регионални цени или Enterprise договори.",
+    "fetched": "Изтеглено {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Ключ на план: {key}",
+    "parserStatus": "Парсер: {status}",
+    "priceSourceTypeLabel": "Тип ценови източник",
+    "sourceUrlLabel": "URL на източника",
+    "fetchedLabel": "Време на извличане/данни",
+    "planKeyLabel": "Ключ на план",
+    "parserStatusLabel": "Статус на парсера",
+    "parserStatuses": {
+      "parsed": "парснато",
+      "parse_failed": "парсването не успя",
+      "cached_after_fetch_error": "кеш след грешка при извличане",
+      "bundled": "вграден fallback",
+      "missing": "липсва",
+      "unknown": "неизвестно"
     }
   }
 }

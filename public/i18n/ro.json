@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Rată live pe 60 s glisant"
   },
   "pricing": {
     "eyebrow": "Costuri API",
@@ -339,6 +340,14 @@
       "heading": "Sursa cotei Fable",
       "available": "Cota Fable distinctă a fost citibilă automat și este afișată pe propriul rând.",
       "unavailable": "Linia de stare Claude, datele browserului/contului și logurile locale nu au expus o cotă Fable distinctă; nu se afișează o cotă sintetică."
+    },
+    "freshness": {
+      "ariaLabel": "Ora datelor furnizorului",
+      "usage": "Utilizare {time}",
+      "limits": "Limite {time}",
+      "prices": "Prețuri {time}",
+      "catalog": "Catalog {date}",
+      "unknown": "Ora datelor necunoscută"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Valoare din catalog"
+      "catalog": "Valoare din catalog",
+      "official": "Preț oficial de listă"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "sursă cont/facturare",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "catalogul public de abonamente Anthropic",
       "claude_browser_sync": "sincronizare browser/cont Claude",
       "claude_api": "API utilizare cont Claude",
-      "browser": "sursa cont browser"
+      "browser": "sursa cont browser",
+      "official_pricing_page": "pagină oficială de prețuri",
+      "cached_official_snapshot": "snapshot oficial în cache",
+      "bundled_catalog": "catalog inclus"
     },
     "catalogReviewed": "Catalog verificat la {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "preț de rezervă din catalog",
       "notConfigured": "nu este prezent în această rulare",
       "notAvailable": "nu există sursă sigură de preț doar pentru citire",
-      "notUsed": "neutilizat"
+      "notUsed": "neutilizat",
+      "officialListPrice": "preț oficial de listă"
+    },
+    "officialListPriceNote": "Preț oficial de listă; factura reală poate diferi din cauza TVA/taxelor, reducerilor anuale, locurilor, cupoanelor, prețurilor regionale sau contractelor Enterprise.",
+    "fetched": "Preluat {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Cheie plan: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Tip sursă preț",
+    "sourceUrlLabel": "URL sursă",
+    "fetchedLabel": "Ora preluării/datelor",
+    "planKeyLabel": "Cheie plan",
+    "parserStatusLabel": "Stare parser",
+    "parserStatuses": {
+      "parsed": "analizat",
+      "parse_failed": "analiza a eșuat",
+      "cached_after_fetch_error": "cache după eroare de preluare",
+      "bundled": "fallback inclus",
+      "missing": "lipsește",
+      "unknown": "necunoscut"
     }
   }
 }

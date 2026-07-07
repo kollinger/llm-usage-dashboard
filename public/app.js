@@ -158,7 +158,7 @@ const providerBrandMeta = {
   codex: { label: "Codex", mark: "Cx", logo: "codex.svg", accent: providerMeta.codex.accent },
   codexSpark: { label: "Codex Spark", mark: "Sp", logo: "codex.svg", accent: providerMeta.codexSpark.accent },
   copilot: { label: "GitHub Copilot", mark: "GH", logo: "github-copilot.svg", accent: providerMeta.copilot.accent },
-  claudeCode: { label: "Claude Code", mark: "Cl", logo: "claude-code.svg", accent: providerMeta.claudeCode.accent },
+  claudeCode: { label: "Claude Code", mark: "Cl", logo: "claude.svg", accent: providerMeta.claudeCode.accent },
   anthropic: { label: "Anthropic", mark: "An", logo: "anthropic.svg", accent: providerMeta.anthropic.accent },
   openai: { label: "OpenAI", mark: "AI", logo: "openai.svg", accent: providerMeta.openai.accent },
   gemini: { label: "Google Gemini", mark: "G", logo: "gemini.svg", accent: providerMeta.gemini.accent },
@@ -254,6 +254,9 @@ const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
 const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
 const LIMIT_GAUGE_TARGET_PERCENT = 100;
+const LIVE_TOKEN_DISPLAY_TICK_MS = 1000;
+const LIVE_TOKEN_RATE_WINDOW_MS = 60_000;
+const LIVE_TOKEN_RATE_EMA_ALPHA = 0.42;
 const USAGE_POLL_INTERVAL_MS = 60_000;
 const SYSTEM_LIVE_POLL_INTERVAL_MS = 5_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
@@ -282,22 +285,22 @@ const publicSubscriptionPlanCatalog = {
       aliases: ["plus", "chatgpt plus", "codex plus"],
       monthlyCost: 20,
       currency: "USD",
-      source: "openai_public_catalog",
-      sourceUrl: "https://chatgpt.com/codex/pricing/"
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
       aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
       monthlyCost: 100,
       currency: "USD",
-      source: "openai_public_catalog",
-      sourceUrl: "https://chatgpt.com/codex/pricing/"
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
       aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
       monthlyCost: 200,
       currency: "USD",
-      source: "openai_public_catalog",
-      sourceUrl: "https://chatgpt.com/codex/pricing/"
+      source: "bundled_catalog",
+      sourceUrl: "https://developers.openai.com/codex/pricing"
     }
   ],
   anthropic: [
@@ -305,21 +308,21 @@ const publicSubscriptionPlanCatalog = {
       aliases: ["pro", "claude pro"],
       monthlyCost: 20,
       currency: "USD",
-      source: "anthropic_public_catalog",
+      source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing"
     },
     {
       aliases: ["max", "claude max", "max 5x", "max-5x"],
       monthlyCost: 100,
       currency: "USD",
-      source: "anthropic_public_catalog",
+      source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing"
     },
     {
       aliases: ["max 20x", "max-20x", "20x"],
       monthlyCost: 200,
       currency: "USD",
-      source: "anthropic_public_catalog",
+      source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing"
     }
   ]
@@ -1329,10 +1332,12 @@ async function init() {
   await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics(), loadSystemMetrics()]);
   setInterval(pollUsage, USAGE_POLL_INTERVAL_MS);
   setInterval(pollSystemMetrics, SYSTEM_LIVE_POLL_INTERVAL_MS);
+  setInterval(renderLiveTokenRateTick, LIVE_TOKEN_DISPLAY_TICK_MS);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       pollUsage();
       pollSystemMetrics();
+      renderLiveTokenRateTick();
     }
   });
 }
@@ -2390,6 +2395,10 @@ function normalizeCodexProvider(codex) {
     secondaryLabel: t("limits.weekly"),
     todayTokens: last24hTokens,
     allTimeTokens,
+    usageUpdatedAt: codex?.latest?.timestamp || null,
+    limitsUpdatedAt: limitUpdatedAt || null,
+    priceUpdatedAt: subscription?.updatedAt || null,
+    catalogReviewedAt: subscription?.catalogReviewedAt || null,
     subscription,
     foot
   };
@@ -2425,6 +2434,10 @@ function normalizeCodexSparkProvider(spark, codexSubscription) {
     todayTokens: spark?.totals?.last24h?.totalTokens,
     allTimeTokens: spark?.totals?.allTime?.totalTokens,
     apiTokens: spark?.totals?.last24h?.totalTokens,
+    usageUpdatedAt: spark?.latest?.timestamp || null,
+    limitsUpdatedAt: limitUpdatedAt || null,
+    priceUpdatedAt: subscription?.updatedAt || null,
+    catalogReviewedAt: subscription?.catalogReviewedAt || null,
     message: localizeProviderMessage(spark?.message, "providers.messages.sparkTokens24h"),
     foot: buildQuotaFoot({
       providerId: "codexSpark",
@@ -2477,6 +2490,12 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let sourceUrl = source.sourceUrl || null;
   let costStatus = source.costStatus || null;
   let costReason = source.costReason || fallbackSource.costReason || null;
+  let fetchedAt = source.fetchedAt || null;
+  let parserStatus = source.parserStatus || null;
+  let planKey = source.planKey || null;
+  let priceType = source.priceType || null;
+  let priceSourceType = source.priceSourceType || null;
+  let officialListPrice = Boolean(source.officialListPrice);
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
     currency = catalog.currency;
@@ -2487,8 +2506,13 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     catalogReviewedAt = SUBSCRIPTION_CATALOG_REVIEW_DATE;
     sourceUrl = catalog.sourceUrl;
     costStatus = "catalog";
+    planKey = normalizeSubscriptionPlanKey(planType);
+    parserStatus = "bundled";
+    priceType = "bundled_catalog";
+    priceSourceType = "bundled_catalog";
   } else if (!(monthlyCost > 0) && planType && sourceId) {
     costStatus = costStatus || "catalog_missing";
+    priceSourceType = priceSourceType || "unknown";
     costReason = costReason || subscriptionCostMissingReasonKey(providerId, sourceId || planSource);
   }
   if (!planType && !(monthlyCost > 0) && !sourceId) return null;
@@ -2501,9 +2525,15 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     updatedAt,
     catalogReviewedAt,
     sourceUrl,
+    fetchedAt,
+    parserStatus,
+    planKey,
+    priceType,
+    priceSourceType: priceSourceType || sourceId || null,
+    officialListPrice,
     costStatus,
     costReason,
-    quality: subscriptionQuality(sourceId, monthlyCost, { costStatus, catalogReviewedAt })
+    quality: subscriptionQuality(sourceId, monthlyCost, { costStatus, catalogReviewedAt, priceSourceType })
   };
 }
 
@@ -2520,7 +2550,8 @@ function subscriptionCostMissingReasonKey(providerId, sourceId) {
 
 function subscriptionQuality(sourceId, monthlyCost, meta = {}) {
   if (sourceId === "local_settings") return "manual";
-  if (meta.costStatus === "catalog" || meta.catalogReviewedAt || /public_catalog$/u.test(String(sourceId || ""))) return "catalog";
+  if (["official_pricing_page", "cached_official_snapshot"].includes(meta.priceSourceType || sourceId)) return "official";
+  if (meta.costStatus === "catalog" || meta.catalogReviewedAt || sourceId === "bundled_catalog" || /public_catalog$/u.test(String(sourceId || ""))) return "catalog";
   if (sourceId && Number(monthlyCost || 0) > 0) return "automatic";
   if (sourceId) return "estimated";
   return "unknown";
@@ -2598,6 +2629,10 @@ function normalizeLocalProvider(id, provider) {
     todayTokens: provider?.totals?.last24h?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
+    usageUpdatedAt: provider?.latest?.timestamp || null,
+    limitsUpdatedAt: updatedAt || null,
+    priceUpdatedAt: subscription?.updatedAt || null,
+    catalogReviewedAt: subscription?.catalogReviewedAt || null,
     subscription,
     message: localizeProviderMessage(
       provider?.message,
@@ -2758,7 +2793,9 @@ function normalizeLimitRow(row) {
 
 function finiteUiNumberOrNull(value) {
   if (value === null || value === undefined || value === "") return null;
-  const number = Number(value);
+  const normalized = typeof value === "string" ? value.trim().replace(/\s*%$/u, "") : value;
+  if (normalized === "") return null;
+  const number = Number(normalized);
   return Number.isFinite(number) ? number : null;
 }
 
@@ -2915,6 +2952,10 @@ function normalizeApiProvider(id, provider) {
     allTimeTokens: totalTokens,
     cost: costs?.total,
     currency: costs?.currency,
+    usageUpdatedAt: provider?.updatedAt || null,
+    limitsUpdatedAt: provider?.updatedAt || null,
+    priceUpdatedAt: subscription?.updatedAt || null,
+    catalogReviewedAt: subscription?.catalogReviewedAt || null,
     subscription,
     message:
       provider?.status === "not_configured"
@@ -3062,6 +3103,7 @@ function renderProvider(provider, index = 0, total = 1) {
         </div>
         <span class="status-pill ${statusClass}">${statusText(provider.status)}</span>
       </div>
+      ${renderProviderFreshness(provider)}
       ${renderProviderSubscription(provider)}
       ${main}
       ${renderLimitAlert(provider)}
@@ -3075,6 +3117,52 @@ function renderProvider(provider, index = 0, total = 1) {
       </div>
     </article>
   `;
+}
+
+function renderProviderFreshness(provider) {
+  const rows = providerFreshnessRows(provider);
+  const title = rows.map((row) => row.title || row.label).join(" · ");
+  return `
+    <div class="provider-freshness" aria-label="${escapeHtml(t("providers.freshness.ariaLabel"))}" title="${escapeHtml(title)}">
+      ${rows.map((row) => `<span>${escapeHtml(row.label)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function providerFreshnessRows(provider) {
+  const rows = [];
+  const usageTime = provider?.usageUpdatedAt || provider?.limitsUpdatedAt || null;
+  const limitsTime = provider?.limitsUpdatedAt || null;
+  if (usageTime) {
+    rows.push({
+      label: t("providers.freshness.usage", { time: formatUpdatedAt(usageTime) }),
+      title: t("providers.freshness.usage", { time: formatUpdatedAtFull(usageTime) })
+    });
+  }
+  if (limitsTime && limitsTime !== usageTime) {
+    rows.push({
+      label: t("providers.freshness.limits", { time: formatUpdatedAt(limitsTime) }),
+      title: t("providers.freshness.limits", { time: formatUpdatedAtFull(limitsTime) })
+    });
+  }
+  if (provider?.priceUpdatedAt) {
+    rows.push({
+      label: t("providers.freshness.prices", { time: formatUpdatedAt(provider.priceUpdatedAt) }),
+      title: t("providers.freshness.prices", { time: formatUpdatedAtFull(provider.priceUpdatedAt) })
+    });
+  } else if (provider?.catalogReviewedAt) {
+    rows.push({
+      label: t("providers.freshness.catalog", { date: provider.catalogReviewedAt }),
+      title: t("providers.freshness.catalog", { date: provider.catalogReviewedAt })
+    });
+  }
+  if (!rows.length) {
+    rows.push({
+      label: t("providers.freshness.unknown"),
+      title: t("providers.freshness.unknown")
+    });
+  }
+  return rows.slice(0, 3);
 }
 
 function renderProviderDragHandle(provider, index, total) {
@@ -3113,7 +3201,12 @@ function renderProviderSubscription(provider) {
     subscription.quality === "catalog" && subscription.planSource
       ? t("subscriptions.catalogFallbackNote")
       : "",
+    subscription.quality === "official" ? t("subscriptions.officialListPriceNote") : "",
     subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : "",
+    subscription.fetchedAt ? t("subscriptions.fetched", { time: formatUpdatedAt(subscription.fetchedAt) }) : "",
+    subscription.sourceUrl ? t("subscriptions.sourceUrl", { url: subscription.sourceUrl }) : "",
+    subscription.planKey ? t("subscriptions.planKey", { key: subscription.planKey }) : "",
+    subscription.parserStatus ? t("subscriptions.parserStatus", { status: subscriptionParserStatusLabel(subscription.parserStatus) }) : "",
     subscription.catalogReviewedAt ? t("subscriptions.catalogReviewed", { date: subscription.catalogReviewedAt }) : "",
     subscription.costStatus === "catalog_missing" ? subscriptionCostMissingText(subscription) : "",
     subscription.costStatus === "catalog_missing" ? t("subscriptions.costActions.addFallback") : ""
@@ -3154,6 +3247,8 @@ function subscriptionSourceAuditRows(provider, subscription) {
   const planSource = subscription?.planSource || source;
   const rows = [];
   const detectedPrice = subscription?.monthlyCost > 0 && subscription?.quality === "automatic";
+  const officialSource = subscription?.source === "official_pricing_page" || subscription?.source === "cached_official_snapshot";
+  const bundledSource = subscription?.source === "bundled_catalog" || subscription?.quality === "catalog";
 
   if (["claudeCode", "anthropic"].includes(providerId)) {
     rows.push({
@@ -3169,8 +3264,14 @@ function subscriptionSourceAuditRows(provider, subscription) {
         : t("subscriptions.sourceAudit.browserNoPrice")
     });
     rows.push({
-      source: subscriptionSourceLabel("anthropic_public_catalog"),
-      status: subscription?.quality === "catalog"
+      source: subscriptionSourceLabel("official_pricing_page"),
+      status: officialSource
+        ? t("subscriptions.sourceAudit.officialListPrice")
+        : t("subscriptions.sourceAudit.notUsed")
+    });
+    rows.push({
+      source: subscriptionSourceLabel("bundled_catalog"),
+      status: bundledSource
         ? t("subscriptions.sourceAudit.catalogFallback")
         : t("subscriptions.sourceAudit.notUsed")
     });
@@ -3191,8 +3292,14 @@ function subscriptionSourceAuditRows(provider, subscription) {
         : t("subscriptions.sourceAudit.notAvailable")
     });
     rows.push({
-      source: subscriptionSourceLabel("openai_public_catalog"),
-      status: subscription?.quality === "catalog"
+      source: subscriptionSourceLabel("official_pricing_page"),
+      status: officialSource
+        ? t("subscriptions.sourceAudit.officialListPrice")
+        : t("subscriptions.sourceAudit.notUsed")
+    });
+    rows.push({
+      source: subscriptionSourceLabel("bundled_catalog"),
+      status: bundledSource
         ? t("subscriptions.sourceAudit.catalogFallback")
         : t("subscriptions.sourceAudit.notUsed")
     });
@@ -3289,7 +3396,7 @@ function renderLimitBars(provider) {
     : normalizeLimitRows({ fiveHour: provider.fiveHour, weekly: provider.weekly });
   if (!rows.length) return "";
   return `
-    <div class="limit-bars${rows.length > 1 ? " limit-bars-grid" : ""}">
+    <div class="limit-bars limit-bars-mode-${escapeHtml(state.usageProjectionMode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
       ${renderUsageProjectionModeToggle()}
       ${rows.map((row) => renderLimitBar(row, provider.accent)).join("")}
     </div>
@@ -3750,7 +3857,7 @@ function renderTokenList(totals) {
 
 function renderLiveGauges(metrics) {
   if (!els.liveGaugeGrid) return;
-  const live = metrics || unavailableLiveMetrics();
+  const live = metrics ? liveMetricsWithDisplayedTokenRate(metrics) : unavailableLiveMetrics();
   els.liveMetricsUpdated.textContent = metrics?.timestamp
     ? t("liveMetrics.updated", { time: formatUpdatedAt(metrics.timestamp) })
     : state.systemMetricsError
@@ -3760,6 +3867,95 @@ function renderLiveGauges(metrics) {
   renderLiveProcessBreakdown(metrics);
   renderLiveHistory(metrics);
   refreshIcons();
+}
+
+function renderLiveTokenRateTick(nowMs = Date.now()) {
+  if (!state.systemMetrics || !els.liveGaugeGrid) return;
+  const card = els.liveGaugeGrid.querySelector?.('[data-live-gauge-id="tokensPerMin"]');
+  if (!card) return;
+  const live = liveMetricsWithDisplayedTokenRate(state.systemMetrics, nowMs);
+  const gauge = liveGaugeDefinitions(live).find((item) => item.id === "tokensPerMin");
+  if (!gauge) return;
+  const ring = card.querySelector?.(".live-gauge-ring");
+  const value = ring?.querySelector?.("strong");
+  const sub = card.querySelector?.(".live-gauge-sub");
+  const quality = card.querySelector?.(".live-quality-badge");
+  if (ring) {
+    ring.style.setProperty("--percent", String(clampUiPercent(gauge.percent || 0)));
+    ring.dataset.valueLen = String(String(gauge.value || "").length);
+  }
+  if (value) value.textContent = gauge.value;
+  if (sub) sub.textContent = gauge.sub || "";
+  if (quality) {
+    quality.className = `live-quality-badge live-quality-${gauge.quality || "unavailable"}`;
+    quality.textContent = liveQualityLabel(gauge.quality);
+  }
+}
+
+function liveMetricsWithDisplayedTokenRate(metrics, nowMs = Date.now()) {
+  if (!metrics) return unavailableLiveMetrics();
+  return {
+    ...metrics,
+    tokensPerMinute: smoothedLiveTokenRateForDisplay(metrics, nowMs)
+  };
+}
+
+function smoothedLiveTokenRateForDisplay(metrics, nowMs = Date.now()) {
+  const source = metrics?.tokensPerMinute || unavailableLiveMetrics().tokensPerMinute;
+  const value = smoothLiveTokenRateField(metrics, "total", nowMs, source.value);
+  const input = smoothLiveTokenRateField(metrics, "input", nowMs, source.input?.value);
+  const output = smoothLiveTokenRateField(metrics, "output", nowMs, source.output?.value);
+  const cached = smoothLiveTokenRateField(metrics, "cached", nowMs, source.cached?.value);
+  return {
+    ...source,
+    value: value.value,
+    quality: value.quality,
+    input: { ...(source.input || {}), value: input.value, quality: input.quality },
+    output: { ...(source.output || {}), value: output.value, quality: output.quality },
+    cached: { ...(source.cached || {}), value: cached.value, quality: cached.quality }
+  };
+}
+
+function smoothLiveTokenRateField(metrics, field, nowMs, fallbackValue) {
+  const samples = liveTokenRateSamples(metrics, field, nowMs);
+  if (!samples.length) {
+    return {
+      value: fallbackValue === null || fallbackValue === undefined ? null : Math.max(0, Number(fallbackValue) || 0),
+      quality: fallbackValue === null || fallbackValue === undefined ? "unavailable" : "calculated"
+    };
+  }
+  let ema = samples[0].value;
+  for (const sample of samples.slice(1)) {
+    ema = LIVE_TOKEN_RATE_EMA_ALPHA * sample.value + (1 - LIVE_TOKEN_RATE_EMA_ALPHA) * ema;
+  }
+  const latest = samples[samples.length - 1];
+  const blend = latest.value > ema
+    ? latest.value * 0.72 + ema * 0.28
+    : ema * 0.68 + latest.value * 0.32;
+  const ageMs = Math.max(0, nowMs - latest.ts);
+  const decay = Math.max(0, 1 - ageMs / LIVE_TOKEN_RATE_WINDOW_MS);
+  const value = Math.max(0, Math.round(blend * decay));
+  return { value, quality: "calculated" };
+}
+
+function liveTokenRateSamples(metrics, field, nowMs) {
+  const tokenKey = field === "total" ? "total" : field;
+  const points = Array.isArray(metrics?.timeSeries) ? metrics.timeSeries : [];
+  const samples = points
+    .map((point) => {
+      const ts = Date.parse(point?.timestamp);
+      const value = Number(point?.tokensPerMinute?.[tokenKey]);
+      return Number.isFinite(ts) && Number.isFinite(value) && value >= 0 ? { ts, value } : null;
+    })
+    .filter(Boolean)
+    .filter((sample) => nowMs - sample.ts <= LIVE_TOKEN_RATE_WINDOW_MS);
+  const directValue = field === "total" ? metrics?.tokensPerMinute?.value : metrics?.tokensPerMinute?.[field]?.value;
+  const directTs = Date.parse(metrics?.timestamp);
+  if (Number.isFinite(directTs) && Number.isFinite(Number(directValue)) && Number(directValue) >= 0) {
+    const hasDirectSample = samples.some((sample) => sample.ts === directTs);
+    if (!hasDirectSample) samples.push({ ts: directTs, value: Number(directValue) });
+  }
+  return samples.sort((a, b) => a.ts - b.ts);
 }
 
 function unavailableLiveMetrics() {
@@ -3861,7 +4057,7 @@ function liveGaugeDefinitions(metrics) {
       percent: tokens.value === null || tokens.value === undefined ? 0 : clampUiPercent((Number(tokens.value) / 1_000_000) * 100),
       quality: tokens.quality,
       accent: "#2e6ea6",
-      sub: formatLiveTokenBreakdown(tokens),
+      sub: formatLiveTokenRateSub(tokens),
       help: t("liveMetrics.tokensPerMinuteHelp")
     }
   ];
@@ -3872,7 +4068,7 @@ function renderLiveGaugeCard(gauge) {
   const quality = gauge.quality || "unavailable";
   const valueLen = String(gauge.value || "").length;
   return `
-    <article class="live-gauge-card">
+    <article class="live-gauge-card" data-live-gauge-id="${escapeHtml(gauge.id)}">
       <div class="live-gauge-top">
         <span class="live-gauge-label">${escapeHtml(gauge.label)}</span>
         ${gauge.help ? `<button type="button" class="mini-stat-help live-gauge-help" aria-label="${escapeHtml(gauge.help)}" title="${escapeHtml(gauge.help)}"><i data-lucide="info"></i></button>` : ""}
@@ -4128,6 +4324,11 @@ function formatLiveTokenBreakdown(tokens) {
   return rows.map(([label, value]) => `${label} ${formatTokensPerMin(value)}`).join(" · ");
 }
 
+function formatLiveTokenRateSub(tokens) {
+  const breakdown = formatLiveTokenBreakdown(tokens);
+  return [t("liveMetrics.recentRateWindow"), breakdown].filter(Boolean).join(" · ");
+}
+
 function formatTokensPerMin(value) {
   if (value === null || value === undefined) return t("liveMetrics.unavailableShort");
   const num = Math.max(0, Number(value) || 0);
@@ -4195,7 +4396,6 @@ function renderPricing(local, filteredDaily = [], providers = []) {
             </div>
           </td>
           <td class="score-cell">${renderQualityScore(price)}</td>
-          <td>${escapeHtml(priceRegion(price))}</td>
           <td>${renderLimitCell(price)}</td>
           <td class="numeric">${formatUsdPerM(price.inputUsd)}</td>
           <td class="numeric">${formatCacheRate(price)}</td>
@@ -4406,6 +4606,26 @@ function renderSubscriptionPricingCard({ provider, subscription, previous }) {
         <div>
           <dt>${escapeHtml(t("subscriptions.planSourceLabel"))}</dt>
           <dd>${escapeHtml(subscription?.planSource ? subscriptionSourceLabel(subscription.planSource) : t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.priceSourceTypeLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.priceSourceType ? subscriptionSourceLabel(subscription.priceSourceType) : t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.sourceUrlLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.sourceUrl || t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.fetchedLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.fetchedAt ? formatUpdatedAt(subscription.fetchedAt) : subscription?.catalogReviewedAt || t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.planKeyLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.planKey || t("pricing.unknown"))}</dd>
+        </div>
+        <div>
+          <dt>${escapeHtml(t("subscriptions.parserStatusLabel"))}</dt>
+          <dd>${escapeHtml(subscription?.parserStatus ? subscriptionParserStatusLabel(subscription.parserStatus) : t("pricing.unknown"))}</dd>
         </div>
         <div>
           <dt>${escapeHtml(t("pricing.subscriptions.previous"))}</dt>
@@ -7015,6 +7235,10 @@ function subscriptionFootValue(subscription) {
 
 function subscriptionSourceLabel(source) {
   return t(`subscriptions.sources.${source || "unknown"}`, {}, source || t("pricing.unknown"));
+}
+
+function subscriptionParserStatusLabel(status) {
+  return t(`subscriptions.parserStatuses.${status || "unknown"}`, {}, status || t("pricing.unknown"));
 }
 
 function subscriptionCostMissingText(subscription) {

@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Live-rate, rollend 60 s"
   },
   "pricing": {
     "eyebrow": "API-kosten",
@@ -339,6 +340,14 @@
       "heading": "Bron voor Fable-quotum",
       "available": "Een apart Fable-quotum was machineleesbaar en wordt als eigen rij getoond.",
       "unavailable": "Claude-statusregel, browser-/accountgegevens en lokale logs gaven geen apart Fable-quotum; er wordt geen synthetisch quotum getoond."
+    },
+    "freshness": {
+      "ariaLabel": "Datatijd van provider",
+      "usage": "Gebruik {time}",
+      "limits": "Limieten {time}",
+      "prices": "Prijzen {time}",
+      "catalog": "Catalogus {date}",
+      "unknown": "Datatijd onbekend"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Opgeslagen fallbackschatting",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Cataloguswaarde"
+      "catalog": "Cataloguswaarde",
+      "official": "Officiële lijstprijs"
     },
     "sources": {
       "local_settings": "opgeslagen fallback",
+      "account": "account-/facturatiebron",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "openbare abonnementencatalogus van Anthropic",
       "claude_browser_sync": "Claude browser/account-sync",
       "claude_api": "Claude account-gebruiks-API",
-      "browser": "browseraccountbron"
+      "browser": "browseraccountbron",
+      "official_pricing_page": "officiële prijspagina",
+      "cached_official_snapshot": "gecachete officiële snapshot",
+      "bundled_catalog": "meegeleverde catalogus"
     },
     "catalogReviewed": "Catalogus gecontroleerd op {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "catalogusfallbackprijs",
       "notConfigured": "niet aanwezig in deze run",
       "notAvailable": "geen veilige alleen-lezen prijsbron beschikbaar",
-      "notUsed": "niet gebruikt"
+      "notUsed": "niet gebruikt",
+      "officialListPrice": "officiële lijstprijs"
+    },
+    "officialListPriceNote": "Officiële lijstprijs; werkelijke facturatie kan afwijken door btw/belastingen, jaarkortingen, seats, coupons, regionale prijzen of Enterprise-contracten.",
+    "fetched": "Opgehaald {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plancode: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Type prijsbron",
+    "sourceUrlLabel": "Bron-URL",
+    "fetchedLabel": "Ophaal-/datatijd",
+    "planKeyLabel": "Plancode",
+    "parserStatusLabel": "Parserstatus",
+    "parserStatuses": {
+      "parsed": "geparseerd",
+      "parse_failed": "parsen mislukt",
+      "cached_after_fetch_error": "cache na ophaalfout",
+      "bundled": "meegeleverde fallback",
+      "missing": "ontbreekt",
+      "unknown": "onbekend"
     }
   }
 }

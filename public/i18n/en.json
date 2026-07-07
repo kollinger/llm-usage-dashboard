@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Rolling 60s live rate"
   },
   "pricing": {
     "eyebrow": "API Costs",
@@ -339,6 +340,14 @@
       "heading": "Fable quota source",
       "available": "Distinct Fable quota was machine-readable and is shown as its own row.",
       "unavailable": "Claude statusline, browser/account data, and local logs did not expose a distinct Fable quota; no synthetic quota is shown."
+    },
+    "freshness": {
+      "ariaLabel": "Provider data timestamp",
+      "usage": "Usage {time}",
+      "limits": "Limits {time}",
+      "prices": "Prices {time}",
+      "catalog": "Catalog {date}",
+      "unknown": "Updated unknown"
     }
   },
   "status": {
@@ -802,10 +811,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Catalog value"
+      "catalog": "Catalog value",
+      "official": "Official list price"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "account/billing source",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -821,7 +832,10 @@
       "anthropic_public_catalog": "Anthropic public subscription catalog",
       "claude_browser_sync": "Claude browser/account sync",
       "claude_api": "Claude account usage API",
-      "browser": "browser account source"
+      "browser": "browser account source",
+      "official_pricing_page": "official pricing page",
+      "cached_official_snapshot": "cached official snapshot",
+      "bundled_catalog": "bundled catalog"
     },
     "catalogReviewed": "Catalog reviewed {date}",
     "catalogFallbackNote": "Monthly price is a catalog fallback; read-only app/account sources provide plan, limit, or credit data but no trusted monthly price.",
@@ -843,7 +857,26 @@
       "catalogFallback": "catalog fallback price",
       "notConfigured": "not present in this run",
       "notAvailable": "no safe read-only price source available",
-      "notUsed": "not used"
+      "notUsed": "not used",
+      "officialListPrice": "official list price"
+    },
+    "officialListPriceNote": "Official list price; actual billing can differ because of VAT/taxes, annual discounts, seats, coupons, regional pricing, or enterprise contracts.",
+    "fetched": "Fetched {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plan key: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Price source type",
+    "sourceUrlLabel": "Source URL",
+    "fetchedLabel": "Fetched/data time",
+    "planKeyLabel": "Plan key",
+    "parserStatusLabel": "Parser status",
+    "parserStatuses": {
+      "parsed": "parsed",
+      "parse_failed": "parse failed",
+      "cached_after_fetch_error": "cached after fetch error",
+      "bundled": "bundled fallback",
+      "missing": "missing",
+      "unknown": "unknown"
     }
   }
 }

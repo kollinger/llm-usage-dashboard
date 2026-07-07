@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Dzīvā likme, slīdošas 60 s"
   },
   "pricing": {
     "eyebrow": "API izmaksas",
@@ -339,6 +340,14 @@
       "heading": "Fable kvotas avots",
       "available": "Atsevišķa Fable kvota bija mašīnlasāma un tiek rādīta savā rindā.",
       "unavailable": "Claude statusa josla, pārlūka/konta dati un lokālie žurnāli neatklāja atsevišķu Fable kvotu; sintētiska kvota netiek rādīta."
+    },
+    "freshness": {
+      "ariaLabel": "Piegādātāja datu laiks",
+      "usage": "Lietojums {time}",
+      "limits": "Limiti {time}",
+      "prices": "Cenas {time}",
+      "catalog": "Katalogs {date}",
+      "unknown": "Datu laiks nav zināms"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Kataloga vērtība"
+      "catalog": "Kataloga vērtība",
+      "official": "Oficiālā saraksta cena"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "konta/norēķinu avots",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropic publiskais abonementu katalogs",
       "claude_browser_sync": "Claude parluka/konta sinhronizacija",
       "claude_api": "Claude konta lietojuma API",
-      "browser": "parluka konta avots"
+      "browser": "parluka konta avots",
+      "official_pricing_page": "oficiāla cenu lapa",
+      "cached_official_snapshot": "kešots oficiāls momentuzņēmums",
+      "bundled_catalog": "iekļauts katalogs"
     },
     "catalogReviewed": "Katalogs pārskatīts {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "kataloga rezerves cena",
       "notConfigured": "nav šajā izpildē",
       "notAvailable": "nav droša tikai lasāma cenu avota",
-      "notUsed": "netiek izmantots"
+      "notUsed": "netiek izmantots",
+      "officialListPrice": "oficiālā saraksta cena"
+    },
+    "officialListPriceNote": "Oficiālā saraksta cena; faktiskā maksa var atšķirties PVN/nodokļu, gada atlaižu, vietu, kuponu, reģionālo cenu vai Enterprise līgumu dēļ.",
+    "fetched": "Nolasīts {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plāna atslēga: {key}",
+    "parserStatus": "Parseris: {status}",
+    "priceSourceTypeLabel": "Cenas avota tips",
+    "sourceUrlLabel": "Avota URL",
+    "fetchedLabel": "Nolasīšanas/datu laiks",
+    "planKeyLabel": "Plāna atslēga",
+    "parserStatusLabel": "Parsera statuss",
+    "parserStatuses": {
+      "parsed": "parsēts",
+      "parse_failed": "parsēšana neizdevās",
+      "cached_after_fetch_error": "kešs pēc nolasīšanas kļūdas",
+      "bundled": "iekļauts rezerves variants",
+      "missing": "trūkst",
+      "unknown": "nezināms"
     }
   }
 }

@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Gyvas 60 s slenkantis greitis"
   },
   "pricing": {
     "eyebrow": "API išlaidos",
@@ -339,6 +340,14 @@
       "heading": "Fable kvotos šaltinis",
       "available": "Atskira Fable kvota buvo mašiniškai skaitoma ir rodoma atskiroje eilutėje.",
       "unavailable": "Claude būsenos eilutė, naršyklės/paskyros duomenys ir vietiniai žurnalai nepateikė atskiros Fable kvotos; sintetinė kvota nerodoma."
+    },
+    "freshness": {
+      "ariaLabel": "Teikėjo duomenų laikas",
+      "usage": "Naudojimas {time}",
+      "limits": "Limitai {time}",
+      "prices": "Kainos {time}",
+      "catalog": "Katalogas {date}",
+      "unknown": "Duomenų laikas nežinomas"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Katalogo reikšmė"
+      "catalog": "Katalogo reikšmė",
+      "official": "Oficiali sąrašo kaina"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "paskyros / atsiskaitymo šaltinis",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "viešasis „Anthropic“ prenumeratų katalogas",
       "claude_browser_sync": "Claude narsykles/paskyros sinchronizacija",
       "claude_api": "Claude paskyros naudojimo API",
-      "browser": "narsykles paskyros saltinis"
+      "browser": "narsykles paskyros saltinis",
+      "official_pricing_page": "oficialus kainodaros puslapis",
+      "cached_official_snapshot": "talpykloje esanti oficiali kopija",
+      "bundled_catalog": "įtrauktas katalogas"
     },
     "catalogReviewed": "Katalogas peržiūrėtas {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "katalogo atsarginė kaina",
       "notConfigured": "šiame vykdyme nėra",
       "notAvailable": "nėra saugaus tik skaitomo kainos šaltinio",
-      "notUsed": "nenaudojama"
+      "notUsed": "nenaudojama",
+      "officialListPrice": "oficiali sąrašo kaina"
+    },
+    "officialListPriceNote": "Oficiali sąrašo kaina; faktinė sąskaita gali skirtis dėl PVM/mokesčių, metinių nuolaidų, vietų, kuponų, regioninių kainų ar Enterprise sutarčių.",
+    "fetched": "Gauta {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plano raktas: {key}",
+    "parserStatus": "Parseris: {status}",
+    "priceSourceTypeLabel": "Kainos šaltinio tipas",
+    "sourceUrlLabel": "Šaltinio URL",
+    "fetchedLabel": "Gavimo/duomenų laikas",
+    "planKeyLabel": "Plano raktas",
+    "parserStatusLabel": "Parserio būsena",
+    "parserStatuses": {
+      "parsed": "nuskaityta",
+      "parse_failed": "nuskaityti nepavyko",
+      "cached_after_fetch_error": "talpykla po gavimo klaidos",
+      "bundled": "įtrauktas atsarginis variantas",
+      "missing": "trūksta",
+      "unknown": "nežinoma"
     }
   }
 }

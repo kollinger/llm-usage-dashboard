@@ -100,14 +100,14 @@
           <div id="chart" class="chart"></div>
           <div id="chartLegend" class="chart-legend" aria-label="Legende" data-i18n-aria-label="chart.legendAria"></div>
         </div>
+      </section>
 
-        <div class="panel split-panel">
-          <div>
-            <p class="eyebrow" data-i18n="tokenMix.eyebrow">Token Mix</p>
-            <h2 data-i18n="tokenMix.heading">Geloggte Token-Verarbeitung</h2>
-          </div>
-          <dl class="token-list" id="tokenList"></dl>
+      <section class="panel split-panel token-mix-panel">
+        <div>
+          <p class="eyebrow" data-i18n="tokenMix.eyebrow">Token Mix</p>
+          <h2 data-i18n="tokenMix.heading">Geloggte Token-Verarbeitung</h2>
         </div>
+        <dl class="token-list" id="tokenList"></dl>
       </section>
 
       <section class="panel live-gauges-panel" id="liveGaugesSection" aria-label="Live-Auslastung" data-i18n-aria-label="liveMetrics.ariaLabel">
@@ -149,7 +149,6 @@
                 <tr>
                   <th><button class="sort-button" type="button" data-price-sort="model" data-i18n="pricing.columns.model">Modell</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="score" data-i18n="pricing.columns.score">Score</button></th>
-                  <th><button class="sort-button" type="button" data-price-sort="region" data-i18n="pricing.columns.region">Region</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="limits" data-i18n="pricing.columns.limits">Limits</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="input" data-i18n="pricing.columns.input">Input</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="cache" data-i18n="pricing.columns.cache">Cache</button></th>

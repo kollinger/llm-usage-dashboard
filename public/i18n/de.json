@@ -194,7 +194,8 @@
       "memory": "Speicher",
       "memoryShare": "RAM %",
       "count": "Prozesse"
-    }
+    },
+    "recentRateWindow": "Live-Rate, rollend 60 s"
   },
   "pricing": {
     "eyebrow": "API-Kosten",
@@ -339,6 +340,14 @@
       "heading": "Fable-Quota-Quelle",
       "available": "Eine eigene Fable-Quota war maschinenlesbar und wird als eigene Zeile gezeigt.",
       "unavailable": "Claude-Statusline, Browser-/Account-Daten und lokale Logs liefern keine eigene Fable-Quota; es wird keine synthetische Quota angezeigt."
+    },
+    "freshness": {
+      "ariaLabel": "Datenstand des Anbieters",
+      "usage": "Usage {time}",
+      "limits": "Limits {time}",
+      "prices": "Preise {time}",
+      "catalog": "Katalog {date}",
+      "unknown": "Datenzeit unbekannt"
     }
   },
   "status": {
@@ -802,10 +811,12 @@
       "manual": "Gespeicherte Fallback-Schätzung",
       "estimated": "Geschätzt / teilweise",
       "unknown": "Unbekannt",
-      "catalog": "Katalogwert"
+      "catalog": "Katalogwert",
+      "official": "Offizieller Listenpreis"
     },
     "sources": {
       "local_settings": "gespeicherter Fallback",
+      "account": "Account-/Abrechnungsquelle",
       "codex_app_server": "lokaler Codex-App-Server",
       "codex_local_logs": "lokale Codex-Logs",
       "claude_statusline": "Claude-Code-Statusline",
@@ -821,7 +832,10 @@
       "anthropic_public_catalog": "öffentlicher Anthropic-Abo-Katalog",
       "claude_browser_sync": "Claude-Browser-/Account-Sync",
       "claude_api": "Claude-Account-Nutzungs-API",
-      "browser": "Browser-Account-Quelle"
+      "browser": "Browser-Account-Quelle",
+      "official_pricing_page": "offizielle Pricing-Seite",
+      "cached_official_snapshot": "gecachter offizieller Snapshot",
+      "bundled_catalog": "gebündelter Katalog"
     },
     "catalogReviewed": "Katalog geprüft am {date}",
     "catalogFallbackNote": "Der Monatspreis kommt aus dem Katalog-Fallback; schreibgeschützte App-/Account-Quellen liefern Plan-, Limit- oder Guthabendaten, aber keinen belastbaren Monatspreis.",
@@ -843,7 +857,26 @@
       "catalogFallback": "Katalog-Fallback-Preis",
       "notConfigured": "in diesem Lauf nicht vorhanden",
       "notAvailable": "keine sichere schreibgeschützte Preisquelle verfügbar",
-      "notUsed": "nicht verwendet"
+      "notUsed": "nicht verwendet",
+      "officialListPrice": "offizieller Listenpreis"
+    },
+    "officialListPriceNote": "Offizieller Listenpreis; die tatsächliche Abrechnung kann wegen USt./Steuern, Jahresrabatten, Seats, Coupons, regionalen Preisen oder Enterprise-Verträgen abweichen.",
+    "fetched": "Gelesen {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plan-Key: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Preisquellentyp",
+    "sourceUrlLabel": "Quell-URL",
+    "fetchedLabel": "Fetch-/Datenzeit",
+    "planKeyLabel": "Plan-Key",
+    "parserStatusLabel": "Parserstatus",
+    "parserStatuses": {
+      "parsed": "geparst",
+      "parse_failed": "Parsing fehlgeschlagen",
+      "cached_after_fetch_error": "Cache nach Fetch-Fehler",
+      "bundled": "gebündelter Fallback",
+      "missing": "fehlend",
+      "unknown": "unbekannt"
     }
   }
 }

@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Rata live fuq 60 s li jiżżerżqu"
   },
   "pricing": {
     "eyebrow": "Spejjeż API",
@@ -339,6 +340,14 @@
       "heading": "Sors tal-kwota Fable",
       "available": "Kwota Fable separata kienet tinqara mill-magna u tidher bħala ringiela tagħha.",
       "unavailable": "Il-linja tal-istatus Claude, id-data tal-browser/kont u l-logs lokali ma wrewx kwota Fable separata; ma tintweriex kwota sintetika."
+    },
+    "freshness": {
+      "ariaLabel": "Ħin tad-dejta tal-fornitur",
+      "usage": "Użu {time}",
+      "limits": "Limiti {time}",
+      "prices": "Prezzijiet {time}",
+      "catalog": "Katalgu {date}",
+      "unknown": "Ħin tad-dejta mhux magħruf"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Valur tal-katalgu"
+      "catalog": "Valur tal-katalgu",
+      "official": "Prezz uffiċjali tal-lista"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "sors tal-kont/kontijiet",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "katalgu pubbliku tal-abbonamenti ta' Anthropic",
       "claude_browser_sync": "sinkronizzazzjoni browser/kont Claude",
       "claude_api": "API tal-uzu tal-kont Claude",
-      "browser": "sors tal-kont tal-browser"
+      "browser": "sors tal-kont tal-browser",
+      "official_pricing_page": "paġna uffiċjali tal-prezzijiet",
+      "cached_official_snapshot": "snapshot uffiċjali fil-cache",
+      "bundled_catalog": "katalgu inkluż"
     },
     "catalogReviewed": "Katalgu rivedut fil-{date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "prezz ta’ riżerva mill-katalgu",
       "notConfigured": "mhux preżenti f’din it-tħaddima",
       "notAvailable": "m’hemmx sors sigur tal-prezz għall-qari biss",
-      "notUsed": "mhux użat"
+      "notUsed": "mhux użat",
+      "officialListPrice": "prezz uffiċjali tal-lista"
+    },
+    "officialListPriceNote": "Prezz uffiċjali tal-lista; il-kont reali jista’ jvarja minħabba VAT/taxxi, skontijiet annwali, seats, kupuni, prezzijiet reġjonali jew kuntratti Enterprise.",
+    "fetched": "Miġjub {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Ċavetta tal-pjan: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Tip tas-sors tal-prezz",
+    "sourceUrlLabel": "URL tas-sors",
+    "fetchedLabel": "Ħin tal-qbid/dejta",
+    "planKeyLabel": "Ċavetta tal-pjan",
+    "parserStatusLabel": "Status tal-parser",
+    "parserStatuses": {
+      "parsed": "ipproċessat",
+      "parse_failed": "falliet il-parse",
+      "cached_after_fetch_error": "cache wara żball ta’ qbid",
+      "bundled": "fallback inkluż",
+      "missing": "nieqes",
+      "unknown": "mhux magħruf"
     }
   }
 }

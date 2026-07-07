@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Ζωντανός ρυθμός κυλιόμενων 60 s"
   },
   "pricing": {
     "eyebrow": "Κόστος API",
@@ -339,6 +340,14 @@
       "heading": "Πηγή ορίου Fable",
       "available": "Το ξεχωριστό όριο Fable ήταν μηχανικά αναγνώσιμο και εμφανίζεται σε δική του σειρά.",
       "unavailable": "Η γραμμή κατάστασης Claude, τα δεδομένα προγράμματος περιήγησης/λογαριασμού και τα τοπικά αρχεία καταγραφής δεν εξέθεσαν ξεχωριστό όριο Fable· δεν εμφανίζεται τεχνητό όριο."
+    },
+    "freshness": {
+      "ariaLabel": "Χρόνος δεδομένων παρόχου",
+      "usage": "Χρήση {time}",
+      "limits": "Όρια {time}",
+      "prices": "Τιμές {time}",
+      "catalog": "Κατάλογος {date}",
+      "unknown": "Άγνωστος χρόνος δεδομένων"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Τιμή καταλόγου"
+      "catalog": "Τιμή καταλόγου",
+      "official": "Επίσημη τιμή καταλόγου"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "πηγή λογαριασμού/χρέωσης",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "δημόσιος κατάλογος συνδρομών Anthropic",
       "claude_browser_sync": "συγχρονισμος browser/λογαριασμου Claude",
       "claude_api": "API χρησης λογαριασμου Claude",
-      "browser": "πηγη λογαριασμου browser"
+      "browser": "πηγη λογαριασμου browser",
+      "official_pricing_page": "επίσημη σελίδα τιμών",
+      "cached_official_snapshot": "αποθηκευμένο επίσημο στιγμιότυπο",
+      "bundled_catalog": "ενσωματωμένος κατάλογος"
     },
     "catalogReviewed": "Ο κατάλογος ελέγχθηκε στις {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "εφεδρική τιμή καταλόγου",
       "notConfigured": "δεν υπάρχει σε αυτήν την εκτέλεση",
       "notAvailable": "δεν υπάρχει ασφαλής πηγή τιμής μόνο για ανάγνωση",
-      "notUsed": "δεν χρησιμοποιείται"
+      "notUsed": "δεν χρησιμοποιείται",
+      "officialListPrice": "επίσημη τιμή καταλόγου"
+    },
+    "officialListPriceNote": "Επίσημη τιμή καταλόγου· η πραγματική χρέωση μπορεί να διαφέρει λόγω ΦΠΑ/φόρων, ετήσιων εκπτώσεων, θέσεων, κουπονιών, περιφερειακών τιμών ή εταιρικών συμβάσεων.",
+    "fetched": "Ανακτήθηκε {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Κλειδί πλάνου: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Τύπος πηγής τιμής",
+    "sourceUrlLabel": "URL πηγής",
+    "fetchedLabel": "Χρόνος ανάκτησης/δεδομένων",
+    "planKeyLabel": "Κλειδί πλάνου",
+    "parserStatusLabel": "Κατάσταση parser",
+    "parserStatuses": {
+      "parsed": "αναλύθηκε",
+      "parse_failed": "αποτυχία ανάλυσης",
+      "cached_after_fetch_error": "cache μετά από σφάλμα ανάκτησης",
+      "bundled": "ενσωματωμένο fallback",
+      "missing": "λείπει",
+      "unknown": "άγνωστο"
     }
   }
 }

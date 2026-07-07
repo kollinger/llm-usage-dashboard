@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Reaalaja 60 s libisev määr"
   },
   "pricing": {
     "eyebrow": "API kulud",
@@ -339,6 +340,14 @@
       "heading": "Fable kvoodi allikas",
       "available": "Eraldi Fable kvoot oli masinloetav ja kuvatakse oma reana.",
       "unavailable": "Claude’i olekurida, brauseri/konto andmed ja kohalikud logid ei avaldanud eraldi Fable kvooti; sünteetilist kvooti ei kuvata."
+    },
+    "freshness": {
+      "ariaLabel": "Teenusepakkuja andmete aeg",
+      "usage": "Kasutus {time}",
+      "limits": "Piirangud {time}",
+      "prices": "Hinnad {time}",
+      "catalog": "Kataloog {date}",
+      "unknown": "Andmeaeg teadmata"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Kataloogi väärtus"
+      "catalog": "Kataloogi väärtus",
+      "official": "Ametlik hinnakirja hind"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "konto/arvelduse allikas",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropicu avalik tellimuste kataloog",
       "claude_browser_sync": "Claude brauseri/konto sunkroon",
       "claude_api": "Claude konto kasutuse API",
-      "browser": "brauserikonto allikas"
+      "browser": "brauserikonto allikas",
+      "official_pricing_page": "ametlik hinnaleht",
+      "cached_official_snapshot": "vahemällu salvestatud ametlik tõmmis",
+      "bundled_catalog": "kaasasolev kataloog"
     },
     "catalogReviewed": "Kataloog üle vaadatud {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "kataloogi varuhind",
       "notConfigured": "selles jooksus puudub",
       "notAvailable": "turvalist ainult loetavat hinnaallikat pole",
-      "notUsed": "ei kasutata"
+      "notUsed": "ei kasutata",
+      "officialListPrice": "ametlik hinnakirja hind"
+    },
+    "officialListPriceNote": "Ametlik hinnakirja hind; tegelik arve võib erineda käibemaksu/maksude, aastasoodustuste, kohtade, kupongide, piirkondlike hindade või Enterprise-lepingute tõttu.",
+    "fetched": "Loetud {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Plaani võti: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Hinnaallika tüüp",
+    "sourceUrlLabel": "Allika URL",
+    "fetchedLabel": "Lugemise/andmete aeg",
+    "planKeyLabel": "Plaani võti",
+    "parserStatusLabel": "Parseri olek",
+    "parserStatuses": {
+      "parsed": "parsitud",
+      "parse_failed": "parsimine nurjus",
+      "cached_after_fetch_error": "vahemälu pärast tõrget",
+      "bundled": "kaasasolev varuvariant",
+      "missing": "puudub",
+      "unknown": "teadmata"
     }
   }
 }

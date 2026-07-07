@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Živá sazba, klouzavě 60 s"
   },
   "pricing": {
     "eyebrow": "Náklady API",
@@ -339,6 +340,14 @@
       "heading": "Zdroj kvóty Fable",
       "available": "Samostatná kvóta Fable je strojově čitelná a zobrazuje se jako vlastní řádek.",
       "unavailable": "Statusline Claude, data prohlížeče/účtu ani lokální logy neodhalily samostatnou kvótu Fable; syntetická kvóta se nezobrazuje."
+    },
+    "freshness": {
+      "ariaLabel": "Čas dat poskytovatele",
+      "usage": "Využití {time}",
+      "limits": "Limity {time}",
+      "prices": "Ceny {time}",
+      "catalog": "Katalog {date}",
+      "unknown": "Čas dat neznámý"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Katalogová hodnota"
+      "catalog": "Katalogová hodnota",
+      "official": "Oficiální ceníková cena"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "zdroj účtu/fakturace",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "veřejný katalog předplatných Anthropic",
       "claude_browser_sync": "synchronizace prohlizece/uctu Claude",
       "claude_api": "API vyuziti uctu Claude",
-      "browser": "zdroj uctu z prohlizece"
+      "browser": "zdroj uctu z prohlizece",
+      "official_pricing_page": "oficiální stránka cen",
+      "cached_official_snapshot": "uložený oficiální snímek",
+      "bundled_catalog": "přibalený katalog"
     },
     "catalogReviewed": "Katalog zkontrolován {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "záložní cena z katalogu",
       "notConfigured": "v tomto běhu není přítomno",
       "notAvailable": "není dostupný bezpečný zdroj ceny jen pro čtení",
-      "notUsed": "nepoužito"
+      "notUsed": "nepoužito",
+      "officialListPrice": "oficiální ceníková cena"
+    },
+    "officialListPriceNote": "Oficiální ceníková cena; skutečné vyúčtování se může lišit kvůli DPH/daním, ročním slevám, seatům, kupónům, regionálním cenám nebo Enterprise smlouvám.",
+    "fetched": "Načteno {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Klíč plánu: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Typ zdroje ceny",
+    "sourceUrlLabel": "URL zdroje",
+    "fetchedLabel": "Čas načtení/dat",
+    "planKeyLabel": "Klíč plánu",
+    "parserStatusLabel": "Stav parseru",
+    "parserStatuses": {
+      "parsed": "zpracováno",
+      "parse_failed": "zpracování selhalo",
+      "cached_after_fetch_error": "cache po chybě načtení",
+      "bundled": "přibalený fallback",
+      "missing": "chybí",
+      "unknown": "neznámé"
     }
   }
 }

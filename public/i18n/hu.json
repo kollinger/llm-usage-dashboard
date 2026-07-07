@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Élő ráta, gördülő 60 mp"
   },
   "pricing": {
     "eyebrow": "API-költségek",
@@ -339,6 +340,14 @@
       "heading": "Fable kvóta forrása",
       "available": "A külön Fable kvóta géppel olvasható volt, és saját sorként jelenik meg.",
       "unavailable": "A Claude állapotsor, a böngésző-/fiókadatok és a helyi naplók nem adtak külön Fable kvótát; szintetikus kvóta nem jelenik meg."
+    },
+    "freshness": {
+      "ariaLabel": "Szolgáltatói adatok ideje",
+      "usage": "Használat {time}",
+      "limits": "Korlátok {time}",
+      "prices": "Árak {time}",
+      "catalog": "Katalógus {date}",
+      "unknown": "Adatidő ismeretlen"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Katalógusérték"
+      "catalog": "Katalógusérték",
+      "official": "Hivatalos listaár"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "fiók-/számlázási forrás",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropic nyilvános előfizetési katalógusa",
       "claude_browser_sync": "Claude bongeszo-/fiokszinkron",
       "claude_api": "Claude fiokhasznalati API",
-      "browser": "bongeszofiok-forras"
+      "browser": "bongeszofiok-forras",
+      "official_pricing_page": "hivatalos ároldal",
+      "cached_official_snapshot": "gyorsítótárazott hivatalos pillanatkép",
+      "bundled_catalog": "beépített katalógus"
     },
     "catalogReviewed": "Katalógus ellenőrizve: {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "katalógus tartalékár",
       "notConfigured": "ebben a futásban nincs jelen",
       "notAvailable": "nem érhető el biztonságos, csak olvasható árforrás",
-      "notUsed": "nincs használva"
+      "notUsed": "nincs használva",
+      "officialListPrice": "hivatalos listaár"
+    },
+    "officialListPriceNote": "Hivatalos listaár; a tényleges számla eltérhet ÁFA/adók, éves kedvezmények, licencek, kuponok, regionális árak vagy Enterprise szerződések miatt.",
+    "fetched": "Lekérve {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Csomagkulcs: {key}",
+    "parserStatus": "Parser: {status}",
+    "priceSourceTypeLabel": "Árforrás típusa",
+    "sourceUrlLabel": "Forrás URL",
+    "fetchedLabel": "Lekérési/adatidő",
+    "planKeyLabel": "Csomagkulcs",
+    "parserStatusLabel": "Parser állapota",
+    "parserStatuses": {
+      "parsed": "feldolgozva",
+      "parse_failed": "feldolgozás sikertelen",
+      "cached_after_fetch_error": "cache lekérési hiba után",
+      "bundled": "beépített tartalék",
+      "missing": "hiányzik",
+      "unknown": "ismeretlen"
     }
   }
 }

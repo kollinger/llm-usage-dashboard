@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "Ráta bheo 60 s rollach"
   },
   "pricing": {
     "eyebrow": "Costais API",
@@ -339,6 +340,14 @@
       "heading": "Foinse cuóta Fable",
       "available": "Bhí cuóta Fable ar leith inléite ag meaisín agus taispeántar é mar líne dá chuid féin.",
       "unavailable": "Níor nocht líne stádais Claude, sonraí brabhsálaí/cuntais ná logaí áitiúla cuóta Fable ar leith; ní thaispeántar cuóta sintéiseach."
+    },
+    "freshness": {
+      "ariaLabel": "Am sonraí an tsoláthraí",
+      "usage": "Úsáid {time}",
+      "limits": "Teorainneacha {time}",
+      "prices": "Praghsanna {time}",
+      "catalog": "Catalóg {date}",
+      "unknown": "Am sonraí anaithnid"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "Luach catalóige"
+      "catalog": "Luach catalóige",
+      "official": "Praghas liosta oifigiúil"
     },
     "sources": {
       "local_settings": "saved fallback",
+      "account": "foinse cuntais/billeála",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "catalóg poiblí síntiús Anthropic",
       "claude_browser_sync": "sioncronú brabhsalaí/cuntais Claude",
       "claude_api": "API usaide cuntais Claude",
-      "browser": "foinse chuntais bhrabhsalaí"
+      "browser": "foinse chuntais bhrabhsalaí",
+      "official_pricing_page": "leathanach praghsála oifigiúil",
+      "cached_official_snapshot": "seat oifigiúil taiscthe",
+      "bundled_catalog": "catalóg chuachta"
     },
     "catalogReviewed": "Athbhreithníodh an catalóg ar {date}",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "praghas cúltaca catalóige",
       "notConfigured": "níl sé sa rith seo",
       "notAvailable": "níl foinse phraghais shábháilte inléite amháin ar fáil",
-      "notUsed": "níl in úsáid"
+      "notUsed": "níl in úsáid",
+      "officialListPrice": "praghas liosta oifigiúil"
+    },
+    "officialListPriceNote": "Praghas liosta oifigiúil; d’fhéadfadh billeáil iarbhír athrú mar gheall ar CBL/cánacha, lascainí bliantúla, suíocháin, cúpóin, praghsáil réigiúnach nó conarthaí Enterprise.",
+    "fetched": "Faighte {time}",
+    "sourceUrl": "URL: {url}",
+    "planKey": "Eochair plean: {key}",
+    "parserStatus": "Parsálaí: {status}",
+    "priceSourceTypeLabel": "Cineál foinse praghais",
+    "sourceUrlLabel": "URL foinse",
+    "fetchedLabel": "Am faighte/sonraí",
+    "planKeyLabel": "Eochair plean",
+    "parserStatusLabel": "Stádas parsálaí",
+    "parserStatuses": {
+      "parsed": "parsáilte",
+      "parse_failed": "theip ar pharsáil",
+      "cached_after_fetch_error": "taisce tar éis earráid faighte",
+      "bundled": "cúltaca cuachta",
+      "missing": "ar iarraidh",
+      "unknown": "anaithnid"
     }
   }
 }

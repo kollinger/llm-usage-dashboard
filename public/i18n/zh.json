@@ -194,7 +194,8 @@
       "memory": "Memory",
       "memoryShare": "RAM %",
       "count": "Processes"
-    }
+    },
+    "recentRateWindow": "60 秒滚动实时速率"
   },
   "pricing": {
     "eyebrow": "API 成本",
@@ -339,6 +340,14 @@
       "heading": "Fable 配额来源",
       "available": "独立 Fable 配额可被机器读取，并显示为单独一行。",
       "unavailable": "Claude 状态行、浏览器/账户数据和本地日志未暴露独立 Fable 配额；不会显示合成配额。"
+    },
+    "freshness": {
+      "ariaLabel": "提供商数据时间",
+      "usage": "用量 {time}",
+      "limits": "限制 {time}",
+      "prices": "价格 {time}",
+      "catalog": "目录 {date}",
+      "unknown": "数据时间未知"
     }
   },
   "status": {
@@ -800,10 +809,12 @@
       "manual": "已保存的备用估算",
       "estimated": "Estimated / partial",
       "unknown": "Unknown",
-      "catalog": "目录价格"
+      "catalog": "目录价格",
+      "official": "官方标价"
     },
     "sources": {
       "local_settings": "已保存备用",
+      "account": "账号/账单来源",
       "codex_app_server": "Codex local app-server",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
@@ -819,7 +830,10 @@
       "anthropic_public_catalog": "Anthropic 公开订阅目录",
       "claude_browser_sync": "Claude 浏览器/账户同步",
       "claude_api": "Claude 账户用量 API",
-      "browser": "浏览器账户来源"
+      "browser": "浏览器账户来源",
+      "official_pricing_page": "官方价格页",
+      "cached_official_snapshot": "缓存的官方快照",
+      "bundled_catalog": "内置目录"
     },
     "catalogReviewed": "目录已于 {date} 审核",
     "costReasons": {
@@ -843,7 +857,26 @@
       "catalogFallback": "目录兜底价格",
       "notConfigured": "本次运行中不存在",
       "notAvailable": "没有可用的安全只读价格来源",
-      "notUsed": "未使用"
+      "notUsed": "未使用",
+      "officialListPrice": "官方标价"
+    },
+    "officialListPriceNote": "官方标价；实际账单可能因增值税/税费、年付折扣、席位、优惠券、区域价格或企业合同而不同。",
+    "fetched": "读取于 {time}",
+    "sourceUrl": "URL：{url}",
+    "planKey": "套餐键：{key}",
+    "parserStatus": "解析器：{status}",
+    "priceSourceTypeLabel": "价格来源类型",
+    "sourceUrlLabel": "来源 URL",
+    "fetchedLabel": "抓取/数据时间",
+    "planKeyLabel": "套餐键",
+    "parserStatusLabel": "解析状态",
+    "parserStatuses": {
+      "parsed": "已解析",
+      "parse_failed": "解析失败",
+      "cached_after_fetch_error": "抓取失败后使用缓存",
+      "bundled": "内置回退",
+      "missing": "缺失",
+      "unknown": "未知"
     }
   }
 }
