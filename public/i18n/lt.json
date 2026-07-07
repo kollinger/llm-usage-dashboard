@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Katalogo reikšmė"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "viešasis „OpenAI“ prenumeratų katalogas",
+      "anthropic_public_catalog": "viešasis „Anthropic“ prenumeratų katalogas"
+    },
+    "catalogReviewed": "Katalogas peržiūrėtas {date}",
+    "costReasons": {
+      "catalogMissing": "Šiam aptiktam planui neatitiko jokia patikima katalogo arba paskyros kaina."
+    },
+    "costActions": {
+      "addFallback": "Atnaujinkite katalogo / paskyros šaltinį arba pridėkite atsarginį įvertį skiltyje Advanced."
     }
   }
 }

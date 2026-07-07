@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Katalógová hodnota"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "verejný katalóg predplatného OpenAI",
+      "anthropic_public_catalog": "verejný katalóg predplatného Anthropic"
+    },
+    "catalogReviewed": "Katalóg skontrolovaný {date}",
+    "costReasons": {
+      "catalogMissing": "Tomuto zistenému plánu nezodpovedá žiadna dôveryhodná cena z katalógu ani účtu."
+    },
+    "costActions": {
+      "addFallback": "Aktualizujte zdroj katalógu/účtu alebo pridajte záložný odhad v Advanced."
     }
   }
 }

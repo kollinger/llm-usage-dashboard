@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Estimacion de respaldo guardada",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Valor de catálogo"
     },
     "sources": {
       "local_settings": "respaldo guardado",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "catálogo público de suscripciones de OpenAI",
+      "anthropic_public_catalog": "catálogo público de suscripciones de Anthropic"
+    },
+    "catalogReviewed": "Catálogo revisado el {date}",
+    "costReasons": {
+      "catalogMissing": "Ningún precio fiable de catálogo o cuenta coincide con este plan detectado."
+    },
+    "costActions": {
+      "addFallback": "Actualiza la fuente de catálogo/cuenta o añade una estimación de respaldo en Advanced."
     }
   }
 }

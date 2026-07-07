@@ -734,7 +734,8 @@
       "automatic": "Automatisch erkannt",
       "manual": "Gespeicherte Fallback-Schätzung",
       "estimated": "Geschätzt / teilweise",
-      "unknown": "Unbekannt"
+      "unknown": "Unbekannt",
+      "catalog": "Katalogwert"
     },
     "sources": {
       "local_settings": "gespeicherter Fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "lokales Gemini-Signal",
       "openai_api": "OpenAI-API-Metadaten",
       "anthropic_api": "Anthropic-API-Metadaten",
-      "unknown": "unbekannt"
+      "unknown": "unbekannt",
+      "openai_public_catalog": "öffentlicher OpenAI-Abo-Katalog",
+      "anthropic_public_catalog": "öffentlicher Anthropic-Abo-Katalog"
+    },
+    "catalogReviewed": "Katalog geprüft am {date}",
+    "costReasons": {
+      "catalogMissing": "Kein vertrauenswürdiger Katalog- oder Account-Preis passt zu diesem erkannten Plan."
+    },
+    "costActions": {
+      "addFallback": "Aktualisiere Katalog/Account-Quelle oder nutze Advanced-Fallback-Schätzung."
     }
   }
 }

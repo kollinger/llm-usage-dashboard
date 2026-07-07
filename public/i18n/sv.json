@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Sparad fallbackuppskattning",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Katalogvärde"
     },
     "sources": {
       "local_settings": "sparad fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "OpenAIs offentliga prenumerationskatalog",
+      "anthropic_public_catalog": "Anthropics offentliga prenumerationskatalog"
+    },
+    "catalogReviewed": "Katalog granskad {date}",
+    "costReasons": {
+      "catalogMissing": "Inget betrott katalog- eller kontopris matchade den identifierade planen."
+    },
+    "costActions": {
+      "addFallback": "Uppdatera katalog-/kontokällan eller lägg till en reservuppskattning i Advanced."
     }
   }
 }

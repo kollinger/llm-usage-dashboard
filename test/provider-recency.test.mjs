@@ -260,8 +260,42 @@ const h24Total = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "h
 state.chartTimeFilter = "today";
 const todayTotal = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "today")).totalTokens;
 const models = summarizeModelUsageForDaily(daily);
-const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" });
-const detectedSubscription = normalizeSubscription(null, { planType: "Max", source: "claude_auth_status" });
+const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" }, {}, "codex");
+const detectedSubscription = normalizeSubscription(null, { planType: "Pro", source: "codex_app_server" }, "codex");
+const missingCatalogSubscription = normalizeSubscription(null, { planType: "Enterprise", source: "codex_app_server" }, "codex");
+const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString();
+const sourceBarsHtml = renderSourceTotalBars([
+  {
+    date: "${today}",
+    totalTokens: 300,
+    sources: [
+      { id: "codex", totalTokens: 200 },
+      { id: "claudeCode", totalTokens: 100 }
+    ]
+  }
+]);
+const providerCardHtml = renderProvider({
+  id: "claudeCode",
+  name: "Claude Code",
+  kicker: "local CLI capture",
+  accent: providerMeta.claudeCode.accent,
+  status: "live",
+  limitRows: [],
+  creditRows: [],
+  foot: [],
+  apiTokens: 100,
+  message: "Logged tokens"
+});
+const mixedCurrencySubscriptionCard = renderSubscriptionPricingCard({
+  provider: { name: "Codex" },
+  subscription: detectedSubscription,
+  previous: { monthlyCost: 20, currency: "EUR" }
+});
+const sameCurrencySubscriptionCard = renderSubscriptionPricingCard({
+  provider: { name: "Codex" },
+  subscription: detectedSubscription,
+  previous: { monthlyCost: 80, currency: "USD" }
+});
 JSON.stringify({
   filters: CHART_FILTERS,
   h24Total,
@@ -271,15 +305,29 @@ JSON.stringify({
   manualQuality: manualSubscription.quality,
   detectedQuality: detectedSubscription.quality,
   detectedCost: detectedSubscription.monthlyCost,
+  detectedCurrency: detectedSubscription.currency,
+  detectedSource: detectedSubscription.source,
+  missingCatalogQuality: missingCatalogSubscription.quality,
+  missingCatalogStatus: missingCatalogSubscription.costStatus,
   limitOk: limitDisplayStatus({ usedPercent: 20 }),
   limitRisk: limitDisplayStatus({ usedPercent: 85 }),
+  limitEarlyWeekRisk: limitDisplayStatus({ usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }),
   limitFull: limitDisplayStatus({ usedPercent: 100 }),
   limitUnknown: limitDisplayStatus({ status: "unavailable" }),
   limitOkLabel: t("limits.status.ok"),
+  catalogQualityLabel: t("subscriptions.quality.catalog"),
   manualQualityLabel: t("subscriptions.quality.manual"),
   manualSourceLabel: subscriptionSourceLabel("local_settings"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
-  aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true }))
+  aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
+  sourceBarsUseProviderColors:
+    sourceBarsHtml.includes("--accent: " + providerMeta.codex.accent) &&
+    sourceBarsHtml.includes("--accent: " + providerMeta.claudeCode.accent),
+  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
+  allRangeHidesTotalTile: shouldShowTotalTokensTile("all") === false,
+  weekRangeShowsTotalTile: shouldShowTotalTokensTile("week") === true,
+  mixedCurrencyDeltaUnknown: mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
+  sameCurrencyDeltaShown: sameCurrencySubscriptionCard.includes("$20.00")
 });`,
     createAppContext(),
     { filename: appPath }
@@ -291,17 +339,29 @@ JSON.stringify({
   assert.equal(result.topModel, "claude-fable-5");
   assert.equal(result.topModelCosted, true);
   assert.equal(result.manualQuality, "manual");
-  assert.equal(result.detectedQuality, "estimated");
-  assert.equal(result.detectedCost, 0);
+  assert.equal(result.detectedQuality, "catalog");
+  assert.equal(result.detectedCost, 100);
+  assert.equal(result.detectedCurrency, "USD");
+  assert.equal(result.detectedSource, "openai_public_catalog");
+  assert.equal(result.missingCatalogQuality, "estimated");
+  assert.equal(result.missingCatalogStatus, "catalog_missing");
   assert.equal(result.limitOk, "ok");
   assert.equal(result.limitRisk, "risk");
+  assert.equal(result.limitEarlyWeekRisk, "risk");
   assert.equal(result.limitFull, "full");
   assert.equal(result.limitUnknown, "unknown");
   assert.equal(result.limitOkLabel, "On track");
+  assert.equal(result.catalogQualityLabel, "Catalog value");
   assert.equal(result.manualQualityLabel, "Saved fallback estimate");
   assert.equal(result.manualSourceLabel, "saved fallback");
   assert.equal(result.aliasesHiddenByDefault, true);
   assert.equal(result.aliasesCollapsedInDebug, true);
+  assert.equal(result.sourceBarsUseProviderColors, true);
+  assert.equal(result.providerCardUsesProviderAccent, true);
+  assert.equal(result.allRangeHidesTotalTile, true);
+  assert.equal(result.weekRangeShowsTotalTile, true);
+  assert.equal(result.mixedCurrencyDeltaUnknown, true);
+  assert.equal(result.sameCurrencyDeltaShown, true);
 }
 
 function assertUpdateSettingsAlwaysOn() {

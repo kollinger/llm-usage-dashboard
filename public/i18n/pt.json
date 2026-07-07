@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Estimativa de fallback salva",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Valor de catálogo"
     },
     "sources": {
       "local_settings": "fallback salvo",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "catálogo público de subscrições da OpenAI",
+      "anthropic_public_catalog": "catálogo público de subscrições da Anthropic"
+    },
+    "catalogReviewed": "Catálogo revisto em {date}",
+    "costReasons": {
+      "catalogMissing": "Nenhum preço fiável do catálogo ou da conta corresponde a este plano detetado."
+    },
+    "costActions": {
+      "addFallback": "Atualize a fonte do catálogo/conta ou adicione uma estimativa de reserva em Advanced."
     }
   }
 }

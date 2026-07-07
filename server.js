@@ -78,6 +78,55 @@ const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
 const SUBSCRIPTION_HISTORY_VERSION = 1;
+const SUBSCRIPTION_CATALOG_REVIEW_DATE = "2026-07-07";
+const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
+  openai: [
+    {
+      aliases: ["plus", "chatgpt plus", "codex plus"],
+      monthlyCost: 20,
+      currency: "USD",
+      source: "openai_public_catalog",
+      sourceUrl: "https://chatgpt.com/codex/pricing/"
+    },
+    {
+      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x", "pro-5x"],
+      monthlyCost: 100,
+      currency: "USD",
+      source: "openai_public_catalog",
+      sourceUrl: "https://chatgpt.com/codex/pricing/"
+    },
+    {
+      aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
+      monthlyCost: 200,
+      currency: "USD",
+      source: "openai_public_catalog",
+      sourceUrl: "https://chatgpt.com/codex/pricing/"
+    }
+  ],
+  anthropic: [
+    {
+      aliases: ["pro", "claude pro"],
+      monthlyCost: 20,
+      currency: "USD",
+      source: "anthropic_public_catalog",
+      sourceUrl: "https://claude.com/pricing"
+    },
+    {
+      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      monthlyCost: 100,
+      currency: "USD",
+      source: "anthropic_public_catalog",
+      sourceUrl: "https://claude.com/pricing"
+    },
+    {
+      aliases: ["max 20x", "max-20x", "20x"],
+      monthlyCost: 200,
+      currency: "USD",
+      source: "anthropic_public_catalog",
+      sourceUrl: "https://claude.com/pricing"
+    }
+  ]
+};
 const LIVE_METRICS_SAMPLE_MS = 5000;
 const LIVE_METRICS_HISTORY_POINTS = 90;
 const LIVE_METRICS_TOKEN_MIN_WINDOW_MS = 30_000;
@@ -398,13 +447,13 @@ async function readUsageDashboard({ force = false } = {}) {
       readAnthropicUsage().catch((error) => providerError("anthropic", error))
     ]);
 
-    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex);
-    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot);
-    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode);
-    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini);
+    const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex");
+    const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot");
+    const claudeCode = mergeProviderSubscription(claudeCodeRaw, subscriptions.claudeCode, "claudeCode");
+    const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini");
     const ollama = ollamaRaw;
-    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai);
-    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic);
+    const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai");
+    const anthropic = mergeProviderSubscription(anthropicRaw, subscriptions.anthropic, "anthropic");
     await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
     const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]);
 
@@ -1676,9 +1725,9 @@ function validateSubscriptionHistory(history) {
   }
 }
 
-function mergeProviderSubscription(provider, subscription) {
+function mergeProviderSubscription(provider, subscription, providerId = provider?.id) {
   if (!provider || provider.status === "error") return provider;
-  if (!hasSubscriptionValue(subscription)) return provider;
+  if (!hasSubscriptionValue(subscription)) return enrichProviderSubscriptionFromCatalog(provider, providerId);
   const sourcePlan = String(provider.planType || "").trim();
   const planType = subscription.planType || sourcePlan || null;
   const mergedSubscription = {
@@ -1695,6 +1744,59 @@ function mergeProviderSubscription(provider, subscription) {
   };
   if (provider._usageEvents) merged._usageEvents = provider._usageEvents;
   return merged;
+}
+
+function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.id) {
+  if (!provider || provider.status === "error") return provider;
+  const existing = provider.subscription && typeof provider.subscription === "object" ? provider.subscription : null;
+  const explicitCost = positiveAmount(existing?.monthlyCost);
+  if (explicitCost > 0) return provider;
+
+  const planType = String(existing?.planType || provider.planType || provider.plan || provider.latest?.planType || "").trim();
+  if (!planType) return provider;
+
+  const planSource = existing?.planSource || existing?.source || provider.planSource || null;
+  const catalog = publicSubscriptionPlan(providerId, planType);
+  const subscription = {
+    ...(existing || {}),
+    planType,
+    monthlyCost: catalog ? catalog.monthlyCost : 0,
+    currency: catalog ? catalog.currency : normalizeCurrency(existing?.currency || "EUR"),
+    source: catalog ? catalog.source : existing?.source || planSource,
+    planSource,
+    catalogReviewedAt: catalog ? SUBSCRIPTION_CATALOG_REVIEW_DATE : null,
+    sourceUrl: catalog ? catalog.sourceUrl : null,
+    costStatus: catalog ? "catalog" : "catalog_missing"
+  };
+
+  return {
+    ...provider,
+    planType,
+    subscription
+  };
+}
+
+function publicSubscriptionPlan(providerId, planType) {
+  const family = subscriptionCatalogFamily(providerId);
+  const entries = family ? PUBLIC_SUBSCRIPTION_PLAN_CATALOG[family] || [] : [];
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  if (!planKey) return null;
+  return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function subscriptionCatalogFamily(providerId) {
+  if (["codex", "codexSpark", "openai"].includes(providerId)) return "openai";
+  if (["claudeCode", "anthropic"].includes(providerId)) return "anthropic";
+  return null;
+}
+
+function normalizeSubscriptionPlanKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 function hasSubscriptionValue(subscription) {

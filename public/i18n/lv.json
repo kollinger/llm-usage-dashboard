@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Kataloga vērtība"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "OpenAI publiskais abonementu katalogs",
+      "anthropic_public_catalog": "Anthropic publiskais abonementu katalogs"
+    },
+    "catalogReviewed": "Katalogs pārskatīts {date}",
+    "costReasons": {
+      "catalogMissing": "Šim noteiktajam plānam neatbilst neviena uzticama kataloga vai konta cena."
+    },
+    "costActions": {
+      "addFallback": "Atjauniniet kataloga/konta avotu vai pievienojiet rezerves aplēsi sadaļā Advanced."
     }
   }
 }

@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Kataloška vrednost"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "javni katalog naročnin OpenAI",
+      "anthropic_public_catalog": "javni katalog naročnin Anthropic"
+    },
+    "catalogReviewed": "Katalog pregledan {date}",
+    "costReasons": {
+      "catalogMissing": "Nobena zaupanja vredna kataloška ali računska cena se ne ujema s tem zaznanim paketom."
+    },
+    "costActions": {
+      "addFallback": "Posodobite vir kataloga/računa ali dodajte rezervno oceno v razdelku Advanced."
     }
   }
 }

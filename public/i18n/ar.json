@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Saved fallback estimate",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "قيمة من الكتالوج"
     },
     "sources": {
       "local_settings": "saved fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "كتالوج اشتراكات OpenAI العام",
+      "anthropic_public_catalog": "كتالوج اشتراكات Anthropic العام"
+    },
+    "catalogReviewed": "تمت مراجعة الكتالوج في {date}",
+    "costReasons": {
+      "catalogMissing": "لم يتطابق أي سعر موثوق من الكتالوج أو الحساب مع هذه الخطة المكتشفة."
+    },
+    "costActions": {
+      "addFallback": "حدّث مصدر الكتالوج/الحساب أو أضف تقديرًا احتياطيًا من Advanced."
     }
   }
 }

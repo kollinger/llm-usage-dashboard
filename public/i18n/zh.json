@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "已保存的备用估算",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "目录价格"
     },
     "sources": {
       "local_settings": "已保存备用",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "OpenAI 公开订阅目录",
+      "anthropic_public_catalog": "Anthropic 公开订阅目录"
+    },
+    "catalogReviewed": "目录已于 {date} 审核",
+    "costReasons": {
+      "catalogMissing": "没有可信的目录价格或账户价格与检测到的方案匹配。"
+    },
+    "costActions": {
+      "addFallback": "更新目录/账户来源，或在 Advanced 中添加备用估算。"
     }
   }
 }

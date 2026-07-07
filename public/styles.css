@@ -438,6 +438,7 @@ a {
 .provider-card {
   position: relative;
   min-height: 270px;
+  border-top: 4px solid var(--provider-accent, var(--line));
   padding: 16px;
   display: flex;
   flex-direction: column;

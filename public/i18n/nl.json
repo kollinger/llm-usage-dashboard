@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Opgeslagen fallbackschatting",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Cataloguswaarde"
     },
     "sources": {
       "local_settings": "opgeslagen fallback",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "openbare abonnementencatalogus van OpenAI",
+      "anthropic_public_catalog": "openbare abonnementencatalogus van Anthropic"
+    },
+    "catalogReviewed": "Catalogus gecontroleerd op {date}",
+    "costReasons": {
+      "catalogMissing": "Geen vertrouwde catalogus- of accountprijs komt overeen met dit gedetecteerde abonnement."
+    },
+    "costActions": {
+      "addFallback": "Werk de catalogus-/accountbron bij of voeg een reserve-inschatting toe in Advanced."
     }
   }
 }

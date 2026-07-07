@@ -734,7 +734,8 @@
       "automatic": "Automatically detected",
       "manual": "Estimation de secours enregistree",
       "estimated": "Estimated / partial",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "catalog": "Valeur du catalogue"
     },
     "sources": {
       "local_settings": "secours enregistre",
@@ -748,7 +749,16 @@
       "gemini_local_signal": "Gemini local signal",
       "openai_api": "OpenAI API metadata",
       "anthropic_api": "Anthropic API metadata",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "openai_public_catalog": "catalogue public des abonnements OpenAI",
+      "anthropic_public_catalog": "catalogue public des abonnements Anthropic"
+    },
+    "catalogReviewed": "Catalogue vérifié le {date}",
+    "costReasons": {
+      "catalogMissing": "Aucun prix fiable du catalogue ou du compte ne correspond à ce forfait détecté."
+    },
+    "costActions": {
+      "addFallback": "Mettez à jour la source catalogue/compte ou ajoutez une estimation de secours dans Advanced."
     }
   }
 }
