@@ -835,12 +835,14 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(openAiPricing.entries.find((entry) => entry.planKey === "pro").actualBillingKnown, false);
 
   const claudePricing = _test.parseClaudePricingPage(
-    '<span data-plan="pro_monthly">$20</span><div data-plan="max_5x_monthly">From $100</div>',
+    '<span data-plan="pro_monthly">$20</span><div data-plan="max_5x_monthly">From $100</div><div data-plan="max_20x_monthly">$200</div>',
     { sourceUrl: "https://claude.com/pricing", fetchedAt: "2026-07-07T10:00:00Z" }
   );
   assert.equal(claudePricing.parserStatus, "parsed");
   assert.equal(claudePricing.entries.find((entry) => entry.planKey === "pro").monthlyCost, 20);
   assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max").monthlyCost, 100);
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 20x").monthlyCost, 200);
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 20x").priceType, "official_list_price");
 
   const officialPricing = {
     families: {
@@ -854,7 +856,15 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(_test.officialSubscriptionPlan("codex", "pro", officialPricing).actualBillingKnown, false);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).priceType, "official_list_price");
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).tierVariant, "pro_5x");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).source, "official_pricing_page");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).monthlyCost, 200);
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).priceType, "official_list_price");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).priceVariant, "pro_20x");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).actualBillingKnown, false);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "max", officialPricing).monthlyCost, 100);
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).source, "official_pricing_page");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).monthlyCost, 200);
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).priceVariant, "max_20x");
   assert.equal(_test.parseOpenAiCodexPricingPage("<html>No pricing cards</html>", { sourceUrl: "https://developers.openai.com/codex/pricing" }).parserStatus, "parse_failed");
 
   const officialMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", officialPricing);
@@ -864,9 +874,15 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(officialMerged.subscription.priceVariant, "from");
   assert.equal(officialMerged.subscription.actualBillingKnown, false);
   const bundledMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro 20x" }, null, "codex", officialPricing);
-  assert.equal(bundledMerged.subscription.source, "bundled_catalog");
+  assert.equal(bundledMerged.subscription.source, "official_pricing_page");
   assert.equal(bundledMerged.subscription.monthlyCost, 200);
   assert.equal(bundledMerged.subscription.tierVariant, "pro_20x");
+  const officialVariantMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro Max" }, null, "codex", officialPricing);
+  assert.equal(officialVariantMerged.subscription.source, "official_pricing_page");
+  assert.equal(officialVariantMerged.subscription.monthlyCost, 200);
+  assert.equal(officialVariantMerged.subscription.priceType, "official_list_price");
+  assert.equal(officialVariantMerged.subscription.priceVariant, "pro_20x");
+  assert.equal(officialVariantMerged.subscription.actualBillingKnown, false);
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
   assert.equal(bundledGenericPro.subscription.monthlyCost, 100);
