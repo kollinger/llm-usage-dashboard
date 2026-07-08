@@ -262,7 +262,7 @@ const claudeBrowserWithoutPlan = _test.resolveClaudePlanSignals({
 assert.equal(claudeBrowserWithoutPlan.planType, null);
 assert.equal(claudeBrowserWithoutPlan.subscription, null);
 assert.equal(claudeBrowserWithoutPlan.connectionAction.url, "https://claude.ai/settings/billing");
-assert.equal(claudeBrowserWithoutPlan.connectionAction.labelKey, "subscriptions.connectionActions.claudeRefresh");
+assert.equal(claudeBrowserWithoutPlan.connectionAction.labelKey, "subscriptions.connectionActions.claudeLogin");
 
 const claudeBrowserBillingWins = _test.resolveClaudePlanSignals({
   browserSubscription: { planType: "Claude Max 20x", monthlyCost: 180, currency: "EUR", updatedAt: "2026-07-08T10:10:00Z" },

@@ -4176,7 +4176,7 @@ function claudeBrowserConnectionAction(browserCredits, conflict = null) {
     return providerConnectionAction("anthropic", requiresLogin ? "login" : "refresh", reason || status || null);
   }
   if (browserCredits) {
-    return providerConnectionAction("anthropic", "refresh", reason || "subscription_missing");
+    return providerConnectionAction("anthropic", "login", reason || "subscription_missing");
   }
   return null;
 }
