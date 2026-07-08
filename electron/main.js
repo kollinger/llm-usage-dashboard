@@ -1175,6 +1175,7 @@ function preferredOpenAiSessionResult(...results) {
 
 async function fetchOpenAiDashboardSnapshot(cookieHeader) {
   const payloads = {};
+  let expiredReason = "";
   for (const url of [
     OPENAI_IDENTITY_API_URL,
     OPENAI_CHATGPT_BILLING_URL,
@@ -1193,7 +1194,8 @@ async function fetchOpenAiDashboardSnapshot(cookieHeader) {
       });
       const location = response.headers.get("location") || "";
       if (response.status === 401 || /\/login|\/auth/i.test(location)) {
-        return { status: "expired", reason: "account_billing_source_expired" };
+        expiredReason ||= "account_billing_source_expired";
+        continue;
       }
       if (!response.ok) continue;
       const text = (await response.text()).slice(0, 2 * 1024 * 1024);
@@ -1207,9 +1209,9 @@ async function fetchOpenAiDashboardSnapshot(cookieHeader) {
       // Continue with the remaining read-only sources.
     }
   }
-  return Object.keys(payloads).length
-    ? { status: "parsed", payloads }
-    : { status: "unavailable", reason: "account_billing_source_unavailable" };
+  if (Object.keys(payloads).length) return { status: "parsed", payloads };
+  if (expiredReason) return { status: "expired", reason: expiredReason };
+  return { status: "unavailable", reason: "account_billing_source_unavailable" };
 }
 
 function extractOpenAiBootstrapJson(text) {
@@ -1625,6 +1627,7 @@ async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
     "https://claude.ai/settings/billing"
   ];
   const billingPayload = {};
+  let expiredReason = "";
   for (const url of endpoints) {
     try {
       const response = await fetch(url, {
@@ -1637,7 +1640,8 @@ async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
       });
       const location = response.headers.get("location") || "";
       if (response.status === 401 || /\/login/i.test(location)) {
-        return { status: "expired", reason: "claude_login_required" };
+        expiredReason ||= "claude_login_required";
+        continue;
       }
       if (!response.ok) continue;
       const text = await response.text();
@@ -1695,6 +1699,7 @@ async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
       usage: billingPayload.usage || null
     };
   }
+  if (expiredReason) return { status: "expired", reason: expiredReason };
   return { status: "missing", reason: "claude_billing_data_unavailable" };
 }
 
