@@ -883,6 +883,39 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(officialVariantMerged.subscription.priceType, "official_list_price");
   assert.equal(officialVariantMerged.subscription.priceVariant, "pro_20x");
   assert.equal(officialVariantMerged.subscription.actualBillingKnown, false);
+  const localizedUsage = _test.localizeUsageSubscriptionPrices(
+    {
+      codex: officialVariantMerged,
+      claudeCode: _test.mergeProviderSubscription({ id: "claudeCode", status: "live", planType: "Claude Max 20x" }, null, "claudeCode", officialPricing),
+      openai: _test.mergeProviderSubscription(
+        {
+          id: "openai",
+          status: "live",
+          planType: "Pro 20x",
+          subscription: {
+            planType: "Pro 20x",
+            monthlyCost: 250,
+            currency: "EUR",
+            source: "account_billing",
+            actualBillingKnown: true
+          }
+        },
+        null,
+        "openai",
+        officialPricing
+      )
+    },
+    "de"
+  );
+  assert.equal(localizedUsage.codex.subscription.monthlyCost, 229);
+  assert.equal(localizedUsage.codex.subscription.currency, "EUR");
+  assert.equal(localizedUsage.codex.subscription.priceRegion, "de_eur");
+  assert.equal(localizedUsage.codex.subscription.actualBillingKnown, false);
+  assert.equal(localizedUsage.claudeCode.subscription.monthlyCost, 180);
+  assert.equal(localizedUsage.claudeCode.subscription.currency, "EUR");
+  assert.equal(localizedUsage.openai.subscription.monthlyCost, 250);
+  assert.equal(localizedUsage.openai.subscription.actualBillingKnown, true);
+  assert.equal(_test.localizeUsageSubscriptionPrices({ codex: officialVariantMerged }, "en").codex.subscription.monthlyCost, 200);
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
   assert.equal(bundledGenericPro.subscription.monthlyCost, 100);

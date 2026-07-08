@@ -169,6 +169,94 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
     }
   ]
 };
+const REGIONAL_SUBSCRIPTION_PLAN_CATALOG = {
+  de: {
+    openai: [
+      {
+        aliases: ["plus", "chatgpt plus", "codex plus"],
+        monthlyCost: 22.99,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro", "chatgpt pro", "codex pro"],
+        monthlyCost: 115,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_starting_list_price",
+        priceVariant: "from",
+        priceRegion: "de_eur",
+        tierVariant: null,
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 5x", "pro-5x"],
+        monthlyCost: 115,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_5x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_5x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
+        monthlyCost: 229,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_20x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_20x",
+        actualBillingKnown: false
+      }
+    ],
+    anthropic: [
+      {
+        aliases: ["pro", "claude pro"],
+        monthlyCost: 18,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+        monthlyCost: 90,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_starting_list_price",
+        priceVariant: "from",
+        priceRegion: "de_eur",
+        tierVariant: null,
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+        monthlyCost: 180,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_20x",
+        priceRegion: "de_eur",
+        tierVariant: "max_20x",
+        actualBillingKnown: false
+      }
+    ]
+  }
+};
 const ACCOUNT_BILLING_PROVIDER_ALIASES = {
   codex: "codex",
   chatgpt: "openai",
@@ -427,7 +515,8 @@ app.get("/auth/oidc/callback", async (req, res) => {
 
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
-    res.json(await readUsageDashboard({ force: parseBoolean(req.query.force) }));
+    const usage = await readUsageDashboard({ force: parseBoolean(req.query.force) });
+    res.json(localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)));
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
   }
@@ -2450,6 +2539,44 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   };
 }
 
+function localizeUsageSubscriptionPrices(usage, locale) {
+  const region = normalizePricingLocale(locale);
+  if (!region || !usage || typeof usage !== "object") return usage;
+  const localized = { ...usage };
+  for (const providerId of ["codex", "codexSpark", "claudeCode", "openai", "anthropic"]) {
+    if (!localized[providerId]) continue;
+    localized[providerId] = localizeProviderSubscriptionPrice(localized[providerId], providerId, region);
+  }
+  return localized;
+}
+
+function localizeProviderSubscriptionPrice(provider, providerId, region) {
+  const subscription = provider?.subscription;
+  if (!subscription || subscription.actualBillingKnown === true || subscription.source === "account_billing") return provider;
+  const planType = subscription.planType || provider.planType || provider.latest?.planType || "";
+  const regional = regionalSubscriptionPlan(providerId, planType, region);
+  if (!regional) return provider;
+  return {
+    ...provider,
+    subscription: {
+      ...subscription,
+      monthlyCost: regional.monthlyCost,
+      currency: regional.currency,
+      source: regional.source || subscription.source,
+      sourceUrl: regional.sourceUrl || subscription.sourceUrl,
+      fetchedAt: subscription.fetchedAt || regional.fetchedAt || null,
+      priceType: regional.priceType || subscription.priceType,
+      priceSourceType: regional.source || subscription.priceSourceType || subscription.source,
+      priceVariant: regional.priceVariant || subscription.priceVariant || null,
+      tierVariant: regional.tierVariant || subscription.tierVariant || null,
+      priceRegion: regional.priceRegion || region,
+      actualBillingKnown: false,
+      officialListPrice: true,
+      quality: regional.priceType === "official_starting_list_price" ? "officialStarting" : "official"
+    }
+  };
+}
+
 function officialSubscriptionPlan(providerId, planType, officialPricing) {
   const family = subscriptionCatalogFamily(providerId);
   const entries = family ? officialPricing?.families?.[family]?.entries || [] : [];
@@ -2510,6 +2637,24 @@ function publicSubscriptionPlan(providerId, planType) {
   const planKey = normalizeSubscriptionPlanKey(planType);
   if (!planKey) return null;
   return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function regionalSubscriptionPlan(providerId, planType, region) {
+  const family = subscriptionCatalogFamily(providerId);
+  const entries = family ? REGIONAL_SUBSCRIPTION_PLAN_CATALOG[region]?.[family] || [] : [];
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  if (!planKey) return null;
+  return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function normalizePricingLocale(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return null;
+  return normalized.split(/[,;]/u).some((part) => part.trim().startsWith("de")) ? "de" : null;
+}
+
+function pricingLocaleFromRequest(req) {
+  return req.query.lang || req.query.locale || req.get("accept-language") || "";
 }
 
 function subscriptionCostMissingReasonKey(providerId, sourceId) {
@@ -6442,6 +6587,7 @@ module.exports = {
     parseClaudePricingPage,
     officialSubscriptionPlan,
     mergeProviderSubscription,
+    localizeUsageSubscriptionPrices,
     sanitizeAccountBillingSnapshots,
     accountBillingSubscriptionPlan
   }

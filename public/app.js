@@ -322,7 +322,7 @@ const publicSubscriptionPlanCatalog = {
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "bundled_catalog",
+      priceType: "official_list_price",
       priceVariant: "pro_5x",
       tierVariant: "pro_5x",
       actualBillingKnown: false
@@ -333,7 +333,7 @@ const publicSubscriptionPlanCatalog = {
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "bundled_catalog",
+      priceType: "official_list_price",
       priceVariant: "pro_20x",
       tierVariant: "pro_20x",
       actualBillingKnown: false
@@ -348,20 +348,116 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
       monthlyCost: 100,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://claude.com/pricing"
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_starting_list_price",
+      priceVariant: "from",
+      tierVariant: null,
+      actualBillingKnown: false
     },
     {
-      aliases: ["max 20x", "max-20x", "20x"],
+      aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://claude.com/pricing"
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_list_price",
+      priceVariant: "max_20x",
+      tierVariant: "max_20x",
+      actualBillingKnown: false
     }
   ]
+};
+const regionalSubscriptionPlanCatalog = {
+  de: {
+    openai: [
+      {
+        aliases: ["plus", "chatgpt plus", "codex plus"],
+        monthlyCost: 22.99,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro", "chatgpt pro", "codex pro"],
+        monthlyCost: 115,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_starting_list_price",
+        priceVariant: "from",
+        priceRegion: "de_eur",
+        tierVariant: null,
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 5x", "pro-5x"],
+        monthlyCost: 115,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_5x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_5x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
+        monthlyCost: 229,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_20x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_20x",
+        actualBillingKnown: false
+      }
+    ],
+    anthropic: [
+      {
+        aliases: ["pro", "claude pro"],
+        monthlyCost: 18,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+        monthlyCost: 90,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_starting_list_price",
+        priceVariant: "from",
+        priceRegion: "de_eur",
+        tierVariant: null,
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+        monthlyCost: 180,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_20x",
+        priceRegion: "de_eur",
+        tierVariant: "max_20x",
+        actualBillingKnown: false
+      }
+    ]
+  }
 };
 const liveHistorySeries = [
   { id: "cpu", labelKey: "liveMetrics.series.cpu", kind: "percent", color: "#23745c", value: (point) => point.cpuPercent },
@@ -2565,6 +2661,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   setUsageLoading(true, showIndicator);
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
+    params.set("lang", state.language || DEFAULT_LANGUAGE);
     if (force) params.set("force", "1");
     const [usage, subscriptionHistory] = await Promise.all([
       fetchJson(`/api/usage?${params.toString()}`),
@@ -3057,10 +3154,17 @@ function subscriptionQuality(sourceId, monthlyCost, meta = {}) {
 
 function publicSubscriptionPlan(providerId, planType) {
   const family = subscriptionCatalogFamily(providerId);
-  const entries = family ? publicSubscriptionPlanCatalog[family] || [] : [];
   const planKey = normalizeSubscriptionPlanKey(planType);
   if (!planKey) return null;
+  const regionalEntries = family ? regionalSubscriptionPlanCatalog[subscriptionPricingRegion()]?.[family] || [] : [];
+  const regionalEntry = regionalEntries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey));
+  if (regionalEntry) return regionalEntry;
+  const entries = family ? publicSubscriptionPlanCatalog[family] || [] : [];
   return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function subscriptionPricingRegion() {
+  return state.language === "de" ? "de" : null;
 }
 
 function subscriptionCatalogFamily(providerId) {
