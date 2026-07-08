@@ -891,12 +891,31 @@
     "priceVariants": {
       "from": "minimu / minn",
       "pro_5x": "Pro 5x",
+      "pro_5x_20x": "Pro 5x/20x",
       "pro_20x": "Pro 20x",
+      "max_5x": "Claude Max 5x",
+      "max_5x_20x": "Claude Max 5x/20x",
+      "max_20x": "Claude Max 20x",
       "unknown": "mhux magħruf"
     },
     "actualBillingKnown": {
       "yes": "iva",
       "no": "le"
+    },
+    "connectionActions": {
+      "refresh": "Aġġorna",
+      "claudeLogin": "Idħol f’Claude",
+      "claudeRefresh": "Aġġorna l-konnessjoni Claude",
+      "chatgptLogin": "Idħol f’ChatGPT",
+      "chatgptRefresh": "Aġġorna l-konnessjoni ChatGPT"
+    },
+    "connectionStatus": {
+      "refreshRequired": "Meħtieġ aġġornament tal-konnessjoni",
+      "claudeLoginRequired": "Meħtieġ login ta’ Claude",
+      "claudeRefreshRequired": "Aġġorna l-konnessjoni Claude",
+      "chatgptLoginRequired": "Meħtieġ login ta’ ChatGPT",
+      "chatgptRefreshRequired": "Aġġorna l-konnessjoni ChatGPT Billing",
+      "claudeConflict": "Claude Max: sorsi kontradittorji ({details})"
     }
   }
 }

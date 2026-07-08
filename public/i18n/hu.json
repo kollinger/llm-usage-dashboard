@@ -891,12 +891,31 @@
     "priceVariants": {
       "from": "minimum / ettől",
       "pro_5x": "Pro 5x",
+      "pro_5x_20x": "Pro 5x/20x",
       "pro_20x": "Pro 20x",
+      "max_5x": "Claude Max 5x",
+      "max_5x_20x": "Claude Max 5x/20x",
+      "max_20x": "Claude Max 20x",
       "unknown": "ismeretlen"
     },
     "actualBillingKnown": {
       "yes": "igen",
       "no": "nem"
+    },
+    "connectionActions": {
+      "refresh": "Frissítés",
+      "claudeLogin": "Bejelentkezés a Claude-ba",
+      "claudeRefresh": "Claude-kapcsolat frissítése",
+      "chatgptLogin": "Bejelentkezés a ChatGPT-be",
+      "chatgptRefresh": "ChatGPT-kapcsolat frissítése"
+    },
+    "connectionStatus": {
+      "refreshRequired": "A kapcsolat frissítése szükséges",
+      "claudeLoginRequired": "Claude-bejelentkezés szükséges",
+      "claudeRefreshRequired": "Frissítse a Claude-kapcsolatot",
+      "chatgptLoginRequired": "ChatGPT-bejelentkezés szükséges",
+      "chatgptRefreshRequired": "Frissítse a ChatGPT Billing kapcsolatot",
+      "claudeConflict": "Claude Max: ellentmondó források ({details})"
     }
   }
 }

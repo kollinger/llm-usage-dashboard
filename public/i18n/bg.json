@@ -891,12 +891,31 @@
     "priceVariants": {
       "from": "минимум / от",
       "pro_5x": "Pro 5x",
+      "pro_5x_20x": "Pro 5x/20x",
       "pro_20x": "Pro 20x",
+      "max_5x": "Claude Max 5x",
+      "max_5x_20x": "Claude Max 5x/20x",
+      "max_20x": "Claude Max 20x",
       "unknown": "неизвестно"
     },
     "actualBillingKnown": {
       "yes": "да",
       "no": "не"
+    },
+    "connectionActions": {
+      "refresh": "Обнови",
+      "claudeLogin": "Вход в Claude",
+      "claudeRefresh": "Обнови връзката с Claude",
+      "chatgptLogin": "Вход в ChatGPT",
+      "chatgptRefresh": "Обнови връзката с ChatGPT"
+    },
+    "connectionStatus": {
+      "refreshRequired": "Нужно е обновяване на връзката",
+      "claudeLoginRequired": "Нужен е вход в Claude",
+      "claudeRefreshRequired": "Обновете връзката с Claude",
+      "chatgptLoginRequired": "Нужен е вход в ChatGPT",
+      "chatgptRefreshRequired": "Обновете връзката с ChatGPT Billing",
+      "claudeConflict": "Claude Max: противоречиви източници ({details})"
     }
   }
 }

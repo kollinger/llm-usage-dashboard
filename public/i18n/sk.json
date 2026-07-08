@@ -891,12 +891,31 @@
     "priceVariants": {
       "from": "minimum / od",
       "pro_5x": "Pro 5x",
+      "pro_5x_20x": "Pro 5x/20x",
       "pro_20x": "Pro 20x",
+      "max_5x": "Claude Max 5x",
+      "max_5x_20x": "Claude Max 5x/20x",
+      "max_20x": "Claude Max 20x",
       "unknown": "neznáme"
     },
     "actualBillingKnown": {
       "yes": "áno",
       "no": "nie"
+    },
+    "connectionActions": {
+      "refresh": "Aktualizovať",
+      "claudeLogin": "Prihlásiť sa do Claude",
+      "claudeRefresh": "Aktualizovať pripojenie Claude",
+      "chatgptLogin": "Prihlásiť sa do ChatGPT",
+      "chatgptRefresh": "Aktualizovať pripojenie ChatGPT"
+    },
+    "connectionStatus": {
+      "refreshRequired": "Je potrebná aktualizácia pripojenia",
+      "claudeLoginRequired": "Je potrebné prihlásenie do Claude",
+      "claudeRefreshRequired": "Aktualizujte pripojenie Claude",
+      "chatgptLoginRequired": "Je potrebné prihlásenie do ChatGPT",
+      "chatgptRefreshRequired": "Aktualizujte pripojenie ChatGPT Billing",
+      "claudeConflict": "Claude Max: protichodné zdroje ({details})"
     }
   }
 }

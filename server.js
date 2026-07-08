@@ -94,6 +94,16 @@ const OFFICIAL_SUBSCRIPTION_PRICING_SOURCES = {
     parser: parseClaudePricingPage
   }
 };
+const PROVIDER_ACCOUNT_CONNECTIONS = {
+  openai: {
+    provider: "chatgpt",
+    url: "https://chatgpt.com/#settings/Billing"
+  },
+  anthropic: {
+    provider: "claude",
+    url: "https://claude.ai/settings/billing"
+  }
+};
 const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
   openai: [
     {
@@ -104,14 +114,17 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
-      aliases: ["pro", "chatgpt pro", "codex pro"],
+      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+      planName: "Pro 5x/20x",
       monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_variant_range",
+      priceVariant: "pro_5x_20x",
+      tierVariant: "pro_5x_20x",
       actualBillingKnown: false
     },
     {
@@ -146,18 +159,34 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+      aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+      planName: "Claude Max 5x/20x",
+      monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
+      currency: "USD",
+      source: "bundled_catalog",
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_variant_range",
+      priceVariant: "max_5x_20x",
+      tierVariant: "max_5x_20x",
+      actualBillingKnown: false
+    },
+    {
+      aliases: ["max 5x", "max-5x", "claude max 5x"],
+      planName: "Claude Max 5x",
       monthlyCost: 100,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_list_price",
+      priceVariant: "max_5x",
+      tierVariant: "max_5x",
       actualBillingKnown: false
     },
     {
       aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+      planName: "Claude Max 20x",
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
@@ -168,6 +197,114 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       actualBillingKnown: false
     }
   ]
+};
+const REGIONAL_SUBSCRIPTION_PLAN_CATALOG = {
+  de: {
+    openai: [
+      {
+        aliases: ["plus", "chatgpt plus", "codex plus"],
+        monthlyCost: 22.99,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+        planName: "Pro 5x/20x",
+        monthlyCost: 115,
+        monthlyCostMin: 115,
+        monthlyCostMax: 229,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_variant_range",
+        priceVariant: "pro_5x_20x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_5x_20x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 5x", "pro-5x"],
+        monthlyCost: 115,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_5x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_5x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
+        monthlyCost: 229,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_20x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_20x",
+        actualBillingKnown: false
+      }
+    ],
+    anthropic: [
+      {
+        aliases: ["pro", "claude pro"],
+        monthlyCost: 18,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+        planName: "Claude Max 5x/20x",
+        monthlyCost: 90,
+        monthlyCostMin: 90,
+        monthlyCostMax: 180,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_variant_range",
+        priceVariant: "max_5x_20x",
+        priceRegion: "de_eur",
+        tierVariant: "max_5x_20x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max 5x", "max-5x", "claude max 5x"],
+        planName: "Claude Max 5x",
+        monthlyCost: 90,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_5x",
+        priceRegion: "de_eur",
+        tierVariant: "max_5x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+        planName: "Claude Max 20x",
+        monthlyCost: 180,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_20x",
+        priceRegion: "de_eur",
+        tierVariant: "max_20x",
+        actualBillingKnown: false
+      }
+    ]
+  }
 };
 const ACCOUNT_BILLING_PROVIDER_ALIASES = {
   codex: "codex",
@@ -184,6 +321,7 @@ const ACCOUNT_BILLING_PROVIDER_ALIASES = {
 const ACCOUNT_BILLING_PROVIDER_IDS = new Set(["codex", "openai", "claudeCode", "anthropic"]);
 const ACCOUNT_BILLING_SAFE_SOURCE_TYPES = new Set([
   "account_billing",
+  "browser",
   "browser_account_snapshot",
   "local_account_endpoint",
   "sanitized_snapshot",
@@ -427,7 +565,8 @@ app.get("/auth/oidc/callback", async (req, res) => {
 
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
-    res.json(await readUsageDashboard({ force: parseBoolean(req.query.force) }));
+    const usage = await readUsageDashboard({ force: parseBoolean(req.query.force) });
+    res.json(localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)));
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
   }
@@ -1085,6 +1224,16 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
   }
 });
 
+app.post("/api/account-billing/snapshots", electronSyncMiddleware, async (req, res) => {
+  try {
+    const snapshot = await saveAccountBillingSnapshots(req.body || {});
+    invalidateTimedCache(usageCache);
+    res.json({ ok: true, snapshot });
+  } catch (error) {
+    sendApiError(res, error, "account_billing_snapshot_save_failed");
+  }
+});
+
 app.get("/api/quota-history", authMiddleware, async (req, res) => {
   try {
     const events = await readQuotaEvents();
@@ -1638,6 +1787,13 @@ async function readAccountBillingSnapshots() {
   return sanitizeAccountBillingSnapshots(parsed);
 }
 
+async function saveAccountBillingSnapshots(payload) {
+  const snapshot = sanitizeAccountBillingSnapshots(payload);
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(ACCOUNT_BILLING_SNAPSHOTS_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+  return snapshot;
+}
+
 function accountBillingSnapshotUnavailable(status, reason) {
   const normalizedStatus = normalizeAccountBillingParserStatus(status) || "unavailable";
   return {
@@ -1979,12 +2135,24 @@ function parseClaudePricingPage(html, meta = {}) {
       planKey: "max",
       planName: "Claude Max",
       dataPlan: "max_5x_monthly",
-      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      aliases: ["max", "claude max"],
       sourceUrl: meta.sourceUrl,
       fetchedAt: meta.fetchedAt,
       priceType: "official_starting_list_price",
       priceVariant: "from",
       tierVariant: null,
+      actualBillingKnown: false
+    }),
+    officialPricingEntryFromDataPlan(html, {
+      planKey: "max 5x",
+      planName: "Claude Max 5x",
+      dataPlan: "max_5x_monthly",
+      aliases: ["max 5x", "max-5x", "claude max 5x"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt,
+      priceType: "official_list_price",
+      priceVariant: "max_5x",
+      tierVariant: "max_5x",
       actualBillingKnown: false
     }),
     officialPricingEntryFromDataPlan(html, {
@@ -2028,7 +2196,9 @@ function officialPricingEntryFromDataPlan(html, options) {
 function officialPricingEntryFromPriceText(priceText, options) {
   const monthlyCost = positiveAmount(priceText);
   if (!(monthlyCost > 0)) return null;
-  const startingPrice = /\bfrom\b/i.test(String(priceText || "")) || options.priceType === "official_starting_list_price";
+  const startingPrice =
+    !(options.priceType === "official_list_price" && options.tierVariant) &&
+    (/\bfrom\b/i.test(String(priceText || "")) || options.priceType === "official_starting_list_price");
   return {
     planKey: options.planKey,
     planName: options.planName,
@@ -2273,21 +2443,22 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
   if (accountSubscription?.monthlyCost > 0 && accountSubscription.actualBillingKnown) {
     return mergeAccountBillingSubscription(provider, providerId, accountSubscription);
   }
+  const accountPlanHint = accountBillingPlanHint(providerId, accountBilling);
   if (!hasSubscriptionValue(subscription)) {
-    return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog(provider, providerId, officialPricing), providerId, accountBilling);
+    return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog(applyAccountBillingPlanHint(provider, accountPlanHint), providerId, officialPricing), providerId, accountBilling);
   }
-  const sourcePlan = String(provider.planType || "").trim();
+  const sourcePlan = String(accountPlanHint?.planType || provider.planType || "").trim();
   const planType = subscription.planType || sourcePlan || null;
   const monthlyCost = positiveAmount(subscription.monthlyCost);
   if (!(monthlyCost > 0)) {
     return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog({
       ...provider,
       planType,
-      planSource: subscription.planType ? "local_settings" : provider.planSource || null,
+      planSource: subscription.planType ? "local_settings" : accountPlanHint?.source || provider.planSource || null,
       subscription: {
         ...(provider.subscription && typeof provider.subscription === "object" ? provider.subscription : {}),
         planType,
-        planSource: subscription.planType ? "local_settings" : provider.planSource || null
+        planSource: subscription.planType ? "local_settings" : accountPlanHint?.source || provider.planSource || null
       }
     }, providerId, officialPricing), providerId, accountBilling);
   }
@@ -2308,6 +2479,24 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
   };
   if (provider._usageEvents) merged._usageEvents = provider._usageEvents;
   return attachAccountBillingStatus(merged, providerId, accountBilling);
+}
+
+function applyAccountBillingPlanHint(provider, accountPlanHint) {
+  if (!accountPlanHint?.planType) return provider;
+  const currentPlan = String(provider?.planType || provider?.latest?.planType || "").trim();
+  if (currentPlan && isConcreteSubscriptionPlanVariant(provider?.id, currentPlan)) return provider;
+  return {
+    ...provider,
+    planType: accountPlanHint.planType,
+    planSource: accountPlanHint.source || provider.planSource || null,
+    subscription: provider.subscription
+      ? {
+          ...provider.subscription,
+          planType: provider.subscription.planType || accountPlanHint.planType,
+          planSource: provider.subscription.planSource || accountPlanHint.source || provider.planSource || null
+        }
+      : provider.subscription
+  };
 }
 
 function mergeAccountBillingSubscription(provider, providerId, accountSubscription) {
@@ -2340,8 +2529,10 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
   if (!provider?.subscription || provider.status === "error") return provider;
   const status = accountBillingProviderStatus(providerId, accountBilling);
   if (!status) return provider;
+  const connectionAction = accountBillingConnectionAction(providerId, status);
   return {
     ...provider,
+    subscriptionConnectionAction: provider.subscriptionConnectionAction || connectionAction,
     subscription: {
       ...provider.subscription,
       accountBillingStatus: status.status,
@@ -2350,6 +2541,30 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
       accountBillingParserStatus: status.parserStatus,
       accountBillingSourceType: status.sourceType
     }
+  };
+}
+
+function accountBillingConnectionAction(providerId, status) {
+  const family = subscriptionCatalogFamily(providerId);
+  if (!["openai", "anthropic"].includes(family)) return null;
+  if (String(status?.status || "") === "available") return null;
+  const reason = String(status?.reason || "");
+  const isLogin = /login|required|expired|cookie|auth/i.test(reason) || status?.status === "expired";
+  return providerConnectionAction(family, isLogin ? "login" : "refresh", reason || status?.status || null);
+}
+
+function providerConnectionAction(family, mode = "refresh", reason = null) {
+  const connection = PROVIDER_ACCOUNT_CONNECTIONS[family];
+  if (!connection) return null;
+  const provider = connection.provider;
+  const suffix = mode === "login" ? "Login" : "Refresh";
+  return {
+    provider,
+    mode,
+    url: connection.url,
+    reason,
+    labelKey: `subscriptions.connectionActions.${provider}${suffix}`,
+    statusKey: `subscriptions.connectionStatus.${provider}${mode === "login" ? "LoginRequired" : "RefreshRequired"}`
   };
 }
 
@@ -2374,6 +2589,17 @@ function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
     actualBillingKnown: true,
     costStatus: "account_billing",
     redacted: Boolean(entry.redacted)
+  };
+}
+
+function accountBillingPlanHint(providerId, accountBilling) {
+  const entry = accountBillingProviderEntry(providerId, accountBilling);
+  if (!entry?.planType) return null;
+  if (entry.redacted || entry.status === "expired" || entry.parserStatus === "expired") return null;
+  return {
+    planType: entry.planType,
+    source: entry.sourceType || "account_billing",
+    fetchedAt: entry.fetchedAt || null
   };
 }
 
@@ -2422,8 +2648,10 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   const catalog = official || publicSubscriptionPlan(providerId, planType);
   const subscription = {
     ...(existing || {}),
-    planType,
+    planType: catalog?.planName || planType,
     monthlyCost: catalog ? catalog.monthlyCost : 0,
+    monthlyCostMin: catalog?.monthlyCostMin || null,
+    monthlyCostMax: catalog?.monthlyCostMax || null,
     currency: catalog ? catalog.currency : normalizeCurrency(existing?.currency || "EUR"),
     source: catalog ? catalog.source : existing?.source || planSource,
     planSource,
@@ -2450,6 +2678,47 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   };
 }
 
+function localizeUsageSubscriptionPrices(usage, locale) {
+  const region = normalizePricingLocale(locale);
+  if (!region || !usage || typeof usage !== "object") return usage;
+  const localized = { ...usage };
+  for (const providerId of ["codex", "codexSpark", "claudeCode", "openai", "anthropic"]) {
+    if (!localized[providerId]) continue;
+    localized[providerId] = localizeProviderSubscriptionPrice(localized[providerId], providerId, region);
+  }
+  return localized;
+}
+
+function localizeProviderSubscriptionPrice(provider, providerId, region) {
+  const subscription = provider?.subscription;
+  if (!subscription || subscription.actualBillingKnown === true || subscription.source === "account_billing") return provider;
+  const planType = subscription.planType || provider.planType || provider.latest?.planType || "";
+  const regional = regionalSubscriptionPlan(providerId, planType, region);
+  if (!regional) return provider;
+  return {
+    ...provider,
+    subscription: {
+      ...subscription,
+      planType: regional.planName || subscription.planType,
+      monthlyCost: regional.monthlyCost,
+      monthlyCostMin: regional.monthlyCostMin || null,
+      monthlyCostMax: regional.monthlyCostMax || null,
+      currency: regional.currency,
+      source: regional.source || subscription.source,
+      sourceUrl: regional.sourceUrl || subscription.sourceUrl,
+      fetchedAt: subscription.fetchedAt || regional.fetchedAt || null,
+      priceType: regional.priceType || subscription.priceType,
+      priceSourceType: regional.source || subscription.priceSourceType || subscription.source,
+      priceVariant: regional.priceVariant || subscription.priceVariant || null,
+      tierVariant: regional.tierVariant || subscription.tierVariant || null,
+      priceRegion: regional.priceRegion || region,
+      actualBillingKnown: false,
+      officialListPrice: true,
+      quality: regional.priceType === "official_starting_list_price" ? "officialStarting" : "official"
+    }
+  };
+}
+
 function officialSubscriptionPlan(providerId, planType, officialPricing) {
   const family = subscriptionCatalogFamily(providerId);
   const entries = family ? officialPricing?.families?.[family]?.entries || [] : [];
@@ -2472,15 +2741,52 @@ function officialSubscriptionPlan(providerId, planType, officialPricing) {
   };
   if (family === "openai" && entry.planKey === "pro") {
     const explicitFiveX = planKey === "pro 5x";
+    const variantRange = openAiProVariantRange();
     return {
       ...official,
-      priceType: explicitFiveX ? "official_list_price" : "official_starting_list_price",
-      priceVariant: explicitFiveX ? "pro_5x" : "from",
-      tierVariant: explicitFiveX ? "pro_5x" : null,
+      planName: explicitFiveX ? official.planName : variantRange.planName,
+      monthlyCostMin: explicitFiveX ? null : variantRange.monthlyCostMin,
+      monthlyCostMax: explicitFiveX ? null : variantRange.monthlyCostMax,
+      priceType: explicitFiveX ? "official_list_price" : "official_variant_range",
+      priceVariant: explicitFiveX ? "pro_5x" : "pro_5x_20x",
+      tierVariant: explicitFiveX ? "pro_5x" : "pro_5x_20x",
+      actualBillingKnown: false
+    };
+  }
+  if (family === "anthropic" && entry.planKey === "max") {
+    const variantRange = claudeMaxVariantRange();
+    return {
+      ...official,
+      planName: variantRange.planName,
+      monthlyCostMin: variantRange.monthlyCostMin,
+      monthlyCostMax: variantRange.monthlyCostMax,
+      priceType: "official_variant_range",
+      priceVariant: "max_5x_20x",
+      tierVariant: "max_5x_20x",
       actualBillingKnown: false
     };
   }
   return official;
+}
+
+function openAiProVariantRange() {
+  const fiveX = publicSubscriptionPlan("codex", "Pro 5x");
+  const twentyX = publicSubscriptionPlan("codex", "Pro 20x");
+  return {
+    planName: "Pro 5x/20x",
+    monthlyCostMin: fiveX?.monthlyCost || 100,
+    monthlyCostMax: twentyX?.monthlyCost || 200
+  };
+}
+
+function claudeMaxVariantRange() {
+  const fiveX = publicSubscriptionPlan("claudeCode", "Claude Max 5x");
+  const twentyX = publicSubscriptionPlan("claudeCode", "Claude Max 20x");
+  return {
+    planName: "Claude Max 5x/20x",
+    monthlyCostMin: fiveX?.monthlyCost || 100,
+    monthlyCostMax: twentyX?.monthlyCost || 200
+  };
 }
 
 function officialSubscriptionPlanVariantFromCatalog(providerId, planType, officialPricing) {
@@ -2510,6 +2816,24 @@ function publicSubscriptionPlan(providerId, planType) {
   const planKey = normalizeSubscriptionPlanKey(planType);
   if (!planKey) return null;
   return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function regionalSubscriptionPlan(providerId, planType, region) {
+  const family = subscriptionCatalogFamily(providerId);
+  const entries = family ? REGIONAL_SUBSCRIPTION_PLAN_CATALOG[region]?.[family] || [] : [];
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  if (!planKey) return null;
+  return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function normalizePricingLocale(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return null;
+  return normalized.split(/[,;]/u).some((part) => part.trim().startsWith("de")) ? "de" : null;
+}
+
+function pricingLocaleFromRequest(req) {
+  return req.query.lang || req.query.locale || req.get("accept-language") || "";
 }
 
 function subscriptionCostMissingReasonKey(providerId, sourceId) {
@@ -2799,6 +3123,7 @@ async function readCodexUsage(options = {}) {
 
   const daily = buildDaily(dailyMap);
   const liveRateLimits = await liveRateLimitsPromise;
+  const codexPlan = preferredCodexPlan(liveRateLimits?.codex?.planType || null);
   const liveCodexLimits = liveRateLimits?.codex ? codexRateLimitsFromLive(liveRateLimits.codex, "Codex") : null;
   const liveSparkLimits = liveRateLimits?.spark ? codexRateLimitsFromLive(liveRateLimits.spark, "Codex 5.3 Spark") : null;
   const liveCodexCreditRows = codexCreditRowsFromLive(liveRateLimits?.codex);
@@ -2818,8 +3143,8 @@ async function readCodexUsage(options = {}) {
       liveRateLimits: liveRateLimits?.source || null
     },
     liveRateLimits: liveRateLimits?.source || null,
-    planType: liveRateLimits?.codex?.planType || null,
-    planSource: liveRateLimits?.codex?.planType ? "codex_app_server" : null,
+    planType: codexPlan.planType,
+    planSource: codexPlan.source,
     creditRows: liveCodexCreditRows,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
@@ -2828,7 +3153,7 @@ async function readCodexUsage(options = {}) {
           modelContextWindow: latestEvent.info.model_context_window || null,
           last: normalizeUsage(latestEvent.info.last_token_usage || {}),
           sessionTotal: normalizeUsage(latestEvent.info.total_token_usage || {}),
-          planType: liveRateLimits?.codex?.planType || latestEvent.rateLimits?.plan_type || null,
+          planType: codexPlan.planType || latestEvent.rateLimits?.plan_type || null,
           file: latestEvent.file
         }
       : null,
@@ -3533,7 +3858,8 @@ async function readClaudeCodeUsage(options = {}) {
   const apiUsageSource = directApiUsage ? "claude_api" : browserSyncedApiUsage ? "claude_browser_sync" : null;
   const apiUsageUpdatedAt = apiUsage?.updatedAt || null;
   const browserSubscription = browserCredits?.subscription || null;
-  const planType = browserSubscription?.planType || statusline?.planType || authStatus?.planType || null;
+  const planResolution = resolveClaudePlanSignals({ browserSubscription, browserCredits, statusline, authStatus });
+  const planType = planResolution.planType;
   const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
   const resolvedCredits = hasUsageCredits(browserCredits?.credits) ? browserCredits.credits : statusline?.credits || null;
   let resolvedLimits = statusline?.limits || null;
@@ -3655,23 +3981,13 @@ async function readClaudeCodeUsage(options = {}) {
     limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt,
     planType,
-    subscription: browserSubscription
-      ? {
-          ...browserSubscription,
-          planType: browserSubscription.planType || planType,
-          source: browserSubscription.source || "claude_browser_sync"
-        }
-      : null,
+    subscription: planResolution.subscription,
+    subscriptionConnectionAction: planResolution.connectionAction,
+    subscriptionConflict: planResolution.conflict,
     credits: resolvedCredits,
     creditRows: buildCreditRows(resolvedCredits),
     limitSource,
-    planSource: browserSubscription?.planType
-      ? "claude_browser_sync"
-      : statusline?.planType
-        ? "claude_statusline"
-        : authStatus?.planType
-          ? "claude_auth_status"
-          : null,
+    planSource: planResolution.planSource,
     creditSource: hasUsageCredits(browserCredits?.credits) ? browserCredits?.source || "browser" : statusline?.credits ? "claude_statusline" : null,
     message: claudeCodeStatusMessage(statusline, limitSource),
     byModel: Array.from(modelMap.entries())
@@ -3681,6 +3997,93 @@ async function readClaudeCodeUsage(options = {}) {
     daily: buildDaily(usage.dailyMap),
     _usageEvents: usageEvents
   };
+}
+
+function resolveClaudePlanSignals({ browserSubscription = null, browserCredits = null, statusline = null, authStatus = null } = {}) {
+  const signals = [
+    claudePlanSignal("claude_browser_sync", browserSubscription?.planType, browserSubscription?.updatedAt || browserCredits?.updatedAt, {
+      priority: 0
+    }),
+    claudePlanSignal("claude_statusline", statusline?.planType, statusline?.updatedAt, { priority: 1 }),
+    claudePlanSignal("claude_auth_status", authStatus?.planType, authStatus?.updatedAt || null, { priority: 2 })
+  ].filter(Boolean);
+  const browserSignal = signals.find((signal) => signal.source === "claude_browser_sync");
+  const browserLoggedIn = Boolean(browserSignal && browserSubscription?.planType);
+  const localConcreteSignals = signals.filter((signal) => signal.source !== "claude_browser_sync" && signal.concrete);
+  const localConcreteVariants = new Set(localConcreteSignals.map((signal) => signal.variantKey));
+  const conflict = !browserLoggedIn && localConcreteVariants.size > 1
+    ? claudePlanConflict(localConcreteSignals)
+    : null;
+  const chosen = browserSignal || (!conflict ? signals.find((signal) => signal.concrete) || signals[0] || null : null);
+  const subscription = browserSignal && browserSubscription
+    ? {
+        ...browserSubscription,
+        planType: browserSignal.planType,
+        source: browserSubscription.source || "claude_browser_sync"
+      }
+    : null;
+  const connectionAction = claudeBrowserConnectionAction(browserCredits, conflict);
+  return {
+    planType: chosen?.planType || null,
+    planSource: chosen?.source || null,
+    subscription,
+    conflict,
+    connectionAction
+  };
+}
+
+function claudePlanSignal(source, planType, updatedAt = null, options = {}) {
+  const text = String(planType || "").trim();
+  if (!text) return null;
+  const catalog = publicSubscriptionPlan("claudeCode", text);
+  const variantKey = claudePlanVariantKey(text);
+  return {
+    source,
+    planType: catalog?.planName || text,
+    rawPlanType: text,
+    variantKey,
+    concrete: ["max_5x", "max_20x"].includes(variantKey),
+    updatedAt: normalizeOptionalDate(updatedAt) || null,
+    priority: options.priority ?? 10
+  };
+}
+
+function claudePlanVariantKey(planType) {
+  const key = normalizeSubscriptionPlanKey(planType);
+  if (!key) return "";
+  if (/(^| )20x($| )/u.test(key) || /max 20x/u.test(key)) return "max_20x";
+  if (/(^| )5x($| )/u.test(key) || /max 5x/u.test(key)) return "max_5x";
+  if (/max/u.test(key)) return "max";
+  if (/pro/u.test(key)) return "pro";
+  if (/team|business/u.test(key)) return "team";
+  if (/enterprise/u.test(key)) return "enterprise";
+  return key;
+}
+
+function claudePlanConflict(signals) {
+  return {
+    status: "conflict",
+    source: "claude_first_party_sources",
+    sources: signals
+      .slice()
+      .sort((a, b) => a.priority - b.priority)
+      .map((signal) => ({
+        source: signal.source,
+        planType: signal.planType,
+        updatedAt: signal.updatedAt
+      }))
+  };
+}
+
+function claudeBrowserConnectionAction(browserCredits, conflict = null) {
+  if (browserCredits?.subscription?.planType) return null;
+  const status = String(browserCredits?.status || "missing");
+  const reason = String(browserCredits?.reason || "");
+  const requiresLogin = status === "expired" || /login|required|cookie|auth/i.test(reason);
+  if (conflict || ["missing", "expired", "unavailable", "unsupported", "error"].includes(status) || requiresLogin) {
+    return providerConnectionAction("anthropic", requiresLogin ? "login" : "refresh", reason || status || null);
+  }
+  return null;
 }
 
 function claudeCodeStatusMessage(statusline, limitSource) {
@@ -4951,6 +5354,21 @@ async function readCodexLiveRateLimits() {
       };
     }
   });
+}
+
+function preferredCodexPlan(livePlanType) {
+  const livePlan = String(livePlanType || "").trim();
+  if (livePlan) return { planType: livePlan, source: "codex_app_server", updatedAt: null };
+  return { planType: null, source: null, updatedAt: null };
+}
+
+function isConcreteSubscriptionPlanVariant(providerId, planType) {
+  const catalog = publicSubscriptionPlan(providerId, planType);
+  if (!catalog) return false;
+  const priceType = String(catalog.priceType || "");
+  const variant = String(catalog.tierVariant || catalog.priceVariant || "");
+  if (priceType === "official_variant_range" || /_5x_20x$/u.test(variant)) return false;
+  return Boolean(catalog.tierVariant || (catalog.priceVariant && catalog.priceVariant !== "from"));
 }
 
 function normalizeCodexLiveRateLimits(response) {
@@ -6442,6 +6860,9 @@ module.exports = {
     parseClaudePricingPage,
     officialSubscriptionPlan,
     mergeProviderSubscription,
+    resolveClaudePlanSignals,
+    preferredCodexPlan,
+    localizeUsageSubscriptionPrices,
     sanitizeAccountBillingSnapshots,
     accountBillingSubscriptionPlan
   }

@@ -136,6 +136,32 @@ assert.equal(claudeWithAnthropicBilling.subscription.monthlyCost, 150);
 assert.equal(claudeWithAnthropicBilling.subscription.source, "account_billing");
 assert.equal(claudeWithAnthropicBilling.subscription.actualBillingKnown, true);
 
+const claudeConflict = _test.resolveClaudePlanSignals({
+  browserCredits: { status: "expired", reason: "claude_login_required", updatedAt: "2026-07-08T10:00:00Z" },
+  statusline: { planType: "Claude Max 20x", updatedAt: "2026-07-07T20:00:00Z" },
+  authStatus: { planType: "Claude Max 5x" }
+});
+assert.equal(claudeConflict.planType, null);
+assert.equal(claudeConflict.subscription, null);
+assert.equal(claudeConflict.conflict.status, "conflict");
+assert.deepEqual(
+  claudeConflict.conflict.sources.map((source) => source.planType),
+  ["Claude Max 20x", "Claude Max 5x"]
+);
+assert.equal(claudeConflict.connectionAction.url, "https://claude.ai/settings/billing");
+assert.equal(claudeConflict.connectionAction.labelKey, "subscriptions.connectionActions.claudeLogin");
+
+const claudeBrowserBillingWins = _test.resolveClaudePlanSignals({
+  browserSubscription: { planType: "Claude Max 20x", monthlyCost: 180, currency: "EUR", updatedAt: "2026-07-08T10:10:00Z" },
+  browserCredits: { status: "available", updatedAt: "2026-07-08T10:10:00Z" },
+  statusline: { planType: "Claude Max 5x", updatedAt: "2026-07-08T10:00:00Z" },
+  authStatus: { planType: "Claude Max 5x" }
+});
+assert.equal(claudeBrowserBillingWins.planType, "Claude Max 20x");
+assert.equal(claudeBrowserBillingWins.planSource, "claude_browser_sync");
+assert.equal(claudeBrowserBillingWins.conflict, null);
+assert.equal(claudeBrowserBillingWins.connectionAction, null);
+
 const expiredBilling = _test.sanitizeAccountBillingSnapshots(
   {
     providers: {
@@ -158,8 +184,12 @@ const codexWithExpiredBilling = _test.mergeProviderSubscription(
   expiredBilling
 );
 assert.equal(codexWithExpiredBilling.subscription.monthlyCost, 100);
+assert.equal(codexWithExpiredBilling.subscription.monthlyCostMin, 100);
+assert.equal(codexWithExpiredBilling.subscription.monthlyCostMax, 200);
 assert.equal(codexWithExpiredBilling.subscription.source, "official_pricing_page");
-assert.equal(codexWithExpiredBilling.subscription.priceType, "official_starting_list_price");
+assert.equal(codexWithExpiredBilling.subscription.planType, "Pro 5x/20x");
+assert.equal(codexWithExpiredBilling.subscription.priceType, "official_variant_range");
+assert.equal(codexWithExpiredBilling.subscription.priceVariant, "pro_5x_20x");
 assert.equal(codexWithExpiredBilling.subscription.actualBillingKnown, false);
 assert.equal(codexWithExpiredBilling.subscription.accountBillingStatus, "expired");
 assert.equal(codexWithExpiredBilling.subscription.accountBillingParserStatus, "expired");

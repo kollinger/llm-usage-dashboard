@@ -306,14 +306,17 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
-      aliases: ["pro", "chatgpt pro", "codex pro"],
+      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+      planName: "Pro 5x/20x",
       monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_variant_range",
+      priceVariant: "pro_5x_20x",
+      tierVariant: "pro_5x_20x",
       actualBillingKnown: false
     },
     {
@@ -322,7 +325,7 @@ const publicSubscriptionPlanCatalog = {
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "bundled_catalog",
+      priceType: "official_list_price",
       priceVariant: "pro_5x",
       tierVariant: "pro_5x",
       actualBillingKnown: false
@@ -333,7 +336,7 @@ const publicSubscriptionPlanCatalog = {
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "bundled_catalog",
+      priceType: "official_list_price",
       priceVariant: "pro_20x",
       tierVariant: "pro_20x",
       actualBillingKnown: false
@@ -348,20 +351,152 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+      planName: "Claude Max 5x/20x",
+      monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
+      currency: "USD",
+      source: "bundled_catalog",
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_variant_range",
+      priceVariant: "max_5x_20x",
+      tierVariant: "max_5x_20x",
+      actualBillingKnown: false
+    },
+    {
+      aliases: ["max 5x", "max-5x", "claude max 5x"],
+      planName: "Claude Max 5x",
       monthlyCost: 100,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://claude.com/pricing"
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_list_price",
+      priceVariant: "max_5x",
+      tierVariant: "max_5x",
+      actualBillingKnown: false
     },
     {
-      aliases: ["max 20x", "max-20x", "20x"],
+      aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+      planName: "Claude Max 20x",
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
-      sourceUrl: "https://claude.com/pricing"
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_list_price",
+      priceVariant: "max_20x",
+      tierVariant: "max_20x",
+      actualBillingKnown: false
     }
   ]
+};
+const regionalSubscriptionPlanCatalog = {
+  de: {
+    openai: [
+      {
+        aliases: ["plus", "chatgpt plus", "codex plus"],
+        monthlyCost: 22.99,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+        planName: "Pro 5x/20x",
+        monthlyCost: 115,
+        monthlyCostMin: 115,
+        monthlyCostMax: 229,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_variant_range",
+        priceVariant: "pro_5x_20x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_5x_20x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 5x", "pro-5x"],
+        monthlyCost: 115,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_5x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_5x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["pro 20x", "pro-20x", "20x", "pro max", "pro-max", "max"],
+        monthlyCost: 229,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://chatgpt.com/pricing/",
+        priceType: "official_list_price",
+        priceVariant: "pro_20x",
+        priceRegion: "de_eur",
+        tierVariant: "pro_20x",
+        actualBillingKnown: false
+      }
+    ],
+    anthropic: [
+      {
+        aliases: ["pro", "claude pro"],
+        monthlyCost: 18,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceRegion: "de_eur",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+        planName: "Claude Max 5x/20x",
+        monthlyCost: 90,
+        monthlyCostMin: 90,
+        monthlyCostMax: 180,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_variant_range",
+        priceVariant: "max_5x_20x",
+        priceRegion: "de_eur",
+        tierVariant: "max_5x_20x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max 5x", "max-5x", "claude max 5x"],
+        planName: "Claude Max 5x",
+        monthlyCost: 90,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_5x",
+        priceRegion: "de_eur",
+        tierVariant: "max_5x",
+        actualBillingKnown: false
+      },
+      {
+        aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+        planName: "Claude Max 20x",
+        monthlyCost: 180,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_20x",
+        priceRegion: "de_eur",
+        tierVariant: "max_20x",
+        actualBillingKnown: false
+      }
+    ]
+  }
 };
 const liveHistorySeries = [
   { id: "cpu", labelKey: "liveMetrics.series.cpu", kind: "percent", color: "#23745c", value: (point) => point.cpuPercent },
@@ -2565,6 +2700,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   setUsageLoading(true, showIndicator);
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
+    params.set("lang", state.language || DEFAULT_LANGUAGE);
     if (force) params.set("force", "1");
     const [usage, subscriptionHistory] = await Promise.all([
       fetchJson(`/api/usage?${params.toString()}`),
@@ -2947,7 +3083,9 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   const source = subscription && typeof subscription === "object" ? subscription : {};
   const fallbackSource = fallback && typeof fallback === "object" ? fallback : {};
   let monthlyCost = Number(source.monthlyCost || 0);
-  const planType = String(source.planType || fallbackSource.planType || "").trim();
+  let monthlyCostMin = Number(source.monthlyCostMin || source.minMonthlyCost || 0);
+  let monthlyCostMax = Number(source.monthlyCostMax || source.maxMonthlyCost || 0);
+  let planType = String(source.planType || fallbackSource.planType || "").trim();
   let sourceId = source.source || fallbackSource.source || null;
   const updatedAt = source.updatedAt || fallbackSource.updatedAt || null;
   let planSource = source.planSource || fallbackSource.planSource || (sourceId !== fallbackSource.source ? fallbackSource.source : null);
@@ -2973,6 +3111,9 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let accountBillingSourceType = source.accountBillingSourceType || null;
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
+    monthlyCostMin = Number(catalog.monthlyCostMin || 0);
+    monthlyCostMax = Number(catalog.monthlyCostMax || 0);
+    planType = catalog.planName || planType;
     currency = catalog.currency;
     if (!planSource && fallbackSource.source && catalog.source !== fallbackSource.source) {
       planSource = fallbackSource.source;
@@ -3001,6 +3142,8 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   return {
     planType: planType || null,
     monthlyCost: monthlyCost > 0 ? monthlyCost : 0,
+    monthlyCostMin: monthlyCostMin > 0 ? monthlyCostMin : null,
+    monthlyCostMax: monthlyCostMax > 0 ? monthlyCostMax : null,
     currency,
     source: sourceId,
     planSource,
@@ -3057,10 +3200,17 @@ function subscriptionQuality(sourceId, monthlyCost, meta = {}) {
 
 function publicSubscriptionPlan(providerId, planType) {
   const family = subscriptionCatalogFamily(providerId);
-  const entries = family ? publicSubscriptionPlanCatalog[family] || [] : [];
   const planKey = normalizeSubscriptionPlanKey(planType);
   if (!planKey) return null;
+  const regionalEntries = family ? regionalSubscriptionPlanCatalog[subscriptionPricingRegion()]?.[family] || [] : [];
+  const regionalEntry = regionalEntries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey));
+  if (regionalEntry) return regionalEntry;
+  const entries = family ? publicSubscriptionPlanCatalog[family] || [] : [];
   return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function subscriptionPricingRegion() {
+  return state.language === "de" ? "de" : null;
 }
 
 function subscriptionCatalogFamily(providerId) {
@@ -3602,6 +3752,7 @@ function renderProvider(provider, index = 0, total = 1) {
       </div>
       ${renderProviderFreshness(provider)}
       ${renderProviderSubscription(provider)}
+      ${renderProviderSubscriptionConnection(provider)}
       ${main}
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
@@ -3692,42 +3843,55 @@ function renderProviderDragHandle(provider, index, total) {
 function renderProviderSubscription(provider) {
   const subscription = provider.subscription;
   if (!subscription) return "";
-  const label = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
-  const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
   const qualityClass = subscription.quality || "unknown";
-  const qualityMarkup = qualityClass === "manual"
-    ? `<span class="subscription-quality-note">${escapeHtml(label)}</span>`
-    : `<span class="subscription-quality-pill">${escapeHtml(label)}</span>`;
-  const details = [
-    subscription.planType ? t("subscriptions.plan", { plan: subscription.planType }) : "",
-    subscription.source ? t("subscriptions.source", { source: subscriptionSourceLabel(subscription.source) }) : "",
-    subscription.planSource && subscription.planSource !== subscription.source
-      ? t("subscriptions.planSource", { source: subscriptionSourceLabel(subscription.planSource) })
-      : "",
-    subscription.quality === "catalog" && subscription.planSource
-      ? t("subscriptions.catalogFallbackNote")
-      : "",
-    subscription.quality === "officialStarting" ? t("subscriptions.officialStartingListPriceNote") : "",
-    subscription.quality === "official" ? t("subscriptions.officialListPriceNote") : "",
-    subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : "",
-    subscription.fetchedAt ? t("subscriptions.fetched", { time: formatUpdatedAt(subscription.fetchedAt) }) : "",
-    subscription.sourceUrl ? t("subscriptions.sourceUrl", { url: subscription.sourceUrl }) : "",
-    subscription.planKey ? t("subscriptions.planKey", { key: subscription.planKey }) : "",
-    subscriptionPriceVariantLabel(subscription) ? t("subscriptions.tierVariant", { variant: subscriptionPriceVariantLabel(subscription) }) : "",
-    t("subscriptions.actualBilling", { status: subscriptionActualBillingKnownLabel(subscription) }),
-    subscription.parserStatus ? t("subscriptions.parserStatus", { status: subscriptionParserStatusLabel(subscription.parserStatus) }) : "",
-    subscription.catalogReviewedAt ? t("subscriptions.catalogReviewed", { date: subscription.catalogReviewedAt }) : "",
-    subscription.costStatus === "catalog_missing" ? subscriptionCostMissingText(subscription) : "",
-    subscription.costStatus === "catalog_missing" ? t("subscriptions.costActions.addFallback") : ""
-  ].filter(Boolean);
   return `
     <div class="subscription-summary subscription-quality-${escapeHtml(qualityClass)}">
-      ${qualityMarkup}
-      <strong>${escapeHtml(cost)}</strong>
-      ${details.length ? `<small>${escapeHtml(details.join(" · "))}</small>` : ""}
-      ${renderSubscriptionSourceAudit(provider, subscription)}
+      <strong>${escapeHtml(subscriptionCompactLabel(subscription))}</strong>
     </div>
   `;
+}
+
+function renderProviderSubscriptionConnection(provider) {
+  const action = provider.subscriptionConnectionAction || provider.subscription?.connectionAction || null;
+  const conflict = provider.subscriptionConflict || provider.subscription?.conflict || null;
+  if (!action && !conflict) return "";
+  const statusText = conflict
+    ? subscriptionConflictText(conflict)
+    : subscriptionConnectionStatusText(action);
+  const actionHtml = action?.url
+    ? `<a class="subscription-connection-action" href="${escapeHtml(action.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(subscriptionConnectionActionLabel(action))}</a>`
+    : "";
+  return `
+    <div class="subscription-connection" data-status="${escapeHtml(conflict?.status || action?.mode || "refresh")}">
+      <span>${escapeHtml(statusText)}</span>
+      ${actionHtml}
+    </div>
+  `;
+}
+
+function subscriptionConflictText(conflict) {
+  const details = (Array.isArray(conflict?.sources) ? conflict.sources : [])
+    .map((source) => {
+      const label = subscriptionSourceLabel(source.source || "unknown");
+      const plan = source.planType || t("subscriptions.planUnknown");
+      const time = source.updatedAt ? formatUpdatedAt(source.updatedAt) : "";
+      return [label, plan, time].filter(Boolean).join(": ");
+    })
+    .filter(Boolean)
+    .join(", ");
+  return t("subscriptions.connectionStatus.claudeConflict", {
+    details: details || t("pricing.unknown")
+  });
+}
+
+function subscriptionConnectionStatusText(action) {
+  if (!action) return t("subscriptions.connectionStatus.refreshRequired");
+  return t(action.statusKey || "subscriptions.connectionStatus.refreshRequired");
+}
+
+function subscriptionConnectionActionLabel(action) {
+  if (!action) return t("subscriptions.connectionActions.refresh");
+  return t(action.labelKey || "subscriptions.connectionActions.refresh");
 }
 
 function renderSubscriptionSourceAudit(provider, subscription) {
@@ -4471,6 +4635,8 @@ function unavailableLiveMetrics() {
 function liveGaugeDefinitions(metrics) {
   const tokens = metrics.tokensPerMinute || {};
   const ai = metrics.processes?.ai || {};
+  const aiCpuShare = liveGaugeSegmentPercent(ai.cpuPercent, metrics.cpu?.usedPercent);
+  const aiMemoryShare = liveGaugeSegmentPercent(ai.memorySharePercent, metrics.ram?.usedPercent);
   return [
     {
       id: "cpu",
@@ -4479,6 +4645,8 @@ function liveGaugeDefinitions(metrics) {
       percent: metrics.cpu?.usedPercent,
       quality: metrics.cpu?.quality,
       accent: "#23745c",
+      segmentPercent: aiCpuShare,
+      segmentAccent: "#6f42c1",
       sub: t("liveMetrics.percentScale")
     },
     {
@@ -4491,7 +4659,9 @@ function liveGaugeDefinitions(metrics) {
       sub:
         metrics.ram?.usedGb !== null && metrics.ram?.totalGb !== null
           ? t("liveMetrics.ramSub", { used: formatGb(metrics.ram.usedGb), total: formatGb(metrics.ram.totalGb) })
-          : t("liveMetrics.unavailable")
+          : t("liveMetrics.unavailable"),
+      segmentPercent: aiMemoryShare,
+      segmentAccent: "#8b5a2b"
     },
     {
       id: "aiCpu",
@@ -4553,6 +4723,7 @@ function liveGaugeDefinitions(metrics) {
 
 function renderLiveGaugeCard(gauge) {
   const percent = clampUiPercent(gauge.percent || 0);
+  const segmentPercent = clampUiPercent(gauge.segmentPercent || 0);
   const quality = gauge.quality || "unavailable";
   const valueLen = String(gauge.value || "").length;
   return `
@@ -4561,13 +4732,21 @@ function renderLiveGaugeCard(gauge) {
         <span class="live-gauge-label">${escapeHtml(gauge.label)}</span>
         ${gauge.help ? `<button type="button" class="mini-stat-help live-gauge-help" aria-label="${escapeHtml(gauge.help)}" title="${escapeHtml(gauge.help)}"><i data-lucide="info"></i></button>` : ""}
       </div>
-      <div class="live-gauge-ring" style="--percent: ${percent}; --accent: ${gauge.accent}" data-value-len="${valueLen}">
+      <div class="live-gauge-ring" style="--percent: ${percent}; --accent: ${gauge.accent}; --segment-percent: ${segmentPercent}; --segment-accent: ${gauge.segmentAccent || gauge.accent}" data-value-len="${valueLen}">
         <strong>${escapeHtml(gauge.value)}</strong>
       </div>
       <span class="live-gauge-sub">${escapeHtml(gauge.sub || "")}</span>
       <span class="live-quality-badge live-quality-${escapeHtml(quality)}">${escapeHtml(liveQualityLabel(quality))}</span>
     </article>
   `;
+}
+
+function liveGaugeSegmentPercent(segmentValue, totalValue) {
+  const segment = Number(segmentValue);
+  const total = Number(totalValue);
+  if (!Number.isFinite(segment) || segment <= 0) return 0;
+  if (!Number.isFinite(total) || total <= 0) return clampUiPercent(segment);
+  return clampUiPercent(Math.min(segment, total));
 }
 
 function renderLiveProcessBreakdown(metrics) {
@@ -5067,71 +5246,12 @@ function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, provi
 
 function renderSubscriptionPricingCard({ provider, subscription, previous }) {
   const quality = subscription?.quality || "unknown";
-  const currentCost = subscription?.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
-  const previousCost = previous?.monthlyCost > 0
-    ? formatMoney(previous.monthlyCost, previous.currency || "EUR")
-    : null;
-  const delta = subscription?.monthlyCost > 0 && previous?.monthlyCost > 0 && subscriptionCurrenciesMatch(subscription, previous)
-    ? formatMoney(subscription.monthlyCost - previous.monthlyCost, subscription.currency || "EUR")
-    : t("pricing.unknown");
   return `
     <article class="subscription-cost-card subscription-quality-${escapeHtml(quality)}">
       <div class="subscription-cost-head">
         ${renderProviderInlineLabel(provider.id, provider.name, { accent: provider.accent, size: "xs" })}
-        <strong>${escapeHtml(currentCost)}</strong>
+        <strong>${escapeHtml(subscriptionCompactLabel(subscription))}</strong>
       </div>
-      <p>${escapeHtml(subscription?.planType ? t("subscriptions.plan", { plan: subscription.planType }) : t("subscriptions.planUnknown"))}</p>
-      ${renderSubscriptionSourceAudit(provider, subscription)}
-      <dl>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.qualityLabel"))}</dt>
-          <dd>${escapeHtml(t(`subscriptions.quality.${quality}`, {}, quality))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.sourceLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.source ? subscriptionSourceLabel(subscription.source) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.planSourceLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.planSource ? subscriptionSourceLabel(subscription.planSource) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.priceSourceTypeLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.priceSourceType ? subscriptionSourceLabel(subscription.priceSourceType) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.sourceUrlLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.sourceUrl || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.fetchedLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.fetchedAt ? formatUpdatedAt(subscription.fetchedAt) : subscription?.catalogReviewedAt || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.planKeyLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.planKey || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.tierVariantLabel"))}</dt>
-          <dd>${escapeHtml(subscriptionPriceVariantLabel(subscription) || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.actualBillingKnownLabel"))}</dt>
-          <dd>${escapeHtml(subscriptionActualBillingKnownLabel(subscription))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.parserStatusLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.parserStatus ? subscriptionParserStatusLabel(subscription.parserStatus) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("pricing.subscriptions.previous"))}</dt>
-          <dd>${escapeHtml(previousCost || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("pricing.subscriptions.delta"))}</dt>
-          <dd>${escapeHtml(delta)}</dd>
-        </div>
-      </dl>
     </article>
   `;
 }
@@ -7717,17 +7837,28 @@ function formatMoney(value, currency = "usd") {
 }
 
 function formatMonthlyCost(subscription) {
+  const min = Number(subscription.monthlyCostMin || 0);
+  const max = Number(subscription.monthlyCostMax || 0);
+  if (min > 0 && max > min) {
+    return t("format.perMonth", {
+      amount: `${formatMoney(min, subscription.currency || "EUR")}–${formatMoney(max, subscription.currency || "EUR")}`
+    });
+  }
   const key = subscriptionPriceIsStarting(subscription) ? "format.fromPerMonth" : "format.perMonth";
   return t(key, {
     amount: formatMoney(subscription.monthlyCost, subscription.currency || "EUR")
   });
 }
 
-function subscriptionFootValue(subscription) {
+function subscriptionCompactLabel(subscription) {
   if (!subscription) return "--";
-  const quality = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
+  const plan = subscription.planType || t("subscriptions.planUnknown");
   const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
-  return `${cost} · ${quality}`;
+  return `${plan} (${cost})`;
+}
+
+function subscriptionFootValue(subscription) {
+  return subscriptionCompactLabel(subscription);
 }
 
 function subscriptionPriceIsStarting(subscription) {
