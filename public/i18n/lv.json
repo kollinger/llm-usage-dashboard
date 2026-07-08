@@ -818,7 +818,6 @@
       "local_settings": "saved fallback",
       "account": "konta/norēķinu avots",
       "codex_app_server": "Codex local app-server",
-      "codexbar_dashboard_snapshot": "CodexBar paneļa momentuzņēmums",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
       "claude_auth_status": "Claude CLI auth status",

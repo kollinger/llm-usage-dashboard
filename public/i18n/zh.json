@@ -818,7 +818,6 @@
       "local_settings": "已保存备用",
       "account": "账号/账单来源",
       "codex_app_server": "Codex local app-server",
-      "codexbar_dashboard_snapshot": "CodexBar 仪表板快照",
       "codex_local_logs": "Codex local logs",
       "claude_statusline": "Claude Code statusline",
       "claude_auth_status": "Claude CLI auth status",

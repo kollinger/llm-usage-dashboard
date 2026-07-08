@@ -59,10 +59,6 @@ const OPENAI_DASHBOARD_USAGE_URL = "https://chatgpt.com/codex/cloud/settings/ana
 const OPENAI_DASHBOARD_API_URL = "https://chatgpt.com/backend-api/wham/usage";
 const OPENAI_IDENTITY_API_URL = "https://chatgpt.com/backend-api/me";
 const OPENAI_PRICING_URL = "https://chatgpt.com/pricing/";
-const CODEXBAR_OPENAI_DASHBOARD_FILES = [
-  path.join(os.homedir(), "Library", "Application Support", "com.steipete.codexbar", "openai-dashboard.json"),
-  path.join(os.homedir(), "Library", "Application Support", "CodexBar", "openai-dashboard.json")
-];
 const CLAUDE_SAFARI_COOKIE_FILE = path.join(os.homedir(), "Library", "Cookies", "Cookies.binarycookies");
 const CLAUDE_APP_CACHE_DIR = path.join(
   os.homedir(),
@@ -1101,13 +1097,6 @@ async function buildOpenAiAccountBillingSnapshot() {
     }
     if (dashboard.status !== "expired") break;
   }
-  if (!planType) {
-    const localSnapshot = await readCodexBarOpenAiDashboardPlanSnapshot();
-    if (localSnapshot?.planType) {
-      planType = localSnapshot.planType;
-      planSource = localSnapshot;
-    }
-  }
   const status = planType ? "missing" : lastDashboard?.status || "unavailable";
   const reason = planType ? "account_billing_amount_missing" : lastDashboard?.reason || "account_billing_source_unavailable";
   const providerFetchedAt = planSource?.fetchedAt || fetchedAt;
@@ -1135,30 +1124,6 @@ function openAiPlanProviderSnapshot(planType, fetchedAt, source) {
     parserStatus: planType ? "parsed" : source.status || "unavailable",
     confidence: planType ? "medium" : "low"
   };
-}
-
-async function readCodexBarOpenAiDashboardPlanSnapshot() {
-  for (const file of CODEXBAR_OPENAI_DASHBOARD_FILES) {
-    try {
-      const [stats, text] = await Promise.all([fs.stat(file), fs.readFile(file, "utf8")]);
-      const payload = JSON.parse(text);
-      const planType = normalizeOpenAiPlanType(findOpenAiPlanValue(payload));
-      if (!planType || !isConcreteDetectedPlan(planType)) continue;
-      return {
-        planType,
-        status: "missing",
-        reason: "account_billing_amount_missing",
-        sourceType: "codexbar_dashboard_snapshot",
-        sourceUrl: null,
-        fetchedAt: new Date(stats.mtimeMs || Date.now()).toISOString(),
-        parserStatus: "parsed",
-        confidence: "medium"
-      };
-    } catch {
-      // Optional local dashboard snapshots are best-effort.
-    }
-  }
-  return null;
 }
 
 async function readOpenAiBrowserSessions() {

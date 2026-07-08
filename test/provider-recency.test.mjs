@@ -1014,14 +1014,14 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(browserPlanMerged.subscription.monthlyCost, 200);
   assert.equal(browserPlanMerged.subscription.actualBillingKnown, false);
   assert.equal(_test.localizeUsageSubscriptionPrices({ codex: browserPlanMerged }, "de").codex.subscription.monthlyCost, 229);
-  const codexBarPlanSnapshot = _test.sanitizeAccountBillingSnapshots(
+  const thirdPartyPlanSnapshot = _test.sanitizeAccountBillingSnapshots(
     {
       fetchedAt: "2026-07-08T00:00:00Z",
       providers: {
         codex: {
           status: "missing",
           reason: "account_billing_amount_missing",
-          sourceType: "codexbar_dashboard_snapshot",
+          sourceType: "third_party_dashboard_snapshot",
           planType: "Pro 20x",
           fetchedAt: "2026-07-08T00:00:00Z"
         }
@@ -1029,18 +1029,20 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     },
     { nowMs: Date.parse("2026-07-08T00:01:00Z") }
   );
-  const codexBarPlanMerged = _test.mergeProviderSubscription(
+  assert.equal(thirdPartyPlanSnapshot.providers.codex.status, "unavailable");
+  assert.equal(thirdPartyPlanSnapshot.providers.codex.sourceType, "untrusted_source");
+  const thirdPartyPlanMerged = _test.mergeProviderSubscription(
     { id: "codex", status: "live", planType: preferredPlan.planType, planSource: preferredPlan.source },
     null,
     "codex",
     officialPricing,
-    codexBarPlanSnapshot
+    thirdPartyPlanSnapshot
   );
-  assert.equal(codexBarPlanMerged.planType, "Pro 20x");
-  assert.equal(codexBarPlanMerged.planSource, "codexbar_dashboard_snapshot");
-  assert.equal(codexBarPlanMerged.subscription.monthlyCost, 200);
-  assert.equal(codexBarPlanMerged.subscription.actualBillingKnown, false);
-  assert.equal(_test.localizeUsageSubscriptionPrices({ codex: codexBarPlanMerged }, "de").codex.subscription.monthlyCost, 229);
+  assert.equal(thirdPartyPlanMerged.planType, preferredPlan.planType);
+  assert.equal(thirdPartyPlanMerged.planSource, preferredPlan.source);
+  assert.equal(thirdPartyPlanMerged.subscription.planType, "Pro 5x/20x");
+  assert.equal(thirdPartyPlanMerged.subscription.monthlyCost, 100);
+  assert.equal(thirdPartyPlanMerged.subscription.priceVariant, "pro_5x_20x");
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
   assert.equal(bundledGenericPro.subscription.planType, "Pro 5x/20x");

@@ -314,7 +314,6 @@ const ACCOUNT_BILLING_SAFE_SOURCE_TYPES = new Set([
   "account_billing",
   "browser",
   "browser_account_snapshot",
-  "codexbar_dashboard_snapshot",
   "local_account_endpoint",
   "sanitized_snapshot",
   "billing_page"
@@ -1920,6 +1919,15 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
     redacted
   };
 
+  if (sourceType === "untrusted_source") {
+    return {
+      ...base,
+      status: "unavailable",
+      parserStatus: "untrusted_source",
+      unavailableReason: "account_billing_source_unavailable"
+    };
+  }
+
   if (["missing", "expired", "unavailable", "parse_failed"].includes(explicitStatus)) {
     return {
       ...base,
@@ -2004,7 +2012,7 @@ function normalizeAccountBillingPeriod(value) {
 
 function normalizeAccountBillingSourceType(value) {
   const normalized = normalizeSubscriptionPlanKey(value).replace(/\s+/g, "_");
-  return ACCOUNT_BILLING_SAFE_SOURCE_TYPES.has(normalized) ? normalized : "account_billing";
+  return ACCOUNT_BILLING_SAFE_SOURCE_TYPES.has(normalized) ? normalized : "untrusted_source";
 }
 
 function normalizeAccountBillingConfidence(value) {
@@ -2587,6 +2595,7 @@ function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
 function accountBillingPlanHint(providerId, accountBilling) {
   const entry = accountBillingProviderEntry(providerId, accountBilling);
   if (!entry?.planType) return null;
+  if (entry.status === "unavailable" || entry.parserStatus === "untrusted_source") return null;
   if (entry.redacted || entry.status === "expired" || entry.parserStatus === "expired") return null;
   return {
     planType: entry.planType,
