@@ -1296,12 +1296,12 @@ function normalizeOpenAiPlanType(value) {
 }
 
 async function fetchOpenAiPlanFromBrowserSession(cookieHeader) {
-  for (const url of [OPENAI_CHATGPT_BILLING_URL, OPENAI_DASHBOARD_USAGE_URL, OPENAI_PRICING_URL]) {
+  for (const url of [OPENAI_CHATGPT_BILLING_URL, OPENAI_DASHBOARD_USAGE_URL]) {
     const planType = await detectPlanWithBrowserSession({
       cookieHeader,
       domain: "chatgpt.com",
       url,
-      detector: (text) => detectOpenAiPlanType(text, { explicit: false, allowGeneric: false })
+      detector: (text) => detectOpenAiPlanType(text, { explicit: true, allowGeneric: false })
     });
     if (planType) return planType;
   }
@@ -1311,7 +1311,6 @@ async function fetchOpenAiPlanFromBrowserSession(cookieHeader) {
 async function fetchClaudePlanFromBrowserSession(cookieHeader) {
   const urls = [
     "https://claude.ai/settings/plan",
-    "https://claude.ai/upgrade",
     "https://claude.ai/settings/billing"
   ];
   for (const url of urls) {
@@ -1319,7 +1318,7 @@ async function fetchClaudePlanFromBrowserSession(cookieHeader) {
       cookieHeader,
       domain: "claude.ai",
       url,
-      detector: (text) => detectClaudePlanType(text, { explicit: false, allowGeneric: false })
+      detector: (text) => detectClaudePlanType(text, { explicit: true, allowGeneric: false })
     });
     if (planType) return planType;
   }

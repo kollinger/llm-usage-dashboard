@@ -25,6 +25,7 @@ await assertForbiddenThirdPartyPlanSourceAbsent();
 async function assertSubscriptionPlanDetection() {
   assert.equal(normalizePlanKey("Pro 20 x"), "pro 20x");
   assert.equal(detectOpenAiPlanType("Pro 20 x", { explicit: true }), "Pro 20x");
+  assert.equal(detectOpenAiPlanType("ChatGPT Pro 20x Your plan auto-renews", { explicit: true, allowGeneric: false }), "Pro 20x");
   assert.equal(detectOpenAiPlanType("Team workspace metadata without a plan field"), null);
   assert.equal(detectOpenAiPlanType("Team", { explicit: true }), "Team");
   assert.equal(detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 $200", { allowGeneric: false }), null);
@@ -52,6 +53,29 @@ async function assertSubscriptionPlanDetection() {
     null
   );
   assert.equal(detectClaudePlanType("max_20x", { explicit: true }), "Claude Max 20x");
+  assert.equal(detectClaudePlanType("Claude Max 20x Current subscription", { explicit: true, allowGeneric: false }), "Claude Max 20x");
+  const electronMain = await readFile(path.join(rootDir, "electron", "main.js"), "utf8");
+  assert.match(
+    electronMain,
+    /detectOpenAiPlanType\(text, \{ explicit: true, allowGeneric: false \}\)/,
+    "ChatGPT browser account probe must use explicit plan detection"
+  );
+  assert.match(
+    electronMain,
+    /detectClaudePlanType\(text, \{ explicit: true, allowGeneric: false \}\)/,
+    "Claude browser account probe must use explicit plan detection"
+  );
+  const openAiProbeStart = electronMain.indexOf("async function fetchOpenAiPlanFromBrowserSession");
+  const claudeProbeStart = electronMain.indexOf("async function fetchClaudePlanFromBrowserSession");
+  const detectProbeStart = electronMain.indexOf("async function detectPlanWithBrowserSession");
+  const openAiProbeFunction = openAiProbeStart >= 0 && claudeProbeStart > openAiProbeStart
+    ? electronMain.slice(openAiProbeStart, claudeProbeStart)
+    : "";
+  const claudeProbeFunction = claudeProbeStart >= 0 && detectProbeStart > claudeProbeStart
+    ? electronMain.slice(claudeProbeStart, detectProbeStart)
+    : "";
+  assert(!openAiProbeFunction.includes("OPENAI_PRICING_URL"), "ChatGPT concrete account-plan probe must not infer variants from public pricing pages");
+  assert(!claudeProbeFunction.includes("claude.ai/upgrade"), "Claude concrete account-plan probe must not infer variants from public upgrade comparison pages");
 }
 
 async function assertProviderVisibility() {
