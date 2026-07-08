@@ -6445,35 +6445,35 @@ async function appendChangedQuotaEvents(events) {
 }
 
 async function readLatestQuotaEventsByKey() {
-  const events = await readQuotaEvents();
   const latestByKey = new Map();
-  for (const event of events) {
-    latestByKey.set(event.eventKey || quotaEventKey(event), event);
+  try {
+    await readJsonl(QUOTA_EVENTS_FILE, (rawEvent) => {
+      const event = normalizeStoredQuotaEvent(rawEvent);
+      if (!event) return;
+      latestByKey.set(event.eventKey || quotaEventKey(event), event);
+    });
+  } catch {
+    // Missing or partially readable history should not block live quota capture.
   }
   return latestByKey;
 }
 
 async function readQuotaEvents() {
+  const events = [];
+  const seen = new Set();
   try {
-    const text = await fsp.readFile(QUOTA_EVENTS_FILE, "utf8");
-    const events = [];
-    const seen = new Set();
-    for (const line of text.split(/\r?\n/).filter(Boolean)) {
-      try {
-        const event = normalizeStoredQuotaEvent(JSON.parse(line));
-        if (!event) continue;
-        const key = `${event.eventKey || ""}:${event.capturedAt || ""}:${event.fingerprint || ""}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        events.push(event);
-      } catch {
-        // Ignore corrupt history lines.
-      }
-    }
-    return events;
+    await readJsonl(QUOTA_EVENTS_FILE, (rawEvent) => {
+      const event = normalizeStoredQuotaEvent(rawEvent);
+      if (!event) return;
+      const key = `${event.eventKey || ""}:${event.capturedAt || ""}:${event.fingerprint || ""}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      events.push(event);
+    });
   } catch {
-    return [];
+    // Ignore missing or partially readable history files.
   }
+  return events;
 }
 
 function normalizeStoredQuotaEvent(event) {
