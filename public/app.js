@@ -20,6 +20,8 @@ const state = {
   pointerDrag: null,
   chartRendered: false,
   chartScrollToLatest: true,
+  chartUserScrolledAwayFromLatest: false,
+  chartProgrammaticScroll: false,
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
@@ -219,6 +221,7 @@ const PRICING_CATALOG_VERSION = "2026.07.06";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
+const CHART_LATEST_SCROLL_TOLERANCE_PX = 24;
 const DASHBOARD_SECTION_ORDER_STORAGE_KEY = "llmUsage.dashboardSectionOrder";
 const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
 const DEFAULT_DASHBOARD_SECTION_ORDER = [
@@ -1550,6 +1553,7 @@ function bindEvents() {
   els.providerGrid?.addEventListener("pointerup", handleProviderPointerUp);
   els.providerGrid?.addEventListener("pointercancel", cancelProviderPointerDrag);
   els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
+  els.chart?.addEventListener("scroll", handleChartScroll, { passive: true });
   els.liveHistoryLegend?.addEventListener("click", handleLiveHistoryLegendToggle);
   els.liveHistoryLegend?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -1596,7 +1600,7 @@ function bindEvents() {
     const modeBtn = e.target.closest("[data-chart-mode]");
     if (modeBtn) {
       state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
-      state.chartScrollToLatest = true;
+      requestChartLatestForViewChange();
       if (state.usage) render();
       return;
     }
@@ -1605,14 +1609,14 @@ function bindEvents() {
       state.chartBreakdownMode = CHART_BREAKDOWN_MODES.includes(breakdownBtn.dataset.chartBreakdown)
         ? breakdownBtn.dataset.chartBreakdown
         : "total";
-      state.chartScrollToLatest = true;
+      requestChartLatestForViewChange();
       if (state.usage) render();
       return;
     }
     const btn = e.target.closest("[data-chart-filter]");
     if (!btn) return;
     state.chartTimeFilter = btn.dataset.chartFilter;
-    state.chartScrollToLatest = true;
+    requestChartLatestForRangeChange();
     if (state.usage) render();
   });
 }
@@ -2826,6 +2830,7 @@ function render() {
   const usage = state.usage;
   const providers = orderProviders(buildProviders(usage));
   const visibleProviders = state.showAllProviders ? providers : providers.filter(providerHasUsage);
+  const chartScrollState = captureChartScrollState();
 
   els.providerGrid.classList.toggle("layout-edit-mode", state.layoutEditMode);
   els.providerGrid.setAttribute("role", visibleProviders.length ? "list" : "group");
@@ -2852,10 +2857,10 @@ function render() {
   }
   els.chartFilterBar.innerHTML = renderChartFilterBar(allDaily);
   if (state.chartMode === "costs") {
-    renderCostChart(filteredDaily);
+    renderCostChart(filteredDaily, chartScrollState);
     els.sourceTotals.innerHTML = renderCostSummary(filteredDaily, state.subscriptionHistory);
   } else {
-    renderChart(filteredDaily);
+    renderChart(filteredDaily, chartScrollState);
     els.sourceTotals.innerHTML = renderSourceTotalBars(filteredDaily);
   }
   els.chartWindowInsights.innerHTML = renderChartWindowInsights(filteredDaily, state.chartMode);
@@ -5528,7 +5533,7 @@ function syncChartTimeFilter(daily) {
   const available = availableChartFilters(daily);
   if (!available.includes(state.chartTimeFilter)) {
     state.chartTimeFilter = "all";
-    state.chartScrollToLatest = true;
+    requestChartLatestForRangeChange();
   }
 }
 
@@ -5765,7 +5770,7 @@ function formatInsightValue(value, mode) {
   return mode === "costs" ? formatEuro(value) : formatTokens(Math.round(Number(value || 0)));
 }
 
-function renderChart(daily) {
+function renderChart(daily, scrollState = captureChartScrollState()) {
   if (!daily.length) {
     els.chart.innerHTML = "";
     els.chartLegend.innerHTML = "";
@@ -5790,8 +5795,8 @@ function renderChart(daily) {
     (viewportWidth - pad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
   );
   const width = Math.max(viewportWidth, pad * 2 + daily.length * barWidth + Math.max(0, daily.length - 1) * barGap);
-  const previousScrollLeft = els.chart.scrollLeft;
-  const wasPinnedToEnd = shouldScrollChartToLatest(previousScrollLeft);
+  const previousScrollLeft = scrollState.previousScrollLeft;
+  const wasPinnedToEnd = scrollState.scrollToLatest;
 
   const bars = daily
     .map((d, index) => {
@@ -5857,7 +5862,7 @@ function renderChart(daily) {
   finishChartRenderScroll(previousScrollLeft, wasPinnedToEnd);
 }
 
-function renderCostChart(daily) {
+function renderCostChart(daily, scrollState = captureChartScrollState()) {
   const costDaily = buildCostDaily(daily);
   const rowsWithCost = costDaily.filter((row) => row.totalEur > 0);
   if (!rowsWithCost.length) {
@@ -5884,8 +5889,8 @@ function renderCostChart(daily) {
     (viewportWidth - pad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
   );
   const width = Math.max(viewportWidth, pad * 2 + rowsWithCost.length * barWidth + Math.max(0, rowsWithCost.length - 1) * barGap);
-  const previousScrollLeft = els.chart.scrollLeft;
-  const wasPinnedToEnd = shouldScrollChartToLatest(previousScrollLeft);
+  const previousScrollLeft = scrollState.previousScrollLeft;
+  const wasPinnedToEnd = scrollState.scrollToLatest;
 
   const bars = rowsWithCost
     .map((day, index) => {
@@ -5954,17 +5959,56 @@ function renderCostChart(daily) {
 }
 
 function shouldScrollChartToLatest(previousScrollLeft) {
-  const maxScrollLeft = Math.max(0, els.chart.scrollWidth - els.chart.clientWidth);
-  return state.chartScrollToLatest || !state.chartRendered || maxScrollLeft - previousScrollLeft < 24;
+  return state.chartScrollToLatest || !state.chartRendered || isChartScrolledToLatest(previousScrollLeft);
+}
+
+function captureChartScrollState() {
+  const previousScrollLeft = Math.max(0, Number(els.chart.scrollLeft) || 0);
+  return {
+    previousScrollLeft,
+    scrollToLatest: shouldScrollChartToLatest(previousScrollLeft)
+  };
 }
 
 function finishChartRenderScroll(previousScrollLeft, scrollToLatest) {
   window.requestAnimationFrame(() => {
-    const maxScrollLeft = Math.max(0, els.chart.scrollWidth - els.chart.clientWidth);
-    els.chart.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
+    const maxScrollLeft = chartMaxScrollLeft();
+    state.chartProgrammaticScroll = true;
+    try {
+      els.chart.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
+    } finally {
+      state.chartProgrammaticScroll = false;
+    }
     state.chartRendered = true;
     state.chartScrollToLatest = false;
+    updateChartManualScrollState();
   });
+}
+
+function requestChartLatestForViewChange() {
+  state.chartScrollToLatest = !state.chartUserScrolledAwayFromLatest;
+}
+
+function requestChartLatestForRangeChange() {
+  state.chartUserScrolledAwayFromLatest = false;
+  state.chartScrollToLatest = true;
+}
+
+function handleChartScroll() {
+  if (!state.chartRendered || state.chartProgrammaticScroll) return;
+  updateChartManualScrollState();
+}
+
+function updateChartManualScrollState() {
+  state.chartUserScrolledAwayFromLatest = !isChartScrolledToLatest();
+}
+
+function isChartScrolledToLatest(scrollLeft = els.chart.scrollLeft) {
+  return chartMaxScrollLeft() - Math.max(0, Number(scrollLeft) || 0) <= CHART_LATEST_SCROLL_TOLERANCE_PX;
+}
+
+function chartMaxScrollLeft() {
+  return Math.max(0, Number(els.chart.scrollWidth || 0) - Number(els.chart.clientWidth || 0));
 }
 
 function buildCostDaily(daily) {
