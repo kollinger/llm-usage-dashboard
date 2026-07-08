@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Värskenda",
-      "claudeLogin": "Logi Claude’i sisse",
-      "claudeRefresh": "Värskenda Claude’i ühendust",
-      "chatgptLogin": "Logi ChatGPT-sse sisse",
-      "chatgptRefresh": "Värskenda ChatGPT ühendust"
+      "claudeLogin": "Logi Claude’i sisse ja loe pakett",
+      "claudeRefresh": "Loe Claude’i pakett uuesti",
+      "chatgptLogin": "Logi ChatGPT-sse ja loe pakett",
+      "chatgptRefresh": "Loe ChatGPT pakett uuesti",
+      "rereadPlan": "Loe pakett nüüd"
     },
     "connectionStatus": {
       "refreshRequired": "Ühendust tuleb värskendada",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "ChatGPT sisselogimine on vajalik",
       "chatgptRefreshRequired": "Värskenda ChatGPT Billing ühendust",
       "claudeConflict": "Claude Max: vastuolulised allikad ({details})"
-    }
+    },
+    "connectionHelp": "Ava teenusepakkuja leht, logi vajaduse korral sisse ja tule siia tagasi. Rakendus loeb paketi fookuse naasmisel uuesti või kasuta nuppu."
   }
 }

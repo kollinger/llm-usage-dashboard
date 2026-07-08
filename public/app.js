@@ -40,6 +40,7 @@ const state = {
   loadingSystemMetrics: false,
   sourceMessage: { text: "", status: "" },
   liveSeriesVisibility: {},
+  pendingSubscriptionReread: null,
   sourceOps: {},
   settingsAutosaveTimers: {},
   settingsToastTimer: null,
@@ -279,6 +280,7 @@ const LIVE_TOKEN_RATE_WINDOW_MS = 60_000;
 const LIVE_TOKEN_RATE_EMA_ALPHA = 0.42;
 const USAGE_POLL_INTERVAL_MS = 60_000;
 const SYSTEM_LIVE_POLL_INTERVAL_MS = 5_000;
+const SUBSCRIPTION_REREAD_AUTO_REFRESH_MS = 5 * 60 * 1000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
 const SETTINGS_AUTOSAVE_DELAY_MS = 500;
 const SETTINGS_TOAST_MS = 1800;
@@ -1511,11 +1513,12 @@ async function init() {
   setInterval(renderLiveTokenRateTick, LIVE_TOKEN_DISPLAY_TICK_MS);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-      pollUsage();
+      if (!handleSubscriptionRereadReturn()) pollUsage();
       pollSystemMetrics();
       renderLiveTokenRateTick();
     }
   });
+  window.addEventListener("focus", handleSubscriptionRereadReturn);
 }
 
 function bindEvents() {
@@ -1552,6 +1555,7 @@ function bindEvents() {
   els.providerGrid?.addEventListener("pointermove", handleProviderPointerMove);
   els.providerGrid?.addEventListener("pointerup", handleProviderPointerUp);
   els.providerGrid?.addEventListener("pointercancel", cancelProviderPointerDrag);
+  els.providerGrid?.addEventListener("click", handleSubscriptionConnectionClick);
   els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
   els.chart?.addEventListener("scroll", handleChartScroll, { passive: true });
   els.liveHistoryLegend?.addEventListener("click", handleLiveHistoryLegendToggle);
@@ -2678,6 +2682,34 @@ async function logout() {
 async function pollUsage() {
   if (document.hidden) return;
   await loadUsage();
+}
+
+function handleSubscriptionConnectionClick(event) {
+  const openLink = event.target.closest("[data-subscription-provider-open]");
+  if (openLink) {
+    state.pendingSubscriptionReread = {
+      provider: openLink.dataset.subscriptionProvider || "",
+      mode: openLink.dataset.subscriptionMode || "refresh",
+      activatedAt: Date.now()
+    };
+    return;
+  }
+
+  const rereadButton = event.target.closest("[data-subscription-reread]");
+  if (!rereadButton) return;
+  event.preventDefault();
+  state.pendingSubscriptionReread = null;
+  loadUsage({ showIndicator: true, force: true });
+}
+
+function handleSubscriptionRereadReturn() {
+  const pending = state.pendingSubscriptionReread;
+  if (!pending || document.hidden) return false;
+  const ageMs = Date.now() - Number(pending.activatedAt || 0);
+  state.pendingSubscriptionReread = null;
+  if (ageMs > SUBSCRIPTION_REREAD_AUTO_REFRESH_MS) return false;
+  loadUsage({ showIndicator: true, force: true });
+  return true;
 }
 
 async function pollSystemMetrics() {
@@ -3898,8 +3930,29 @@ function renderProviderSubscriptionConnection(provider) {
   const statusText = conflict
     ? subscriptionConflictText(conflict)
     : subscriptionConnectionStatusText(action);
-  const actionHtml = action?.url
-    ? `<a class="subscription-connection-action" href="${escapeHtml(action.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(subscriptionConnectionActionLabel(action))}</a>`
+  const connectionProvider = action?.provider || providerSubscriptionConnectionProvider(provider?.id);
+  const mode = action?.mode || "refresh";
+  const actionHtml = action
+    ? `
+      <span class="subscription-connection-actions">
+        ${action.url ? `<a
+          class="subscription-connection-action"
+          href="${escapeHtml(action.url)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-subscription-provider-open
+          data-subscription-provider="${escapeHtml(connectionProvider)}"
+          data-subscription-mode="${escapeHtml(mode)}"
+        >${escapeHtml(subscriptionConnectionActionLabel(action))}</a>` : ""}
+        <button
+          type="button"
+          class="subscription-connection-action"
+          data-subscription-reread
+          data-subscription-provider="${escapeHtml(connectionProvider)}"
+        >${escapeHtml(t("subscriptions.connectionActions.rereadPlan"))}</button>
+      </span>
+      <small class="subscription-connection-help">${escapeHtml(t("subscriptions.connectionHelp"))}</small>
+    `
     : "";
   return `
     <div class="subscription-connection" data-status="${escapeHtml(conflict?.status || action?.mode || "refresh")}">
@@ -3907,6 +3960,12 @@ function renderProviderSubscriptionConnection(provider) {
       ${actionHtml}
     </div>
   `;
+}
+
+function providerSubscriptionConnectionProvider(providerId) {
+  if (["codex", "codexSpark", "openai"].includes(providerId)) return "chatgpt";
+  if (["claudeCode", "anthropic"].includes(providerId)) return "claude";
+  return providerId || "";
 }
 
 function subscriptionConflictText(conflict) {

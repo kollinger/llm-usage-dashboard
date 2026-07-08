@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Uppdatera",
-      "claudeLogin": "Logga in på Claude",
-      "claudeRefresh": "Uppdatera Claude-anslutning",
-      "chatgptLogin": "Logga in på ChatGPT",
-      "chatgptRefresh": "Uppdatera ChatGPT-anslutning"
+      "claudeLogin": "Logga in på Claude och läs planen",
+      "claudeRefresh": "Läs Claude-planen igen",
+      "chatgptLogin": "Logga in på ChatGPT och läs planen",
+      "chatgptRefresh": "Läs ChatGPT-planen igen",
+      "rereadPlan": "Läs plan nu"
     },
     "connectionStatus": {
       "refreshRequired": "Anslutningen behöver uppdateras",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "ChatGPT-inloggning krävs",
       "chatgptRefreshRequired": "Uppdatera ChatGPT Billing-anslutningen",
       "claudeConflict": "Claude Max: motstridiga källor ({details})"
-    }
+    },
+    "connectionHelp": "Öppna leverantörens sida, logga in vid behov och återvänd hit. Appen läser planen igen när den får fokus, eller använd knappen."
   }
 }

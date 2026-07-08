@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Atualizar",
-      "claudeLogin": "Entrar no Claude",
-      "claudeRefresh": "Atualizar conexão do Claude",
-      "chatgptLogin": "Entrar no ChatGPT",
-      "chatgptRefresh": "Atualizar conexão do ChatGPT"
+      "claudeLogin": "Entrar no Claude e ler o plano",
+      "claudeRefresh": "Ler novamente o plano do Claude",
+      "chatgptLogin": "Entrar no ChatGPT e ler o plano",
+      "chatgptRefresh": "Ler novamente o plano do ChatGPT",
+      "rereadPlan": "Ler plano agora"
     },
     "connectionStatus": {
       "refreshRequired": "É necessário atualizar a conexão",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Login no ChatGPT necessário",
       "chatgptRefreshRequired": "Atualize a conexão do ChatGPT Billing",
       "claudeConflict": "Claude Max: fontes conflitantes ({details})"
-    }
+    },
+    "connectionHelp": "Abra a página do provedor, entre se necessário e volte aqui. O app relê o plano quando recupera o foco, ou use o botão."
   }
 }

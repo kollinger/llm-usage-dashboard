@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Ανανέωση",
-      "claudeLogin": "Σύνδεση στο Claude",
-      "claudeRefresh": "Ανανέωση σύνδεσης Claude",
-      "chatgptLogin": "Σύνδεση στο ChatGPT",
-      "chatgptRefresh": "Ανανέωση σύνδεσης ChatGPT"
+      "claudeLogin": "Σύνδεση στο Claude και ανάγνωση πλάνου",
+      "claudeRefresh": "Επανάγνωση πλάνου Claude",
+      "chatgptLogin": "Σύνδεση στο ChatGPT και ανάγνωση πλάνου",
+      "chatgptRefresh": "Επανάγνωση πλάνου ChatGPT",
+      "rereadPlan": "Ανάγνωση πλάνου τώρα"
     },
     "connectionStatus": {
       "refreshRequired": "Απαιτείται ανανέωση σύνδεσης",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Απαιτείται σύνδεση στο ChatGPT",
       "chatgptRefreshRequired": "Ανανεώστε τη σύνδεση ChatGPT Billing",
       "claudeConflict": "Claude Max: αντικρουόμενες πηγές ({details})"
-    }
+    },
+    "connectionHelp": "Ανοίξτε τη σελίδα του παρόχου, συνδεθείτε αν χρειάζεται και επιστρέψτε εδώ. Η εφαρμογή θα διαβάσει ξανά το πλάνο όταν επανέλθει η εστίαση ή χρησιμοποιήστε το κουμπί."
   }
 }

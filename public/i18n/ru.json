@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Обновить",
-      "claudeLogin": "Войти в Claude",
-      "claudeRefresh": "Обновить подключение Claude",
-      "chatgptLogin": "Войти в ChatGPT",
-      "chatgptRefresh": "Обновить подключение ChatGPT"
+      "claudeLogin": "Войти в Claude и прочитать план",
+      "claudeRefresh": "Повторно прочитать план Claude",
+      "chatgptLogin": "Войти в ChatGPT и прочитать план",
+      "chatgptRefresh": "Повторно прочитать план ChatGPT",
+      "rereadPlan": "Прочитать план сейчас"
     },
     "connectionStatus": {
       "refreshRequired": "Требуется обновить подключение",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Требуется вход в ChatGPT",
       "chatgptRefreshRequired": "Обновите подключение ChatGPT Billing",
       "claudeConflict": "Claude Max: противоречивые источники ({details})"
-    }
+    },
+    "connectionHelp": "Откройте страницу провайдера, при необходимости войдите и вернитесь сюда. Приложение повторно прочитает план при возврате фокуса, либо используйте кнопку."
   }
 }

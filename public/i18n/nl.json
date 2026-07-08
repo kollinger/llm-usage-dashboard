@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Vernieuwen",
-      "claudeLogin": "Inloggen bij Claude",
-      "claudeRefresh": "Claude-verbinding vernieuwen",
-      "chatgptLogin": "Inloggen bij ChatGPT",
-      "chatgptRefresh": "ChatGPT-verbinding vernieuwen"
+      "claudeLogin": "Inloggen bij Claude en plan lezen",
+      "claudeRefresh": "Claude-plan opnieuw lezen",
+      "chatgptLogin": "Inloggen bij ChatGPT en plan lezen",
+      "chatgptRefresh": "ChatGPT-plan opnieuw lezen",
+      "rereadPlan": "Plan nu lezen"
     },
     "connectionStatus": {
       "refreshRequired": "Verbinding moet worden vernieuwd",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "ChatGPT-login vereist",
       "chatgptRefreshRequired": "Vernieuw de ChatGPT Billing-verbinding",
       "claudeConflict": "Claude Max: tegenstrijdige bronnen ({details})"
-    }
+    },
+    "connectionHelp": "Open de providerpagina, log zo nodig in en keer hier terug. De app leest het plan opnieuw zodra hij focus krijgt, of gebruik de knop."
   }
 }

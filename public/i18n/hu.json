@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Frissítés",
-      "claudeLogin": "Bejelentkezés a Claude-ba",
-      "claudeRefresh": "Claude-kapcsolat frissítése",
-      "chatgptLogin": "Bejelentkezés a ChatGPT-be",
-      "chatgptRefresh": "ChatGPT-kapcsolat frissítése"
+      "claudeLogin": "Jelentkezzen be a Claude-ba és olvassa ki a csomagot",
+      "claudeRefresh": "Claude-csomag újraolvasása",
+      "chatgptLogin": "Jelentkezzen be a ChatGPT-be és olvassa ki a csomagot",
+      "chatgptRefresh": "ChatGPT-csomag újraolvasása",
+      "rereadPlan": "Csomag olvasása most"
     },
     "connectionStatus": {
       "refreshRequired": "A kapcsolat frissítése szükséges",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "ChatGPT-bejelentkezés szükséges",
       "chatgptRefreshRequired": "Frissítse a ChatGPT Billing kapcsolatot",
       "claudeConflict": "Claude Max: ellentmondó források ({details})"
-    }
+    },
+    "connectionHelp": "Nyissa meg a szolgáltató oldalát, jelentkezzen be, ha szükséges, majd térjen vissza ide. Az app fókuszba kerüléskor újraolvassa a csomagot, vagy használja a gombot."
   }
 }

@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Atsvaidzināt",
-      "claudeLogin": "Pierakstīties Claude",
-      "claudeRefresh": "Atsvaidzināt Claude savienojumu",
-      "chatgptLogin": "Pierakstīties ChatGPT",
-      "chatgptRefresh": "Atsvaidzināt ChatGPT savienojumu"
+      "claudeLogin": "Pierakstīties Claude un nolasīt plānu",
+      "claudeRefresh": "Vēlreiz nolasīt Claude plānu",
+      "chatgptLogin": "Pierakstīties ChatGPT un nolasīt plānu",
+      "chatgptRefresh": "Vēlreiz nolasīt ChatGPT plānu",
+      "rereadPlan": "Nolasīt plānu tagad"
     },
     "connectionStatus": {
       "refreshRequired": "Nepieciešama savienojuma atsvaidzināšana",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Nepieciešama ChatGPT pierakstīšanās",
       "chatgptRefreshRequired": "Atsvaidziniet ChatGPT Billing savienojumu",
       "claudeConflict": "Claude Max: pretrunīgi avoti ({details})"
-    }
+    },
+    "connectionHelp": "Atveriet pakalpojuma sniedzēja lapu, ja vajag, pierakstieties un atgriezieties šeit. Lietotne vēlreiz nolasīs plānu, kad atgūs fokusu, vai izmantojiet pogu."
   }
 }

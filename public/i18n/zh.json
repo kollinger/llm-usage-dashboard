@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "刷新",
-      "claudeLogin": "登录 Claude",
-      "claudeRefresh": "刷新 Claude 连接",
-      "chatgptLogin": "登录 ChatGPT",
-      "chatgptRefresh": "刷新 ChatGPT 连接"
+      "claudeLogin": "登录 Claude 并读取套餐",
+      "claudeRefresh": "重新读取 Claude 套餐",
+      "chatgptLogin": "登录 ChatGPT 并读取套餐",
+      "chatgptRefresh": "重新读取 ChatGPT 套餐",
+      "rereadPlan": "立即读取套餐"
     },
     "connectionStatus": {
       "refreshRequired": "需要刷新连接",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "需要登录 ChatGPT",
       "chatgptRefreshRequired": "刷新 ChatGPT Billing 连接",
       "claudeConflict": "Claude Max：来源冲突（{details}）"
-    }
+    },
+    "connectionHelp": "打开提供商页面，按需登录，然后返回这里。应用会在重新获得焦点时再次读取套餐，或使用按钮。"
   }
 }

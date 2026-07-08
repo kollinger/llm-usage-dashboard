@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Aktualizovať",
-      "claudeLogin": "Prihlásiť sa do Claude",
-      "claudeRefresh": "Aktualizovať pripojenie Claude",
-      "chatgptLogin": "Prihlásiť sa do ChatGPT",
-      "chatgptRefresh": "Aktualizovať pripojenie ChatGPT"
+      "claudeLogin": "Prihlásiť sa do Claude a načítať plán",
+      "claudeRefresh": "Znova načítať plán Claude",
+      "chatgptLogin": "Prihlásiť sa do ChatGPT a načítať plán",
+      "chatgptRefresh": "Znova načítať plán ChatGPT",
+      "rereadPlan": "Načítať plán teraz"
     },
     "connectionStatus": {
       "refreshRequired": "Je potrebná aktualizácia pripojenia",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Je potrebné prihlásenie do ChatGPT",
       "chatgptRefreshRequired": "Aktualizujte pripojenie ChatGPT Billing",
       "claudeConflict": "Claude Max: protichodné zdroje ({details})"
-    }
+    },
+    "connectionHelp": "Otvorte stránku poskytovateľa, podľa potreby sa prihláste a vráťte sa sem. Aplikácia znova načíta plán pri návrate fokusu alebo použite tlačidlo."
   }
 }

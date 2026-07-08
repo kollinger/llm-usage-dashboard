@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Actualiser",
-      "claudeLogin": "Se connecter à Claude",
-      "claudeRefresh": "Actualiser la connexion Claude",
-      "chatgptLogin": "Se connecter à ChatGPT",
-      "chatgptRefresh": "Actualiser la connexion ChatGPT"
+      "claudeLogin": "Se connecter à Claude et lire le forfait",
+      "claudeRefresh": "Relire le forfait Claude",
+      "chatgptLogin": "Se connecter à ChatGPT et lire le forfait",
+      "chatgptRefresh": "Relire le forfait ChatGPT",
+      "rereadPlan": "Relire le forfait maintenant"
     },
     "connectionStatus": {
       "refreshRequired": "Actualisation de la connexion requise",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Connexion ChatGPT requise",
       "chatgptRefreshRequired": "Actualisez la connexion ChatGPT Billing",
       "claudeConflict": "Claude Max : sources contradictoires ({details})"
-    }
+    },
+    "connectionHelp": "Ouvrez la page du fournisseur, connectez-vous si nécessaire, puis revenez ici. L’app relit le forfait quand elle reprend le focus, ou utilisez le bouton."
   }
 }

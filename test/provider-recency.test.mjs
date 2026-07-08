@@ -16,6 +16,7 @@ const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 await assertSubscriptionPlanDetection();
 await assertProviderVisibility();
 await assertFrontendUsageIntelligence();
+await assertSubscriptionConnectionLocalization();
 await assertNotificationLocalizationRegression();
 await assertUpdateSettingsAlwaysOn();
 await assertCodexSparkRateLimitDoesNotMoveGpt55Usage();
@@ -270,6 +271,23 @@ async function assertForbiddenThirdPartyPlanSourceAbsent() {
     assert.equal(text.includes(forbiddenName), false, `${file} must not mention the forbidden third-party source name`);
     assert.equal(text.includes(forbiddenKey), false, `${file} must not expose the forbidden third-party source key`);
   }
+}
+
+async function assertSubscriptionConnectionLocalization() {
+  const localeFiles = await readdir(path.join(rootDir, "public", "i18n"));
+  for (const file of localeFiles.filter((name) => name.endsWith(".json"))) {
+    const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", file), "utf8"));
+    assert.equal(typeof translations.subscriptions.connectionHelp, "string", `${file} needs subscription connection help`);
+    assert(translations.subscriptions.connectionHelp.length > 20, `${file} connection help must be meaningful`);
+    for (const key of ["rereadPlan", "claudeLogin", "claudeRefresh", "chatgptLogin", "chatgptRefresh"]) {
+      assert.equal(typeof translations.subscriptions.connectionActions[key], "string", `${file} missing connection action ${key}`);
+      assert(translations.subscriptions.connectionActions[key].length > 4, `${file} connection action ${key} must be meaningful`);
+    }
+  }
+  const de = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "de.json"), "utf8"));
+  assert.equal(de.subscriptions.connectionActions.chatgptLogin, "Bei ChatGPT einloggen und Plan neu lesen");
+  assert.equal(de.subscriptions.connectionActions.claudeLogin, "Bei Claude einloggen und Plan neu lesen");
+  assert.equal(de.subscriptions.connectionActions.rereadPlan, "Plan jetzt neu auslesen");
 }
 
 async function assertFrontendUsageIntelligence() {
@@ -628,6 +646,32 @@ const sameCurrencySubscriptionCard = renderSubscriptionPricingCard({
   subscription: detectedSubscription,
   previous: { monthlyCost: 80, currency: "USD" }
 });
+const forcedPlanReads = [];
+loadUsage = async (options = {}) => {
+  forcedPlanReads.push(options);
+};
+const openConnectionTarget = {
+  dataset: { subscriptionProvider: "claude", subscriptionMode: "login" },
+  closest(selector) {
+    return selector === "[data-subscription-provider-open]" ? this : null;
+  }
+};
+handleSubscriptionConnectionClick({ target: openConnectionTarget });
+const pendingPlanReadProvider = state.pendingSubscriptionReread?.provider;
+const autoPlanReadTriggered = handleSubscriptionRereadReturn();
+let manualPlanReadPrevented = false;
+const manualConnectionTarget = {
+  dataset: { subscriptionProvider: "chatgpt" },
+  closest(selector) {
+    return selector === "[data-subscription-reread]" ? this : null;
+  }
+};
+handleSubscriptionConnectionClick({
+  target: manualConnectionTarget,
+  preventDefault() {
+    manualPlanReadPrevented = true;
+  }
+});
 JSON.stringify({
   filters: CHART_FILTERS,
   h24Total,
@@ -773,15 +817,26 @@ JSON.stringify({
     claudeTachometerLimitBarsHtml.includes("limit-bars-mode-bar") &&
     claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
     !claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
-  claudeLoginAction:
-    claudeLoginCardHtml.includes("Log in to Claude") &&
-    claudeLoginCardHtml.includes("https://claude.ai/settings/billing") &&
-    claudeLoginCardHtml.includes("Claude login required"),
-  claudeConflictAction:
-    claudeConflictCardHtml.includes("Claude Max: conflicting sources") &&
-    claudeConflictCardHtml.includes("Claude Max 20x") &&
-    claudeConflictCardHtml.includes("Claude Max 5x") &&
-    claudeConflictCardHtml.includes("Refresh Claude connection"),
+	  claudeLoginAction:
+	    claudeLoginCardHtml.includes("Log in to Claude and read plan") &&
+	    claudeLoginCardHtml.includes("https://claude.ai/settings/billing") &&
+	    claudeLoginCardHtml.includes("Claude login required") &&
+	    claudeLoginCardHtml.includes("data-subscription-provider-open") &&
+	    claudeLoginCardHtml.includes("data-subscription-reread") &&
+	    claudeLoginCardHtml.includes("Read plan now") &&
+	    claudeLoginCardHtml.includes("Open the provider page"),
+	  connectionRereadFlow:
+	    pendingPlanReadProvider === "claude" &&
+	    autoPlanReadTriggered === true &&
+	    manualPlanReadPrevented === true &&
+	    forcedPlanReads.length === 2 &&
+	    forcedPlanReads.every((entry) => entry.force === true && entry.showIndicator === true),
+	  claudeConflictAction:
+	    claudeConflictCardHtml.includes("Claude Max: conflicting sources") &&
+	    claudeConflictCardHtml.includes("Claude Max 20x") &&
+	    claudeConflictCardHtml.includes("Claude Max 5x") &&
+	    claudeConflictCardHtml.includes("Read Claude plan again") &&
+	    claudeConflictCardHtml.includes("Read plan now"),
   rejectedPaceLegendRemoved: !limitBarsHtml.includes("limit-status-note"),
   riskLimitBarHasTachometerGauge:
     riskLimitTachometerHtml.includes("limit-tachometer-gauge") &&
@@ -912,6 +967,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.limitBarsHasProjectionToggle, true);
   assert.equal(result.providerProjectionModeGlobal, true);
   assert.equal(result.claudeLoginAction, true);
+  assert.equal(result.connectionRereadFlow, true);
   assert.equal(result.claudeConflictAction, true);
   assert.equal(germanResult.claudeMax20Label.includes("Claude Max 20x"), true);
   assert.equal(germanResult.claudeMax20Label.includes("180"), true);

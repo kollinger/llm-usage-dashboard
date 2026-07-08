@@ -1224,6 +1224,13 @@ a {
   color: #8a4b00;
 }
 
+.subscription-connection-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .subscription-connection-action {
   display: inline-flex;
   align-items: center;
@@ -1238,8 +1245,21 @@ a {
   text-decoration: none;
 }
 
+button.subscription-connection-action {
+  cursor: pointer;
+  font: inherit;
+}
+
 .subscription-connection-action:hover {
   border-color: var(--provider-accent, var(--accent));
+}
+
+.subscription-connection-help {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 720;
+  line-height: 1.35;
 }
 
 .subscription-source-audit,

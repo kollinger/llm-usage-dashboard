@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Atnaujinti",
-      "claudeLogin": "Prisijungti prie Claude",
-      "claudeRefresh": "Atnaujinti Claude ryšį",
-      "chatgptLogin": "Prisijungti prie ChatGPT",
-      "chatgptRefresh": "Atnaujinti ChatGPT ryšį"
+      "claudeLogin": "Prisijunkite prie Claude ir nuskaitykite planą",
+      "claudeRefresh": "Dar kartą nuskaityti Claude planą",
+      "chatgptLogin": "Prisijunkite prie ChatGPT ir nuskaitykite planą",
+      "chatgptRefresh": "Dar kartą nuskaityti ChatGPT planą",
+      "rereadPlan": "Skaityti planą dabar"
     },
     "connectionStatus": {
       "refreshRequired": "Reikia atnaujinti ryšį",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Reikia prisijungti prie ChatGPT",
       "chatgptRefreshRequired": "Atnaujinkite ChatGPT Billing ryšį",
       "claudeConflict": "Claude Max: prieštaringi šaltiniai ({details})"
-    }
+    },
+    "connectionHelp": "Atidarykite teikėjo puslapį, prireikus prisijunkite ir grįžkite čia. Programėlė vėl nuskaitys planą gavusi fokusą arba naudokite mygtuką."
   }
 }

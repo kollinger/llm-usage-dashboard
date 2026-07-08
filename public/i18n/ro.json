@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Actualizează",
-      "claudeLogin": "Autentificare în Claude",
-      "claudeRefresh": "Actualizează conexiunea Claude",
-      "chatgptLogin": "Autentificare în ChatGPT",
-      "chatgptRefresh": "Actualizează conexiunea ChatGPT"
+      "claudeLogin": "Autentifică-te în Claude și citește planul",
+      "claudeRefresh": "Recitește planul Claude",
+      "chatgptLogin": "Autentifică-te în ChatGPT și citește planul",
+      "chatgptRefresh": "Recitește planul ChatGPT",
+      "rereadPlan": "Citește planul acum"
     },
     "connectionStatus": {
       "refreshRequired": "Este necesară actualizarea conexiunii",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Este necesară autentificarea în ChatGPT",
       "chatgptRefreshRequired": "Actualizează conexiunea ChatGPT Billing",
       "claudeConflict": "Claude Max: surse contradictorii ({details})"
-    }
+    },
+    "connectionHelp": "Deschide pagina furnizorului, autentifică-te dacă este necesar și revino aici. Aplicația recitește planul când primește focus sau folosește butonul."
   }
 }

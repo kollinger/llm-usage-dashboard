@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Aġġorna",
-      "claudeLogin": "Idħol f’Claude",
-      "claudeRefresh": "Aġġorna l-konnessjoni Claude",
-      "chatgptLogin": "Idħol f’ChatGPT",
-      "chatgptRefresh": "Aġġorna l-konnessjoni ChatGPT"
+      "claudeLogin": "Idħol f’Claude u aqra l-pjan",
+      "claudeRefresh": "Aqra mill-ġdid il-pjan ta’ Claude",
+      "chatgptLogin": "Idħol f’ChatGPT u aqra l-pjan",
+      "chatgptRefresh": "Aqra mill-ġdid il-pjan ta’ ChatGPT",
+      "rereadPlan": "Aqra l-pjan issa"
     },
     "connectionStatus": {
       "refreshRequired": "Meħtieġ aġġornament tal-konnessjoni",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Meħtieġ login ta’ ChatGPT",
       "chatgptRefreshRequired": "Aġġorna l-konnessjoni ChatGPT Billing",
       "claudeConflict": "Claude Max: sorsi kontradittorji ({details})"
-    }
+    },
+    "connectionHelp": "Iftaħ il-paġna tal-fornitur, idħol jekk hemm bżonn, u erġa’ lura hawn. L-app taqra l-pjan mill-ġdid meta terġa’ tikseb il-fokus, jew uża l-buttuna."
   }
 }

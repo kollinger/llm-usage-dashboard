@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "تحديث",
-      "claudeLogin": "تسجيل الدخول إلى Claude",
-      "claudeRefresh": "تحديث اتصال Claude",
-      "chatgptLogin": "تسجيل الدخول إلى ChatGPT",
-      "chatgptRefresh": "تحديث اتصال ChatGPT"
+      "claudeLogin": "تسجيل الدخول إلى Claude وقراءة الخطة",
+      "claudeRefresh": "إعادة قراءة خطة Claude",
+      "chatgptLogin": "تسجيل الدخول إلى ChatGPT وقراءة الخطة",
+      "chatgptRefresh": "إعادة قراءة خطة ChatGPT",
+      "rereadPlan": "قراءة الخطة الآن"
     },
     "connectionStatus": {
       "refreshRequired": "يلزم تحديث الاتصال",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "يلزم تسجيل الدخول إلى ChatGPT",
       "chatgptRefreshRequired": "حدّث اتصال ChatGPT Billing",
       "claudeConflict": "Claude Max: مصادر متعارضة ({details})"
-    }
+    },
+    "connectionHelp": "افتح صفحة المزوّد، وسجّل الدخول إذا لزم الأمر، ثم عُد إلى هنا. سيعيد التطبيق قراءة الخطة عند عودة التركيز، أو استخدم الزر."
   }
 }

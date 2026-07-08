@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Athnuaigh",
-      "claudeLogin": "Logáil isteach i Claude",
-      "claudeRefresh": "Athnuaigh nasc Claude",
-      "chatgptLogin": "Logáil isteach i ChatGPT",
-      "chatgptRefresh": "Athnuaigh nasc ChatGPT"
+      "claudeLogin": "Logáil isteach i Claude agus léigh an plean",
+      "claudeRefresh": "Léigh plean Claude arís",
+      "chatgptLogin": "Logáil isteach i ChatGPT agus léigh an plean",
+      "chatgptRefresh": "Léigh plean ChatGPT arís",
+      "rereadPlan": "Léigh an plean anois"
     },
     "connectionStatus": {
       "refreshRequired": "Tá athnuachan an naisc de dhíth",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Tá logáil isteach ChatGPT de dhíth",
       "chatgptRefreshRequired": "Athnuaigh nasc ChatGPT Billing",
       "claudeConflict": "Claude Max: foinsí contrártha ({details})"
-    }
+    },
+    "connectionHelp": "Oscail leathanach an tsoláthraí, logáil isteach más gá, agus fill anseo. Léifidh an aip an plean arís nuair a fhilleann fócas, nó úsáid an cnaipe."
   }
 }

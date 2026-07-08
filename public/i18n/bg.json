@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Обнови",
-      "claudeLogin": "Вход в Claude",
-      "claudeRefresh": "Обнови връзката с Claude",
-      "chatgptLogin": "Вход в ChatGPT",
-      "chatgptRefresh": "Обнови връзката с ChatGPT"
+      "claudeLogin": "Влезте в Claude и прочетете плана",
+      "claudeRefresh": "Прочетете плана на Claude отново",
+      "chatgptLogin": "Влезте в ChatGPT и прочетете плана",
+      "chatgptRefresh": "Прочетете плана на ChatGPT отново",
+      "rereadPlan": "Прочети плана сега"
     },
     "connectionStatus": {
       "refreshRequired": "Нужно е обновяване на връзката",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Нужен е вход в ChatGPT",
       "chatgptRefreshRequired": "Обновете връзката с ChatGPT Billing",
       "claudeConflict": "Claude Max: противоречиви източници ({details})"
-    }
+    },
+    "connectionHelp": "Отворете страницата на доставчика, влезте при нужда и се върнете тук. Приложението ще прочете плана отново при фокус или използвайте бутона."
   }
 }

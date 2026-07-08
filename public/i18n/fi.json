@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Päivitä",
-      "claudeLogin": "Kirjaudu Claudeen",
-      "claudeRefresh": "Päivitä Claude-yhteys",
-      "chatgptLogin": "Kirjaudu ChatGPT:hen",
-      "chatgptRefresh": "Päivitä ChatGPT-yhteys"
+      "claudeLogin": "Kirjaudu Claudeen ja lue tilaus",
+      "claudeRefresh": "Lue Claude-tilaus uudelleen",
+      "chatgptLogin": "Kirjaudu ChatGPT:hen ja lue tilaus",
+      "chatgptRefresh": "Lue ChatGPT-tilaus uudelleen",
+      "rereadPlan": "Lue tilaus nyt"
     },
     "connectionStatus": {
       "refreshRequired": "Yhteys on päivitettävä",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "ChatGPT-kirjautuminen vaaditaan",
       "chatgptRefreshRequired": "Päivitä ChatGPT Billing -yhteys",
       "claudeConflict": "Claude Max: ristiriitaiset lähteet ({details})"
-    }
+    },
+    "connectionHelp": "Avaa palveluntarjoajan sivu, kirjaudu tarvittaessa sisään ja palaa tänne. Sovellus lukee tilauksen uudelleen, kun se saa fokuksen, tai käytä painiketta."
   }
 }

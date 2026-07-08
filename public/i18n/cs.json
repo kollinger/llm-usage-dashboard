@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Aktualizovat",
-      "claudeLogin": "Přihlásit se ke Claude",
-      "claudeRefresh": "Aktualizovat připojení Claude",
-      "chatgptLogin": "Přihlásit se k ChatGPT",
-      "chatgptRefresh": "Aktualizovat připojení ChatGPT"
+      "claudeLogin": "Přihlásit se ke Claude a přečíst plán",
+      "claudeRefresh": "Znovu přečíst plán Claude",
+      "chatgptLogin": "Přihlásit se k ChatGPT a přečíst plán",
+      "chatgptRefresh": "Znovu přečíst plán ChatGPT",
+      "rereadPlan": "Přečíst plán teď"
     },
     "connectionStatus": {
       "refreshRequired": "Je potřeba aktualizovat připojení",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Je potřeba přihlášení k ChatGPT",
       "chatgptRefreshRequired": "Aktualizujte připojení ChatGPT Billing",
       "claudeConflict": "Claude Max: rozporné zdroje ({details})"
-    }
+    },
+    "connectionHelp": "Otevřete stránku poskytovatele, případně se přihlaste a vraťte se sem. Aplikace plán znovu přečte po návratu fokusu, nebo použijte tlačítko."
   }
 }

@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Odśwież",
-      "claudeLogin": "Zaloguj się do Claude",
-      "claudeRefresh": "Odśwież połączenie Claude",
-      "chatgptLogin": "Zaloguj się do ChatGPT",
-      "chatgptRefresh": "Odśwież połączenie ChatGPT"
+      "claudeLogin": "Zaloguj się do Claude i odczytaj plan",
+      "claudeRefresh": "Odczytaj ponownie plan Claude",
+      "chatgptLogin": "Zaloguj się do ChatGPT i odczytaj plan",
+      "chatgptRefresh": "Odczytaj ponownie plan ChatGPT",
+      "rereadPlan": "Odczytaj plan teraz"
     },
     "connectionStatus": {
       "refreshRequired": "Wymagane odświeżenie połączenia",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Wymagane logowanie do ChatGPT",
       "chatgptRefreshRequired": "Odśwież połączenie ChatGPT Billing",
       "claudeConflict": "Claude Max: sprzeczne źródła ({details})"
-    }
+    },
+    "connectionHelp": "Otwórz stronę dostawcy, zaloguj się w razie potrzeby i wróć tutaj. Aplikacja ponownie odczyta plan po odzyskaniu fokusu albo użyj przycisku."
   }
 }

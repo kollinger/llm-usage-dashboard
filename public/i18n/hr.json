@@ -904,10 +904,11 @@
     },
     "connectionActions": {
       "refresh": "Osvježi",
-      "claudeLogin": "Prijava u Claude",
-      "claudeRefresh": "Osvježi Claude vezu",
-      "chatgptLogin": "Prijava u ChatGPT",
-      "chatgptRefresh": "Osvježi ChatGPT vezu"
+      "claudeLogin": "Prijavite se u Claude i pročitajte plan",
+      "claudeRefresh": "Ponovno pročitajte Claude plan",
+      "chatgptLogin": "Prijavite se u ChatGPT i pročitajte plan",
+      "chatgptRefresh": "Ponovno pročitajte ChatGPT plan",
+      "rereadPlan": "Pročitaj plan sada"
     },
     "connectionStatus": {
       "refreshRequired": "Potrebno je osvježiti vezu",
@@ -916,6 +917,7 @@
       "chatgptLoginRequired": "Potrebna je prijava u ChatGPT",
       "chatgptRefreshRequired": "Osvježite ChatGPT Billing vezu",
       "claudeConflict": "Claude Max: proturječni izvori ({details})"
-    }
+    },
+    "connectionHelp": "Otvorite stranicu pružatelja, prijavite se po potrebi i vratite se ovamo. Aplikacija ponovno čita plan kad dobije fokus ili upotrijebite gumb."
   }
 }
