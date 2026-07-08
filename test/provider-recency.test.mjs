@@ -1286,6 +1286,7 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(browserPlanMerged.planSource, "browser");
   assert.equal(browserPlanMerged.subscription.monthlyCost, 200);
   assert.equal(browserPlanMerged.subscription.actualBillingKnown, false);
+  assert.equal(browserPlanMerged.subscriptionConnectionAction, null);
   assert.equal(_test.localizeUsageSubscriptionPrices({ codex: browserPlanMerged }, "de").codex.subscription.monthlyCost, 229);
   const thirdPartyPlanSnapshot = _test.sanitizeAccountBillingSnapshots(
     {

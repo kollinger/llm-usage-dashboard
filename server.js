@@ -2565,7 +2565,8 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
   if (!provider?.subscription || provider.status === "error") return provider;
   const status = accountBillingProviderStatus(providerId, accountBilling);
   if (!status) return provider;
-  const connectionAction = providerSubscriptionHasActualBilling(provider.subscription)
+  const connectionAction = providerSubscriptionHasActualBilling(provider.subscription) ||
+    providerSubscriptionHasConcretePlanPrice(providerId, provider.subscription)
     ? null
     : accountBillingConnectionAction(providerId, status);
   return {
@@ -2585,6 +2586,11 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
 function providerSubscriptionHasActualBilling(subscription) {
   if (subscription?.actualBillingKnown !== true) return false;
   return ["account", "account_billing", "browser", "claude_browser_sync"].includes(String(subscription.source || ""));
+}
+
+function providerSubscriptionHasConcretePlanPrice(providerId, subscription) {
+  if (!(positiveAmount(subscription?.monthlyCost) > 0)) return false;
+  return isConcreteSubscriptionPlanVariant(providerId, subscription?.planType);
 }
 
 function accountBillingConnectionAction(providerId, status) {
