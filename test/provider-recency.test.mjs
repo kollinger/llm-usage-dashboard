@@ -1049,6 +1049,14 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(officialMerged.subscription.tierVariant, null);
   assert.equal(officialMerged.subscription.actualBillingKnown, false);
   assert.equal(officialMerged.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
+  const localizedOfficialMerged = _test.localizeUsageSubscriptionPrices({ codex: officialMerged }, "de").codex;
+  assert.equal(localizedOfficialMerged.subscription.planType, null);
+  assert.equal(localizedOfficialMerged.subscription.monthlyCost, 0);
+  assert.equal(localizedOfficialMerged.subscription.monthlyCostMin, null);
+  assert.equal(localizedOfficialMerged.subscription.monthlyCostMax, null);
+  assert.equal(localizedOfficialMerged.subscription.priceType, null);
+  assert.equal(localizedOfficialMerged.subscription.costStatus, "variant_required");
+  assert.equal(localizedOfficialMerged.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
   const bundledMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro 20x" }, null, "codex", officialPricing);
   assert.equal(bundledMerged.subscription.source, "official_pricing_page");
   assert.equal(bundledMerged.subscription.monthlyCost, 200);

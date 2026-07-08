@@ -2782,6 +2782,7 @@ function localizeUsageSubscriptionPrices(usage, locale) {
 function localizeProviderSubscriptionPrice(provider, providerId, region) {
   const subscription = provider?.subscription;
   if (!subscription || subscription.actualBillingKnown === true || subscription.source === "account_billing") return provider;
+  if (subscription.costStatus === "variant_required") return provider;
   const planType = subscription.planType || provider.planType || provider.latest?.planType || "";
   const regional = regionalSubscriptionPlan(providerId, planType, region);
   if (!regional) return provider;
@@ -4107,7 +4108,7 @@ function resolveClaudePlanSignals({ browserSubscription = null, browserCredits =
         source: browserSubscription.source || "claude_browser_sync"
       }
     : null;
-  const connectionAction = claudeBrowserConnectionAction(browserCredits, conflict);
+  const connectionAction = subscription ? null : claudeBrowserConnectionAction(browserCredits, conflict);
   return {
     planType: chosen?.planType || null,
     planSource: chosen?.source || null,
@@ -4167,6 +4168,9 @@ function claudeBrowserConnectionAction(browserCredits, conflict = null) {
   const requiresLogin = status === "expired" || /login|required|cookie|auth/i.test(reason);
   if (conflict || ["missing", "expired", "unavailable", "unsupported", "error"].includes(status) || requiresLogin) {
     return providerConnectionAction("anthropic", requiresLogin ? "login" : "refresh", reason || status || null);
+  }
+  if (browserCredits) {
+    return providerConnectionAction("anthropic", "refresh", reason || "subscription_missing");
   }
   return null;
 }

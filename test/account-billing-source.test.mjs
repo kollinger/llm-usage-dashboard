@@ -251,6 +251,19 @@ assert.deepEqual(
 assert.equal(claudeConflict.connectionAction.url, "https://claude.ai/settings/billing");
 assert.equal(claudeConflict.connectionAction.labelKey, "subscriptions.connectionActions.claudeLogin");
 
+const claudeBrowserWithoutPlan = _test.resolveClaudePlanSignals({
+  browserCredits: {
+    status: "available",
+    credits: { included: 1, remaining: 1 },
+    usage: { five_hour: { used: 1, limit: 10 } },
+    updatedAt: "2026-07-08T10:10:00Z"
+  }
+});
+assert.equal(claudeBrowserWithoutPlan.planType, null);
+assert.equal(claudeBrowserWithoutPlan.subscription, null);
+assert.equal(claudeBrowserWithoutPlan.connectionAction.url, "https://claude.ai/settings/billing");
+assert.equal(claudeBrowserWithoutPlan.connectionAction.labelKey, "subscriptions.connectionActions.claudeRefresh");
+
 const claudeBrowserBillingWins = _test.resolveClaudePlanSignals({
   browserSubscription: { planType: "Claude Max 20x", monthlyCost: 180, currency: "EUR", updatedAt: "2026-07-08T10:10:00Z" },
   browserCredits: { status: "available", updatedAt: "2026-07-08T10:10:00Z" },
