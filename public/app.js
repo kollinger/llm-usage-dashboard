@@ -306,14 +306,17 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
-      aliases: ["pro", "chatgpt pro", "codex pro"],
+      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+      planName: "Pro 5x/20x",
       monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_variant_range",
+      priceVariant: "pro_5x_20x",
+      tierVariant: "pro_5x_20x",
       actualBillingKnown: false
     },
     {
@@ -348,14 +351,17 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+      planName: "Claude Max 5x/20x",
       monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_variant_range",
+      priceVariant: "max_5x_20x",
+      tierVariant: "max_5x_20x",
       actualBillingKnown: false
     },
     {
@@ -385,15 +391,18 @@ const regionalSubscriptionPlanCatalog = {
         actualBillingKnown: false
       },
       {
-        aliases: ["pro", "chatgpt pro", "codex pro"],
+        aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+        planName: "Pro 5x/20x",
         monthlyCost: 115,
+        monthlyCostMin: 115,
+        monthlyCostMax: 229,
         currency: "EUR",
         source: "official_pricing_page",
         sourceUrl: "https://chatgpt.com/pricing/",
-        priceType: "official_starting_list_price",
-        priceVariant: "from",
+        priceType: "official_variant_range",
+        priceVariant: "pro_5x_20x",
         priceRegion: "de_eur",
-        tierVariant: null,
+        tierVariant: "pro_5x_20x",
         actualBillingKnown: false
       },
       {
@@ -433,15 +442,18 @@ const regionalSubscriptionPlanCatalog = {
         actualBillingKnown: false
       },
       {
-        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+        planName: "Claude Max 5x/20x",
         monthlyCost: 90,
+        monthlyCostMin: 90,
+        monthlyCostMax: 180,
         currency: "EUR",
         source: "official_pricing_page",
         sourceUrl: "https://claude.com/pricing",
-        priceType: "official_starting_list_price",
-        priceVariant: "from",
+        priceType: "official_variant_range",
+        priceVariant: "max_5x_20x",
         priceRegion: "de_eur",
-        tierVariant: null,
+        tierVariant: "max_5x_20x",
         actualBillingKnown: false
       },
       {
@@ -3044,7 +3056,9 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   const source = subscription && typeof subscription === "object" ? subscription : {};
   const fallbackSource = fallback && typeof fallback === "object" ? fallback : {};
   let monthlyCost = Number(source.monthlyCost || 0);
-  const planType = String(source.planType || fallbackSource.planType || "").trim();
+  let monthlyCostMin = Number(source.monthlyCostMin || source.minMonthlyCost || 0);
+  let monthlyCostMax = Number(source.monthlyCostMax || source.maxMonthlyCost || 0);
+  let planType = String(source.planType || fallbackSource.planType || "").trim();
   let sourceId = source.source || fallbackSource.source || null;
   const updatedAt = source.updatedAt || fallbackSource.updatedAt || null;
   let planSource = source.planSource || fallbackSource.planSource || (sourceId !== fallbackSource.source ? fallbackSource.source : null);
@@ -3070,6 +3084,9 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let accountBillingSourceType = source.accountBillingSourceType || null;
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
+    monthlyCostMin = Number(catalog.monthlyCostMin || 0);
+    monthlyCostMax = Number(catalog.monthlyCostMax || 0);
+    planType = catalog.planName || planType;
     currency = catalog.currency;
     if (!planSource && fallbackSource.source && catalog.source !== fallbackSource.source) {
       planSource = fallbackSource.source;
@@ -3098,6 +3115,8 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   return {
     planType: planType || null,
     monthlyCost: monthlyCost > 0 ? monthlyCost : 0,
+    monthlyCostMin: monthlyCostMin > 0 ? monthlyCostMin : null,
+    monthlyCostMax: monthlyCostMax > 0 ? monthlyCostMax : null,
     currency,
     source: sourceId,
     planSource,
@@ -7747,6 +7766,13 @@ function formatMoney(value, currency = "usd") {
 }
 
 function formatMonthlyCost(subscription) {
+  const min = Number(subscription.monthlyCostMin || 0);
+  const max = Number(subscription.monthlyCostMax || 0);
+  if (min > 0 && max > min) {
+    return t("format.perMonth", {
+      amount: `${formatMoney(min, subscription.currency || "EUR")}–${formatMoney(max, subscription.currency || "EUR")}`
+    });
+  }
   const key = subscriptionPriceIsStarting(subscription) ? "format.fromPerMonth" : "format.perMonth";
   return t(key, {
     amount: formatMoney(subscription.monthlyCost, subscription.currency || "EUR")

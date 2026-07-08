@@ -104,14 +104,17 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://developers.openai.com/codex/pricing"
     },
     {
-      aliases: ["pro", "chatgpt pro", "codex pro"],
+      aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+      planName: "Pro 5x/20x",
       monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://developers.openai.com/codex/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_variant_range",
+      priceVariant: "pro_5x_20x",
+      tierVariant: "pro_5x_20x",
       actualBillingKnown: false
     },
     {
@@ -146,14 +149,17 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+      planName: "Claude Max 5x/20x",
       monthlyCost: 100,
+      monthlyCostMin: 100,
+      monthlyCostMax: 200,
       currency: "USD",
       source: "bundled_catalog",
       sourceUrl: "https://claude.com/pricing",
-      priceType: "official_starting_list_price",
-      priceVariant: "from",
-      tierVariant: null,
+      priceType: "official_variant_range",
+      priceVariant: "max_5x_20x",
+      tierVariant: "max_5x_20x",
       actualBillingKnown: false
     },
     {
@@ -183,15 +189,18 @@ const REGIONAL_SUBSCRIPTION_PLAN_CATALOG = {
         actualBillingKnown: false
       },
       {
-        aliases: ["pro", "chatgpt pro", "codex pro"],
+        aliases: ["pro", "chatgpt pro", "codex pro", "pro 5x/20x", "pro 5x 20x"],
+        planName: "Pro 5x/20x",
         monthlyCost: 115,
+        monthlyCostMin: 115,
+        monthlyCostMax: 229,
         currency: "EUR",
         source: "official_pricing_page",
         sourceUrl: "https://chatgpt.com/pricing/",
-        priceType: "official_starting_list_price",
-        priceVariant: "from",
+        priceType: "official_variant_range",
+        priceVariant: "pro_5x_20x",
         priceRegion: "de_eur",
-        tierVariant: null,
+        tierVariant: "pro_5x_20x",
         actualBillingKnown: false
       },
       {
@@ -231,15 +240,18 @@ const REGIONAL_SUBSCRIPTION_PLAN_CATALOG = {
         actualBillingKnown: false
       },
       {
-        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x"],
+        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+        planName: "Claude Max 5x/20x",
         monthlyCost: 90,
+        monthlyCostMin: 90,
+        monthlyCostMax: 180,
         currency: "EUR",
         source: "official_pricing_page",
         sourceUrl: "https://claude.com/pricing",
-        priceType: "official_starting_list_price",
-        priceVariant: "from",
+        priceType: "official_variant_range",
+        priceVariant: "max_5x_20x",
         priceRegion: "de_eur",
-        tierVariant: null,
+        tierVariant: "max_5x_20x",
         actualBillingKnown: false
       },
       {
@@ -2559,8 +2571,10 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   const catalog = official || publicSubscriptionPlan(providerId, planType);
   const subscription = {
     ...(existing || {}),
-    planType,
+    planType: catalog?.planName || planType,
     monthlyCost: catalog ? catalog.monthlyCost : 0,
+    monthlyCostMin: catalog?.monthlyCostMin || null,
+    monthlyCostMax: catalog?.monthlyCostMax || null,
     currency: catalog ? catalog.currency : normalizeCurrency(existing?.currency || "EUR"),
     source: catalog ? catalog.source : existing?.source || planSource,
     planSource,
@@ -2608,7 +2622,10 @@ function localizeProviderSubscriptionPrice(provider, providerId, region) {
     ...provider,
     subscription: {
       ...subscription,
+      planType: regional.planName || subscription.planType,
       monthlyCost: regional.monthlyCost,
+      monthlyCostMin: regional.monthlyCostMin || null,
+      monthlyCostMax: regional.monthlyCostMax || null,
       currency: regional.currency,
       source: regional.source || subscription.source,
       sourceUrl: regional.sourceUrl || subscription.sourceUrl,
@@ -2647,15 +2664,52 @@ function officialSubscriptionPlan(providerId, planType, officialPricing) {
   };
   if (family === "openai" && entry.planKey === "pro") {
     const explicitFiveX = planKey === "pro 5x";
+    const variantRange = openAiProVariantRange();
     return {
       ...official,
-      priceType: explicitFiveX ? "official_list_price" : "official_starting_list_price",
-      priceVariant: explicitFiveX ? "pro_5x" : "from",
-      tierVariant: explicitFiveX ? "pro_5x" : null,
+      planName: explicitFiveX ? official.planName : variantRange.planName,
+      monthlyCostMin: explicitFiveX ? null : variantRange.monthlyCostMin,
+      monthlyCostMax: explicitFiveX ? null : variantRange.monthlyCostMax,
+      priceType: explicitFiveX ? "official_list_price" : "official_variant_range",
+      priceVariant: explicitFiveX ? "pro_5x" : "pro_5x_20x",
+      tierVariant: explicitFiveX ? "pro_5x" : "pro_5x_20x",
+      actualBillingKnown: false
+    };
+  }
+  if (family === "anthropic" && entry.planKey === "max") {
+    const variantRange = claudeMaxVariantRange();
+    return {
+      ...official,
+      planName: variantRange.planName,
+      monthlyCostMin: variantRange.monthlyCostMin,
+      monthlyCostMax: variantRange.monthlyCostMax,
+      priceType: "official_variant_range",
+      priceVariant: "max_5x_20x",
+      tierVariant: "max_5x_20x",
       actualBillingKnown: false
     };
   }
   return official;
+}
+
+function openAiProVariantRange() {
+  const fiveX = publicSubscriptionPlan("codex", "Pro 5x");
+  const twentyX = publicSubscriptionPlan("codex", "Pro 20x");
+  return {
+    planName: "Pro 5x/20x",
+    monthlyCostMin: fiveX?.monthlyCost || 100,
+    monthlyCostMax: twentyX?.monthlyCost || 200
+  };
+}
+
+function claudeMaxVariantRange() {
+  const fiveX = publicSubscriptionPlan("claudeCode", "Claude Max 5x");
+  const twentyX = publicSubscriptionPlan("claudeCode", "Claude Max 20x");
+  return {
+    planName: "Claude Max 5x/20x",
+    monthlyCostMin: fiveX?.monthlyCost || 100,
+    monthlyCostMax: twentyX?.monthlyCost || 200
+  };
 }
 
 function officialSubscriptionPlanVariantFromCatalog(providerId, planType, officialPricing) {
@@ -5155,7 +5209,11 @@ function preferredCodexPlan(livePlanType) {
 
 function isConcreteSubscriptionPlanVariant(providerId, planType) {
   const catalog = publicSubscriptionPlan(providerId, planType);
-  return Boolean(catalog?.tierVariant || (catalog?.priceVariant && catalog.priceVariant !== "from"));
+  if (!catalog) return false;
+  const priceType = String(catalog.priceType || "");
+  const variant = String(catalog.tierVariant || catalog.priceVariant || "");
+  if (priceType === "official_variant_range" || /_5x_20x$/u.test(variant)) return false;
+  return Boolean(catalog.tierVariant || (catalog.priceVariant && catalog.priceVariant !== "from"));
 }
 
 function normalizeCodexLiveRateLimits(response) {

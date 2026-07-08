@@ -158,8 +158,12 @@ const codexWithExpiredBilling = _test.mergeProviderSubscription(
   expiredBilling
 );
 assert.equal(codexWithExpiredBilling.subscription.monthlyCost, 100);
+assert.equal(codexWithExpiredBilling.subscription.monthlyCostMin, 100);
+assert.equal(codexWithExpiredBilling.subscription.monthlyCostMax, 200);
 assert.equal(codexWithExpiredBilling.subscription.source, "official_pricing_page");
-assert.equal(codexWithExpiredBilling.subscription.priceType, "official_starting_list_price");
+assert.equal(codexWithExpiredBilling.subscription.planType, "Pro 5x/20x");
+assert.equal(codexWithExpiredBilling.subscription.priceType, "official_variant_range");
+assert.equal(codexWithExpiredBilling.subscription.priceVariant, "pro_5x_20x");
 assert.equal(codexWithExpiredBilling.subscription.actualBillingKnown, false);
 assert.equal(codexWithExpiredBilling.subscription.accountBillingStatus, "expired");
 assert.equal(codexWithExpiredBilling.subscription.accountBillingParserStatus, "expired");
