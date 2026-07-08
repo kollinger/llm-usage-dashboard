@@ -1393,9 +1393,9 @@ async function loadHiddenProbeWindowText(url, partition) {
         settled = true;
         clearTimeout(timeout);
         setTimeout(async () => {
-          const text = await probe.webContents.executeJavaScript("document.body ? document.body.innerText : ''", true).catch(() => "");
+          const text = await waitForProbeWindowText(probe);
           resolve(String(text || "").slice(0, 512 * 1024));
-        }, 1200);
+        }, 500);
       };
       const timeout = setTimeout(finish, 12000);
       probe.webContents.once("did-finish-load", finish);
@@ -1406,6 +1406,22 @@ async function loadHiddenProbeWindowText(url, partition) {
   } finally {
     if (!probe.isDestroyed()) probe.destroy();
   }
+}
+
+async function waitForProbeWindowText(probe, maxWaitMs = 9000) {
+  const startedAt = Date.now();
+  let bestText = "";
+  while (Date.now() - startedAt < maxWaitMs) {
+    const text = await probe.webContents.executeJavaScript("document.body ? document.body.innerText : ''", true).catch(() => "");
+    if (String(text || "").length > bestText.length) bestText = String(text || "");
+    if (hasPlanProbeSignal(text)) return text;
+    await new Promise((resolve) => setTimeout(resolve, 750));
+  }
+  return bestText;
+}
+
+function hasPlanProbeSignal(text) {
+  return /(?:\b(?:chatgpt\s+)?pro\s+(?:5x|20x)\b|\bclaude\s+max\s+(?:5x|20x)\b|\bmax\s+(?:5x|20x)\b|current plan|dein aktueller plan|your plan auto-renews|billing history|zahlungsverlauf|abrechnungsverlauf)/iu.test(String(text || ""));
 }
 
 async function readClaudeBrowserSession() {
