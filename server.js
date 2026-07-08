@@ -149,7 +149,7 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+      aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
       planName: "Claude Max 5x/20x",
       monthlyCost: 100,
       monthlyCostMin: 100,
@@ -163,7 +163,20 @@ const PUBLIC_SUBSCRIPTION_PLAN_CATALOG = {
       actualBillingKnown: false
     },
     {
+      aliases: ["max 5x", "max-5x", "claude max 5x"],
+      planName: "Claude Max 5x",
+      monthlyCost: 100,
+      currency: "USD",
+      source: "bundled_catalog",
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_list_price",
+      priceVariant: "max_5x",
+      tierVariant: "max_5x",
+      actualBillingKnown: false
+    },
+    {
       aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+      planName: "Claude Max 20x",
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
@@ -240,7 +253,7 @@ const REGIONAL_SUBSCRIPTION_PLAN_CATALOG = {
         actualBillingKnown: false
       },
       {
-        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+        aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
         planName: "Claude Max 5x/20x",
         monthlyCost: 90,
         monthlyCostMin: 90,
@@ -255,7 +268,21 @@ const REGIONAL_SUBSCRIPTION_PLAN_CATALOG = {
         actualBillingKnown: false
       },
       {
+        aliases: ["max 5x", "max-5x", "claude max 5x"],
+        planName: "Claude Max 5x",
+        monthlyCost: 90,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_5x",
+        priceRegion: "de_eur",
+        tierVariant: "max_5x",
+        actualBillingKnown: false
+      },
+      {
         aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+        planName: "Claude Max 20x",
         monthlyCost: 180,
         currency: "EUR",
         source: "official_pricing_page",
@@ -2098,12 +2125,24 @@ function parseClaudePricingPage(html, meta = {}) {
       planKey: "max",
       planName: "Claude Max",
       dataPlan: "max_5x_monthly",
-      aliases: ["max", "claude max", "max 5x", "max-5x"],
+      aliases: ["max", "claude max"],
       sourceUrl: meta.sourceUrl,
       fetchedAt: meta.fetchedAt,
       priceType: "official_starting_list_price",
       priceVariant: "from",
       tierVariant: null,
+      actualBillingKnown: false
+    }),
+    officialPricingEntryFromDataPlan(html, {
+      planKey: "max 5x",
+      planName: "Claude Max 5x",
+      dataPlan: "max_5x_monthly",
+      aliases: ["max 5x", "max-5x", "claude max 5x"],
+      sourceUrl: meta.sourceUrl,
+      fetchedAt: meta.fetchedAt,
+      priceType: "official_list_price",
+      priceVariant: "max_5x",
+      tierVariant: "max_5x",
       actualBillingKnown: false
     }),
     officialPricingEntryFromDataPlan(html, {
@@ -2147,7 +2186,9 @@ function officialPricingEntryFromDataPlan(html, options) {
 function officialPricingEntryFromPriceText(priceText, options) {
   const monthlyCost = positiveAmount(priceText);
   if (!(monthlyCost > 0)) return null;
-  const startingPrice = /\bfrom\b/i.test(String(priceText || "")) || options.priceType === "official_starting_list_price";
+  const startingPrice =
+    !(options.priceType === "official_list_price" && options.tierVariant) &&
+    (/\bfrom\b/i.test(String(priceText || "")) || options.priceType === "official_starting_list_price");
   return {
     planKey: options.planKey,
     planName: options.planName,

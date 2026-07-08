@@ -837,6 +837,11 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(claudePricing.parserStatus, "parsed");
   assert.equal(claudePricing.entries.find((entry) => entry.planKey === "pro").monthlyCost, 20);
   assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max").monthlyCost, 100);
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max").priceType, "official_starting_list_price");
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 5x").planName, "Claude Max 5x");
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 5x").monthlyCost, 100);
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 5x").priceType, "official_list_price");
+  assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 5x").tierVariant, "max_5x");
   assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 20x").monthlyCost, 200);
   assert.equal(claudePricing.entries.find((entry) => entry.planKey === "max 20x").priceType, "official_list_price");
 
@@ -870,6 +875,11 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(genericClaudeMax.monthlyCostMax, 200);
   assert.equal(genericClaudeMax.priceType, "official_variant_range");
   assert.equal(genericClaudeMax.priceVariant, "max_5x_20x");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).source, "official_pricing_page");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).planName, "Claude Max 5x");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).monthlyCost, 100);
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).monthlyCostMax, undefined);
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).priceVariant, "max_5x");
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).source, "official_pricing_page");
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).priceVariant, "max_20x");
@@ -895,10 +905,17 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(officialVariantMerged.subscription.priceType, "official_list_price");
   assert.equal(officialVariantMerged.subscription.priceVariant, "pro_20x");
   assert.equal(officialVariantMerged.subscription.actualBillingKnown, false);
+  const claudeFiveXMerged = _test.mergeProviderSubscription({ id: "claudeCode", status: "live", planType: "Claude Max 5x" }, null, "claudeCode", officialPricing);
+  assert.equal(claudeFiveXMerged.subscription.planType, "Claude Max 5x");
+  assert.equal(claudeFiveXMerged.subscription.monthlyCost, 100);
+  assert.equal(claudeFiveXMerged.subscription.monthlyCostMax, null);
+  assert.equal(claudeFiveXMerged.subscription.priceType, "official_list_price");
+  assert.equal(claudeFiveXMerged.subscription.priceVariant, "max_5x");
   const localizedUsage = _test.localizeUsageSubscriptionPrices(
     {
       codex: officialVariantMerged,
       claudeCode: _test.mergeProviderSubscription({ id: "claudeCode", status: "live", planType: "Claude Max 20x" }, null, "claudeCode", officialPricing),
+      anthropic: claudeFiveXMerged,
       openai: _test.mergeProviderSubscription(
         {
           id: "openai",
@@ -925,6 +942,9 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(localizedUsage.codex.subscription.actualBillingKnown, false);
   assert.equal(localizedUsage.claudeCode.subscription.monthlyCost, 180);
   assert.equal(localizedUsage.claudeCode.subscription.currency, "EUR");
+  assert.equal(localizedUsage.anthropic.subscription.planType, "Claude Max 5x");
+  assert.equal(localizedUsage.anthropic.subscription.monthlyCost, 90);
+  assert.equal(localizedUsage.anthropic.subscription.currency, "EUR");
   assert.equal(localizedUsage.openai.subscription.monthlyCost, 250);
   assert.equal(localizedUsage.openai.subscription.actualBillingKnown, true);
   assert.equal(_test.localizeUsageSubscriptionPrices({ codex: officialVariantMerged }, "en").codex.subscription.monthlyCost, 200);

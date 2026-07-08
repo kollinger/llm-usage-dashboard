@@ -351,7 +351,7 @@ const publicSubscriptionPlanCatalog = {
       sourceUrl: "https://claude.com/pricing"
     },
     {
-      aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+      aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
       planName: "Claude Max 5x/20x",
       monthlyCost: 100,
       monthlyCostMin: 100,
@@ -365,7 +365,20 @@ const publicSubscriptionPlanCatalog = {
       actualBillingKnown: false
     },
     {
+      aliases: ["max 5x", "max-5x", "claude max 5x"],
+      planName: "Claude Max 5x",
+      monthlyCost: 100,
+      currency: "USD",
+      source: "bundled_catalog",
+      sourceUrl: "https://claude.com/pricing",
+      priceType: "official_list_price",
+      priceVariant: "max_5x",
+      tierVariant: "max_5x",
+      actualBillingKnown: false
+    },
+    {
       aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+      planName: "Claude Max 20x",
       monthlyCost: 200,
       currency: "USD",
       source: "bundled_catalog",
@@ -442,7 +455,7 @@ const regionalSubscriptionPlanCatalog = {
         actualBillingKnown: false
       },
       {
-        aliases: ["max", "claude max", "max 5x", "max-5x", "claude max 5x", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
+        aliases: ["max", "claude max", "max 5x/20x", "max 5x 20x", "claude max 5x/20x", "claude max 5x 20x"],
         planName: "Claude Max 5x/20x",
         monthlyCost: 90,
         monthlyCostMin: 90,
@@ -457,7 +470,21 @@ const regionalSubscriptionPlanCatalog = {
         actualBillingKnown: false
       },
       {
+        aliases: ["max 5x", "max-5x", "claude max 5x"],
+        planName: "Claude Max 5x",
+        monthlyCost: 90,
+        currency: "EUR",
+        source: "official_pricing_page",
+        sourceUrl: "https://claude.com/pricing",
+        priceType: "official_list_price",
+        priceVariant: "max_5x",
+        priceRegion: "de_eur",
+        tierVariant: "max_5x",
+        actualBillingKnown: false
+      },
+      {
         aliases: ["max 20x", "max-20x", "20x", "claude max 20x"],
+        planName: "Claude Max 20x",
         monthlyCost: 180,
         currency: "EUR",
         source: "official_pricing_page",
