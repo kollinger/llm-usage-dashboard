@@ -23,6 +23,8 @@ await assertCodexSparkRateLimitDoesNotMoveGpt55Usage();
 async function assertSubscriptionPlanDetection() {
   assert.equal(normalizePlanKey("Pro 20 x"), "pro 20x");
   assert.equal(detectOpenAiPlanType("Pro 20 x", { explicit: true }), "Pro 20x");
+  assert.equal(detectOpenAiPlanType("Team workspace metadata without a plan field"), null);
+  assert.equal(detectOpenAiPlanType("Team", { explicit: true }), "Team");
   assert.equal(detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 $200", { allowGeneric: false }), null);
   assert.equal(
     detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $200 / Monat Dein aktueller Plan 20x höheres Nutzungskontingent", {
@@ -37,6 +39,8 @@ async function assertSubscriptionPlanDetection() {
     "Pro 5x"
   );
   assert.equal(detectClaudePlanType("Choose a Claude plan Max 5x $100 Max 20x $200", { allowGeneric: false }), null);
+  assert.equal(detectClaudePlanType("Pro capacity comparison text without current plan"), null);
+  assert.equal(detectClaudePlanType("Claude Team", { explicit: true }), "Claude Team");
   assert.equal(
     detectClaudePlanType("Claude Max $200 Current plan 20x Pro capacity per session", { allowGeneric: false }),
     "Claude Max 20x"
