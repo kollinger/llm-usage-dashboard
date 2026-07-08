@@ -1772,6 +1772,7 @@ a {
 
 .live-gauge-card {
   display: grid;
+  align-content: start;
   min-width: 0;
   gap: 9px;
   border: 1px solid var(--line);
@@ -1811,6 +1812,7 @@ a {
 
 .live-gauge-ring {
   --percent: 0;
+  --segment-percent: 0;
   display: grid;
   place-items: center;
   width: 130px;
@@ -1819,6 +1821,7 @@ a {
   border-radius: 50%;
   background:
     radial-gradient(circle at center, #fff 0 58%, transparent 59%),
+    conic-gradient(var(--segment-accent, transparent) calc(var(--segment-percent) * 1%), transparent 0),
     conic-gradient(var(--accent, var(--green)) calc(var(--percent) * 1%), #e9eee9 0);
   transition: background 360ms ease;
 }

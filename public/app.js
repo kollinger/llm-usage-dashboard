@@ -4545,6 +4545,8 @@ function unavailableLiveMetrics() {
 function liveGaugeDefinitions(metrics) {
   const tokens = metrics.tokensPerMinute || {};
   const ai = metrics.processes?.ai || {};
+  const aiCpuShare = liveGaugeSegmentPercent(ai.cpuPercent, metrics.cpu?.usedPercent);
+  const aiMemoryShare = liveGaugeSegmentPercent(ai.memorySharePercent, metrics.ram?.usedPercent);
   return [
     {
       id: "cpu",
@@ -4553,6 +4555,8 @@ function liveGaugeDefinitions(metrics) {
       percent: metrics.cpu?.usedPercent,
       quality: metrics.cpu?.quality,
       accent: "#23745c",
+      segmentPercent: aiCpuShare,
+      segmentAccent: "#6f42c1",
       sub: t("liveMetrics.percentScale")
     },
     {
@@ -4565,7 +4569,9 @@ function liveGaugeDefinitions(metrics) {
       sub:
         metrics.ram?.usedGb !== null && metrics.ram?.totalGb !== null
           ? t("liveMetrics.ramSub", { used: formatGb(metrics.ram.usedGb), total: formatGb(metrics.ram.totalGb) })
-          : t("liveMetrics.unavailable")
+          : t("liveMetrics.unavailable"),
+      segmentPercent: aiMemoryShare,
+      segmentAccent: "#8b5a2b"
     },
     {
       id: "aiCpu",
@@ -4627,6 +4633,7 @@ function liveGaugeDefinitions(metrics) {
 
 function renderLiveGaugeCard(gauge) {
   const percent = clampUiPercent(gauge.percent || 0);
+  const segmentPercent = clampUiPercent(gauge.segmentPercent || 0);
   const quality = gauge.quality || "unavailable";
   const valueLen = String(gauge.value || "").length;
   return `
@@ -4635,13 +4642,21 @@ function renderLiveGaugeCard(gauge) {
         <span class="live-gauge-label">${escapeHtml(gauge.label)}</span>
         ${gauge.help ? `<button type="button" class="mini-stat-help live-gauge-help" aria-label="${escapeHtml(gauge.help)}" title="${escapeHtml(gauge.help)}"><i data-lucide="info"></i></button>` : ""}
       </div>
-      <div class="live-gauge-ring" style="--percent: ${percent}; --accent: ${gauge.accent}" data-value-len="${valueLen}">
+      <div class="live-gauge-ring" style="--percent: ${percent}; --accent: ${gauge.accent}; --segment-percent: ${segmentPercent}; --segment-accent: ${gauge.segmentAccent || gauge.accent}" data-value-len="${valueLen}">
         <strong>${escapeHtml(gauge.value)}</strong>
       </div>
       <span class="live-gauge-sub">${escapeHtml(gauge.sub || "")}</span>
       <span class="live-quality-badge live-quality-${escapeHtml(quality)}">${escapeHtml(liveQualityLabel(quality))}</span>
     </article>
   `;
+}
+
+function liveGaugeSegmentPercent(segmentValue, totalValue) {
+  const segment = Number(segmentValue);
+  const total = Number(totalValue);
+  if (!Number.isFinite(segment) || segment <= 0) return 0;
+  if (!Number.isFinite(total) || total <= 0) return clampUiPercent(segment);
+  return clampUiPercent(Math.min(segment, total));
 }
 
 function renderLiveProcessBreakdown(metrics) {
