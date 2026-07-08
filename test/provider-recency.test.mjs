@@ -568,34 +568,25 @@ JSON.stringify({
 	  limitOkLabel: t("limits.status.ok"),
 	  limitRiskLabel: t("limits.status.risk"),
   catalogQualityLabel: t("subscriptions.quality.catalog"),
-	  manualQualityLabel: t("subscriptions.quality.manual"),
+  manualQualityLabel: t("subscriptions.quality.manual"),
 	  manualSourceLabel: subscriptionSourceLabel("local_settings"),
   detectedSubscriptionCardShowsCost:
-    detectedSubscriptionCard.includes("from $100.00/mo") &&
-    detectedSubscriptionCard.includes("Catalog value"),
-  detectedSubscriptionCardSourceAudit:
-    detectedSubscriptionCard.includes("Read-only price sources") &&
-    detectedSubscriptionCard.includes("plan/limits only; no monthly price exposed") &&
-    detectedSubscriptionCard.includes("catalog fallback price"),
+    detectedSubscriptionCard.includes("Pro (from $100.00/mo)") &&
+    !detectedSubscriptionCard.includes("Read-only price sources"),
   genericCodexProStartingPrice:
     genericCodexOfficialSubscription.quality === "officialStarting" &&
-    genericCodexOfficialCard.includes("from $100.00/mo") &&
-    genericCodexOfficialCard.includes("Actual billing known") &&
-    genericCodexOfficialCard.includes("<dd>no</dd>") &&
-    genericCodexOfficialProviderSummary.includes("Official starting list price") &&
-    genericCodexOfficialProviderSummary.includes("Actual billing known: no") &&
-    !genericCodexOfficialCard.includes("<strong>$100.00/mo</strong>"),
+    genericCodexOfficialCard.includes("Pro (from $100.00/mo)") &&
+    genericCodexOfficialProviderSummary.includes("Pro (from $100.00/mo)") &&
+    !genericCodexOfficialCard.includes("Actual billing known") &&
+    !genericCodexOfficialProviderSummary.includes("Actual billing known: no"),
   accountBillingActual:
     accountBillingSubscription.quality === "automatic" &&
-    accountBillingCard.includes("$200.00/mo") &&
-    accountBillingCard.includes("account/billing source") &&
-    accountBillingCard.includes("trusted monthly price detected") &&
-    accountBillingCard.includes("<dd>yes</dd>"),
+    accountBillingCard.includes("Pro 20x ($200.00/mo)") &&
+    !accountBillingCard.includes("trusted monthly price detected"),
   expiredAccountBillingAudit:
     expiredAccountBillingSubscription.quality === "officialStarting" &&
-    expiredAccountBillingCard.includes("from $100.00/mo") &&
-    expiredAccountBillingCard.includes("account source expired") &&
-    expiredAccountBillingCard.includes("<dd>no</dd>"),
+    expiredAccountBillingCard.includes("Pro (from $100.00/mo)") &&
+    !expiredAccountBillingCard.includes("account source expired"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
 	  sourceBarsUseProviderColors:
@@ -710,8 +701,8 @@ JSON.stringify({
 	    claudeWithFableHtml.includes("--accent: " + providerMeta.claudeCode.accent),
   fableQuotaAvailableAudit:
     claudeWithFableHtml.includes("Distinct Fable quota was machine-readable"),
-	  mixedCurrencyDeltaUnknown: mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
-  sameCurrencyDeltaShown: sameCurrencySubscriptionCard.includes("$20.00")
+	  mixedCurrencyDeltaHidden: !mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
+  sameCurrencyDeltaHidden: !sameCurrencySubscriptionCard.includes("$20.00")
 });`,
     createAppContext(),
     { filename: appPath }
@@ -742,9 +733,9 @@ JSON.stringify({
   assert.equal(result.detectedSource, "bundled_catalog");
   assert.equal(result.missingCatalogQuality, "estimated");
   assert.equal(result.missingCatalogStatus, "catalog_missing");
-  assert.equal(result.missingCatalogReason.includes("Codex app-server exposed the plan"), true);
-  assert.equal(result.claudeCatalogCopy.includes("Plan/limits from Claude Code statusline"), true);
-  assert.equal(result.claudeCatalogCopy.includes("Monthly price is a catalog fallback"), true);
+  assert.equal(result.missingCatalogReason.includes("Enterprise (Cost unknown)"), true);
+  assert.equal(result.claudeCatalogCopy.includes("Max (") && result.claudeCatalogCopy.includes("/mo)"), true);
+  assert.equal(result.claudeCatalogCopy.includes("Monthly price is a catalog fallback"), false);
   assert.equal(result.limitOk, "ok");
   assert.equal(result.limitNoWindow, "unknown");
   assert.equal(result.limitEarlyWeekRisk, "risk");
@@ -758,7 +749,6 @@ JSON.stringify({
   assert.equal(result.manualQualityLabel, "Saved fallback estimate");
   assert.equal(result.manualSourceLabel, "saved fallback");
   assert.equal(result.detectedSubscriptionCardShowsCost, true);
-  assert.equal(result.detectedSubscriptionCardSourceAudit, true);
   assert.equal(result.genericCodexProStartingPrice, true);
   assert.equal(result.accountBillingActual, true);
   assert.equal(result.expiredAccountBillingAudit, true);
@@ -791,8 +781,8 @@ JSON.stringify({
   assert.equal(result.liveRateKeepsZero, true);
   assert.equal(result.fableLimitRowVisible, true);
   assert.equal(result.fableQuotaAvailableAudit, true);
-  assert.equal(result.mixedCurrencyDeltaUnknown, true);
-  assert.equal(result.sameCurrencyDeltaShown, true);
+  assert.equal(result.mixedCurrencyDeltaHidden, true);
+  assert.equal(result.sameCurrencyDeltaHidden, true);
 
   const indexHtml = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
   assert.equal(indexHtml.includes('data-price-sort="region"'), false);
@@ -916,36 +906,36 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(localizedUsage.openai.subscription.monthlyCost, 250);
   assert.equal(localizedUsage.openai.subscription.actualBillingKnown, true);
   assert.equal(_test.localizeUsageSubscriptionPrices({ codex: officialVariantMerged }, "en").codex.subscription.monthlyCost, 200);
-  const codexBarDir = await mkdtemp(path.join(os.tmpdir(), "codexbar-plan-"));
-  const codexBarSnapshotFile = path.join(codexBarDir, "openai-dashboard.json");
-  await writeFile(
-    codexBarSnapshotFile,
-    JSON.stringify({
-      accountEmail: "redacted@example.test",
-      snapshot: {
-        accountPlan: "Pro 20x",
-        updatedAt: "2026-07-08T00:00:00Z",
-        creditEvents: [{ id: "not-read", creditsUsed: 12.3 }]
+  const preferredPlan = _test.preferredCodexPlan("pro");
+  assert.equal(preferredPlan.planType, "pro");
+  assert.equal(preferredPlan.source, "codex_app_server");
+  const browserAccountPlanSnapshot = _test.sanitizeAccountBillingSnapshots(
+    {
+      fetchedAt: "2026-07-08T00:00:00Z",
+      providers: {
+        codex: {
+          status: "missing",
+          reason: "account_billing_amount_missing",
+          sourceType: "browser",
+          planType: "Pro 20x",
+          fetchedAt: "2026-07-08T00:00:00Z"
+        }
       }
-    })
+    },
+    { nowMs: Date.parse("2026-07-08T00:01:00Z") }
   );
-  const codexBarPlan = await _test.readCodexBarOpenAiDashboardPlan(codexBarSnapshotFile);
-  assert.deepEqual(codexBarPlan, {
-    planType: "Pro 20x",
-    source: "codexbar_dashboard_snapshot",
-    updatedAt: "2026-07-08T00:00:00.000Z"
-  });
-  const preferredPlan = _test.preferredCodexPlan("pro", codexBarPlan, "codex");
-  assert.equal(preferredPlan.planType, "Pro 20x");
-  assert.equal(preferredPlan.source, "codexbar_dashboard_snapshot");
-  const codexBarMerged = _test.mergeProviderSubscription(
+  const browserPlanMerged = _test.mergeProviderSubscription(
     { id: "codex", status: "live", planType: preferredPlan.planType, planSource: preferredPlan.source },
     null,
     "codex",
-    officialPricing
+    officialPricing,
+    browserAccountPlanSnapshot
   );
-  assert.equal(_test.localizeUsageSubscriptionPrices({ codex: codexBarMerged }, "de").codex.subscription.monthlyCost, 229);
-  await rm(codexBarDir, { recursive: true, force: true });
+  assert.equal(browserPlanMerged.planType, "Pro 20x");
+  assert.equal(browserPlanMerged.planSource, "browser");
+  assert.equal(browserPlanMerged.subscription.monthlyCost, 200);
+  assert.equal(browserPlanMerged.subscription.actualBillingKnown, false);
+  assert.equal(_test.localizeUsageSubscriptionPrices({ codex: browserPlanMerged }, "de").codex.subscription.monthlyCost, 229);
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
   assert.equal(bundledGenericPro.subscription.monthlyCost, 100);

@@ -34,13 +34,6 @@ const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
-const CODEXBAR_OPENAI_DASHBOARD_FILE = path.join(
-  os.homedir(),
-  "Library",
-  "Application Support",
-  "com.steipete.codexbar",
-  "openai-dashboard.json"
-);
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -279,6 +272,7 @@ const ACCOUNT_BILLING_PROVIDER_ALIASES = {
 const ACCOUNT_BILLING_PROVIDER_IDS = new Set(["codex", "openai", "claudeCode", "anthropic"]);
 const ACCOUNT_BILLING_SAFE_SOURCE_TYPES = new Set([
   "account_billing",
+  "browser",
   "browser_account_snapshot",
   "local_account_endpoint",
   "sanitized_snapshot",
@@ -1181,6 +1175,16 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
   }
 });
 
+app.post("/api/account-billing/snapshots", electronSyncMiddleware, async (req, res) => {
+  try {
+    const snapshot = await saveAccountBillingSnapshots(req.body || {});
+    invalidateTimedCache(usageCache);
+    res.json({ ok: true, snapshot });
+  } catch (error) {
+    sendApiError(res, error, "account_billing_snapshot_save_failed");
+  }
+});
+
 app.get("/api/quota-history", authMiddleware, async (req, res) => {
   try {
     const events = await readQuotaEvents();
@@ -1732,6 +1736,13 @@ async function readAccountBillingSnapshots() {
     return accountBillingSnapshotUnavailable("unavailable", "account_billing_source_unreadable");
   }
   return sanitizeAccountBillingSnapshots(parsed);
+}
+
+async function saveAccountBillingSnapshots(payload) {
+  const snapshot = sanitizeAccountBillingSnapshots(payload);
+  await fsp.mkdir(DATA_DIR, { recursive: true });
+  await fsp.writeFile(ACCOUNT_BILLING_SNAPSHOTS_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+  return snapshot;
 }
 
 function accountBillingSnapshotUnavailable(status, reason) {
@@ -2369,21 +2380,22 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
   if (accountSubscription?.monthlyCost > 0 && accountSubscription.actualBillingKnown) {
     return mergeAccountBillingSubscription(provider, providerId, accountSubscription);
   }
+  const accountPlanHint = accountBillingPlanHint(providerId, accountBilling);
   if (!hasSubscriptionValue(subscription)) {
-    return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog(provider, providerId, officialPricing), providerId, accountBilling);
+    return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog(applyAccountBillingPlanHint(provider, accountPlanHint), providerId, officialPricing), providerId, accountBilling);
   }
-  const sourcePlan = String(provider.planType || "").trim();
+  const sourcePlan = String(accountPlanHint?.planType || provider.planType || "").trim();
   const planType = subscription.planType || sourcePlan || null;
   const monthlyCost = positiveAmount(subscription.monthlyCost);
   if (!(monthlyCost > 0)) {
     return attachAccountBillingStatus(enrichProviderSubscriptionFromCatalog({
       ...provider,
       planType,
-      planSource: subscription.planType ? "local_settings" : provider.planSource || null,
+      planSource: subscription.planType ? "local_settings" : accountPlanHint?.source || provider.planSource || null,
       subscription: {
         ...(provider.subscription && typeof provider.subscription === "object" ? provider.subscription : {}),
         planType,
-        planSource: subscription.planType ? "local_settings" : provider.planSource || null
+        planSource: subscription.planType ? "local_settings" : accountPlanHint?.source || provider.planSource || null
       }
     }, providerId, officialPricing), providerId, accountBilling);
   }
@@ -2404,6 +2416,24 @@ function mergeProviderSubscription(provider, subscription, providerId = provider
   };
   if (provider._usageEvents) merged._usageEvents = provider._usageEvents;
   return attachAccountBillingStatus(merged, providerId, accountBilling);
+}
+
+function applyAccountBillingPlanHint(provider, accountPlanHint) {
+  if (!accountPlanHint?.planType) return provider;
+  const currentPlan = String(provider?.planType || provider?.latest?.planType || "").trim();
+  if (currentPlan && isConcreteSubscriptionPlanVariant(provider?.id, currentPlan)) return provider;
+  return {
+    ...provider,
+    planType: accountPlanHint.planType,
+    planSource: accountPlanHint.source || provider.planSource || null,
+    subscription: provider.subscription
+      ? {
+          ...provider.subscription,
+          planType: provider.subscription.planType || accountPlanHint.planType,
+          planSource: provider.subscription.planSource || accountPlanHint.source || provider.planSource || null
+        }
+      : provider.subscription
+  };
 }
 
 function mergeAccountBillingSubscription(provider, providerId, accountSubscription) {
@@ -2470,6 +2500,17 @@ function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
     actualBillingKnown: true,
     costStatus: "account_billing",
     redacted: Boolean(entry.redacted)
+  };
+}
+
+function accountBillingPlanHint(providerId, accountBilling) {
+  const entry = accountBillingProviderEntry(providerId, accountBilling);
+  if (!entry?.planType) return null;
+  if (entry.redacted || entry.status === "expired" || entry.parserStatus === "expired") return null;
+  return {
+    planType: entry.planType,
+    source: entry.sourceType || "account_billing",
+    fetchedAt: entry.fetchedAt || null
   };
 }
 
@@ -2834,7 +2875,6 @@ function buildLimitRows(limits, keys) {
 
 async function readCodexUsage(options = {}) {
   const liveRateLimitsPromise = readCodexLiveRateLimits();
-  const codexBarPlanPromise = readCodexBarOpenAiDashboardPlan();
   const { files, roots, duplicatesSkipped } = await listCodexUsageFiles(options.sources || defaultCodexSources());
 
   const aggregates = createUsageTotals();
@@ -2952,8 +2992,7 @@ async function readCodexUsage(options = {}) {
 
   const daily = buildDaily(dailyMap);
   const liveRateLimits = await liveRateLimitsPromise;
-  const codexBarPlan = await codexBarPlanPromise;
-  const codexPlan = preferredCodexPlan(liveRateLimits?.codex?.planType || null, codexBarPlan, "codex");
+  const codexPlan = preferredCodexPlan(liveRateLimits?.codex?.planType || null);
   const liveCodexLimits = liveRateLimits?.codex ? codexRateLimitsFromLive(liveRateLimits.codex, "Codex") : null;
   const liveSparkLimits = liveRateLimits?.spark ? codexRateLimitsFromLive(liveRateLimits.spark, "Codex 5.3 Spark") : null;
   const liveCodexCreditRows = codexCreditRowsFromLive(liveRateLimits?.codex);
@@ -2970,15 +3009,7 @@ async function readCodexUsage(options = {}) {
       duplicatesSkipped,
       sessionsWithEvents,
       eventCount,
-      liveRateLimits: liveRateLimits?.source || null,
-      codexBarDashboard: codexBarPlan
-        ? {
-            status: "available",
-            source: codexBarPlan.source,
-            updatedAt: codexBarPlan.updatedAt,
-            planType: codexBarPlan.planType
-          }
-        : null
+      liveRateLimits: liveRateLimits?.source || null
     },
     liveRateLimits: liveRateLimits?.source || null,
     planType: codexPlan.planType,
@@ -5116,48 +5147,9 @@ async function readCodexLiveRateLimits() {
   });
 }
 
-async function readCodexBarOpenAiDashboardPlan(file = CODEXBAR_OPENAI_DASHBOARD_FILE) {
-  try {
-    const payload = JSON.parse(await fsp.readFile(file, "utf8"));
-    const snapshot = payload?.snapshot && typeof payload.snapshot === "object" ? payload.snapshot : payload;
-    const planType = firstNonEmptyString(
-      snapshot?.accountPlan,
-      snapshot?.planType,
-      snapshot?.planName,
-      snapshot?.plan?.displayName,
-      snapshot?.plan?.name,
-      snapshot?.billing?.planType,
-      snapshot?.billing?.planName
-    );
-    if (!planType) return null;
-    return {
-      planType,
-      source: "codexbar_dashboard_snapshot",
-      updatedAt: normalizeOptionalDate(snapshot?.updatedAt || payload?.updatedAt)
-    };
-  } catch {
-    return null;
-  }
-}
-
-function preferredCodexPlan(livePlanType, codexBarPlan, providerId = "codex") {
+function preferredCodexPlan(livePlanType) {
   const livePlan = String(livePlanType || "").trim();
-  const codexBarPlanType = String(codexBarPlan?.planType || "").trim();
-  if (codexBarPlanType && isConcreteSubscriptionPlanVariant(providerId, codexBarPlanType) && !isConcreteSubscriptionPlanVariant(providerId, livePlan)) {
-    return {
-      planType: codexBarPlanType,
-      source: "codexbar_dashboard_snapshot",
-      updatedAt: codexBarPlan.updatedAt || null
-    };
-  }
   if (livePlan) return { planType: livePlan, source: "codex_app_server", updatedAt: null };
-  if (codexBarPlanType) {
-    return {
-      planType: codexBarPlanType,
-      source: "codexbar_dashboard_snapshot",
-      updatedAt: codexBarPlan.updatedAt || null
-    };
-  }
   return { planType: null, source: null, updatedAt: null };
 }
 
@@ -6655,7 +6647,6 @@ module.exports = {
     parseClaudePricingPage,
     officialSubscriptionPlan,
     mergeProviderSubscription,
-    readCodexBarOpenAiDashboardPlan,
     preferredCodexPlan,
     localizeUsageSubscriptionPrices,
     sanitizeAccountBillingSnapshots,

@@ -3796,40 +3796,10 @@ function renderProviderDragHandle(provider, index, total) {
 function renderProviderSubscription(provider) {
   const subscription = provider.subscription;
   if (!subscription) return "";
-  const label = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
-  const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
   const qualityClass = subscription.quality || "unknown";
-  const qualityMarkup = qualityClass === "manual"
-    ? `<span class="subscription-quality-note">${escapeHtml(label)}</span>`
-    : `<span class="subscription-quality-pill">${escapeHtml(label)}</span>`;
-  const details = [
-    subscription.planType ? t("subscriptions.plan", { plan: subscription.planType }) : "",
-    subscription.source ? t("subscriptions.source", { source: subscriptionSourceLabel(subscription.source) }) : "",
-    subscription.planSource && subscription.planSource !== subscription.source
-      ? t("subscriptions.planSource", { source: subscriptionSourceLabel(subscription.planSource) })
-      : "",
-    subscription.quality === "catalog" && subscription.planSource
-      ? t("subscriptions.catalogFallbackNote")
-      : "",
-    subscription.quality === "officialStarting" ? t("subscriptions.officialStartingListPriceNote") : "",
-    subscription.quality === "official" ? t("subscriptions.officialListPriceNote") : "",
-    subscription.updatedAt ? t("subscriptions.updated", { time: formatUpdatedAt(subscription.updatedAt) }) : "",
-    subscription.fetchedAt ? t("subscriptions.fetched", { time: formatUpdatedAt(subscription.fetchedAt) }) : "",
-    subscription.sourceUrl ? t("subscriptions.sourceUrl", { url: subscription.sourceUrl }) : "",
-    subscription.planKey ? t("subscriptions.planKey", { key: subscription.planKey }) : "",
-    subscriptionPriceVariantLabel(subscription) ? t("subscriptions.tierVariant", { variant: subscriptionPriceVariantLabel(subscription) }) : "",
-    t("subscriptions.actualBilling", { status: subscriptionActualBillingKnownLabel(subscription) }),
-    subscription.parserStatus ? t("subscriptions.parserStatus", { status: subscriptionParserStatusLabel(subscription.parserStatus) }) : "",
-    subscription.catalogReviewedAt ? t("subscriptions.catalogReviewed", { date: subscription.catalogReviewedAt }) : "",
-    subscription.costStatus === "catalog_missing" ? subscriptionCostMissingText(subscription) : "",
-    subscription.costStatus === "catalog_missing" ? t("subscriptions.costActions.addFallback") : ""
-  ].filter(Boolean);
   return `
     <div class="subscription-summary subscription-quality-${escapeHtml(qualityClass)}">
-      ${qualityMarkup}
-      <strong>${escapeHtml(cost)}</strong>
-      ${details.length ? `<small>${escapeHtml(details.join(" · "))}</small>` : ""}
-      ${renderSubscriptionSourceAudit(provider, subscription)}
+      <strong>${escapeHtml(subscriptionCompactLabel(subscription))}</strong>
     </div>
   `;
 }
@@ -3896,12 +3866,6 @@ function subscriptionSourceAuditRows(provider, subscription) {
       status: planSource === "codex_app_server"
         ? t("subscriptions.sourceAudit.planOnlyNoPrice")
         : t("subscriptions.sourceAudit.notConfigured")
-    });
-    rows.push({
-      source: subscriptionSourceLabel("codexbar_dashboard_snapshot"),
-      status: planSource === "codexbar_dashboard_snapshot"
-        ? t("subscriptions.sourceAudit.planOnlyNoPrice")
-        : t("subscriptions.sourceAudit.notUsed")
     });
     rows.push({
       source: subscriptionSourceLabel("account_billing"),
@@ -5177,71 +5141,12 @@ function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, provi
 
 function renderSubscriptionPricingCard({ provider, subscription, previous }) {
   const quality = subscription?.quality || "unknown";
-  const currentCost = subscription?.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
-  const previousCost = previous?.monthlyCost > 0
-    ? formatMoney(previous.monthlyCost, previous.currency || "EUR")
-    : null;
-  const delta = subscription?.monthlyCost > 0 && previous?.monthlyCost > 0 && subscriptionCurrenciesMatch(subscription, previous)
-    ? formatMoney(subscription.monthlyCost - previous.monthlyCost, subscription.currency || "EUR")
-    : t("pricing.unknown");
   return `
     <article class="subscription-cost-card subscription-quality-${escapeHtml(quality)}">
       <div class="subscription-cost-head">
         ${renderProviderInlineLabel(provider.id, provider.name, { accent: provider.accent, size: "xs" })}
-        <strong>${escapeHtml(currentCost)}</strong>
+        <strong>${escapeHtml(subscriptionCompactLabel(subscription))}</strong>
       </div>
-      <p>${escapeHtml(subscription?.planType ? t("subscriptions.plan", { plan: subscription.planType }) : t("subscriptions.planUnknown"))}</p>
-      ${renderSubscriptionSourceAudit(provider, subscription)}
-      <dl>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.qualityLabel"))}</dt>
-          <dd>${escapeHtml(t(`subscriptions.quality.${quality}`, {}, quality))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.sourceLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.source ? subscriptionSourceLabel(subscription.source) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.planSourceLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.planSource ? subscriptionSourceLabel(subscription.planSource) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.priceSourceTypeLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.priceSourceType ? subscriptionSourceLabel(subscription.priceSourceType) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.sourceUrlLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.sourceUrl || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.fetchedLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.fetchedAt ? formatUpdatedAt(subscription.fetchedAt) : subscription?.catalogReviewedAt || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.planKeyLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.planKey || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.tierVariantLabel"))}</dt>
-          <dd>${escapeHtml(subscriptionPriceVariantLabel(subscription) || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.actualBillingKnownLabel"))}</dt>
-          <dd>${escapeHtml(subscriptionActualBillingKnownLabel(subscription))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("subscriptions.parserStatusLabel"))}</dt>
-          <dd>${escapeHtml(subscription?.parserStatus ? subscriptionParserStatusLabel(subscription.parserStatus) : t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("pricing.subscriptions.previous"))}</dt>
-          <dd>${escapeHtml(previousCost || t("pricing.unknown"))}</dd>
-        </div>
-        <div>
-          <dt>${escapeHtml(t("pricing.subscriptions.delta"))}</dt>
-          <dd>${escapeHtml(delta)}</dd>
-        </div>
-      </dl>
     </article>
   `;
 }
@@ -7833,11 +7738,15 @@ function formatMonthlyCost(subscription) {
   });
 }
 
-function subscriptionFootValue(subscription) {
+function subscriptionCompactLabel(subscription) {
   if (!subscription) return "--";
-  const quality = t(`subscriptions.quality.${subscription.quality || "unknown"}`, {}, subscription.quality || "unknown");
+  const plan = subscription.planType || t("subscriptions.planUnknown");
   const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
-  return `${cost} · ${quality}`;
+  return `${plan} (${cost})`;
+}
+
+function subscriptionFootValue(subscription) {
+  return subscriptionCompactLabel(subscription);
 }
 
 function subscriptionPriceIsStarting(subscription) {

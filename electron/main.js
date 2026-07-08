@@ -16,6 +16,7 @@ let mainWindow = null;
 let dashboardPort = null;
 let openWindowWhenReady = false;
 let claudeBrowserSyncPending = null;
+let accountBillingSyncPending = null;
 let instanceMarkerPath = null;
 let macNotificationDiagnosticsPending = null;
 let notificationCheckPending = null;
@@ -38,6 +39,7 @@ const UPDATE_REQUEST_POLL_INTERVAL_MS = 5 * 1000;
 const SQLITE_BINARY = "/usr/bin/sqlite3";
 const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
+const ACCOUNT_BILLING_SYNC_ENDPOINT = "/api/account-billing/snapshots";
 const CLAUDE_SYNC_TOKEN_HEADER = "x-llm-usage-sync-token";
 const BACKGROUND_START_ARG = "--background";
 const LINUX_AUTOSTART_ID = "local.llm-usage-dashboard";
@@ -52,6 +54,9 @@ const CLAUDE_CHROME_COOKIE_DB = path.join(
   "Default",
   "Cookies"
 );
+const OPENAI_DASHBOARD_USAGE_URL = "https://chatgpt.com/codex/cloud/settings/analytics#usage";
+const OPENAI_DASHBOARD_API_URL = "https://chatgpt.com/backend-api/wham/usage";
+const OPENAI_IDENTITY_API_URL = "https://chatgpt.com/backend-api/me";
 const CLAUDE_SAFARI_COOKIE_FILE = path.join(os.homedir(), "Library", "Cookies", "Cookies.binarycookies");
 const CLAUDE_APP_CACHE_DIR = path.join(
   os.homedir(),
@@ -1017,6 +1022,208 @@ async function postClaudeBrowserCredits(port, payload) {
   });
 }
 
+async function syncAccountBillingSnapshots(port) {
+  if (accountBillingSyncPending) return accountBillingSyncPending;
+  accountBillingSyncPending = (async () => {
+    const snapshot = await buildOpenAiAccountBillingSnapshot();
+    await postAccountBillingSnapshots(port, snapshot);
+  })().finally(() => {
+    accountBillingSyncPending = null;
+  });
+  return accountBillingSyncPending;
+}
+
+async function postAccountBillingSnapshots(port, payload) {
+  const token = process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN;
+  if (!token) return;
+  await fetch(`http://localhost:${port}${ACCOUNT_BILLING_SYNC_ENDPOINT}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      [CLAUDE_SYNC_TOKEN_HEADER]: token
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+async function buildOpenAiAccountBillingSnapshot() {
+  const fetchedAt = new Date().toISOString();
+  const sessions = await readOpenAiBrowserSessions();
+  const usableSessions = sessions.filter((session) => session.cookieHeader);
+  if (!usableSessions.length) {
+    const session = preferredOpenAiSessionResult(...sessions);
+    return {
+      version: 1,
+      status: session.status || "missing",
+      reason: session.reason || "account_billing_source_unavailable",
+      fetchedAt,
+      providers: {
+        codex: openAiPlanProviderSnapshot(null, fetchedAt, session),
+        openai: openAiPlanProviderSnapshot(null, fetchedAt, session)
+      }
+    };
+  }
+
+  let lastDashboard = null;
+  let lastSession = usableSessions[0];
+  let planType = null;
+  for (const session of usableSessions) {
+    const dashboard = await fetchOpenAiDashboardSnapshot(session.cookieHeader);
+    const candidatePlan = normalizeOpenAiPlanType(findOpenAiPlanValue(dashboard));
+    lastDashboard = dashboard;
+    lastSession = session;
+    if (candidatePlan) {
+      planType = candidatePlan;
+      break;
+    }
+    if (dashboard.status !== "expired") break;
+  }
+  const status = planType ? "missing" : lastDashboard?.status || "unavailable";
+  const reason = planType ? "account_billing_amount_missing" : lastDashboard?.reason || "account_billing_source_unavailable";
+  return {
+    version: 1,
+    status,
+    reason,
+    fetchedAt,
+    providers: {
+      codex: openAiPlanProviderSnapshot(planType, fetchedAt, { ...lastSession, status, reason }),
+      openai: openAiPlanProviderSnapshot(planType, fetchedAt, { ...lastSession, status, reason })
+    }
+  };
+}
+
+function openAiPlanProviderSnapshot(planType, fetchedAt, source) {
+  return {
+    status: planType ? "missing" : source.status || "unavailable",
+    reason: planType ? "account_billing_amount_missing" : source.reason || "account_billing_source_unavailable",
+    sourceType: "browser",
+    sourceUrl: OPENAI_DASHBOARD_USAGE_URL,
+    planType: planType || null,
+    period: "month",
+    fetchedAt,
+    parserStatus: planType ? "parsed" : source.status || "unavailable",
+    confidence: planType ? "medium" : "low"
+  };
+}
+
+async function readOpenAiBrowserSessions() {
+  return [
+    await readChromeCookieSessionForDomain("chatgpt.com", "chrome"),
+    await readSafariCookieSessionForDomain("chatgpt.com", "safari")
+  ];
+}
+
+function preferredOpenAiSessionResult(...results) {
+  return (
+    results.find((result) => result.status === "unsupported") ||
+    results.find((result) => result.status === "expired") ||
+    results.find((result) => result.status === "missing") ||
+    results[0] || { status: "missing", reason: "browser_unavailable", source: null }
+  );
+}
+
+async function fetchOpenAiDashboardSnapshot(cookieHeader) {
+  const payloads = {};
+  for (const url of [OPENAI_IDENTITY_API_URL, OPENAI_DASHBOARD_API_URL, OPENAI_DASHBOARD_USAGE_URL]) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          accept: url.endsWith("#usage") ? "text/html,application/json;q=0.9" : "application/json, text/html;q=0.9",
+          cookie: cookieHeader,
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari/537.36"
+        },
+        redirect: "manual"
+      });
+      const location = response.headers.get("location") || "";
+      if (response.status === 401 || /\/login|\/auth/i.test(location)) {
+        return { status: "expired", reason: "account_billing_source_expired" };
+      }
+      if (!response.ok) continue;
+      const text = (await response.text()).slice(0, 2 * 1024 * 1024);
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        payloads[url] = JSON.parse(text || "{}");
+      } else {
+        payloads[url] = extractOpenAiBootstrapJson(text) || { htmlText: text };
+      }
+    } catch {
+      // Continue with the remaining read-only sources.
+    }
+  }
+  return Object.keys(payloads).length
+    ? { status: "parsed", payloads }
+    : { status: "unavailable", reason: "account_billing_source_unavailable" };
+}
+
+function extractOpenAiBootstrapJson(text) {
+  const scripts = [
+    /<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i,
+    /<script[^>]+id=["']client-bootstrap["'][^>]*>([\s\S]*?)<\/script>/i
+  ];
+  for (const pattern of scripts) {
+    const match = String(text || "").match(pattern);
+    if (!match) continue;
+    try {
+      return JSON.parse(match[1]);
+    } catch {
+      // Try the next bootstrap candidate.
+    }
+  }
+  return null;
+}
+
+const OPENAI_PLAN_KEYS = new Set([
+  "accountPlan",
+  "account_plan",
+  "plan",
+  "planName",
+  "plan_name",
+  "planType",
+  "plan_type",
+  "subscriptionPlan",
+  "subscription_plan",
+  "tier",
+  "tierName",
+  "tier_name"
+]);
+
+function findOpenAiPlanValue(value, seen = new Set()) {
+  if (typeof value === "string") {
+    const match = value.match(/\b(?:Pro\s*20x|Pro\s*5x|Pro\s*Max|ChatGPT\s*Pro|Plus|Team)\b/i);
+    return match ? match[0] : "";
+  }
+  if (!value || typeof value !== "object") return "";
+  if (seen.has(value)) return "";
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = findOpenAiPlanValue(entry, seen);
+      if (found) return found;
+    }
+    return "";
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (OPENAI_PLAN_KEYS.has(key) && typeof child === "string" && child.trim()) return child.trim();
+    if (child && typeof child === "object") {
+      const found = findOpenAiPlanValue(child, seen);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+function normalizeOpenAiPlanType(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  const key = text.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  if (/pro\s*20x|20x|pro max|max pro/.test(key)) return "Pro 20x";
+  if (/pro\s*5x|5x/.test(key)) return "Pro 5x";
+  if (/team|business/.test(key)) return "Team";
+  if (/plus/.test(key)) return "Plus";
+  if (/pro/.test(key)) return "Pro";
+  return text.slice(0, 80);
+}
+
 async function readClaudeBrowserSession() {
   const chrome = await readChromeClaudeSession();
   if (chrome.cookieHeader) return chrome;
@@ -1038,21 +1245,32 @@ async function readChromeClaudeSession() {
   if (!(await fileExists(CLAUDE_CHROME_COOKIE_DB))) {
     return { status: "missing", reason: "chrome_cookie_store_missing", source: "chrome" };
   }
-  const rows = await readChromeClaudeCookieRows();
+  const rows = await readChromeCookieRowsForDomain("claude.ai");
   if (!rows.length) return { status: "missing", reason: "claude_cookie_missing", source: "chrome" };
   const chromeKey = await getChromeSafeStorageKey();
   return buildClaudeCookieSession(rows, "chrome", chromeKey || null);
 }
 
-async function readChromeClaudeCookieRows() {
+async function readChromeCookieSessionForDomain(domain, source) {
+  if (!(await fileExists(CLAUDE_CHROME_COOKIE_DB))) {
+    return { status: "missing", reason: "chrome_cookie_store_missing", source };
+  }
+  const rows = await readChromeCookieRowsForDomain(domain);
+  if (!rows.length) return { status: "missing", reason: "browser_cookie_missing", source };
+  const chromeKey = await getChromeSafeStorageKey();
+  return buildGenericCookieSession(rows, source, chromeKey || null);
+}
+
+async function readChromeCookieRowsForDomain(domain) {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "llm-usage-chrome-cookies-"));
   const tmpDb = path.join(tmpDir, "Cookies.sqlite");
   try {
     await fs.copyFile(CLAUDE_CHROME_COOKIE_DB, tmpDb);
+    const escapedDomain = String(domain || "").replace(/'/g, "''");
     const sql = [
       "select host_key, name, value, hex(encrypted_value), path, is_secure",
       "from cookies",
-      "where host_key like '%claude.ai%';"
+      `where host_key like '%${escapedDomain}%';`
     ].join(" ");
     const { stdout } = await execFileAsync(SQLITE_BINARY, ["-tabs", tmpDb, sql], { maxBuffer: 1024 * 1024 });
     return String(stdout || "")
@@ -1076,6 +1294,21 @@ async function readChromeClaudeCookieRows() {
   }
 }
 
+async function readSafariCookieSessionForDomain(domain, source) {
+  if (!(await fileExists(CLAUDE_SAFARI_COOKIE_FILE))) {
+    return { status: "missing", reason: "safari_cookie_store_missing", source };
+  }
+  try {
+    const rows = parseSafariBinaryCookies(await fs.readFile(CLAUDE_SAFARI_COOKIE_FILE)).filter((cookie) =>
+      cookie.domain.includes(domain)
+    );
+    if (!rows.length) return { status: "missing", reason: "browser_cookie_missing", source };
+    return buildGenericCookieSession(rows, source);
+  } catch {
+    return { status: "error", reason: "safari_cookie_parse_failed", source };
+  }
+}
+
 async function readSafariClaudeSession() {
   if (!(await fileExists(CLAUDE_SAFARI_COOKIE_FILE))) {
     return { status: "missing", reason: "safari_cookie_store_missing", source: "safari" };
@@ -1089,6 +1322,23 @@ async function readSafariClaudeSession() {
   } catch {
     return { status: "error", reason: "safari_cookie_parse_failed", source: "safari" };
   }
+}
+
+function buildGenericCookieSession(rows, source, chromeKey = null) {
+  const decryptedCookies = [];
+  for (const row of rows) {
+    const value = decodeBrowserCookieValue(row, chromeKey);
+    if (value) decryptedCookies.push(`${row.name}=${value}`);
+  }
+  if (!decryptedCookies.length) {
+    return { status: "unsupported", reason: "browser_cookies_encrypted", source };
+  }
+  return {
+    status: "available",
+    reason: null,
+    source,
+    cookieHeader: decryptedCookies.join("; ")
+  };
 }
 
 function buildClaudeCookieSession(rows, source, chromeKey = null) {
@@ -1706,6 +1956,7 @@ app.whenReady().then(async () => {
 
   startAutoUpdatePolling(port).catch(() => {});
   syncClaudeBrowserCredits(port).catch(() => {});
+  syncAccountBillingSnapshots(port).catch(() => {});
 
   // Start notification polling after a short initial delay
   setTimeout(() => {
@@ -1716,6 +1967,7 @@ app.whenReady().then(async () => {
   }, 10000);
   setInterval(() => {
     syncClaudeBrowserCredits(port).catch(() => {});
+    syncAccountBillingSnapshots(port).catch(() => {});
   }, CLAUDE_SYNC_INTERVAL_MS);
 
   app.on("activate", () => {

@@ -1185,21 +1185,19 @@ a {
 }
 
 .subscription-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: 4px 8px;
-  margin: 8px 0 2px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f7faf7;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .subscription-summary strong {
   color: var(--ink);
-  font-size: 0.86rem;
-  white-space: nowrap;
+  font-size: 0.82rem;
+  line-height: 1.25;
 }
 
 .subscription-summary small {
@@ -2465,8 +2463,10 @@ a {
 
 .subscription-cost-head strong {
   color: var(--ink);
-  font-size: 0.98rem;
-  white-space: nowrap;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  white-space: normal;
+  text-align: right;
 }
 
 .subscription-cost-card p {

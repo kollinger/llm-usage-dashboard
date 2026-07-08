@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "LLM Usage",
-    "eyebrow": "LLM Usage",
+    "title": "LLM-Nutzung",
+    "eyebrow": "LLM-Nutzung",
     "heading": "Limits & Tokens"
   },
   "actions": {
@@ -304,7 +304,7 @@
       "missingBackendKey": "Backend-Key fehlt",
       "sevenDays": "7 Tage",
       "noCodexSparkEvents": "Keine Codex 5.3 Spark Events gefunden.",
-      "noGeminiLogs": "Keine lokalen Gemini Usage-Logs gefunden.",
+      "noGeminiLogs": "Keine lokalen Gemini-Nutzungslogs gefunden.",
       "ollamaLogTokens": "Lokale Ollama-Tokens aus Logs",
       "noOllamaLogs": "Keine lokalen Ollama-Logs gefunden.",
       "copilotLogTokens": "Copilot-CLI-Tokens 24h",
@@ -331,7 +331,7 @@
       "default": "Dieser Anbieter hat seit mehr als {minutes} Minuten kein frisches lokales Signal geliefert. Manche Quellen aktualisieren sich erst, wenn CLI oder App neue Nutzungsdaten schreibt.",
       "codex": "Codex-Limits aktualisieren sich normalerweise über den lokalen App-Server. Bleibt der Stand alt, ist der App-Server eventuell nicht erreichbar oder Codex liefert gerade keine frischen Live-Limits.",
       "codexSpark": "Codex-Spark-Limits aktualisieren sich normalerweise über den lokalen Codex-App-Server. Bleibt der Stand alt, werden Spark-Live-Limits eventuell noch nicht geliefert.",
-      "claudeCode": "Diese Claude-Code-Karte kombiniert Statusline, lokale Logs und Claude.ai Billing-/Usage-Daten. Verzögerungen sind möglich, wenn Claude Code geschlossen ist, die Statusline nicht gelaufen ist oder Claude.ai-Cookies/API-Zugriff fehlen.",
+      "claudeCode": "Diese Claude-Code-Karte kombiniert Statusline, lokale Logs und Claude.ai Billing-/Nutzungsdaten. Verzögerungen sind möglich, wenn Claude Code geschlossen ist, die Statusline nicht gelaufen ist oder Claude.ai-Cookies/API-Zugriff fehlen.",
       "copilot": "GitHub-Copilot-CLI-Nutzung wird erst nach Session-Ende geschrieben; Live-Quota hängt vom lokalen Copilot CLI ab. Der Stand kann daher während offener Sessions oder bei fehlgeschlagener Abfrage verzögert sein.",
       "gemini": "Gemini lokal aktualisiert sich nur, wenn lokale Logdateien neue Nutzungsmetadaten enthalten.",
       "ollama": "Ollama aktualisiert sich nur, wenn Anfragen über den lokalen Proxy bzw. die Logdatei des Dashboards laufen."
@@ -343,7 +343,7 @@
     },
     "freshness": {
       "ariaLabel": "Datenstand des Anbieters",
-      "usage": "Usage {time}",
+      "usage": "Nutzung {time}",
       "limits": "Limits {time}",
       "prices": "Preise {time}",
       "catalog": "Katalog {date}",
@@ -493,7 +493,7 @@
       "diagYes": "Ja",
       "diagNo": "Nein",
       "testBtn": "Test-Benachrichtigung senden",
-      "testQueued": "Test angefordert. Wenn kein echter System-Banner erscheint, öffne die System-Mitteilungen, erlaube LLM Usage Dashboard, starte die App neu und teste danach erneut.",
+      "testQueued": "Test angefordert. Wenn kein echter System-Banner erscheint, öffne die System-Mitteilungen, erlaube LLM-Nutzungs-Dashboard, starte die App neu und teste danach erneut.",
       "testError": "Test-Benachrichtigung konnte nicht gesendet werden.",
       "testResultLabel": "Letztes Testergebnis",
       "testResultAt": "Zeitpunkt",
@@ -508,11 +508,11 @@
       "permission_unsupported": "Nicht unterstützt",
       "permission_unknown": "Unbekannt",
       "permission_error": "Berechtigungsprüfung fehlgeschlagen",
-      "permissionNotGranted": "Die Benachrichtigungsberechtigung ist nicht erteilt. Die System-Mitteilungen wurden geöffnet; erlaube LLM Usage Dashboard, starte die App neu und teste danach erneut.",
+      "permissionNotGranted": "Die Benachrichtigungsberechtigung ist nicht erteilt. Die System-Mitteilungen wurden geöffnet; erlaube LLM-Nutzungs-Dashboard, starte die App neu und teste danach erneut.",
       "permissionUnsupported": "Diese App-Laufzeit stellt keine Desktop-Benachrichtigungsberechtigung bereit.",
       "testResult_sent": "Mit Electron vorgemerkt (Banner nicht bestätigt)",
       "testQueuedRendererError": "Native macOS-Benachrichtigung vorgemerkt, aber die sofortige Browser-Benachrichtigung ist fehlgeschlagen: {error}",
-      "testTitle": "LLM Usage Dashboard - Test",
+      "testTitle": "LLM-Nutzungs-Dashboard - Test",
       "testBody": "Desktop-Benachrichtigungen funktionieren.",
       "inAppTestTitle": "In-App-Testbenachrichtigung",
       "inAppTestErrorTitle": "Benachrichtigungstest braucht Aufmerksamkeit",
@@ -525,15 +525,15 @@
       "nativeDelivery_not_applicable": "Auf dieser Plattform nicht relevant",
       "nativeDelivery_unknown": "Unbekannt",
       "openSettingsBtn": "System-Mitteilungen öffnen",
-      "openSettingsQueued": "System-Mitteilungen geöffnet. Erlaube Mitteilungen für LLM Usage Dashboard, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.",
+      "openSettingsQueued": "System-Mitteilungen geöffnet. Erlaube Mitteilungen für LLM-Nutzungs-Dashboard, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.",
       "openSettingsError": "Konnte die System-Mitteilungen aus dieser Laufzeit nicht öffnen.",
       "systemGuideTitle": "System-Mitteilungen brauchen Aufmerksamkeit",
-      "systemGuideDefault": "Erlaube Mitteilungen für LLM Usage Dashboard in den Systemeinstellungen, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.",
-      "systemGuidePermission": "Die App hat noch keine Benachrichtigungsberechtigung. Die Systemeinstellungen wurden geöffnet; erlaube LLM Usage Dashboard dort Mitteilungen.",
-      "systemGuideUnsupported": "Diese Laufzeit kann die Browser-Berechtigung nicht prüfen. Öffne die System-Mitteilungen und erlaube LLM Usage Dashboard dort Benachrichtigungen.",
-      "systemGuideNativeUnverified": "Native Banner sind mit diesem Build nicht verlässlich bestätigt. Prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard und teste nach einem App-Neustart erneut.",
+      "systemGuideDefault": "Erlaube Mitteilungen für LLM-Nutzungs-Dashboard in den Systemeinstellungen, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.",
+      "systemGuidePermission": "Die App hat noch keine Benachrichtigungsberechtigung. Die Systemeinstellungen wurden geöffnet; erlaube LLM-Nutzungs-Dashboard dort Mitteilungen.",
+      "systemGuideUnsupported": "Diese Laufzeit kann die Browser-Berechtigung nicht prüfen. Öffne die System-Mitteilungen und erlaube LLM-Nutzungs-Dashboard dort Benachrichtigungen.",
+      "systemGuideNativeUnverified": "Native Banner sind mit diesem Build nicht verlässlich bestätigt. Prüfe die System-Mitteilungen, erlaube LLM-Nutzungs-Dashboard und teste nach einem App-Neustart erneut.",
       "systemGuideTestFailed": "Der letzte native Notification-Versuch meldete einen Fehler. Prüfe die System-Mitteilungen, starte die App neu und teste erneut.",
-      "systemGuideAfterTest": "Wenn kein echter System-Banner sichtbar wurde, prüfe die System-Mitteilungen, erlaube LLM Usage Dashboard, starte die App neu und sende den Test noch einmal.",
+      "systemGuideAfterTest": "Wenn kein echter System-Banner sichtbar wurde, prüfe die System-Mitteilungen, erlaube LLM-Nutzungs-Dashboard, starte die App neu und sende den Test noch einmal.",
       "thresholdsHelp": "Tempo nutzt die aktuelle Verbrauchsrate; harte Warnung nutzt den gemessenen Verbrauch im jeweiligen 5h- oder Wochenfenster.",
       "nativeAlertTitle": "Limit-Warnung: {window}",
       "nativeUsedPercent": "{percent}% verbraucht.",
@@ -603,7 +603,7 @@
         "telemetry": "Telemetry",
         "chats": "Chats",
         "tmp": "Temporäre Dateien",
-        "usage_file": "Usage-Datei",
+        "usage_file": "Nutzungsdatei",
         "home": "Home"
       },
       "noPaths": "Kein direkter Dateisystempfad verfügbar.",
@@ -613,7 +613,7 @@
       "connectError": "Quelle konnte nicht verbunden werden.",
       "disable": "Deaktivieren",
       "disablePending": "Deaktiviere...",
-      "disableSuccess": "Quelle deaktiviert. Usage-Summen wurden aktualisiert.",
+      "disableSuccess": "Quelle deaktiviert. Nutzungssummen wurden aktualisiert.",
       "disableError": "Quelle konnte nicht deaktiviert werden.",
       "grantCommands": "Freigabe-Kommandos",
       "revokeCommands": "Revoke-Kommandos",
@@ -711,7 +711,7 @@
     "facets": {
       "logs": {
         "title": "Lesbare Log-Quellen",
-        "available": "Die App kann mindestens eine lokale Usage-Quelle lesen.",
+        "available": "Die App kann mindestens eine lokale Nutzungsquelle lesen.",
         "empty": "In diesem Lauf wurde keine lesbare Token-Log-Quelle gefunden."
       },
       "savedSources": {
@@ -743,7 +743,7 @@
       },
       "current_user_empty": {
         "title": "Logs des aktuellen Benutzers leer",
-        "body": "Der aktuelle Desktop-Benutzer wurde geprüft, aber es wurden noch keine lokalen Usage-Dateien mit Token-Daten gefunden."
+        "body": "Der aktuelle Desktop-Benutzer wurde geprüft, aber es wurden noch keine lokalen Nutzungsdateien mit Token-Daten gefunden."
       },
       "candidates_readable_empty": {
         "title": "Lesbare Kandidaten gefunden",
@@ -763,7 +763,7 @@
       },
       "other_dashboard_found": {
         "title": "Andere Dashboard-Instanz gefunden",
-        "body": "Eine andere lokale LLM-Usage-Dashboard-Instanz läuft bereits und liest eventuell schon lokale Nutzungsdaten."
+        "body": "Eine andere lokale LLM-Nutzungs-Dashboard-Instanz läuft bereits und liest eventuell schon lokale Nutzungsdaten."
       },
       "partial_unsupported": {
         "title": "Discovery ist hier eingeschränkt",
@@ -779,7 +779,7 @@
       "current_user_empty": "Keine Aktion nötig, außer du erwartest Verlauf; starte ein unterstütztes Tool oder prüfe Quellen in den Einstellungen.",
       "candidates_readable_empty": "Öffne Einstellungen > Lokale Quellen, wenn du eine dieser lesbaren Quellen speichern möchtest.",
       "candidates_denied": "Öffne Einstellungen > Lokale Quellen, kopiere den ACL-Befehl der verweigerten Quelle, führe ihn als Admin aus und prüfe erneut.",
-      "runtime_hints_only": "Warte, bis das Tool Usage-Logs schreibt, oder konfiguriere die lesbare Quelle in den Einstellungen und prüfe erneut.",
+      "runtime_hints_only": "Warte, bis das Tool Nutzungslogs schreibt, oder konfiguriere die lesbare Quelle in den Einstellungen und prüfe erneut.",
       "no_tools_found": "Starte ein unterstütztes lokales Tool oder füge eine Quelle in den Einstellungen hinzu und prüfe erneut.",
       "other_dashboard_found": "Nutze das bereits laufende Dashboard-Fenster oder stoppe es, bevor du diese Instanz erneut prüfst.",
       "partial_unsupported": "Starte die Desktop-App auf dem Host-OS für vollständigere Discovery; gemountete lokale Logs können trotzdem unten erscheinen.",
