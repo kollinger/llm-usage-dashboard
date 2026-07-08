@@ -3223,6 +3223,11 @@ function normalizeSubscriptionPlanKey(value) {
   return String(value || "")
     .trim()
     .toLowerCase()
+    .replace(/&nbsp;/giu, " ")
+    .replace(/&#x2f;|&#47;/giu, "/")
+    .replace(/&amp;/giu, "&")
+    .replace(/[_-]+/gu, " ")
+    .replace(/\b([0-9]+)\s*x\b/gu, "$1x")
     .replace(/[^a-z0-9]+/gu, " ")
     .trim()
     .replace(/\s+/gu, " ");

@@ -10,13 +10,43 @@ process.env.CODEX_LIVE_RATE_LIMITS = "false";
 
 const require = createRequire(import.meta.url);
 const { readCodexUsage, _test } = require("../server.js");
+const { detectOpenAiPlanType, detectClaudePlanType, normalizePlanKey } = require("../lib/subscription-plan-detection");
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
+await assertSubscriptionPlanDetection();
 await assertProviderVisibility();
 await assertFrontendUsageIntelligence();
 await assertNotificationLocalizationRegression();
 await assertUpdateSettingsAlwaysOn();
 await assertCodexSparkRateLimitDoesNotMoveGpt55Usage();
+
+async function assertSubscriptionPlanDetection() {
+  assert.equal(normalizePlanKey("Pro 20 x"), "pro 20x");
+  assert.equal(detectOpenAiPlanType("Pro 20 x", { explicit: true }), "Pro 20x");
+  assert.equal(detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 $200", { allowGeneric: false }), null);
+  assert.equal(
+    detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $200 / Monat Dein aktueller Plan 20x höheres Nutzungskontingent", {
+      allowGeneric: false
+    }),
+    "Pro 20x"
+  );
+  assert.equal(
+    detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 / Monat Dein aktueller Plan 5x höheres Nutzungskontingent", {
+      allowGeneric: false
+    }),
+    "Pro 5x"
+  );
+  assert.equal(detectClaudePlanType("Choose a Claude plan Max 5x $100 Max 20x $200", { allowGeneric: false }), null);
+  assert.equal(
+    detectClaudePlanType("Claude Max $200 Current plan 20x Pro capacity per session", { allowGeneric: false }),
+    "Claude Max 20x"
+  );
+  assert.equal(
+    detectClaudePlanType("max_payment_success=true&previous_tier=default_claude_max_5x", { allowGeneric: false }),
+    null
+  );
+  assert.equal(detectClaudePlanType("max_20x", { explicit: true }), "Claude Max 20x");
+}
 
 async function assertProviderVisibility() {
   const appPath = path.join(rootDir, "public", "app.js");
@@ -863,6 +893,7 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(genericPro.actualBillingKnown, false);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).priceType, "official_list_price");
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).tierVariant, "pro_5x");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro 20 x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).source, "official_pricing_page");
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).priceType, "official_list_price");
@@ -880,6 +911,7 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).monthlyCost, 100);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).monthlyCostMax, undefined);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).priceVariant, "max_5x");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20 x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).source, "official_pricing_page");
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).priceVariant, "max_20x");

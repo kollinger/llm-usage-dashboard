@@ -8,7 +8,8 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
-const { app, BrowserWindow, shell, Notification, dialog } = require("electron");
+const { app, BrowserWindow, shell, Notification, dialog, session: electronSession } = require("electron");
+const { detectOpenAiPlanType, detectClaudePlanType } = require("../lib/subscription-plan-detection");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -57,6 +58,7 @@ const CLAUDE_CHROME_COOKIE_DB = path.join(
 const OPENAI_DASHBOARD_USAGE_URL = "https://chatgpt.com/codex/cloud/settings/analytics#usage";
 const OPENAI_DASHBOARD_API_URL = "https://chatgpt.com/backend-api/wham/usage";
 const OPENAI_IDENTITY_API_URL = "https://chatgpt.com/backend-api/me";
+const OPENAI_PRICING_URL = "https://chatgpt.com/pricing/";
 const CLAUDE_SAFARI_COOKIE_FILE = path.join(os.homedir(), "Library", "Cookies", "Cookies.binarycookies");
 const CLAUDE_APP_CACHE_DIR = path.join(
   os.homedir(),
@@ -969,6 +971,19 @@ async function syncClaudeBrowserCredits(port) {
       };
       if (session.cookieHeader) {
         const billing = await fetchClaudeBillingSnapshot(session.cookieHeader, session.orgId || null);
+        if (!billing.subscription) {
+          const browserPlan = await fetchClaudePlanFromBrowserSession(session.cookieHeader);
+          if (browserPlan) {
+            billing.subscription = {
+              planType: browserPlan,
+              monthlyCost: 0,
+              currency: "EUR",
+              source: "claude_browser_sync",
+              actualBillingKnown: false,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        }
         payload = {
           ...payload,
           ...billing,
@@ -1069,7 +1084,9 @@ async function buildOpenAiAccountBillingSnapshot() {
   let planType = null;
   for (const session of usableSessions) {
     const dashboard = await fetchOpenAiDashboardSnapshot(session.cookieHeader);
-    const candidatePlan = normalizeOpenAiPlanType(findOpenAiPlanValue(dashboard));
+    const candidatePlan =
+      normalizeOpenAiPlanType(findOpenAiPlanValue(dashboard)) ||
+      (await fetchOpenAiPlanFromBrowserSession(session.cookieHeader));
     lastDashboard = dashboard;
     lastSession = session;
     if (candidatePlan) {
@@ -1124,7 +1141,7 @@ function preferredOpenAiSessionResult(...results) {
 
 async function fetchOpenAiDashboardSnapshot(cookieHeader) {
   const payloads = {};
-  for (const url of [OPENAI_IDENTITY_API_URL, OPENAI_DASHBOARD_API_URL, OPENAI_DASHBOARD_USAGE_URL]) {
+  for (const url of [OPENAI_IDENTITY_API_URL, OPENAI_DASHBOARD_API_URL, OPENAI_DASHBOARD_USAGE_URL, OPENAI_PRICING_URL]) {
     try {
       const response = await fetch(url, {
         headers: {
@@ -1187,25 +1204,45 @@ const OPENAI_PLAN_KEYS = new Set([
   "tier_name"
 ]);
 
-function findOpenAiPlanValue(value, seen = new Set()) {
+function isConcreteDetectedPlan(planType) {
+  return /\b(?:5x|20x|max)\b/i.test(String(planType || ""));
+}
+
+function findOpenAiPlanValue(value) {
+  const state = { fallback: "" };
+  return findOpenAiConcretePlanValue(value, new Set(), state) || state.fallback || "";
+}
+
+function findOpenAiConcretePlanValue(value, seen = new Set(), state = { fallback: "" }, options = {}) {
   if (typeof value === "string") {
-    const match = value.match(/\b(?:Pro\s*20x|Pro\s*5x|Pro\s*Max|ChatGPT\s*Pro|Plus|Team)\b/i);
-    return match ? match[0] : "";
+    const exact = detectOpenAiPlanType(value, { explicit: Boolean(options.explicit), allowGeneric: false });
+    if (exact) return exact;
+    const generic = detectOpenAiPlanType(value, { explicit: Boolean(options.explicit), allowGeneric: true });
+    if (generic && !state.fallback) state.fallback = generic;
+    return "";
   }
   if (!value || typeof value !== "object") return "";
   if (seen.has(value)) return "";
   seen.add(value);
   if (Array.isArray(value)) {
     for (const entry of value) {
-      const found = findOpenAiPlanValue(entry, seen);
+      const found = findOpenAiConcretePlanValue(entry, seen, state, options);
       if (found) return found;
     }
     return "";
   }
   for (const [key, child] of Object.entries(value)) {
-    if (OPENAI_PLAN_KEYS.has(key) && typeof child === "string" && child.trim()) return child.trim();
+    if (OPENAI_PLAN_KEYS.has(key) && typeof child === "string" && child.trim()) {
+      const plan = detectOpenAiPlanType(child, { explicit: true, allowGeneric: true }) || child.trim();
+      if (isConcreteDetectedPlan(plan)) return plan;
+      if (!state.fallback) state.fallback = plan;
+    }
+    if (typeof child === "string") {
+      const found = findOpenAiConcretePlanValue(child, seen, state, { explicit: false });
+      if (found) return found;
+    }
     if (child && typeof child === "object") {
-      const found = findOpenAiPlanValue(child, seen);
+      const found = findOpenAiConcretePlanValue(child, seen, state, options);
       if (found) return found;
     }
   }
@@ -1213,15 +1250,117 @@ function findOpenAiPlanValue(value, seen = new Set()) {
 }
 
 function normalizeOpenAiPlanType(value) {
-  const text = String(value || "").trim();
-  if (!text) return null;
-  const key = text.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
-  if (/pro\s*20x|20x|pro max|max pro/.test(key)) return "Pro 20x";
-  if (/pro\s*5x|5x/.test(key)) return "Pro 5x";
-  if (/team|business/.test(key)) return "Team";
-  if (/plus/.test(key)) return "Plus";
-  if (/pro/.test(key)) return "Pro";
-  return text.slice(0, 80);
+  const planType = detectOpenAiPlanType(value, { explicit: true, allowGeneric: true });
+  return planType || (String(value || "").trim() ? String(value).trim().slice(0, 80) : null);
+}
+
+async function fetchOpenAiPlanFromBrowserSession(cookieHeader) {
+  return detectPlanWithBrowserSession({
+    cookieHeader,
+    domain: "chatgpt.com",
+    url: OPENAI_PRICING_URL,
+    detector: (text) => detectOpenAiPlanType(text, { explicit: false, allowGeneric: false })
+  });
+}
+
+async function fetchClaudePlanFromBrowserSession(cookieHeader) {
+  const urls = [
+    "https://claude.ai/settings/plan",
+    "https://claude.ai/upgrade",
+    "https://claude.ai/settings/billing"
+  ];
+  for (const url of urls) {
+    const planType = await detectPlanWithBrowserSession({
+      cookieHeader,
+      domain: "claude.ai",
+      url,
+      detector: (text) => detectClaudePlanType(text, { explicit: false, allowGeneric: false })
+    });
+    if (planType) return planType;
+  }
+  return null;
+}
+
+async function detectPlanWithBrowserSession({ cookieHeader, domain, url, detector }) {
+  if (!cookieHeader || !domain || !url || typeof detector !== "function" || !electronSession?.fromPartition) return null;
+  const partition = `llm-usage-plan-probe-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const probeSession = electronSession.fromPartition(partition);
+  try {
+    await setProbeSessionCookies(probeSession, cookieHeader, domain);
+    const text = await loadHiddenProbeWindowText(url, partition);
+    const detected = detector(text);
+    return detected || null;
+  } catch {
+    return null;
+  } finally {
+    probeSession.clearStorageData().catch(() => {});
+  }
+}
+
+async function setProbeSessionCookies(probeSession, cookieHeader, domain) {
+  const cookies = parseCookieHeader(cookieHeader);
+  for (const cookie of cookies) {
+    await probeSession.cookies.set({
+      url: `https://${domain}`,
+      domain: `.${domain}`,
+      path: "/",
+      name: cookie.name,
+      value: cookie.value,
+      secure: true,
+      httpOnly: true
+    }).catch(() => {});
+  }
+}
+
+function parseCookieHeader(cookieHeader) {
+  return String(cookieHeader || "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const index = part.indexOf("=");
+      if (index === -1) return null;
+      return {
+        name: part.slice(0, index).trim(),
+        value: part.slice(index + 1).trim()
+      };
+    })
+    .filter((cookie) => cookie?.name && cookie.value);
+}
+
+async function loadHiddenProbeWindowText(url, partition) {
+  const probe = new BrowserWindow({
+    show: false,
+    width: 1280,
+    height: 900,
+    webPreferences: {
+      partition,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  });
+  try {
+    return await new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        setTimeout(async () => {
+          const text = await probe.webContents.executeJavaScript("document.body ? document.body.innerText : ''", true).catch(() => "");
+          resolve(String(text || "").slice(0, 512 * 1024));
+        }, 1200);
+      };
+      const timeout = setTimeout(finish, 12000);
+      probe.webContents.once("did-finish-load", finish);
+      probe.webContents.once("did-stop-loading", finish);
+      probe.webContents.once("did-fail-load", finish);
+      probe.loadURL(url).catch(finish);
+    });
+  } finally {
+    if (!probe.isDestroyed()) probe.destroy();
+  }
 }
 
 async function readClaudeBrowserSession() {
@@ -1438,6 +1577,8 @@ async function fetchClaudeBillingSnapshot(cookieHeader, orgId = null) {
     "https://claude.ai/api/account/billing",
     "https://claude.ai/api/settings/billing",
     "https://claude.ai/api/account",
+    "https://claude.ai/settings/plan",
+    "https://claude.ai/upgrade",
     "https://claude.ai/settings/billing"
   ];
   const billingPayload = {};
@@ -1526,7 +1667,8 @@ async function readClaudeAppCacheBillingSnapshot() {
   const cacheParts = {
     overageLimit: null,
     prepaidCredits: null,
-    usage: null
+    usage: null,
+    subscription: null
   };
   for (const entry of entries) {
     if (!entry.isFile()) continue;
@@ -1538,6 +1680,10 @@ async function readClaudeAppCacheBillingSnapshot() {
       const payload = decodeClaudeCacheJsonPayload(buffer);
       if (!payload) continue;
       const cacheEntry = { payload, mtimeMs: stats.mtimeMs };
+      const subscription = findClaudeSubscriptionCandidate(payload);
+      if (subscription && (!cacheParts.subscription || stats.mtimeMs >= cacheParts.subscription.mtimeMs)) {
+        cacheParts.subscription = { payload: subscription, mtimeMs: stats.mtimeMs };
+      }
       if (endpoint === "overageLimit" && (!cacheParts.overageLimit || stats.mtimeMs >= cacheParts.overageLimit.mtimeMs)) {
         cacheParts.overageLimit = cacheEntry;
       }
@@ -1567,7 +1713,8 @@ async function readClaudeAppCacheBillingSnapshot() {
   const updatedAtMs = Math.max(
     cacheParts.overageLimit?.mtimeMs || 0,
     cacheParts.prepaidCredits?.mtimeMs || 0,
-    cacheParts.usage?.mtimeMs || 0
+    cacheParts.usage?.mtimeMs || 0,
+    cacheParts.subscription?.mtimeMs || 0
   );
   return {
     status: "available",
@@ -1575,6 +1722,7 @@ async function readClaudeAppCacheBillingSnapshot() {
     source: "claude_app_cache",
     updatedAt: new Date(updatedAtMs || Date.now()).toISOString(),
     credits: credits || null,
+    subscription: cacheParts.subscription?.payload || null,
     usage
   };
 }
@@ -1691,7 +1839,8 @@ function findClaudeSubscriptionCandidate(value, options = {}, seen = new Set()) 
 function sanitizeClaudeSubscriptionCandidate(candidate, options = {}) {
   if (!candidate || typeof candidate !== "object") return null;
   const explicitPlanType = explicitClaudeSubscriptionPlan(candidate);
-  const planType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const rawPlanType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const planType = detectClaudePlanType(rawPlanType, { explicit: true, allowGeneric: true }) || rawPlanType;
   const hasSubscriptionScope = Boolean(options.explicitPath || explicitPlanType);
   if (!hasSubscriptionScope) return null;
   if (planType && !isKnownClaudeBrowserSubscriptionPlan(planType)) return null;
@@ -1730,7 +1879,7 @@ function sanitizeClaudeSubscriptionCandidate(candidate, options = {}) {
 
 function explicitClaudeSubscriptionPlan(candidate) {
   const planObject = candidate?.plan && typeof candidate.plan === "object" ? candidate.plan : null;
-  return firstNonEmptyString(
+  const plan = firstNonEmptyString(
     candidate.planType,
     candidate.plan_type,
     planObject?.planType,
@@ -1746,14 +1895,16 @@ function explicitClaudeSubscriptionPlan(candidate) {
     candidate.subscriptionPlan,
     candidate.subscription_plan
   );
+  return detectClaudePlanType(plan, { explicit: true, allowGeneric: true }) || plan;
 }
 
 function fallbackClaudeSubscriptionPlan(candidate) {
-  return firstNonEmptyString(
+  const plan = firstNonEmptyString(
     candidate.tier,
     candidate.name,
     candidate.displayName
   );
+  return detectClaudePlanType(plan, { explicit: true, allowGeneric: true }) || plan;
 }
 
 function isKnownClaudeBrowserSubscriptionPlan(planType) {
@@ -1837,15 +1988,30 @@ function extractClaudeSubscriptionFromHtml(text) {
   const snippet = extractJsonObjectAroundNeedles(text, [
     "subscriptionCost", "subscription_cost", "monthlyCost", "monthly_cost",
     "monthlyPrice", "monthly_price", "priceMonthly", "subscriptionPlan",
-    "subscription_plan", "subscriptionType", "subscription_type"
+    "subscription_plan", "subscriptionType", "subscription_type",
+    "current plan", "Current plan", "dein aktueller Plan", "Dein aktueller Plan",
+    "max_5x", "max_20x", "default_claude_max_5x", "default_claude_max_20x"
   ]);
-  if (!snippet) return null;
-  try {
-    const parsed = JSON.parse(snippet);
-    return findClaudeSubscriptionCandidate(parsed);
-  } catch {
-    return null;
+  if (snippet) {
+    try {
+      const parsed = JSON.parse(snippet);
+      const candidate = findClaudeSubscriptionCandidate(parsed);
+      if (candidate) return candidate;
+    } catch {
+      // Fall through to the text detector.
+    }
   }
+  const planType = detectClaudePlanType(text, { explicit: false, allowGeneric: false });
+  return planType
+    ? {
+        planType,
+        monthlyCost: 0,
+        currency: "EUR",
+        source: "claude_browser_sync",
+        actualBillingKnown: false,
+        updatedAt: new Date().toISOString()
+      }
+    : null;
 }
 
 function extractJsonObjectAroundNeedles(text, needles) {

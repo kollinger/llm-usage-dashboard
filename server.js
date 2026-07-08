@@ -18,6 +18,7 @@ const {
   readSourceSettings
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath } = require("./lib/usage-events");
+const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
@@ -2818,12 +2819,7 @@ function subscriptionCatalogFamily(providerId) {
 }
 
 function normalizeSubscriptionPlanKey(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+  return normalizePlanKey(value);
 }
 
 function escapeRegExp(value) {
@@ -6109,7 +6105,8 @@ const CLAUDE_BROWSER_SUBSCRIPTION_PLAN_KEYS = new Set([
 function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, options = {}) {
   if (!candidate || typeof candidate !== "object") return null;
   const explicitPlanType = explicitClaudeSubscriptionPlan(candidate);
-  const planType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const rawPlanType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const planType = detectClaudePlanType(rawPlanType, { explicit: true, allowGeneric: true }) || rawPlanType;
   const hasSubscriptionScope = Boolean(options.explicitPath || explicitPlanType);
   if (!hasSubscriptionScope) return null;
   if (planType && !isKnownClaudeBrowserSubscriptionPlan(planType)) return null;
@@ -6148,7 +6145,7 @@ function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, optio
 
 function explicitClaudeSubscriptionPlan(candidate) {
   const planObject = candidate?.plan && typeof candidate.plan === "object" ? candidate.plan : null;
-  return firstNonEmptyString(
+  const plan = firstNonEmptyString(
     candidate.planType,
     candidate.plan_type,
     planObject?.planType,
@@ -6164,14 +6161,16 @@ function explicitClaudeSubscriptionPlan(candidate) {
     candidate.subscriptionPlan,
     candidate.subscription_plan
   );
+  return detectClaudePlanType(plan, { explicit: true, allowGeneric: true }) || plan;
 }
 
 function fallbackClaudeSubscriptionPlan(candidate) {
-  return firstNonEmptyString(
+  const plan = firstNonEmptyString(
     candidate.tier,
     candidate.name,
     candidate.displayName
   );
+  return detectClaudePlanType(plan, { explicit: true, allowGeneric: true }) || plan;
 }
 
 function isKnownClaudeBrowserSubscriptionPlan(planType) {
