@@ -314,6 +314,7 @@ const ACCOUNT_BILLING_SAFE_SOURCE_TYPES = new Set([
   "account_billing",
   "browser",
   "browser_account_snapshot",
+  "codexbar_dashboard_snapshot",
   "local_account_endpoint",
   "sanitized_snapshot",
   "billing_page"
