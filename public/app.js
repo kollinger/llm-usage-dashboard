@@ -3094,7 +3094,6 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let sourceId = source.source || fallbackSource.source || null;
   const updatedAt = source.updatedAt || fallbackSource.updatedAt || null;
   let planSource = source.planSource || fallbackSource.planSource || (sourceId !== fallbackSource.source ? fallbackSource.source : null);
-  const catalog = monthlyCost > 0 ? null : publicSubscriptionPlan(providerId, planType);
   let currency = source.currency || fallbackSource.currency || "EUR";
   let catalogReviewedAt = source.catalogReviewedAt || null;
   let sourceUrl = source.sourceUrl || null;
@@ -3114,6 +3113,25 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
   let accountBillingFetchedAt = source.accountBillingFetchedAt || null;
   let accountBillingParserStatus = source.accountBillingParserStatus || null;
   let accountBillingSourceType = source.accountBillingSourceType || null;
+  const ambiguousVariant = isAmbiguousSubscriptionPlanVariant(providerId, planType);
+  if (ambiguousVariant && !actualBillingKnown && sourceId !== "local_settings") {
+    monthlyCost = 0;
+    monthlyCostMin = 0;
+    monthlyCostMax = 0;
+    if (/_5x_20x$/u.test(String(tierVariant || priceVariant || "")) || /5x\s*\/\s*20x/iu.test(planType)) {
+      planType = "";
+    }
+    catalogReviewedAt = null;
+    sourceUrl = source.sourceUrl || null;
+    priceType = null;
+    priceSourceType = "unknown";
+    priceVariant = null;
+    tierVariant = null;
+    officialListPrice = false;
+    costStatus = costStatus || "variant_required";
+    costReason = costReason || subscriptionCostMissingReasonKey(providerId, sourceId || planSource);
+  }
+  const catalog = monthlyCost > 0 || ambiguousVariant ? null : publicSubscriptionPlan(providerId, planType);
   if (!(monthlyCost > 0) && catalog) {
     monthlyCost = catalog.monthlyCost;
     monthlyCostMin = Number(catalog.monthlyCostMin || 0);
@@ -3212,6 +3230,18 @@ function publicSubscriptionPlan(providerId, planType) {
   if (regionalEntry) return regionalEntry;
   const entries = family ? publicSubscriptionPlanCatalog[family] || [] : [];
   return entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey)) || null;
+}
+
+function isAmbiguousSubscriptionPlanVariant(providerId, planType) {
+  const family = subscriptionCatalogFamily(providerId);
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  if (!family || !planKey) return false;
+  const entries = publicSubscriptionPlanCatalog[family] || [];
+  const catalog = entries.find((entry) => entry.aliases.some((alias) => normalizeSubscriptionPlanKey(alias) === planKey));
+  if (!catalog) return false;
+  const priceType = String(catalog.priceType || "");
+  const variant = String(catalog.tierVariant || catalog.priceVariant || "");
+  return priceType === "official_variant_range" || /_5x_20x$/u.test(variant);
 }
 
 function subscriptionPricingRegion() {

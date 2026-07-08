@@ -2565,7 +2565,9 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
   if (!provider?.subscription || provider.status === "error") return provider;
   const status = accountBillingProviderStatus(providerId, accountBilling);
   if (!status) return provider;
-  const connectionAction = accountBillingConnectionAction(providerId, status);
+  const connectionAction = providerSubscriptionHasActualBilling(provider.subscription)
+    ? null
+    : accountBillingConnectionAction(providerId, status);
   return {
     ...provider,
     subscriptionConnectionAction: provider.subscriptionConnectionAction || connectionAction,
@@ -2580,10 +2582,21 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
   };
 }
 
+function providerSubscriptionHasActualBilling(subscription) {
+  if (subscription?.actualBillingKnown !== true) return false;
+  return ["account", "account_billing", "browser", "claude_browser_sync"].includes(String(subscription.source || ""));
+}
+
 function accountBillingConnectionAction(providerId, status) {
   const family = subscriptionCatalogFamily(providerId);
   if (!["openai", "anthropic"].includes(family)) return null;
   if (String(status?.status || "") === "available") return null;
+  if (
+    status?.reason === "account_billing_amount_missing" &&
+    isConcreteSubscriptionPlanVariant(providerId, status.planType)
+  ) {
+    return null;
+  }
   const reason = String(status?.reason || "");
   const isLogin = /login|required|expired|cookie|auth/i.test(reason) || status?.status === "expired";
   return providerConnectionAction(family, isLogin ? "login" : "refresh", reason || status?.status || null);
@@ -2607,8 +2620,13 @@ function providerConnectionAction(family, mode = "refresh", reason = null) {
 function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
   const entry = accountBillingProviderEntry(providerId, accountBilling);
   if (!entry || entry.status !== "available" || !(entry.monthlyCost > 0)) return null;
+  const planType = accountBillingConcretePlanType(providerId, entry.planType, entry.monthlyCost, entry.currency) ||
+    entry.planType ||
+    provider?.planType ||
+    provider?.latest?.planType ||
+    null;
   return {
-    planType: entry.planType || provider?.planType || provider?.latest?.planType || null,
+    planType,
     monthlyCost: entry.monthlyCost,
     amount: entry.amount,
     currency: entry.currency,
@@ -2621,7 +2639,7 @@ function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
     updatedAt: entry.fetchedAt,
     confidence: entry.confidence,
     parserStatus: entry.parserStatus || "parsed",
-    planKey: entry.planKey,
+    planKey: normalizeSubscriptionPlanKey(planType) || entry.planKey,
     actualBillingKnown: true,
     costStatus: "account_billing",
     redacted: Boolean(entry.redacted)
@@ -2648,6 +2666,7 @@ function accountBillingProviderStatus(providerId, accountBilling) {
       status: entry.status || "unavailable",
       reason: entry.unavailableReason || null,
       fetchedAt: entry.fetchedAt || null,
+      planType: entry.planType || null,
       parserStatus: entry.parserStatus || entry.status || "unknown",
       sourceType: entry.sourceType || "account_billing"
     };
@@ -2657,6 +2676,7 @@ function accountBillingProviderStatus(providerId, accountBilling) {
     status: accountBilling.status || "missing",
     reason: accountBilling.reason || "account_billing_provider_missing",
     fetchedAt: accountBilling.fetchedAt || null,
+    planType: null,
     parserStatus: accountBilling.status || "missing",
     sourceType: "account_billing"
   };
@@ -2681,6 +2701,12 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   if (!planType) return provider;
 
   const planSource = existing?.planSource || existing?.source || provider.planSource || null;
+  if (isAmbiguousSubscriptionPlanVariant(providerId, planType)) {
+    return {
+      ...provider,
+      subscription: unresolvedSubscriptionVariant(providerId, existing, planType, planSource)
+    };
+  }
   const official = officialSubscriptionPlan(providerId, planType, officialPricing);
   const catalog = official || publicSubscriptionPlan(providerId, planType);
   const subscription = {
@@ -2712,6 +2738,33 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
     ...provider,
     planType,
     subscription
+  };
+}
+
+function unresolvedSubscriptionVariant(providerId, existing, planType, planSource) {
+  return {
+    ...(existing || {}),
+    planType: null,
+    monthlyCost: 0,
+    monthlyCostMin: null,
+    monthlyCostMax: null,
+    currency: normalizeCurrency(existing?.currency || "EUR"),
+    source: existing?.source || planSource,
+    planSource,
+    updatedAt: existing?.updatedAt || null,
+    fetchedAt: existing?.fetchedAt || null,
+    catalogReviewedAt: null,
+    sourceUrl: existing?.sourceUrl || null,
+    planKey: normalizeSubscriptionPlanKey(planType),
+    parserStatus: existing?.parserStatus || "missing",
+    priceType: null,
+    priceSourceType: "unknown",
+    priceVariant: null,
+    tierVariant: null,
+    actualBillingKnown: false,
+    officialListPrice: false,
+    costStatus: "variant_required",
+    costReason: subscriptionCostMissingReasonKey(providerId, existing?.source || planSource)
   };
 }
 
@@ -5403,6 +5456,75 @@ function isConcreteSubscriptionPlanVariant(providerId, planType) {
   return Boolean(catalog.tierVariant || (catalog.priceVariant && catalog.priceVariant !== "from"));
 }
 
+function isAmbiguousSubscriptionPlanVariant(providerId, planType) {
+  const catalog = publicSubscriptionPlan(providerId, planType);
+  if (!catalog) return false;
+  const priceType = String(catalog.priceType || "");
+  const variant = String(catalog.tierVariant || catalog.priceVariant || "");
+  return priceType === "official_variant_range" || /_5x_20x$/u.test(variant);
+}
+
+function accountBillingConcretePlanType(providerId, planType, monthlyCost, currency) {
+  if (isConcreteSubscriptionPlanVariant(providerId, planType)) {
+    return concreteSubscriptionPlanName(providerId, planType);
+  }
+  const family = subscriptionCatalogFamily(providerId);
+  if (!["openai", "anthropic"].includes(family)) return null;
+  const normalizedPlan = normalizeSubscriptionPlanKey(planType);
+  const canInferVariant =
+    !normalizedPlan ||
+    isAmbiguousSubscriptionPlanVariant(providerId, planType) ||
+    (family === "openai" && /\bpro\b/u.test(normalizedPlan)) ||
+    (family === "anthropic" && /\bmax\b/u.test(normalizedPlan));
+  if (!canInferVariant) return null;
+  const amount = positiveAmount(monthlyCost);
+  if (!(amount > 0)) return null;
+  const currencyCode = normalizeCurrency(currency || "EUR");
+  for (const candidate of concreteSubscriptionVariantCandidates(family)) {
+    if (candidate.currency !== currencyCode) continue;
+    if (Math.abs(candidate.monthlyCost - amount) < 0.01) return candidate.planName;
+  }
+  return null;
+}
+
+function concreteSubscriptionPlanName(providerId, planType) {
+  const family = subscriptionCatalogFamily(providerId);
+  const catalog = publicSubscriptionPlan(providerId, planType);
+  const variant = String(catalog?.tierVariant || catalog?.priceVariant || "");
+  if (family === "openai") {
+    if (variant === "pro_5x") return "Pro 5x";
+    if (variant === "pro_20x") return "Pro 20x";
+  }
+  if (family === "anthropic") {
+    if (variant === "max_5x") return "Claude Max 5x";
+    if (variant === "max_20x") return "Claude Max 20x";
+  }
+  return catalog?.planName || String(planType || "").trim() || null;
+}
+
+function concreteSubscriptionVariantCandidates(family) {
+  const candidates = [];
+  const addEntries = (entries = []) => {
+    for (const entry of entries) {
+      const variant = String(entry.tierVariant || entry.priceVariant || "");
+      if (!["pro_5x", "pro_20x", "max_5x", "max_20x"].includes(variant)) continue;
+      const monthlyCost = positiveAmount(entry.monthlyCost);
+      if (!(monthlyCost > 0)) continue;
+      const providerId = family === "openai" ? "codex" : "claudeCode";
+      candidates.push({
+        planName: entry.planName || concreteSubscriptionPlanName(providerId, variant.replace("_", " ")),
+        monthlyCost,
+        currency: normalizeCurrency(entry.currency || "USD")
+      });
+    }
+  };
+  addEntries(PUBLIC_SUBSCRIPTION_PLAN_CATALOG[family] || []);
+  for (const region of Object.values(REGIONAL_SUBSCRIPTION_PLAN_CATALOG)) {
+    addEntries(region?.[family] || []);
+  }
+  return candidates;
+}
+
 function normalizeCodexLiveRateLimits(response) {
   const entries = [];
   if (response?.rateLimitsByLimitId && typeof response.rateLimitsByLimitId === "object") {
@@ -6283,10 +6405,11 @@ function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, optio
   );
   const normalizedCost = monthlyCost || (monthlyCostCents ? monthlyCostCents / 100 : 0);
   if (!planType && !(normalizedCost > 0)) return null;
+  const currency = normalizeCurrency(candidate.currency || candidate.price?.currency || "EUR");
   return {
-    planType: planType || null,
+    planType: accountBillingConcretePlanType("claudeCode", planType, normalizedCost, currency) || planType || null,
     monthlyCost: normalizedCost,
-    currency: normalizeCurrency(candidate.currency || candidate.price?.currency || "EUR"),
+    currency,
     source: "claude_browser_sync",
     actualBillingKnown: normalizedCost > 0,
     updatedAt: normalizeOptionalDate(candidate.updatedAt || candidate.updated_at) || fallbackUpdatedAt

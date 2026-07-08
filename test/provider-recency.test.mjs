@@ -670,23 +670,24 @@ JSON.stringify({
   catalogQualityLabel: t("subscriptions.quality.catalog"),
   manualQualityLabel: t("subscriptions.quality.manual"),
 	  manualSourceLabel: subscriptionSourceLabel("local_settings"),
-  detectedSubscriptionCardShowsCost:
-    detectedSubscriptionCard.includes("Pro 5x/20x ($100.00–$200.00/mo)") &&
-    !detectedSubscriptionCard.includes("Read-only price sources"),
-  genericCodexProVariantRange:
-    genericCodexOfficialSubscription.quality === "official" &&
-    genericCodexOfficialCard.includes("Pro 5x/20x ($100.00–$200.00/mo)") &&
-    genericCodexOfficialProviderSummary.includes("Pro 5x/20x ($100.00–$200.00/mo)") &&
-    !genericCodexOfficialCard.includes("Actual billing known") &&
-    !genericCodexOfficialProviderSummary.includes("Actual billing known: no"),
+  detectedSubscriptionRequiresVariant:
+    detectedSubscription.quality === "estimated" &&
+    detectedSubscriptionCard.includes("Pro (Cost unknown)") &&
+    !detectedSubscriptionCard.includes("Pro 5x/20x"),
+  genericCodexProVariantRangeBlocked:
+    genericCodexOfficialSubscription.quality === "estimated" &&
+    genericCodexOfficialCard.includes("Plan unknown (Cost unknown)") &&
+    genericCodexOfficialProviderSummary.includes("Plan unknown (Cost unknown)") &&
+    !genericCodexOfficialCard.includes("Pro 5x/20x") &&
+    !genericCodexOfficialProviderSummary.includes("Pro 5x/20x"),
   accountBillingActual:
     accountBillingSubscription.quality === "automatic" &&
     accountBillingCard.includes("Pro 20x ($200.00/mo)") &&
     !accountBillingCard.includes("trusted monthly price detected"),
   expiredAccountBillingAudit:
-    expiredAccountBillingSubscription.quality === "official" &&
-    expiredAccountBillingCard.includes("Pro 5x/20x ($100.00–$200.00/mo)") &&
-    !expiredAccountBillingCard.includes("account source expired"),
+    expiredAccountBillingSubscription.quality === "estimated" &&
+    expiredAccountBillingCard.includes("Plan unknown (Cost unknown)") &&
+    !expiredAccountBillingCard.includes("Pro 5x/20x"),
   aliasesHiddenByDefault: renderPricingAliases(pricingModels[0]) === "",
   aliasesCollapsedInDebug: /<details/.test(renderPricingAliases(pricingModels[0], { debug: true })),
 	  sourceBarsUseProviderColors:
@@ -831,7 +832,17 @@ const claudeMax20Label = subscriptionCompactLabel(normalizeSubscription({
   tierVariant: "max_20x",
   actualBillingKnown: false
 }, {}, "claudeCode"));
-JSON.stringify({ claudeMax20Label });`,
+const codexPro20Label = subscriptionCompactLabel(normalizeSubscription({
+  planType: "Pro 20x",
+  monthlyCost: 229,
+  currency: "EUR",
+  source: "official_pricing_page",
+  priceType: "official_list_price",
+  priceVariant: "pro_20x",
+  tierVariant: "pro_20x",
+  actualBillingKnown: false
+}, {}, "codex"));
+JSON.stringify({ claudeMax20Label, codexPro20Label });`,
     createAppContext(),
     { filename: appPath }
   ));
@@ -855,14 +866,15 @@ JSON.stringify({ claudeMax20Label });`,
   assert.equal(result.partialApiCostStatus, "partial");
   assert.equal(result.partialApiCostNote.includes("partial"), true);
   assert.equal(result.manualQuality, "manual");
-  assert.equal(result.detectedQuality, "catalog");
-  assert.equal(result.detectedCost, 100);
-  assert.equal(result.detectedCurrency, "USD");
-  assert.equal(result.detectedSource, "bundled_catalog");
+  assert.equal(result.detectedQuality, "estimated");
+  assert.equal(result.detectedCost, 0);
+  assert.equal(result.detectedCurrency, "EUR");
+  assert.equal(result.detectedSource, "codex_app_server");
   assert.equal(result.missingCatalogQuality, "estimated");
   assert.equal(result.missingCatalogStatus, "catalog_missing");
   assert.equal(result.missingCatalogReason.includes("Enterprise (Cost unknown)"), true);
-  assert.equal(result.claudeCatalogCopy.includes("Claude Max 5x/20x (") && result.claudeCatalogCopy.includes("/mo)"), true);
+  assert.equal(result.claudeCatalogCopy.includes("Max (Cost unknown)"), true);
+  assert.equal(result.claudeCatalogCopy.includes("Claude Max 5x/20x"), false);
   assert.equal(result.claudeCatalogCopy.includes("Monthly price is a catalog fallback"), false);
   assert.equal(result.limitOk, "ok");
   assert.equal(result.limitNoWindow, "unknown");
@@ -876,8 +888,8 @@ JSON.stringify({ claudeMax20Label });`,
   assert.equal(result.catalogQualityLabel, "Catalog value");
   assert.equal(result.manualQualityLabel, "Saved fallback estimate");
   assert.equal(result.manualSourceLabel, "saved fallback");
-  assert.equal(result.detectedSubscriptionCardShowsCost, true);
-  assert.equal(result.genericCodexProVariantRange, true);
+  assert.equal(result.detectedSubscriptionRequiresVariant, true);
+  assert.equal(result.genericCodexProVariantRangeBlocked, true);
   assert.equal(result.accountBillingActual, true);
   assert.equal(result.expiredAccountBillingAudit, true);
   assert.equal(result.aliasesHiddenByDefault, true);
@@ -905,6 +917,10 @@ JSON.stringify({ claudeMax20Label });`,
   assert.equal(germanResult.claudeMax20Label.includes("180"), true);
   assert.equal(germanResult.claudeMax20Label.includes("Monat"), true);
   assert.equal(germanResult.claudeMax20Label.includes("5x/20x"), false);
+  assert.equal(germanResult.codexPro20Label.includes("Pro 20x"), true);
+  assert.equal(germanResult.codexPro20Label.includes("229"), true);
+  assert.equal(germanResult.codexPro20Label.includes("Monat"), true);
+  assert.equal(germanResult.codexPro20Label.includes("5x/20x"), false);
   assert.equal(result.rejectedPaceLegendRemoved, true);
   assert.equal(result.riskLimitBarHasTachometerGauge, true);
   assert.equal(result.riskLimitBarHasProjectionBarMode, true);
@@ -925,7 +941,7 @@ JSON.stringify({ claudeMax20Label });`,
     subscription: { planType: "Max", monthlyPrice: 100, currency: "USD" }
   });
   assert.equal(browserSnapshot.status, "available");
-  assert.equal(browserSnapshot.subscription.planType, "Max");
+  assert.equal(browserSnapshot.subscription.planType, "Claude Max 5x");
   assert.equal(browserSnapshot.subscription.monthlyCost, 100);
   assert.equal(browserSnapshot.subscription.source, "claude_browser_sync");
 
@@ -933,7 +949,7 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     subscription: { name: "Claude Max", unit_amount: 10000, currency: "USD" }
   });
   assert.equal(browserScopedSnapshot.status, "available");
-  assert.equal(browserScopedSnapshot.subscription.planType, "Claude Max");
+  assert.equal(browserScopedSnapshot.subscription.planType, "Claude Max 5x");
   assert.equal(browserScopedSnapshot.subscription.monthlyCost, 100);
 
   const prepaidCreditsSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
@@ -1015,16 +1031,24 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).priceVariant, "max_20x");
   assert.equal(_test.parseOpenAiCodexPricingPage("<html>No pricing cards</html>", { sourceUrl: "https://developers.openai.com/codex/pricing" }).parserStatus, "parse_failed");
 
-  const officialMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", officialPricing);
-  assert.equal(officialMerged.subscription.source, "official_pricing_page");
-  assert.equal(officialMerged.subscription.planType, "Pro 5x/20x");
-  assert.equal(officialMerged.subscription.monthlyCost, 100);
-  assert.equal(officialMerged.subscription.monthlyCostMin, 100);
-  assert.equal(officialMerged.subscription.monthlyCostMax, 200);
-  assert.equal(officialMerged.subscription.priceType, "official_variant_range");
-  assert.equal(officialMerged.subscription.priceVariant, "pro_5x_20x");
-  assert.equal(officialMerged.subscription.tierVariant, "pro_5x_20x");
+  const missingAccountBilling = _test.sanitizeAccountBillingSnapshots({});
+  const officialMerged = _test.mergeProviderSubscription(
+    { id: "codex", status: "live", planType: "Pro", planSource: "codex_app_server" },
+    null,
+    "codex",
+    officialPricing,
+    missingAccountBilling
+  );
+  assert.equal(officialMerged.subscription.source, "codex_app_server");
+  assert.equal(officialMerged.subscription.planType, null);
+  assert.equal(officialMerged.subscription.monthlyCost, 0);
+  assert.equal(officialMerged.subscription.monthlyCostMin, null);
+  assert.equal(officialMerged.subscription.monthlyCostMax, null);
+  assert.equal(officialMerged.subscription.priceType, null);
+  assert.equal(officialMerged.subscription.priceVariant, null);
+  assert.equal(officialMerged.subscription.tierVariant, null);
   assert.equal(officialMerged.subscription.actualBillingKnown, false);
+  assert.equal(officialMerged.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
   const bundledMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro 20x" }, null, "codex", officialPricing);
   assert.equal(bundledMerged.subscription.source, "official_pricing_page");
   assert.equal(bundledMerged.subscription.monthlyCost, 200);
@@ -1134,17 +1158,17 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   );
   assert.equal(thirdPartyPlanMerged.planType, preferredPlan.planType);
   assert.equal(thirdPartyPlanMerged.planSource, preferredPlan.source);
-  assert.equal(thirdPartyPlanMerged.subscription.planType, "Pro 5x/20x");
-  assert.equal(thirdPartyPlanMerged.subscription.monthlyCost, 100);
-  assert.equal(thirdPartyPlanMerged.subscription.priceVariant, "pro_5x_20x");
+  assert.equal(thirdPartyPlanMerged.subscription.planType, null);
+  assert.equal(thirdPartyPlanMerged.subscription.monthlyCost, 0);
+  assert.equal(thirdPartyPlanMerged.subscription.priceVariant, null);
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
-  assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
-  assert.equal(bundledGenericPro.subscription.planType, "Pro 5x/20x");
-  assert.equal(bundledGenericPro.subscription.monthlyCost, 100);
-  assert.equal(bundledGenericPro.subscription.monthlyCostMin, 100);
-  assert.equal(bundledGenericPro.subscription.monthlyCostMax, 200);
-  assert.equal(bundledGenericPro.subscription.priceType, "official_variant_range");
-  assert.equal(bundledGenericPro.subscription.priceVariant, "pro_5x_20x");
+  assert.equal(bundledGenericPro.subscription.source, null);
+  assert.equal(bundledGenericPro.subscription.planType, null);
+  assert.equal(bundledGenericPro.subscription.monthlyCost, 0);
+  assert.equal(bundledGenericPro.subscription.monthlyCostMin, null);
+  assert.equal(bundledGenericPro.subscription.monthlyCostMax, null);
+  assert.equal(bundledGenericPro.subscription.priceType, null);
+  assert.equal(bundledGenericPro.subscription.priceVariant, null);
   assert.equal(bundledGenericPro.subscription.actualBillingKnown, false);
   const unknownMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Enterprise" }, null, "codex", officialPricing);
   assert.equal(unknownMerged.subscription.monthlyCost, 0);

@@ -1219,8 +1219,7 @@ function isConcreteDetectedPlan(planType) {
 }
 
 function findOpenAiPlanValue(value) {
-  const state = { fallback: "" };
-  return findOpenAiConcretePlanValue(value, new Set(), state) || state.fallback || "";
+  return findOpenAiConcretePlanValue(value, new Set(), { fallback: "" });
 }
 
 function findOpenAiConcretePlanValue(value, seen = new Set(), state = { fallback: "" }, options = {}) {
@@ -1260,7 +1259,7 @@ function findOpenAiConcretePlanValue(value, seen = new Set(), state = { fallback
 }
 
 function normalizeOpenAiPlanType(value) {
-  const planType = detectOpenAiPlanType(value, { explicit: true, allowGeneric: true });
+  const planType = detectOpenAiPlanType(value, { explicit: true, allowGeneric: false });
   return planType || (String(value || "").trim() ? String(value).trim().slice(0, 80) : null);
 }
 
@@ -1881,14 +1880,34 @@ function sanitizeClaudeSubscriptionCandidate(candidate, options = {}) {
   );
   const normalizedCost = monthlyCost || (monthlyCostCents ? monthlyCostCents / 100 : 0);
   if (!planType && !(normalizedCost > 0)) return null;
+  const currency = normalizeClaudeCurrency(candidate.currency || candidate.price?.currency);
   return {
-    planType: planType || null,
+    planType: concreteClaudePlanTypeFromCost(planType, normalizedCost, currency) || planType || null,
     monthlyCost: normalizedCost,
-    currency: normalizeClaudeCurrency(candidate.currency || candidate.price?.currency),
+    currency,
     source: "claude_browser_sync",
     actualBillingKnown: normalizedCost > 0,
     updatedAt: new Date().toISOString()
   };
+}
+
+function concreteClaudePlanTypeFromCost(planType, monthlyCost, currency) {
+  const planKey = normalizeSubscriptionPlanKey(planType);
+  if (/max 20x|(^| )20x($| )/.test(planKey)) return "Claude Max 20x";
+  if (/max 5x|(^| )5x($| )/.test(planKey)) return "Claude Max 5x";
+  if (planKey && !/\bmax\b/.test(planKey)) return null;
+  const amount = positiveCurrencyAmount(monthlyCost);
+  const currencyCode = normalizeClaudeCurrency(currency);
+  if (!(amount > 0)) return null;
+  if (currencyCode === "EUR") {
+    if (Math.abs(amount - 180) < 0.01) return "Claude Max 20x";
+    if (Math.abs(amount - 90) < 0.01) return "Claude Max 5x";
+  }
+  if (currencyCode === "USD") {
+    if (Math.abs(amount - 200) < 0.01) return "Claude Max 20x";
+    if (Math.abs(amount - 100) < 0.01) return "Claude Max 5x";
+  }
+  return null;
 }
 
 function explicitClaudeSubscriptionPlan(candidate) {

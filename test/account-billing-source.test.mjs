@@ -136,6 +136,106 @@ assert.equal(claudeWithAnthropicBilling.subscription.monthlyCost, 150);
 assert.equal(claudeWithAnthropicBilling.subscription.source, "account_billing");
 assert.equal(claudeWithAnthropicBilling.subscription.actualBillingKnown, true);
 
+const openAiGenericPro5xBilling = _test.sanitizeAccountBillingSnapshots(
+  {
+    providers: {
+      openai: {
+        amount: 115,
+        currency: "EUR",
+        period: "month",
+        plan: "Pro",
+        sourceType: "browser_account_snapshot",
+        fetchedAt: "2026-07-08T10:30:00Z"
+      }
+    }
+  },
+  { nowMs }
+);
+const codexGenericPro5x = _test.mergeProviderSubscription(
+  { id: "codex", status: "live", planType: "Pro" },
+  {},
+  "codex",
+  officialPricing,
+  openAiGenericPro5xBilling
+);
+assert.equal(codexGenericPro5x.planType, "Pro 5x");
+assert.equal(codexGenericPro5x.subscription.planType, "Pro 5x");
+assert.equal(codexGenericPro5x.subscription.monthlyCost, 115);
+assert.equal(codexGenericPro5x.subscription.currency, "EUR");
+assert.equal(codexGenericPro5x.subscription.actualBillingKnown, true);
+
+const openAiGenericPro20xBilling = _test.sanitizeAccountBillingSnapshots(
+  {
+    providers: {
+      openai: {
+        amount: 229,
+        currency: "EUR",
+        period: "month",
+        plan: "Pro",
+        sourceType: "browser_account_snapshot",
+        fetchedAt: "2026-07-08T10:35:00Z"
+      }
+    }
+  },
+  { nowMs }
+);
+const codexGenericPro20x = _test.mergeProviderSubscription(
+  { id: "codex", status: "live", planType: "Pro" },
+  {},
+  "codex",
+  officialPricing,
+  openAiGenericPro20xBilling
+);
+assert.equal(codexGenericPro20x.planType, "Pro 20x");
+assert.equal(codexGenericPro20x.subscription.planType, "Pro 20x");
+assert.equal(codexGenericPro20x.subscription.monthlyCost, 229);
+assert.equal(codexGenericPro20x.subscription.currency, "EUR");
+assert.equal(codexGenericPro20x.subscription.actualBillingKnown, true);
+
+const claudeMax5xSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
+  subscription: { planType: "Claude Max", monthlyPrice: 90, currency: "EUR" },
+  updatedAt: "2026-07-08T10:40:00Z"
+});
+assert.equal(claudeMax5xSnapshot.subscription.planType, "Claude Max 5x");
+assert.equal(claudeMax5xSnapshot.subscription.monthlyCost, 90);
+
+const claudeMax20xSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
+  subscription: { planType: "Claude Max", monthlyPrice: 180, currency: "EUR" },
+  updatedAt: "2026-07-08T10:45:00Z"
+});
+assert.equal(claudeMax20xSnapshot.subscription.planType, "Claude Max 20x");
+assert.equal(claudeMax20xSnapshot.subscription.monthlyCost, 180);
+
+const openAiOnlyBilling = _test.sanitizeAccountBillingSnapshots(
+  {
+    providers: {
+      openai: {
+        status: "missing",
+        reason: "account_billing_amount_missing",
+        sourceType: "browser_account_snapshot",
+        fetchedAt: "2026-07-08T10:45:00Z"
+      }
+    }
+  },
+  { nowMs }
+);
+const claudeBrowserSubscriptionMerged = _test.mergeProviderSubscription(
+  {
+    id: "claudeCode",
+    status: "live",
+    planType: "Claude Max 20x",
+    planSource: "claude_browser_sync",
+    subscription: claudeMax20xSnapshot.subscription
+  },
+  {},
+  "claudeCode",
+  officialPricing,
+  openAiOnlyBilling
+);
+assert.equal(claudeBrowserSubscriptionMerged.subscription.planType, "Claude Max 20x");
+assert.equal(claudeBrowserSubscriptionMerged.subscription.monthlyCost, 180);
+assert.equal(claudeBrowserSubscriptionMerged.subscriptionConnectionAction, null);
+
 const claudeConflict = _test.resolveClaudePlanSignals({
   browserCredits: { status: "expired", reason: "claude_login_required", updatedAt: "2026-07-08T10:00:00Z" },
   statusline: { planType: "Claude Max 20x", updatedAt: "2026-07-07T20:00:00Z" },
@@ -183,16 +283,54 @@ const codexWithExpiredBilling = _test.mergeProviderSubscription(
   officialPricing,
   expiredBilling
 );
-assert.equal(codexWithExpiredBilling.subscription.monthlyCost, 100);
-assert.equal(codexWithExpiredBilling.subscription.monthlyCostMin, 100);
-assert.equal(codexWithExpiredBilling.subscription.monthlyCostMax, 200);
-assert.equal(codexWithExpiredBilling.subscription.source, "official_pricing_page");
-assert.equal(codexWithExpiredBilling.subscription.planType, "Pro 5x/20x");
-assert.equal(codexWithExpiredBilling.subscription.priceType, "official_variant_range");
-assert.equal(codexWithExpiredBilling.subscription.priceVariant, "pro_5x_20x");
+assert.equal(codexWithExpiredBilling.subscription.monthlyCost, 0);
+assert.equal(codexWithExpiredBilling.subscription.monthlyCostMin, null);
+assert.equal(codexWithExpiredBilling.subscription.monthlyCostMax, null);
+assert.equal(codexWithExpiredBilling.subscription.planType, null);
+assert.equal(codexWithExpiredBilling.subscription.priceType, null);
+assert.equal(codexWithExpiredBilling.subscription.priceVariant, null);
 assert.equal(codexWithExpiredBilling.subscription.actualBillingKnown, false);
 assert.equal(codexWithExpiredBilling.subscription.accountBillingStatus, "expired");
 assert.equal(codexWithExpiredBilling.subscription.accountBillingParserStatus, "expired");
+assert.equal(codexWithExpiredBilling.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptLogin");
+
+const genericCodexWithoutBilling = _test.mergeProviderSubscription(
+  { id: "codex", status: "live", planType: "Pro", planSource: "codex_app_server" },
+  {},
+  "codex",
+  officialPricing,
+  _test.sanitizeAccountBillingSnapshots({}, { nowMs })
+);
+assert.equal(genericCodexWithoutBilling.subscription.monthlyCost, 0);
+assert.equal(genericCodexWithoutBilling.subscription.planType, null);
+assert.equal(genericCodexWithoutBilling.subscription.priceVariant, null);
+assert.equal(genericCodexWithoutBilling.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
+
+const concreteOpenAiPlanOnlyBilling = _test.sanitizeAccountBillingSnapshots(
+  {
+    providers: {
+      openai: {
+        plan: "Pro 20x",
+        sourceType: "browser_account_snapshot",
+        fetchedAt: "2026-07-08T10:50:00Z",
+        reason: "account_billing_amount_missing"
+      }
+    }
+  },
+  { nowMs }
+);
+const concreteCodexPlanOnly = _test.mergeProviderSubscription(
+  { id: "codex", status: "live", planType: "Pro" },
+  {},
+  "codex",
+  officialPricing,
+  concreteOpenAiPlanOnlyBilling
+);
+const localizedConcreteCodex = _test.localizeUsageSubscriptionPrices({ codex: concreteCodexPlanOnly }, "de").codex;
+assert.equal(localizedConcreteCodex.subscription.planType, "Pro 20x");
+assert.equal(localizedConcreteCodex.subscription.monthlyCost, 229);
+assert.equal(localizedConcreteCodex.subscription.currency, "EUR");
+assert.equal(localizedConcreteCodex.subscriptionConnectionAction, null);
 
 const unknownBilling = _test.sanitizeAccountBillingSnapshots({}, { nowMs });
 const enterpriseWithoutFallback = _test.mergeProviderSubscription(
