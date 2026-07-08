@@ -1234,6 +1234,8 @@ a {
 .subscription-connection-action {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 28px;
   padding: 5px 9px;
   border: 1px solid color-mix(in srgb, var(--provider-accent, var(--accent)) 42%, var(--line));
@@ -1252,6 +1254,22 @@ button.subscription-connection-action {
 
 .subscription-connection-action:hover {
   border-color: var(--provider-accent, var(--accent));
+}
+
+.subscription-connection-action.is-loading {
+  opacity: 0.78;
+  cursor: wait;
+  pointer-events: none;
+}
+
+.subscription-connection-action.is-loading::before {
+  content: "";
+  width: 0.72em;
+  height: 0.72em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: refresh-spin 0.72s linear infinite;
 }
 
 .subscription-connection-help {

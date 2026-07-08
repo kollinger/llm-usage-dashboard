@@ -460,6 +460,18 @@ const expiredAccountBillingCard = renderSubscriptionPricingCard({
   previous: null
 });
 const genericCodexOfficialProviderSummary = renderProviderSubscription({ subscription: genericCodexOfficialSubscription });
+const concretePlanBadgeOnlyProviderHtml = renderProvider({
+  id: "codex",
+  name: "Codex",
+  kicker: "CODEX",
+  accent: providerMeta.codex.accent,
+  status: "live",
+  planType: "Pro 20x",
+  subscription: accountBillingSubscription,
+  foot: [],
+  apiTokens: 100,
+  message: "Logged tokens"
+});
 const usedModelPricingHtml = renderUsedModelPricingView(daily);
 const unknownModelPricingHtml = renderUsedModelPricingView([
   {
@@ -745,6 +757,17 @@ handleSubscriptionConnectionClick({
     manualPlanReadPrevented = true;
   }
 });
+const manualPlanReadLoadingProvider = state.subscriptionRereadProvider;
+const loadingCodexConnectionHtml = renderProviderSubscriptionConnection({
+  id: "codex",
+  subscriptionConnectionAction: {
+    provider: "chatgpt",
+    mode: "login",
+    url: "https://chatgpt.com/#settings/Billing",
+    labelKey: "subscriptions.connectionActions.chatgptLogin",
+    statusKey: "subscriptions.connectionStatus.chatgptLoginRequired"
+  }
+});
 JSON.stringify({
   filters: CHART_FILTERS,
   h24Total,
@@ -827,6 +850,11 @@ JSON.stringify({
     totalBreakdownChartHtml.includes("Total") &&
     chartTokenSegmentEntries(multiProviderDaily, "total")[0].label === "Total",
 	  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
+  providerCardUsesPlanBadgeOnly:
+    concretePlanBadgeOnlyProviderHtml.includes("plan-badge") &&
+    concretePlanBadgeOnlyProviderHtml.includes(">Pro 20x<") &&
+    !concretePlanBadgeOnlyProviderHtml.includes("subscription-summary") &&
+    !concretePlanBadgeOnlyProviderHtml.includes("$200.00/mo"),
   providerCardHasLogo:
     providerCardHtml.includes("provider-mark-claudeCode") &&
     providerCardHtml.includes("assets/provider-logos/claude.svg"),
@@ -913,11 +941,15 @@ JSON.stringify({
 	    claudeLoginCardHtml.includes("data-subscription-reread") &&
 	    claudeLoginCardHtml.includes("Read plan now") &&
 	    claudeLoginCardHtml.includes("Open the provider page"),
-	  connectionRereadFlow:
-	    pendingPlanReadProvider === "claude" &&
-	    autoPlanReadTriggered === true &&
-	    manualPlanReadPrevented === true &&
-	    subscriptionRefreshCalls.join(",") === "claude,chatgpt" &&
+		  connectionRereadFlow:
+		    pendingPlanReadProvider === "claude" &&
+		    autoPlanReadTriggered === true &&
+		    manualPlanReadPrevented === true &&
+		    manualPlanReadLoadingProvider === "chatgpt" &&
+		    loadingCodexConnectionHtml.includes("is-loading") &&
+		    loadingCodexConnectionHtml.includes("aria-busy=\\\"true\\\"") &&
+		    loadingCodexConnectionHtml.includes("disabled") &&
+		    subscriptionRefreshCalls.join(",") === "claude,chatgpt" &&
 	    forcedPlanReads.length === 2 &&
 	    forcedPlanReads.every((entry) => entry.force === true && entry.showIndicator === true),
 	  claudeConflictAction:
@@ -1044,6 +1076,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.modelBreakdownSegments, true);
   assert.equal(result.totalBreakdownSegment, true);
   assert.equal(result.providerCardUsesProviderAccent, true);
+  assert.equal(result.providerCardUsesPlanBadgeOnly, true);
   assert.equal(result.providerCardHasLogo, true);
   assert.equal(result.providerCardFreshness, true);
   assert.equal(result.normalizedProviderConnectionActions, true);

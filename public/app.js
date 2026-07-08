@@ -41,6 +41,7 @@ const state = {
   sourceMessage: { text: "", status: "" },
   liveSeriesVisibility: {},
   pendingSubscriptionReread: null,
+  subscriptionRereadProvider: null,
   sourceOps: {},
   settingsAutosaveTimers: {},
   settingsToastTimer: null,
@@ -2713,19 +2714,27 @@ function handleSubscriptionRereadReturn() {
   return true;
 }
 
-function triggerSubscriptionPlanReread(provider) {
+async function triggerSubscriptionPlanReread(provider) {
+  setSubscriptionRereadLoading(provider, true);
   setRefreshIndicator(true);
-  const refreshResult = requestSubscriptionSourceRefresh(provider);
-  if (!refreshResult || typeof refreshResult.then !== "function") {
-    loadUsage({ showIndicator: true, force: true });
+  try {
+    const refreshResult = requestSubscriptionSourceRefresh(provider);
+    if (refreshResult && typeof refreshResult.then === "function") {
+      await Promise.race([
+        refreshResult.catch(() => null),
+        new Promise((resolve) => setTimeout(resolve, SUBSCRIPTION_REREAD_SYNC_TIMEOUT_MS))
+      ]);
+    }
+    await loadUsage({ showIndicator: true, force: true });
     return refreshResult;
+  } finally {
+    setSubscriptionRereadLoading(null, false);
   }
-  return Promise.race([
-    refreshResult.catch(() => null),
-    new Promise((resolve) => setTimeout(resolve, SUBSCRIPTION_REREAD_SYNC_TIMEOUT_MS))
-  ]).finally(() => {
-    loadUsage({ showIndicator: true, force: true });
-  });
+}
+
+function setSubscriptionRereadLoading(provider, isLoading) {
+  state.subscriptionRereadProvider = isLoading ? String(provider || "") : null;
+  updateSubscriptionConnectionLoadingState();
 }
 
 function requestSubscriptionSourceRefresh(provider) {
@@ -2809,6 +2818,20 @@ function setRefreshIndicator(isLoading) {
   els.refreshBtn.disabled = isLoading;
   els.refreshBtn.classList.toggle("is-loading", isLoading);
   els.refreshBtn.toggleAttribute("aria-busy", isLoading);
+}
+
+function updateSubscriptionConnectionLoadingState() {
+  const activeProvider = state.subscriptionRereadProvider;
+  document.querySelectorAll("[data-subscription-provider-open], [data-subscription-reread]").forEach((element) => {
+    const isActive = Boolean(activeProvider) && element.dataset.subscriptionProvider === activeProvider;
+    element.classList.toggle("is-loading", isActive);
+    element.toggleAttribute("aria-busy", isActive);
+    if (element.tagName === "BUTTON") {
+      element.disabled = isActive;
+    } else {
+      element.setAttribute("aria-disabled", String(isActive));
+    }
+  });
 }
 
 function renderSkeletonProviderGrid() {
@@ -3965,6 +3988,7 @@ function renderProviderDragHandle(provider, index, total) {
 function renderProviderSubscription(provider) {
   const subscription = provider.subscription;
   if (!providerSubscriptionIsDisplayable(subscription)) return "";
+  if (providerPlanBadgeAlreadyShowsSubscription(provider, subscription)) return "";
   const qualityClass = subscription.quality || "unknown";
   return `
     <div class="subscription-summary subscription-quality-${escapeHtml(qualityClass)}">
@@ -3982,21 +4006,25 @@ function renderProviderSubscriptionConnection(provider) {
     : subscriptionConnectionStatusText(action);
   const connectionProvider = action?.provider || providerSubscriptionConnectionProvider(provider?.id);
   const mode = action?.mode || "refresh";
+  const isReading = state.subscriptionRereadProvider === connectionProvider;
   const actionHtml = action
     ? `
       <span class="subscription-connection-actions">
         ${action.url ? `<a
-          class="subscription-connection-action"
+          class="subscription-connection-action${isReading ? " is-loading" : ""}"
           href="${escapeHtml(action.url)}"
           target="_blank"
           rel="noopener noreferrer"
+          aria-disabled="${isReading ? "true" : "false"}"
+          ${isReading ? "aria-busy=\"true\"" : ""}
           data-subscription-provider-open
           data-subscription-provider="${escapeHtml(connectionProvider)}"
           data-subscription-mode="${escapeHtml(mode)}"
         >${escapeHtml(subscriptionConnectionActionLabel(action))}</a>` : ""}
         <button
           type="button"
-          class="subscription-connection-action"
+          class="subscription-connection-action${isReading ? " is-loading" : ""}"
+          ${isReading ? "disabled aria-busy=\"true\"" : ""}
           data-subscription-reread
           data-subscription-provider="${escapeHtml(connectionProvider)}"
         >${escapeHtml(t("subscriptions.connectionActions.rereadPlan"))}</button>
@@ -4010,6 +4038,12 @@ function renderProviderSubscriptionConnection(provider) {
       ${actionHtml}
     </div>
   `;
+}
+
+function providerPlanBadgeAlreadyShowsSubscription(provider, subscription) {
+  const providerPlan = providerDisplayPlanType(provider?.id, provider?.planType, subscription);
+  if (!providerPlan || !subscription?.planType) return false;
+  return normalizeSubscriptionPlanKey(providerPlan) === normalizeSubscriptionPlanKey(subscription.planType);
 }
 
 function providerSubscriptionConnectionProvider(providerId) {
