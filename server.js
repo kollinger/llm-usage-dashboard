@@ -1219,7 +1219,7 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
 app.post("/api/account-billing/snapshots", electronSyncMiddleware, async (req, res) => {
   try {
     const snapshot = await saveAccountBillingSnapshots(req.body || {});
-    invalidateTimedCache(usageCache);
+    if (snapshot._usageCacheChanged) invalidateTimedCache(usageCache);
     res.json({ ok: true, snapshot });
   } catch (error) {
     sendApiError(res, error, "account_billing_snapshot_save_failed");
@@ -1358,13 +1358,13 @@ app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
 
 app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) => {
   try {
-    const [settings, codex, claudeCode, copilot] = await Promise.all([
+    const [settings, usage] = await Promise.all([
       readNotificationSettings(),
-      readCodexUsage().catch(() => null),
-      readClaudeCodeUsage().catch(() => null),
-      readCopilotUsage().catch(() => null)
+      readUsageDashboard().catch(() => null)
     ]);
-    await recordProviderQuotaSnapshots([codex, claudeCode, copilot]).catch(() => {});
+    const codex = usage?.codex || null;
+    const claudeCode = usage?.claudeCode || null;
+    const copilot = usage?.copilot || null;
     const alerts = settings.enabled ? buildNotificationAlerts(settings, { codex, claudeCode, copilot }) : [];
     res.json({ alerts });
   } catch (error) {
@@ -1781,9 +1781,39 @@ async function readAccountBillingSnapshots() {
 
 async function saveAccountBillingSnapshots(payload) {
   const snapshot = sanitizeAccountBillingSnapshots(payload);
+  const previous = await readAccountBillingSnapshots().catch(() => null);
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.writeFile(ACCOUNT_BILLING_SNAPSHOTS_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+  Object.defineProperty(snapshot, "_usageCacheChanged", {
+    value: accountBillingUsageCacheKey(previous) !== accountBillingUsageCacheKey(snapshot),
+    enumerable: false
+  });
   return snapshot;
+}
+
+function accountBillingUsageCacheKey(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return "";
+  const providers = Object.entries(snapshot.providers || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([providerId, entry]) => [
+      providerId,
+      entry?.status || null,
+      entry?.unavailableReason || null,
+      entry?.sourceType || null,
+      entry?.planType || null,
+      entry?.planKey || null,
+      entry?.monthlyCost || 0,
+      entry?.currency || null,
+      entry?.period || null,
+      entry?.actualBillingKnown === true,
+      entry?.parserStatus || null,
+      entry?.redacted === true
+    ]);
+  return JSON.stringify({
+    status: snapshot.status || null,
+    reason: snapshot.reason || null,
+    providers
+  });
 }
 
 function accountBillingSnapshotUnavailable(status, reason) {
