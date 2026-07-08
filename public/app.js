@@ -3005,11 +3005,13 @@ function normalizeCodexProvider(codex) {
   const limitRows = normalizeLimitRows(codex?.limits);
   const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
   const creditRows = normalizeCreditRows(codex?.creditRows, codex?.credits);
+  const rawPlanType = codex?.planType || codex?.latest?.planType || null;
   const subscription = normalizeSubscription(codex?.subscription, {
-    planType: codex?.planType || codex?.latest?.planType,
+    planType: rawPlanType,
     source: codex?.planSource || (codex?.liveRateLimits ? "codex_app_server" : codex?.latest?.planType ? "codex_local_logs" : null),
     updatedAt: codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp
   }, "codex");
+  const planType = providerDisplayPlanType("codex", rawPlanType, subscription);
   const foot = buildQuotaFoot({
     providerId: "codex",
     todayTokens: last24hTokens,
@@ -3030,7 +3032,7 @@ function normalizeCodexProvider(codex) {
     limitRows,
     limitAlert: buildLimitFullAlert({ limitRows, totals: codex?.totals }),
     creditRows,
-    planType: codex?.planType || codex?.latest?.planType || null,
+    planType,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
     todayTokens: last24hTokens,
@@ -3054,11 +3056,13 @@ function normalizeCodexSparkProvider(spark, codexSubscription) {
   const meta = providerMeta.codexSpark;
   const limitRows = normalizeLimitRows(spark?.limits);
   const limitUpdatedAt = spark?.limitsUpdatedAt || spark?.latest?.timestamp;
+  const rawPlanType = spark?.planType || null;
   const subscription = normalizeSubscription(codexSubscription, {
-    planType: spark?.planType,
+    planType: rawPlanType,
     source: spark?.planSource || null,
     updatedAt: spark?.limitsUpdatedAt || spark?.latest?.timestamp
   }, "codexSpark");
+  const planType = providerDisplayPlanType("codexSpark", rawPlanType || subscription?.planType, subscription);
   return {
     id: "codexSpark",
     name: meta.name,
@@ -3070,7 +3074,7 @@ function normalizeCodexSparkProvider(spark, codexSubscription) {
     limitRows,
     limitAlert: buildLimitFullAlert({ limitRows, totals: spark?.totals }),
     creditRows: [],
-    planType: subscription?.planType || spark?.planType || null,
+    planType,
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
     todayTokens: spark?.totals?.last24h?.totalTokens,
@@ -3109,7 +3113,7 @@ function buildQuotaFoot({ providerId, todayTokens, since, fiveHour, weekly, upda
 }
 
 function insertSubscriptionFoot(rows, subscription) {
-  if (!subscription) return;
+  if (!providerSubscriptionIsDisplayable(subscription)) return;
   const index = Math.max(rows.length - 1, 0);
   rows.splice(index, 0, footRow(t("labels.subscription"), subscriptionFootValue(subscription), { wide: true }));
 }
@@ -3152,9 +3156,7 @@ function normalizeSubscription(subscription, fallback = {}, providerId = null) {
     monthlyCost = 0;
     monthlyCostMin = 0;
     monthlyCostMax = 0;
-    if (/_5x_20x$/u.test(String(tierVariant || priceVariant || "")) || /5x\s*\/\s*20x/iu.test(planType)) {
-      planType = "";
-    }
+    planType = "";
     catalogReviewedAt = null;
     sourceUrl = source.sourceUrl || null;
     priceType = null;
@@ -3278,6 +3280,20 @@ function isAmbiguousSubscriptionPlanVariant(providerId, planType) {
   return priceType === "official_variant_range" || /_5x_20x$/u.test(variant);
 }
 
+function providerDisplayPlanType(providerId, planType, subscription = null) {
+  const normalized = String(planType || "").trim();
+  if (!normalized) return null;
+  if (subscription?.costStatus === "variant_required") return null;
+  if (subscription?.actualBillingKnown !== true && isAmbiguousSubscriptionPlanVariant(providerId, normalized)) return null;
+  return normalized;
+}
+
+function providerSubscriptionIsDisplayable(subscription) {
+  if (!subscription) return false;
+  if (subscription.costStatus === "variant_required") return false;
+  return Boolean(subscription.planType || Number(subscription.monthlyCost || 0) > 0);
+}
+
 function subscriptionPricingRegion() {
   return state.language === "de" ? "de" : null;
 }
@@ -3308,15 +3324,16 @@ function normalizeLocalProvider(id, provider) {
   const limitRows = normalizeLimitRows(provider?.limits);
   const hasLimitData = hasLimits || Boolean(limitRows.length);
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
-  const planType = provider?.planType || provider?.plan || null;
+  const rawPlanType = provider?.planType || provider?.plan || null;
   const limitsUpdatedAt =
     id === "claudeCode" ? provider?.limitsUpdatedAt : id === "copilot" && hasLimitData ? provider?.quotaStatus?.updatedAt : null;
   const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
   const subscription = normalizeSubscription(provider?.subscription, {
-    planType,
-    source: provider?.planSource || (planType ? `${id}_local_signal` : null),
+    planType: rawPlanType,
+    source: provider?.planSource || (rawPlanType ? `${id}_local_signal` : null),
     updatedAt
   }, id);
+  const planType = providerDisplayPlanType(id, rawPlanType, subscription);
   const foot = buildQuotaFoot({
     providerId: id,
     todayTokens: provider?.totals?.last24h?.totalTokens,
@@ -3645,12 +3662,13 @@ function normalizeApiProvider(id, provider) {
   const costs = provider?.costs;
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const limitRows = normalizeLimitRows(provider?.limits);
-  const planType = provider?.planType || provider?.plan || null;
+  const rawPlanType = provider?.planType || provider?.plan || null;
   const subscription = normalizeSubscription(provider?.subscription, {
-    planType,
-    source: provider?.planSource || (planType ? `${id}_api` : null),
+    planType: rawPlanType,
+    source: provider?.planSource || (rawPlanType ? `${id}_api` : null),
     updatedAt: provider?.updatedAt || null
   }, id);
+  const planType = providerDisplayPlanType(id, rawPlanType, subscription);
   const foot = [
     [t("labels.tokens7d"), formatTokens(totalTokens)],
     [t("labels.cost7d"), formatMoney(costs?.total, costs?.currency)]
@@ -3920,7 +3938,7 @@ function renderProviderDragHandle(provider, index, total) {
 
 function renderProviderSubscription(provider) {
   const subscription = provider.subscription;
-  if (!subscription) return "";
+  if (!providerSubscriptionIsDisplayable(subscription)) return "";
   const qualityClass = subscription.quality || "unknown";
   return `
     <div class="subscription-summary subscription-quality-${escapeHtml(qualityClass)}">
@@ -7996,7 +8014,7 @@ function formatMonthlyCost(subscription) {
 
 function subscriptionCompactLabel(subscription) {
   if (!subscription) return "--";
-  const plan = subscription.planType || t("subscriptions.planUnknown");
+  const plan = subscription.costStatus === "variant_required" ? t("subscriptions.planUnknown") : subscription.planType || t("subscriptions.planUnknown");
   const cost = subscription.monthlyCost > 0 ? formatMonthlyCost(subscription) : t("subscriptions.costUnknown");
   return `${plan} (${cost})`;
 }

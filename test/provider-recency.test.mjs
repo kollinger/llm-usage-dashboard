@@ -755,15 +755,16 @@ JSON.stringify({
 	  limitRiskLabel: t("limits.status.risk"),
   catalogQualityLabel: t("subscriptions.quality.catalog"),
   manualQualityLabel: t("subscriptions.quality.manual"),
-	  manualSourceLabel: subscriptionSourceLabel("local_settings"),
+  manualSourceLabel: subscriptionSourceLabel("local_settings"),
   detectedSubscriptionRequiresVariant:
     detectedSubscription.quality === "estimated" &&
-    detectedSubscriptionCard.includes("Pro (Cost unknown)") &&
+    renderProviderSubscription({ subscription: detectedSubscription }) === "" &&
+    !detectedSubscriptionCard.includes("Pro (Cost unknown)") &&
     !detectedSubscriptionCard.includes("Pro 5x/20x"),
   genericCodexProVariantRangeBlocked:
     genericCodexOfficialSubscription.quality === "estimated" &&
     genericCodexOfficialCard.includes("Plan unknown (Cost unknown)") &&
-    genericCodexOfficialProviderSummary.includes("Plan unknown (Cost unknown)") &&
+    genericCodexOfficialProviderSummary === "" &&
     !genericCodexOfficialCard.includes("Pro 5x/20x") &&
     !genericCodexOfficialProviderSummary.includes("Pro 5x/20x"),
   accountBillingActual:
@@ -809,6 +810,9 @@ JSON.stringify({
     normalizedCodexConnectionCardHtml.includes("data-subscription-provider-open") &&
     normalizedCodexConnectionCardHtml.includes("data-subscription-reread") &&
     normalizedCodexConnectionCardHtml.includes("Read plan now") &&
+    !normalizedCodexConnectionCardHtml.includes("Pro (Cost unknown)") &&
+    !normalizedCodexConnectionCardHtml.includes("pro (Cost unknown)") &&
+    !/plan-badge[^>]*>\\s*pro\\s*</iu.test(normalizedCodexConnectionCardHtml) &&
     normalizedClaudeConnectionCardHtml.includes("Read Claude plan again") &&
     normalizedClaudeConnectionCardHtml.includes("https://claude.ai/settings/billing") &&
     normalizedClaudeConnectionCardHtml.includes("data-subscription-provider-open") &&
@@ -981,7 +985,8 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.missingCatalogQuality, "estimated");
   assert.equal(result.missingCatalogStatus, "catalog_missing");
   assert.equal(result.missingCatalogReason.includes("Enterprise (Cost unknown)"), true);
-  assert.equal(result.claudeCatalogCopy.includes("Max (Cost unknown)"), true);
+  assert.equal(result.claudeCatalogCopy, "");
+  assert.equal(result.claudeCatalogCopy.includes("Max (Cost unknown)"), false);
   assert.equal(result.claudeCatalogCopy.includes("Claude Max 5x/20x"), false);
   assert.equal(result.claudeCatalogCopy.includes("Monthly price is a catalog fallback"), false);
   assert.equal(result.limitOk, "ok");
