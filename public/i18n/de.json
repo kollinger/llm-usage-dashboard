@@ -820,6 +820,7 @@
       "local_settings": "gespeicherter Fallback",
       "account": "Account-/Abrechnungsquelle",
       "codex_app_server": "lokaler Codex-App-Server",
+      "codexbar_dashboard_snapshot": "CodexBar-Dashboard-Snapshot",
       "codex_local_logs": "lokale Codex-Logs",
       "claude_statusline": "Claude-Code-Statusline",
       "claude_auth_status": "Claude-CLI-Auth-Status",

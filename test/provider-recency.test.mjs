@@ -916,6 +916,36 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(localizedUsage.openai.subscription.monthlyCost, 250);
   assert.equal(localizedUsage.openai.subscription.actualBillingKnown, true);
   assert.equal(_test.localizeUsageSubscriptionPrices({ codex: officialVariantMerged }, "en").codex.subscription.monthlyCost, 200);
+  const codexBarDir = await mkdtemp(path.join(os.tmpdir(), "codexbar-plan-"));
+  const codexBarSnapshotFile = path.join(codexBarDir, "openai-dashboard.json");
+  await writeFile(
+    codexBarSnapshotFile,
+    JSON.stringify({
+      accountEmail: "redacted@example.test",
+      snapshot: {
+        accountPlan: "Pro 20x",
+        updatedAt: "2026-07-08T00:00:00Z",
+        creditEvents: [{ id: "not-read", creditsUsed: 12.3 }]
+      }
+    })
+  );
+  const codexBarPlan = await _test.readCodexBarOpenAiDashboardPlan(codexBarSnapshotFile);
+  assert.deepEqual(codexBarPlan, {
+    planType: "Pro 20x",
+    source: "codexbar_dashboard_snapshot",
+    updatedAt: "2026-07-08T00:00:00.000Z"
+  });
+  const preferredPlan = _test.preferredCodexPlan("pro", codexBarPlan, "codex");
+  assert.equal(preferredPlan.planType, "Pro 20x");
+  assert.equal(preferredPlan.source, "codexbar_dashboard_snapshot");
+  const codexBarMerged = _test.mergeProviderSubscription(
+    { id: "codex", status: "live", planType: preferredPlan.planType, planSource: preferredPlan.source },
+    null,
+    "codex",
+    officialPricing
+  );
+  assert.equal(_test.localizeUsageSubscriptionPrices({ codex: codexBarMerged }, "de").codex.subscription.monthlyCost, 229);
+  await rm(codexBarDir, { recursive: true, force: true });
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
   assert.equal(bundledGenericPro.subscription.monthlyCost, 100);

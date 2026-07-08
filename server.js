@@ -34,6 +34,13 @@ const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
+const CODEXBAR_OPENAI_DASHBOARD_FILE = path.join(
+  os.homedir(),
+  "Library",
+  "Application Support",
+  "com.steipete.codexbar",
+  "openai-dashboard.json"
+);
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -2827,6 +2834,7 @@ function buildLimitRows(limits, keys) {
 
 async function readCodexUsage(options = {}) {
   const liveRateLimitsPromise = readCodexLiveRateLimits();
+  const codexBarPlanPromise = readCodexBarOpenAiDashboardPlan();
   const { files, roots, duplicatesSkipped } = await listCodexUsageFiles(options.sources || defaultCodexSources());
 
   const aggregates = createUsageTotals();
@@ -2944,6 +2952,8 @@ async function readCodexUsage(options = {}) {
 
   const daily = buildDaily(dailyMap);
   const liveRateLimits = await liveRateLimitsPromise;
+  const codexBarPlan = await codexBarPlanPromise;
+  const codexPlan = preferredCodexPlan(liveRateLimits?.codex?.planType || null, codexBarPlan, "codex");
   const liveCodexLimits = liveRateLimits?.codex ? codexRateLimitsFromLive(liveRateLimits.codex, "Codex") : null;
   const liveSparkLimits = liveRateLimits?.spark ? codexRateLimitsFromLive(liveRateLimits.spark, "Codex 5.3 Spark") : null;
   const liveCodexCreditRows = codexCreditRowsFromLive(liveRateLimits?.codex);
@@ -2960,11 +2970,19 @@ async function readCodexUsage(options = {}) {
       duplicatesSkipped,
       sessionsWithEvents,
       eventCount,
-      liveRateLimits: liveRateLimits?.source || null
+      liveRateLimits: liveRateLimits?.source || null,
+      codexBarDashboard: codexBarPlan
+        ? {
+            status: "available",
+            source: codexBarPlan.source,
+            updatedAt: codexBarPlan.updatedAt,
+            planType: codexBarPlan.planType
+          }
+        : null
     },
     liveRateLimits: liveRateLimits?.source || null,
-    planType: liveRateLimits?.codex?.planType || null,
-    planSource: liveRateLimits?.codex?.planType ? "codex_app_server" : null,
+    planType: codexPlan.planType,
+    planSource: codexPlan.source,
     creditRows: liveCodexCreditRows,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
@@ -2973,7 +2991,7 @@ async function readCodexUsage(options = {}) {
           modelContextWindow: latestEvent.info.model_context_window || null,
           last: normalizeUsage(latestEvent.info.last_token_usage || {}),
           sessionTotal: normalizeUsage(latestEvent.info.total_token_usage || {}),
-          planType: liveRateLimits?.codex?.planType || latestEvent.rateLimits?.plan_type || null,
+          planType: codexPlan.planType || latestEvent.rateLimits?.plan_type || null,
           file: latestEvent.file
         }
       : null,
@@ -5098,6 +5116,56 @@ async function readCodexLiveRateLimits() {
   });
 }
 
+async function readCodexBarOpenAiDashboardPlan(file = CODEXBAR_OPENAI_DASHBOARD_FILE) {
+  try {
+    const payload = JSON.parse(await fsp.readFile(file, "utf8"));
+    const snapshot = payload?.snapshot && typeof payload.snapshot === "object" ? payload.snapshot : payload;
+    const planType = firstNonEmptyString(
+      snapshot?.accountPlan,
+      snapshot?.planType,
+      snapshot?.planName,
+      snapshot?.plan?.displayName,
+      snapshot?.plan?.name,
+      snapshot?.billing?.planType,
+      snapshot?.billing?.planName
+    );
+    if (!planType) return null;
+    return {
+      planType,
+      source: "codexbar_dashboard_snapshot",
+      updatedAt: normalizeOptionalDate(snapshot?.updatedAt || payload?.updatedAt)
+    };
+  } catch {
+    return null;
+  }
+}
+
+function preferredCodexPlan(livePlanType, codexBarPlan, providerId = "codex") {
+  const livePlan = String(livePlanType || "").trim();
+  const codexBarPlanType = String(codexBarPlan?.planType || "").trim();
+  if (codexBarPlanType && isConcreteSubscriptionPlanVariant(providerId, codexBarPlanType) && !isConcreteSubscriptionPlanVariant(providerId, livePlan)) {
+    return {
+      planType: codexBarPlanType,
+      source: "codexbar_dashboard_snapshot",
+      updatedAt: codexBarPlan.updatedAt || null
+    };
+  }
+  if (livePlan) return { planType: livePlan, source: "codex_app_server", updatedAt: null };
+  if (codexBarPlanType) {
+    return {
+      planType: codexBarPlanType,
+      source: "codexbar_dashboard_snapshot",
+      updatedAt: codexBarPlan.updatedAt || null
+    };
+  }
+  return { planType: null, source: null, updatedAt: null };
+}
+
+function isConcreteSubscriptionPlanVariant(providerId, planType) {
+  const catalog = publicSubscriptionPlan(providerId, planType);
+  return Boolean(catalog?.tierVariant || (catalog?.priceVariant && catalog.priceVariant !== "from"));
+}
+
 function normalizeCodexLiveRateLimits(response) {
   const entries = [];
   if (response?.rateLimitsByLimitId && typeof response.rateLimitsByLimitId === "object") {
@@ -6587,6 +6655,8 @@ module.exports = {
     parseClaudePricingPage,
     officialSubscriptionPlan,
     mergeProviderSubscription,
+    readCodexBarOpenAiDashboardPlan,
+    preferredCodexPlan,
     localizeUsageSubscriptionPrices,
     sanitizeAccountBillingSnapshots,
     accountBillingSubscriptionPlan

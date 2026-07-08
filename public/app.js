@@ -3898,6 +3898,12 @@ function subscriptionSourceAuditRows(provider, subscription) {
         : t("subscriptions.sourceAudit.notConfigured")
     });
     rows.push({
+      source: subscriptionSourceLabel("codexbar_dashboard_snapshot"),
+      status: planSource === "codexbar_dashboard_snapshot"
+        ? t("subscriptions.sourceAudit.planOnlyNoPrice")
+        : t("subscriptions.sourceAudit.notUsed")
+    });
+    rows.push({
       source: subscriptionSourceLabel("account_billing"),
       status: accountBillingStatus
     });
