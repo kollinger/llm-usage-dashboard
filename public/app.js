@@ -3040,6 +3040,8 @@ function normalizeCodexProvider(codex) {
     priceUpdatedAt: subscription?.updatedAt || null,
     catalogReviewedAt: subscription?.catalogReviewedAt || null,
     subscription,
+    subscriptionConnectionAction: codex?.subscriptionConnectionAction || subscription?.connectionAction || null,
+    subscriptionConflict: codex?.subscriptionConflict || subscription?.conflict || null,
     foot
   };
 }
@@ -3354,6 +3356,8 @@ function normalizeLocalProvider(id, provider) {
     priceUpdatedAt: subscription?.updatedAt || null,
     catalogReviewedAt: subscription?.catalogReviewedAt || null,
     subscription,
+    subscriptionConnectionAction: provider?.subscriptionConnectionAction || subscription?.connectionAction || null,
+    subscriptionConflict: provider?.subscriptionConflict || subscription?.conflict || null,
     message: localizeProviderMessage(
       provider?.message,
       id === "copilot" ? "providers.messages.copilotLogTokens" : "providers.messages.logTokens24h"
@@ -3677,6 +3681,8 @@ function normalizeApiProvider(id, provider) {
     priceUpdatedAt: subscription?.updatedAt || null,
     catalogReviewedAt: subscription?.catalogReviewedAt || null,
     subscription,
+    subscriptionConnectionAction: provider?.subscriptionConnectionAction || subscription?.connectionAction || null,
+    subscriptionConflict: provider?.subscriptionConflict || subscription?.conflict || null,
     message:
       provider?.status === "not_configured"
         ? t("providers.messages.missingBackendKey")

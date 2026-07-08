@@ -499,6 +499,48 @@ const providerCardHtml = renderProvider({
   apiTokens: 100,
   message: "Logged tokens"
 });
+const normalizedCodexConnectionCardHtml = renderProvider(normalizeCodexProvider({
+  status: "live",
+  planType: "pro",
+  totals: {
+    last24h: { totalTokens: 1000 },
+    allTime: { totalTokens: 1000 }
+  },
+  limits: {
+    fiveHour: { usedPercent: 8, remainingPercent: 92, windowMinutes: 300, resetsAt: okFiveHourReset },
+    weekly: { usedPercent: 11, remainingPercent: 89, windowMinutes: 10080, resetsAt: earlyWeekReset }
+  },
+  subscription: {
+    planType: null,
+    monthlyCost: 0,
+    source: "codex_app_server",
+    costStatus: "variant_required",
+    accountBillingStatus: "expired",
+    accountBillingReason: "account_billing_source_expired"
+  },
+  subscriptionConnectionAction: {
+    provider: "chatgpt",
+    mode: "login",
+    url: "https://chatgpt.com/#settings/Billing",
+    labelKey: "subscriptions.connectionActions.chatgptLogin",
+    statusKey: "subscriptions.connectionStatus.chatgptLoginRequired"
+  }
+}));
+const normalizedClaudeConnectionCardHtml = renderProvider(normalizeLocalProvider("claudeCode", {
+  status: "live",
+  limits: {
+    fiveHour: { usedPercent: 1, remainingPercent: 99, windowMinutes: 300, resetsAt: okFiveHourReset },
+    weekly: { usedPercent: 59, remainingPercent: 41, windowMinutes: 10080, resetsAt: earlyWeekReset }
+  },
+  totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } },
+  subscriptionConnectionAction: {
+    provider: "claude",
+    mode: "refresh",
+    url: "https://claude.ai/settings/billing",
+    labelKey: "subscriptions.connectionActions.claudeRefresh",
+    statusKey: "subscriptions.connectionStatus.claudeRefreshRequired"
+  }
+}));
 const limitBarsHtml = renderLimitBars({
   id: "codex",
   accent: providerMeta.codex.accent,
@@ -761,6 +803,17 @@ JSON.stringify({
     providerCardHtml.includes("Usage") &&
     providerCardHtml.includes("Limits") &&
     providerCardHtml.includes("Catalog"),
+  normalizedProviderConnectionActions:
+    normalizedCodexConnectionCardHtml.includes("Log in to ChatGPT and read plan") &&
+    normalizedCodexConnectionCardHtml.includes("https://chatgpt.com/#settings/Billing") &&
+    normalizedCodexConnectionCardHtml.includes("data-subscription-provider-open") &&
+    normalizedCodexConnectionCardHtml.includes("data-subscription-reread") &&
+    normalizedCodexConnectionCardHtml.includes("Read plan now") &&
+    normalizedClaudeConnectionCardHtml.includes("Read Claude plan again") &&
+    normalizedClaudeConnectionCardHtml.includes("https://claude.ai/settings/billing") &&
+    normalizedClaudeConnectionCardHtml.includes("data-subscription-provider-open") &&
+    normalizedClaudeConnectionCardHtml.includes("data-subscription-reread") &&
+    normalizedClaudeConnectionCardHtml.includes("Read plan now"),
   providerCardFableQuotaAudit:
     providerCardHtml.includes("Fable quota source") &&
     providerCardHtml.includes("no synthetic quota is shown") &&
@@ -956,6 +1009,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.providerCardUsesProviderAccent, true);
   assert.equal(result.providerCardHasLogo, true);
   assert.equal(result.providerCardFreshness, true);
+  assert.equal(result.normalizedProviderConnectionActions, true);
   assert.equal(result.providerCardFableQuotaAudit, true);
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
