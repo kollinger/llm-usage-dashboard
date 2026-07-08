@@ -566,12 +566,8 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
 
 app.get("/api/system/live", authMiddleware, async (_req, res) => {
   try {
-    let localUsage = null;
-    try {
-      localUsage = (await readUsageDashboard()).local || null;
-    } catch {
-      localUsage = null;
-    }
+    // This endpoint is polled every few seconds; never trigger full log aggregation here.
+    const localUsage = usageCache.value?.local || null;
     res.json(buildSystemLiveMetrics(localUsage));
   } catch (error) {
     sendApiError(res, error, "system_live_failed");
