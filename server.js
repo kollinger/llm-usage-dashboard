@@ -18,6 +18,7 @@ const {
   readSourceSettings
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath } = require("./lib/usage-events");
+const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
@@ -574,12 +575,8 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
 
 app.get("/api/system/live", authMiddleware, async (_req, res) => {
   try {
-    let localUsage = null;
-    try {
-      localUsage = (await readUsageDashboard()).local || null;
-    } catch {
-      localUsage = null;
-    }
+    // This endpoint is polled every few seconds; never trigger full log aggregation here.
+    const localUsage = usageCache.value?.local || null;
     res.json(buildSystemLiveMetrics(localUsage));
   } catch (error) {
     sendApiError(res, error, "system_live_failed");
@@ -1227,7 +1224,7 @@ app.post("/api/claude/browser-credits", electronSyncMiddleware, async (req, res)
 app.post("/api/account-billing/snapshots", electronSyncMiddleware, async (req, res) => {
   try {
     const snapshot = await saveAccountBillingSnapshots(req.body || {});
-    invalidateTimedCache(usageCache);
+    if (snapshot._usageCacheChanged) invalidateTimedCache(usageCache);
     res.json({ ok: true, snapshot });
   } catch (error) {
     sendApiError(res, error, "account_billing_snapshot_save_failed");
@@ -1366,13 +1363,13 @@ app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
 
 app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) => {
   try {
-    const [settings, codex, claudeCode, copilot] = await Promise.all([
+    const [settings, usage] = await Promise.all([
       readNotificationSettings(),
-      readCodexUsage().catch(() => null),
-      readClaudeCodeUsage().catch(() => null),
-      readCopilotUsage().catch(() => null)
+      readUsageDashboard().catch(() => null)
     ]);
-    await recordProviderQuotaSnapshots([codex, claudeCode, copilot]).catch(() => {});
+    const codex = usage?.codex || null;
+    const claudeCode = usage?.claudeCode || null;
+    const copilot = usage?.copilot || null;
     const alerts = settings.enabled ? buildNotificationAlerts(settings, { codex, claudeCode, copilot }) : [];
     res.json({ alerts });
   } catch (error) {
@@ -1789,9 +1786,39 @@ async function readAccountBillingSnapshots() {
 
 async function saveAccountBillingSnapshots(payload) {
   const snapshot = sanitizeAccountBillingSnapshots(payload);
+  const previous = await readAccountBillingSnapshots().catch(() => null);
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.writeFile(ACCOUNT_BILLING_SNAPSHOTS_FILE, `${JSON.stringify(snapshot, null, 2)}\n`, { mode: 0o600 });
+  Object.defineProperty(snapshot, "_usageCacheChanged", {
+    value: accountBillingUsageCacheKey(previous) !== accountBillingUsageCacheKey(snapshot),
+    enumerable: false
+  });
   return snapshot;
+}
+
+function accountBillingUsageCacheKey(snapshot) {
+  if (!snapshot || typeof snapshot !== "object") return "";
+  const providers = Object.entries(snapshot.providers || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([providerId, entry]) => [
+      providerId,
+      entry?.status || null,
+      entry?.unavailableReason || null,
+      entry?.sourceType || null,
+      entry?.planType || null,
+      entry?.planKey || null,
+      entry?.monthlyCost || 0,
+      entry?.currency || null,
+      entry?.period || null,
+      entry?.actualBillingKnown === true,
+      entry?.parserStatus || null,
+      entry?.redacted === true
+    ]);
+  return JSON.stringify({
+    status: snapshot.status || null,
+    reason: snapshot.reason || null,
+    providers
+  });
 }
 
 function accountBillingSnapshotUnavailable(status, reason) {
@@ -1902,6 +1929,15 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
     redacted
   };
 
+  if (sourceType === "untrusted_source") {
+    return {
+      ...base,
+      status: "unavailable",
+      parserStatus: "untrusted_source",
+      unavailableReason: "account_billing_source_unavailable"
+    };
+  }
+
   if (["missing", "expired", "unavailable", "parse_failed"].includes(explicitStatus)) {
     return {
       ...base,
@@ -1986,7 +2022,7 @@ function normalizeAccountBillingPeriod(value) {
 
 function normalizeAccountBillingSourceType(value) {
   const normalized = normalizeSubscriptionPlanKey(value).replace(/\s+/g, "_");
-  return ACCOUNT_BILLING_SAFE_SOURCE_TYPES.has(normalized) ? normalized : "account_billing";
+  return ACCOUNT_BILLING_SAFE_SOURCE_TYPES.has(normalized) ? normalized : "untrusted_source";
 }
 
 function normalizeAccountBillingConfidence(value) {
@@ -2595,6 +2631,7 @@ function accountBillingSubscriptionPlan(providerId, provider, accountBilling) {
 function accountBillingPlanHint(providerId, accountBilling) {
   const entry = accountBillingProviderEntry(providerId, accountBilling);
   if (!entry?.planType) return null;
+  if (entry.status === "unavailable" || entry.parserStatus === "untrusted_source") return null;
   if (entry.redacted || entry.status === "expired" || entry.parserStatus === "expired") return null;
   return {
     planType: entry.planType,
@@ -2854,12 +2891,7 @@ function subscriptionCatalogFamily(providerId) {
 }
 
 function normalizeSubscriptionPlanKey(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+  return normalizePlanKey(value);
 }
 
 function escapeRegExp(value) {
@@ -6223,7 +6255,8 @@ const CLAUDE_BROWSER_SUBSCRIPTION_PLAN_KEYS = new Set([
 function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, options = {}) {
   if (!candidate || typeof candidate !== "object") return null;
   const explicitPlanType = explicitClaudeSubscriptionPlan(candidate);
-  const planType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const rawPlanType = explicitPlanType || (options.explicitPath ? fallbackClaudeSubscriptionPlan(candidate) : "");
+  const planType = detectClaudePlanType(rawPlanType, { explicit: true, allowGeneric: true }) || rawPlanType;
   const hasSubscriptionScope = Boolean(options.explicitPath || explicitPlanType);
   if (!hasSubscriptionScope) return null;
   if (planType && !isKnownClaudeBrowserSubscriptionPlan(planType)) return null;
@@ -6262,7 +6295,7 @@ function sanitizeClaudeSubscriptionCandidate(candidate, fallbackUpdatedAt, optio
 
 function explicitClaudeSubscriptionPlan(candidate) {
   const planObject = candidate?.plan && typeof candidate.plan === "object" ? candidate.plan : null;
-  return firstNonEmptyString(
+  const plan = firstNonEmptyString(
     candidate.planType,
     candidate.plan_type,
     planObject?.planType,
@@ -6278,14 +6311,16 @@ function explicitClaudeSubscriptionPlan(candidate) {
     candidate.subscriptionPlan,
     candidate.subscription_plan
   );
+  return detectClaudePlanType(plan, { explicit: true, allowGeneric: true }) || plan;
 }
 
 function fallbackClaudeSubscriptionPlan(candidate) {
-  return firstNonEmptyString(
+  const plan = firstNonEmptyString(
     candidate.tier,
     candidate.name,
     candidate.displayName
   );
+  return detectClaudePlanType(plan, { explicit: true, allowGeneric: true }) || plan;
 }
 
 function isKnownClaudeBrowserSubscriptionPlan(planType) {
@@ -6559,35 +6594,35 @@ async function appendChangedQuotaEvents(events) {
 }
 
 async function readLatestQuotaEventsByKey() {
-  const events = await readQuotaEvents();
   const latestByKey = new Map();
-  for (const event of events) {
-    latestByKey.set(event.eventKey || quotaEventKey(event), event);
+  try {
+    await readJsonl(QUOTA_EVENTS_FILE, (rawEvent) => {
+      const event = normalizeStoredQuotaEvent(rawEvent);
+      if (!event) return;
+      latestByKey.set(event.eventKey || quotaEventKey(event), event);
+    });
+  } catch {
+    // Missing or partially readable history should not block live quota capture.
   }
   return latestByKey;
 }
 
 async function readQuotaEvents() {
+  const events = [];
+  const seen = new Set();
   try {
-    const text = await fsp.readFile(QUOTA_EVENTS_FILE, "utf8");
-    const events = [];
-    const seen = new Set();
-    for (const line of text.split(/\r?\n/).filter(Boolean)) {
-      try {
-        const event = normalizeStoredQuotaEvent(JSON.parse(line));
-        if (!event) continue;
-        const key = `${event.eventKey || ""}:${event.capturedAt || ""}:${event.fingerprint || ""}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        events.push(event);
-      } catch {
-        // Ignore corrupt history lines.
-      }
-    }
-    return events;
+    await readJsonl(QUOTA_EVENTS_FILE, (rawEvent) => {
+      const event = normalizeStoredQuotaEvent(rawEvent);
+      if (!event) return;
+      const key = `${event.eventKey || ""}:${event.capturedAt || ""}:${event.fingerprint || ""}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      events.push(event);
+    });
   } catch {
-    return [];
+    // Ignore missing or partially readable history files.
   }
+  return events;
 }
 
 function normalizeStoredQuotaEvent(event) {

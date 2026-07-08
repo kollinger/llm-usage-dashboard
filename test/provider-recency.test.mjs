@@ -10,14 +10,48 @@ process.env.CODEX_LIVE_RATE_LIMITS = "false";
 
 const require = createRequire(import.meta.url);
 const { readCodexUsage, _test } = require("../server.js");
+const { detectOpenAiPlanType, detectClaudePlanType, normalizePlanKey } = require("../lib/subscription-plan-detection");
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
+await assertSubscriptionPlanDetection();
 await assertProviderVisibility();
 await assertFrontendUsageIntelligence();
 await assertNotificationLocalizationRegression();
 await assertUpdateSettingsAlwaysOn();
 await assertCodexSparkRateLimitDoesNotMoveGpt55Usage();
 await assertForbiddenThirdPartyPlanSourceAbsent();
+
+async function assertSubscriptionPlanDetection() {
+  assert.equal(normalizePlanKey("Pro 20 x"), "pro 20x");
+  assert.equal(detectOpenAiPlanType("Pro 20 x", { explicit: true }), "Pro 20x");
+  assert.equal(detectOpenAiPlanType("Team workspace metadata without a plan field"), null);
+  assert.equal(detectOpenAiPlanType("Team", { explicit: true }), "Team");
+  assert.equal(detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 $200", { allowGeneric: false }), null);
+  assert.equal(
+    detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $200 / Monat Dein aktueller Plan 20x höheres Nutzungskontingent", {
+      allowGeneric: false
+    }),
+    "Pro 20x"
+  );
+  assert.equal(
+    detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 / Monat Dein aktueller Plan 5x höheres Nutzungskontingent", {
+      allowGeneric: false
+    }),
+    "Pro 5x"
+  );
+  assert.equal(detectClaudePlanType("Choose a Claude plan Max 5x $100 Max 20x $200", { allowGeneric: false }), null);
+  assert.equal(detectClaudePlanType("Pro capacity comparison text without current plan"), null);
+  assert.equal(detectClaudePlanType("Claude Team", { explicit: true }), "Claude Team");
+  assert.equal(
+    detectClaudePlanType("Claude Max $200 Current plan 20x Pro capacity per session", { allowGeneric: false }),
+    "Claude Max 20x"
+  );
+  assert.equal(
+    detectClaudePlanType("max_payment_success=true&previous_tier=default_claude_max_5x", { allowGeneric: false }),
+    null
+  );
+  assert.equal(detectClaudePlanType("max_20x", { explicit: true }), "Claude Max 20x");
+}
 
 async function assertProviderVisibility() {
   const appPath = path.join(rootDir, "public", "app.js");
@@ -957,6 +991,7 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(genericPro.actualBillingKnown, false);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).priceType, "official_list_price");
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro 5x", officialPricing).tierVariant, "pro_5x");
+  assert.equal(_test.officialSubscriptionPlan("codex", "Pro 20 x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).source, "official_pricing_page");
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("codex", "Pro Max", officialPricing).priceType, "official_list_price");
@@ -974,6 +1009,7 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).monthlyCost, 100);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).monthlyCostMax, undefined);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 5x", officialPricing).priceVariant, "max_5x");
+  assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20 x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).source, "official_pricing_page");
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).monthlyCost, 200);
   assert.equal(_test.officialSubscriptionPlan("claudeCode", "Claude Max 20x", officialPricing).priceVariant, "max_20x");
@@ -1072,6 +1108,35 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   assert.equal(browserPlanMerged.subscription.monthlyCost, 200);
   assert.equal(browserPlanMerged.subscription.actualBillingKnown, false);
   assert.equal(_test.localizeUsageSubscriptionPrices({ codex: browserPlanMerged }, "de").codex.subscription.monthlyCost, 229);
+  const thirdPartyPlanSnapshot = _test.sanitizeAccountBillingSnapshots(
+    {
+      fetchedAt: "2026-07-08T00:00:00Z",
+      providers: {
+        codex: {
+          status: "missing",
+          reason: "account_billing_amount_missing",
+          sourceType: "third_party_dashboard_snapshot",
+          planType: "Pro 20x",
+          fetchedAt: "2026-07-08T00:00:00Z"
+        }
+      }
+    },
+    { nowMs: Date.parse("2026-07-08T00:01:00Z") }
+  );
+  assert.equal(thirdPartyPlanSnapshot.providers.codex.status, "unavailable");
+  assert.equal(thirdPartyPlanSnapshot.providers.codex.sourceType, "untrusted_source");
+  const thirdPartyPlanMerged = _test.mergeProviderSubscription(
+    { id: "codex", status: "live", planType: preferredPlan.planType, planSource: preferredPlan.source },
+    null,
+    "codex",
+    officialPricing,
+    thirdPartyPlanSnapshot
+  );
+  assert.equal(thirdPartyPlanMerged.planType, preferredPlan.planType);
+  assert.equal(thirdPartyPlanMerged.planSource, preferredPlan.source);
+  assert.equal(thirdPartyPlanMerged.subscription.planType, "Pro 5x/20x");
+  assert.equal(thirdPartyPlanMerged.subscription.monthlyCost, 100);
+  assert.equal(thirdPartyPlanMerged.subscription.priceVariant, "pro_5x_20x");
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, "bundled_catalog");
   assert.equal(bundledGenericPro.subscription.planType, "Pro 5x/20x");
