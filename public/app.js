@@ -281,6 +281,7 @@ const LIVE_TOKEN_RATE_EMA_ALPHA = 0.42;
 const USAGE_POLL_INTERVAL_MS = 60_000;
 const SYSTEM_LIVE_POLL_INTERVAL_MS = 5_000;
 const SUBSCRIPTION_REREAD_AUTO_REFRESH_MS = 5 * 60 * 1000;
+const SUBSCRIPTION_REREAD_SYNC_TIMEOUT_MS = 30_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
 const SETTINGS_AUTOSAVE_DELAY_MS = 500;
 const SETTINGS_TOAST_MS = 1800;
@@ -2699,7 +2700,7 @@ function handleSubscriptionConnectionClick(event) {
   if (!rereadButton) return;
   event.preventDefault();
   state.pendingSubscriptionReread = null;
-  loadUsage({ showIndicator: true, force: true });
+  triggerSubscriptionPlanReread(rereadButton.dataset.subscriptionProvider || "");
 }
 
 function handleSubscriptionRereadReturn() {
@@ -2708,8 +2709,33 @@ function handleSubscriptionRereadReturn() {
   const ageMs = Date.now() - Number(pending.activatedAt || 0);
   state.pendingSubscriptionReread = null;
   if (ageMs > SUBSCRIPTION_REREAD_AUTO_REFRESH_MS) return false;
-  loadUsage({ showIndicator: true, force: true });
+  triggerSubscriptionPlanReread(pending.provider || "");
   return true;
+}
+
+function triggerSubscriptionPlanReread(provider) {
+  setRefreshIndicator(true);
+  const refreshResult = requestSubscriptionSourceRefresh(provider);
+  if (!refreshResult || typeof refreshResult.then !== "function") {
+    loadUsage({ showIndicator: true, force: true });
+    return refreshResult;
+  }
+  return Promise.race([
+    refreshResult.catch(() => null),
+    new Promise((resolve) => setTimeout(resolve, SUBSCRIPTION_REREAD_SYNC_TIMEOUT_MS))
+  ]).finally(() => {
+    loadUsage({ showIndicator: true, force: true });
+  });
+}
+
+function requestSubscriptionSourceRefresh(provider) {
+  const bridge = window.llmUsageDashboard;
+  if (!bridge || typeof bridge.refreshSubscriptionProvider !== "function") return null;
+  try {
+    return bridge.refreshSubscriptionProvider(provider || "");
+  } catch {
+    return null;
+  }
 }
 
 async function pollSystemMetrics() {

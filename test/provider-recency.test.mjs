@@ -692,6 +692,13 @@ const forcedPlanReads = [];
 loadUsage = async (options = {}) => {
   forcedPlanReads.push(options);
 };
+const subscriptionRefreshCalls = [];
+window.llmUsageDashboard = {
+  refreshSubscriptionProvider(provider) {
+    subscriptionRefreshCalls.push(provider);
+    return { ok: true, provider };
+  }
+};
 const openConnectionTarget = {
   dataset: { subscriptionProvider: "claude", subscriptionMode: "login" },
   closest(selector) {
@@ -886,6 +893,7 @@ JSON.stringify({
 	    pendingPlanReadProvider === "claude" &&
 	    autoPlanReadTriggered === true &&
 	    manualPlanReadPrevented === true &&
+	    subscriptionRefreshCalls.join(",") === "claude,chatgpt" &&
 	    forcedPlanReads.length === 2 &&
 	    forcedPlanReads.every((entry) => entry.force === true && entry.showIndicator === true),
 	  claudeConflictAction:
@@ -1389,6 +1397,7 @@ function createAppContext() {
       removeEventListener() {},
       setAttribute() {},
       removeAttribute() {},
+      toggleAttribute() {},
       querySelector() {
         return null;
       },

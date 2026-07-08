@@ -8,7 +8,7 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
-const { app, BrowserWindow, shell, Notification, dialog, session: electronSession } = require("electron");
+const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain } = require("electron");
 const { detectOpenAiPlanType, detectClaudePlanType } = require("../lib/subscription-plan-detection");
 
 let dashboardServer = null;
@@ -86,6 +86,10 @@ if (!hasSingleInstanceLock) {
   });
 }
 
+ipcMain.handle("subscription:refresh", async (_event, payload = {}) => {
+  return refreshSubscriptionSources(payload?.provider);
+});
+
 function setDefaultEnv(name, value) {
   if (!process.env[name]) process.env[name] = value;
 }
@@ -160,6 +164,7 @@ function createWindow(port) {
     title: "LLM Usage Dashboard",
     backgroundColor: "#f6f7f4",
     webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -1047,6 +1052,31 @@ async function syncAccountBillingSnapshots(port) {
     accountBillingSyncPending = null;
   });
   return accountBillingSyncPending;
+}
+
+async function refreshSubscriptionSources(provider) {
+  if (!dashboardPort) {
+    return { ok: false, reason: "dashboard_not_ready", refreshed: 0 };
+  }
+  const normalizedProvider = String(provider || "").toLowerCase();
+  const tasks = [];
+  if (!normalizedProvider || ["chatgpt", "codex", "codexspark", "openai"].includes(normalizedProvider)) {
+    tasks.push(syncAccountBillingSnapshots(dashboardPort));
+  }
+  if (!normalizedProvider || ["anthropic", "claude", "claudecode"].includes(normalizedProvider)) {
+    tasks.push(syncClaudeBrowserCredits(dashboardPort));
+  }
+  if (!tasks.length) {
+    tasks.push(syncAccountBillingSnapshots(dashboardPort), syncClaudeBrowserCredits(dashboardPort));
+  }
+  const results = await Promise.allSettled(tasks);
+  const failed = results.filter((result) => result.status === "rejected").length;
+  return {
+    ok: failed === 0,
+    provider: normalizedProvider || "all",
+    refreshed: results.length,
+    failed
+  };
 }
 
 async function postAccountBillingSnapshots(port, payload) {
