@@ -15,7 +15,7 @@ The dashboard bundles local SVG assets and does not hotlink provider logos at ru
 | Asset | Provider surface |
 | --- | --- |
 | `codex.svg` | Codex / Codex Spark |
-| `openai.svg` | OpenAI / GPT |
+| `openai.svg` | OpenAI API |
 | `anthropic.svg` | Anthropic API |
 | `claude.svg` | Claude / Fable model family |
 | `claude-code.svg` | Claude Code |

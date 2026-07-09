@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "A jelenlegi tempoval a visszaallitasig kb. {percent}% marad.",
       "shortfall": "A jelenlegi tempoval a visszaallitasig kb. {percent}% hianyzik.",
-      "hitBeforeReset": "A jelenlegi tempoval a limit kb. {duration} idovel a visszaallitas elott elerheto.",
+      "hitBeforeReset": "A jelenlegi tempoval a limit kb. {duration} idovel a visszaallitas elott elerheto. ({time})",
       "fullWithReset": "Limit elerve; visszaallitas {time}.",
       "fullNoReset": "Limit elerve; a visszaallitas ideje nem elerheto.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Mérő",
       "bar": "Sáv"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Bemenet",

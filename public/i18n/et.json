@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Praeguse tempoga jaab lahtestamisel alles umbes {percent}%.",
       "shortfall": "Praeguse tempoga jaab lahtestamisel puudu umbes {percent}%.",
-      "hitBeforeReset": "Praeguse tempoga saavutatakse piir umbes {duration} enne lahtestamist.",
+      "hitBeforeReset": "Praeguse tempoga saavutatakse piir umbes {duration} enne lahtestamist. ({time})",
       "fullWithReset": "Piir saavutatud; lahtestus {time}.",
       "fullNoReset": "Piir saavutatud; lahtestuse aeg pole saadaval.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Mõõdik",
       "bar": "Riba"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Sisend",

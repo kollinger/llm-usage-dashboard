@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Nykyisella tahdilla nollauksessa jaa noin {percent}%.",
       "shortfall": "Nykyisella tahdilla nollauksessa puuttuu noin {percent}%.",
-      "hitBeforeReset": "Nykyisella tahdilla raja tayttyy noin {duration} ennen nollausta.",
+      "hitBeforeReset": "Nykyisella tahdilla raja tayttyy noin {duration} ennen nollausta. ({time})",
       "fullWithReset": "Raja tayttynyt; nollaus {time}.",
       "fullNoReset": "Raja tayttynyt; nollausaikaa ei saatavilla.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Mittari",
       "bar": "Palkki"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Syöte",

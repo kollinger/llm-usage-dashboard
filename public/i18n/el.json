@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Με τον τρεχοντα ρυθμο θα μεινει περιπου {percent}% στην επαναφορα.",
       "shortfall": "Με τον τρεχοντα ρυθμο θα λειπει περιπου {percent}% στην επαναφορα.",
-      "hitBeforeReset": "Με τον τρεχοντα ρυθμο το οριο θα φτασει περιπου {duration} πριν την επαναφορα.",
+      "hitBeforeReset": "Με τον τρεχοντα ρυθμο το οριο θα φτασει περιπου {duration} πριν την επαναφορα. ({time})",
       "fullWithReset": "Το οριο επιτευχθηκε· επαναφορα {time}.",
       "fullNoReset": "Το οριο επιτευχθηκε· η ωρα επαναφορας δεν ειναι διαθεσιμη.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Μετρητής",
       "bar": "Γραμμή"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Είσοδος",

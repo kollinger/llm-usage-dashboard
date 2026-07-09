@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "In het huidige tempo blijft bij reset ongeveer {percent}% over.",
       "shortfall": "In het huidige tempo ontbreekt bij reset ongeveer {percent}%.",
-      "hitBeforeReset": "In het huidige tempo wordt de limiet ongeveer {duration} voor reset bereikt.",
+      "hitBeforeReset": "In het huidige tempo wordt de limiet ongeveer {duration} voor reset bereikt. ({time})",
       "fullWithReset": "Limiet bereikt; reset {time}.",
       "fullNoReset": "Limiet bereikt; resettijd niet beschikbaar.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Meter",
       "bar": "Balk"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Invoer",

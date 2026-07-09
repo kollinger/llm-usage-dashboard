@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Al ritmo attuale restera circa il {percent}% al reset.",
       "shortfall": "Al ritmo attuale manchera circa il {percent}% al reset.",
-      "hitBeforeReset": "Al ritmo attuale il limite sara raggiunto circa {duration} prima del reset.",
+      "hitBeforeReset": "Al ritmo attuale il limite sara raggiunto circa {duration} prima del reset. ({time})",
       "fullWithReset": "Limite raggiunto; reset {time}.",
       "fullNoReset": "Limite raggiunto; ora del reset non disponibile.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Indicatore",
       "bar": "Barra"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Input",

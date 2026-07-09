@@ -525,6 +525,29 @@ const earlyWeekReset = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOStrin
 const okFiveHourReset = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
 const earlyWeekLimit = { usedPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset };
 const okFiveHourLimit = { usedPercent: 10, windowMinutes: 300, resetsAt: okFiveHourReset };
+const deterministicPaceNow = Date.parse("2026-07-09T10:00:00Z");
+const deterministicPaceReset = new Date(deterministicPaceNow + 6 * 24 * 60 * 60 * 1000).toISOString();
+const deterministicPaceHit = deterministicPaceNow + 24 * 60 * 60 * 1000;
+const deterministicPaceMessage = limitPaceAssessment(
+  { usedPercent: 50, windowMinutes: 10080, resetsAt: deterministicPaceReset },
+  deterministicPaceNow
+).message;
+const resetCopyNow = new Date(2026, 6, 9, 10, 0, 0);
+const fiveHourSameDayResetCopy = formatLimitResetDisplay(
+  new Date(2026, 6, 9, 14, 30, 0).toISOString(),
+  { label: "5h", windowMinutes: 300 },
+  resetCopyNow
+);
+const fiveHourTomorrowResetCopy = formatLimitResetDisplay(
+  new Date(2026, 6, 10, 1, 30, 0).toISOString(),
+  { label: "5h", windowMinutes: 300 },
+  resetCopyNow
+);
+const weeklyTomorrowResetCopy = formatLimitResetDisplay(
+  new Date(2026, 6, 10, 8, 45, 0).toISOString(),
+  { label: "Week", windowMinutes: 10080 },
+  resetCopyNow
+);
 const defaultUsageProjectionMode = state.usageProjectionMode;
 const sourceBarsHtml = renderSourceTotalBars([
   {
@@ -547,6 +570,7 @@ const modelBreakdownLegendHtml = els.chartLegend.innerHTML;
 state.chartBreakdownMode = "total";
 renderChart(multiProviderDaily);
 const totalBreakdownChartHtml = els.chart.innerHTML;
+const totalBreakdownLegendHtml = els.chartLegend.innerHTML;
 const providerCardHtml = renderProvider({
   id: "claudeCode",
   name: "Claude Code",
@@ -665,6 +689,45 @@ const claudeLoginCardHtml = renderProvider({
   foot: [],
   message: "Logged tokens"
 });
+const duplicateOpenAiSubscriptionHtml = renderSubscriptionPricingView(
+  [
+    {
+      date: "2026-07-09",
+      totalTokens: 100,
+      sources: [{ id: "codex", totalTokens: 100, models: [{ model: "gpt-5.2-codex", totalTokens: 100 }] }]
+    }
+  ],
+  {
+    entries: [
+      { provider: "codex", planName: "Pro 20x", monthlyCost: 200, currency: "USD", effectiveFrom: "2026-07-09", effectiveTo: null },
+      { provider: "openai", planName: "Pro 20x", monthlyCost: 200, currency: "USD", effectiveFrom: "2026-07-09", effectiveTo: null }
+    ]
+  },
+  [
+    {
+      id: "codex",
+      name: "Codex",
+      accent: providerMeta.codex.accent,
+      subscription: { planType: "Pro 20x", monthlyCost: 200, currency: "USD", quality: "automatic" }
+    },
+    {
+      id: "openai",
+      name: providerMeta.openai.name,
+      accent: providerMeta.openai.accent,
+      subscription: { planType: "Pro 20x", monthlyCost: 200, currency: "USD", quality: "automatic" }
+    }
+  ]
+);
+const duplicateOpenAiPaidCost = calculatePaidSubscriptionCost(
+  {
+    entries: [
+      { provider: "codex", planName: "Pro 20x", monthlyCost: 200, currency: "USD", effectiveFrom: "2026-07-09", effectiveTo: null },
+      { provider: "openai", planName: "Pro 20x", monthlyCost: 200, currency: "USD", effectiveFrom: "2026-07-09", effectiveTo: null }
+    ]
+  },
+  "2026-07-09",
+  "2026-07-09"
+);
 const claudeConflictCardHtml = renderProvider({
   id: "claudeCode",
   name: "Claude Code",
@@ -843,6 +906,15 @@ JSON.stringify({
 	  limitEarlyWeekRisk: limitDisplayStatus(earlyWeekLimit),
 	  earlyWeekPaceMessage: limitPaceAssessment(earlyWeekLimit).message,
 	  okFiveHourPaceMessage: limitPaceAssessment(okFiveHourLimit).message,
+      deterministicPaceHasHitTime:
+        deterministicPaceMessage.includes("before reset") &&
+        deterministicPaceMessage.includes(formatDateTime(deterministicPaceHit)),
+      fiveHourSameDayResetCopy,
+      fiveHourTomorrowResetCopy,
+      weeklyTomorrowResetCopy,
+      limitDetailUsesResetAndRelative:
+        /<p class="limit-detail">[^<]*Resets in [^<]*Reset [^<]*<\\/p>/.test(riskLimitBarHtml) &&
+        !/<p class="limit-detail">[^<]*before reset/i.test(riskLimitBarHtml),
 	  limitFull: limitDisplayStatus({ usedPercent: 100 }),
 	  limitUnknown: limitDisplayStatus({ status: "unavailable" }),
 	  limitOkLabel: t("limits.status.ok"),
@@ -886,9 +958,12 @@ JSON.stringify({
     modelBreakdownLegendHtml.includes("claude-fable-5") &&
     modelBreakdownLegendHtml.includes("provider-mark-codex") &&
     modelBreakdownLegendHtml.includes("provider-mark-claudeCode"),
-  totalBreakdownSegment:
-    totalBreakdownChartHtml.includes("Total") &&
-    chartTokenSegmentEntries(multiProviderDaily, "total")[0].label === "Total",
+  totalBreakdownProviderSegments:
+    totalBreakdownChartHtml.includes('fill="' + providerMeta.codex.accent + '"') &&
+    totalBreakdownChartHtml.includes('fill="' + providerMeta.claudeCode.accent + '"') &&
+    totalBreakdownLegendHtml.includes("Codex") &&
+    totalBreakdownLegendHtml.includes("Claude Code") &&
+    chartTokenSegmentEntries(multiProviderDaily, "total").every((entry) => entry.type === "provider"),
 	  providerCardUsesProviderAccent: providerCardHtml.includes("--provider-accent: " + providerMeta.claudeCode.accent),
   providerCardUsesPlanBadgeOnly:
     concretePlanBadgeOnlyProviderHtml.includes("plan-badge") &&
@@ -1030,7 +1105,14 @@ JSON.stringify({
     !claudeWithFableHtml.includes(">Fable<") &&
     !claudeWithFableHtml.includes("Distinct Fable quota was machine-readable"),
 	  mixedCurrencyDeltaHidden: !mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
-  sameCurrencyDeltaHidden: !sameCurrencySubscriptionCard.includes("$20.00")
+  sameCurrencyDeltaHidden: !sameCurrencySubscriptionCard.includes("$20.00"),
+  duplicateOpenAiSubscriptionDeduped:
+    duplicateOpenAiSubscriptionHtml.includes("Codex") &&
+    !duplicateOpenAiSubscriptionHtml.includes(["OpenAI", " / ", "GPT"].join("")) &&
+    !duplicateOpenAiSubscriptionHtml.includes("OpenAI API"),
+  duplicateOpenAiPaidDeduped:
+    duplicateOpenAiPaidCost.known === true &&
+    Math.abs(duplicateOpenAiPaidCost.totalEur - (200 / USD_PER_EUR / 31)) < 0.000001
 });`,
     createAppContext(),
     { filename: appPath }
@@ -1100,6 +1182,14 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.limitEarlyWeekRisk, "risk");
   assert.equal(result.earlyWeekPaceMessage.includes("before reset"), true);
   assert.equal(result.okFiveHourPaceMessage.includes("remains by reset"), true);
+  assert.equal(result.deterministicPaceHasHitTime, true);
+  assert.equal(result.fiveHourSameDayResetCopy.includes("2026"), false);
+  assert.equal(result.fiveHourSameDayResetCopy.includes("tomorrow"), false);
+  assert.equal(result.fiveHourTomorrowResetCopy.includes("tomorrow"), true);
+  assert.equal(result.fiveHourTomorrowResetCopy.includes("2026"), false);
+  assert.equal(result.weeklyTomorrowResetCopy.includes("tomorrow"), true);
+  assert.equal(result.weeklyTomorrowResetCopy.includes("2026"), true);
+  assert.equal(result.limitDetailUsesResetAndRelative, true);
   assert.equal(result.limitFull, "full");
   assert.equal(result.limitUnknown, "unknown");
   assert.equal(result.limitOkLabel, "On track");
@@ -1116,7 +1206,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.sourceBarsUseProviderColors, true);
   assert.equal(result.providerBreakdownSegments, true);
   assert.equal(result.modelBreakdownSegments, true);
-  assert.equal(result.totalBreakdownSegment, true);
+  assert.equal(result.totalBreakdownProviderSegments, true);
   assert.equal(result.providerCardUsesProviderAccent, true);
   assert.equal(result.providerCardUsesPlanBadgeOnly, true);
   assert.equal(result.providerCardHasLogo, true);
@@ -1156,6 +1246,8 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.fableLimitRowHidden, true);
   assert.equal(result.mixedCurrencyDeltaHidden, true);
   assert.equal(result.sameCurrencyDeltaHidden, true);
+  assert.equal(result.duplicateOpenAiSubscriptionDeduped, true);
+  assert.equal(result.duplicateOpenAiPaidDeduped, true);
 
   const indexHtml = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
   assert.equal(indexHtml.includes('data-price-sort="region"'), false);

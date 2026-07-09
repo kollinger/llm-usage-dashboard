@@ -418,7 +418,7 @@
     "pace": {
       "remaining": "Bei aktuellem Tempo bleiben bis zum Reset ca. {percent}% übrig.",
       "shortfall": "Bei aktuellem Tempo fehlen bis zum Reset ca. {percent}%.",
-      "hitBeforeReset": "Bei aktuellem Tempo wird das Limit ca. {duration} vor dem Reset erreicht.",
+      "hitBeforeReset": "Bei aktuellem Tempo wird das Limit am {time} erreicht ({duration} vor Reset).",
       "fullWithReset": "Limit erreicht; Reset {time}.",
       "fullNoReset": "Limit erreicht; Reset-Zeit nicht verfügbar.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Tacho",
       "bar": "Balken"
     },
-    "remainingUntilReset": "{remaining} vor Reset ({time})"
+    "remainingUntilReset": "Reset in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Input",

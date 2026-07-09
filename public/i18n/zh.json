@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "按当前速度，重置时约剩余 {percent}%。",
       "shortfall": "按当前速度，重置时约缺少 {percent}%。",
-      "hitBeforeReset": "按当前速度，额度将在重置前约 {duration} 达到上限。",
+      "hitBeforeReset": "按当前速度，额度将在重置前约 {duration} 达到上限。 ({time})",
       "fullWithReset": "已达到上限；{time} 重置。",
       "fullNoReset": "已达到上限；重置时间不可用。",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "仪表盘",
       "bar": "条形"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "输入",

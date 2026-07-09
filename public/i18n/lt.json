@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Dabartiniu tempu iki atstatymo liks apie {percent}%.",
       "shortfall": "Dabartiniu tempu iki atstatymo truks apie {percent}%.",
-      "hitBeforeReset": "Dabartiniu tempu limitas bus pasiektas mazdaug {duration} pries atstatyma.",
+      "hitBeforeReset": "Dabartiniu tempu limitas bus pasiektas mazdaug {duration} pries atstatyma. ({time})",
       "fullWithReset": "Limitas pasiektas; atstatymas {time}.",
       "fullNoReset": "Limitas pasiektas; atstatymo laikas neprieinamas.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Matuoklis",
       "bar": "Juosta"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Įvestis",

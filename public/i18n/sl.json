@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Pri trenutnem tempu bo ob ponastavitvi ostalo priblizno {percent}%.",
       "shortfall": "Pri trenutnem tempu bo ob ponastavitvi manjkalo priblizno {percent}%.",
-      "hitBeforeReset": "Pri trenutnem tempu bo omejitev dosezena priblizno {duration} pred ponastavitvijo.",
+      "hitBeforeReset": "Pri trenutnem tempu bo omejitev dosezena priblizno {duration} pred ponastavitvijo. ({time})",
       "fullWithReset": "Omejitev dosezena; ponastavitev {time}.",
       "fullNoReset": "Omejitev dosezena; cas ponastavitve ni na voljo.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Merilnik",
       "bar": "Trak"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Vhod",

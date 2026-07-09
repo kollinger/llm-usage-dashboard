@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Ag an luas reatha beidh thart ar {percent}% fagtha ag an athshocru.",
       "shortfall": "Ag an luas reatha beidh thart ar {percent}% in easnamh ag an athshocru.",
-      "hitBeforeReset": "Ag an luas reatha bainfear an teorainn amach thart ar {duration} roimh an athshocru.",
+      "hitBeforeReset": "Ag an luas reatha bainfear an teorainn amach thart ar {duration} roimh an athshocru. ({time})",
       "fullWithReset": "Teorainn bainte amach; athshocru {time}.",
       "fullNoReset": "Teorainn bainte amach; am athshocraithe ar fail.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Tomhas",
       "bar": "Barra"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Ionchur",

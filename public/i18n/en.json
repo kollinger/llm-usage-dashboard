@@ -418,7 +418,7 @@
     "pace": {
       "remaining": "At current pace about {percent}% remains by reset.",
       "shortfall": "At current pace about {percent}% is missing by reset.",
-      "hitBeforeReset": "At current pace the limit will be reached about {duration} before reset.",
+      "hitBeforeReset": "At current pace the limit will be reached at {time} ({duration} before reset).",
       "fullWithReset": "Limit reached; resets {time}.",
       "fullNoReset": "Limit reached; reset time unavailable.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Tacho",
       "bar": "Bar"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Input",

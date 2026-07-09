@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "При текущото темпо ще останат около {percent}% при нулиране.",
       "shortfall": "При текущото темпо ще липсват около {percent}% при нулиране.",
-      "hitBeforeReset": "При текущото темпо лимитът ще бъде достигнат около {duration} преди нулирането.",
+      "hitBeforeReset": "При текущото темпо лимитът ще бъде достигнат около {duration} преди нулирането. ({time})",
       "fullWithReset": "Лимитът е достигнат; нулиране {time}.",
       "fullNoReset": "Лимитът е достигнат; часът за нулиране не е наличен.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Тахометър",
       "bar": "Лента"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Вход",

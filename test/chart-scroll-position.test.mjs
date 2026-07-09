@@ -40,12 +40,55 @@ els.chart.scrollLeft = 0;
 renderChart(daily);
 const rangeReset = chartSnapshot();
 
+const totalProviderEntries = chartTokenSegmentEntries([daily[0]], "total");
+const totalProviderSegments = chartSegmentsForDay(daily[0], totalProviderEntries).map((segment) => ({
+  id: segment.id,
+  sourceId: segment.sourceId,
+  color: chartSegmentColor(segment),
+  totalTokens: segment.totalTokens
+}));
+const localOnlyEntries = chartTokenSegmentEntries([{ date: "2026-07-01", totalTokens: 1234 }], "total");
+const localOnlySegments = chartSegmentsForDay({ date: "2026-07-01", totalTokens: 1234 }, localOnlyEntries).map((segment) => ({
+  id: segment.id,
+  type: segment.type,
+  color: chartSegmentColor(segment),
+  totalTokens: segment.totalTokens
+}));
+
+const pageScrollCalls = [];
+window.scrollX = 12;
+window.pageXOffset = 12;
+window.scrollY = 760;
+window.pageYOffset = 760;
+window.scrollTo = (left, top) => {
+  pageScrollCalls.push({ left, top });
+  window.scrollX = left;
+  window.pageXOffset = left;
+  window.scrollY = top;
+  window.pageYOffset = top;
+};
+preservePageScrollDuring(() => {
+  window.scrollY = 0;
+  window.pageYOffset = 0;
+});
+const preservedPageScroll = {
+  scrollX: window.scrollX,
+  scrollY: window.scrollY,
+  calls: pageScrollCalls
+};
+
 JSON.stringify({
   initial,
   manualAway,
   preservedManual,
   endPinnedRefresh,
-  rangeReset
+  rangeReset,
+  totalProviderSegments,
+  localOnlySegments,
+  codexColor: chartSourceColor("codex"),
+  claudeCodeColor: chartSourceColor("claudeCode"),
+  totalFallbackColor: "#5f6f68",
+  preservedPageScroll
 });
 
 function chartSnapshot() {
@@ -105,6 +148,31 @@ assert.equal(result.endPinnedRefresh.userScrolledAway, false);
 
 assert.equal(result.rangeReset.scrollLeft, result.rangeReset.maxScrollLeft);
 assert.equal(result.rangeReset.userScrolledAway, false);
+
+assert.deepEqual(result.totalProviderSegments.map((segment) => segment.sourceId), ["codex", "claudeCode"]);
+assert.deepEqual(
+  result.totalProviderSegments.map((segment) => segment.color),
+  [result.codexColor, result.claudeCodeColor]
+);
+assert.deepEqual(
+  result.totalProviderSegments.map((segment) => segment.totalTokens),
+  [10_000, 8_000]
+);
+assert.deepEqual(result.localOnlySegments, [
+  {
+    id: "total",
+    type: "total",
+    color: result.totalFallbackColor,
+    totalTokens: 1234
+  }
+]);
+
+assert.equal(result.preservedPageScroll.scrollX, 12);
+assert.equal(result.preservedPageScroll.scrollY, 760);
+assert.deepEqual(result.preservedPageScroll.calls, [
+  { left: 12, top: 760 },
+  { left: 12, top: 760 }
+]);
 
 function createAppContext() {
   const elements = new Map();

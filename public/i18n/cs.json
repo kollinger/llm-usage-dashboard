@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Pri soucasnem tempu zustane do resetu asi {percent}%.",
       "shortfall": "Pri soucasnem tempu bude do resetu chybet asi {percent}%.",
-      "hitBeforeReset": "Pri soucasnem tempu bude limit dosazen asi {duration} pred resetem.",
+      "hitBeforeReset": "Pri soucasnem tempu bude limit dosazen asi {duration} pred resetem. ({time})",
       "fullWithReset": "Limit dosazen; reset {time}.",
       "fullNoReset": "Limit dosazen; cas resetu neni k dispozici.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Tachometr",
       "bar": "Pruh"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Vstup",

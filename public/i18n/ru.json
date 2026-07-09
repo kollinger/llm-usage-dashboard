@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "При текущем темпе к сбросу останется около {percent}%.",
       "shortfall": "При текущем темпе к сбросу не хватит около {percent}%.",
-      "hitBeforeReset": "При текущем темпе лимит будет достигнут примерно за {duration} до сброса.",
+      "hitBeforeReset": "При текущем темпе лимит будет достигнут примерно за {duration} до сброса. ({time})",
       "fullWithReset": "Лимит достигнут; сброс {time}.",
       "fullNoReset": "Лимит достигнут; время сброса недоступно.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Индикатор",
       "bar": "Полоса"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Ввод",

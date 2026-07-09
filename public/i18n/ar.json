@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "بالوتيرة الحالية سيبقى نحو {percent}% عند اعادة الضبط.",
       "shortfall": "بالوتيرة الحالية سينقص نحو {percent}% عند اعادة الضبط.",
-      "hitBeforeReset": "بالوتيرة الحالية سيصل الحد قبل اعادة الضبط بحوالي {duration}.",
+      "hitBeforeReset": "بالوتيرة الحالية سيصل الحد قبل اعادة الضبط بحوالي {duration}. ({time})",
       "fullWithReset": "تم بلوغ الحد؛ اعادة الضبط {time}.",
       "fullNoReset": "تم بلوغ الحد؛ وقت اعادة الضبط غير متاح.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "مؤشر",
       "bar": "شريط"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "الإدخال",

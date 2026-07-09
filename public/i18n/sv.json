@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "I nuvarande takt finns cirka {percent}% kvar vid aterstallning.",
       "shortfall": "I nuvarande takt saknas cirka {percent}% vid aterstallning.",
-      "hitBeforeReset": "I nuvarande takt nas gransen cirka {duration} fore aterstallning.",
+      "hitBeforeReset": "I nuvarande takt nas gransen cirka {duration} fore aterstallning. ({time})",
       "fullWithReset": "Gransen nadd; aterstallning {time}.",
       "fullNoReset": "Gransen nadd; aterstallningstid saknas.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Mätare",
       "bar": "Stapel"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Indata",

@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Bir-ritmu attwali jibqa madwar {percent}% sal-reset.",
       "shortfall": "Bir-ritmu attwali jonqos madwar {percent}% sal-reset.",
-      "hitBeforeReset": "Bir-ritmu attwali l-limitu jintlaħaq madwar {duration} qabel ir-reset.",
+      "hitBeforeReset": "Bir-ritmu attwali l-limitu jintlaħaq madwar {duration} qabel ir-reset. ({time})",
       "fullWithReset": "Il-limitu ntlaħaq; reset {time}.",
       "fullNoReset": "Il-limitu ntlaħaq; il-hin tar-reset mhux disponibbli.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Arloġġ",
       "bar": "Strixxa"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Input",

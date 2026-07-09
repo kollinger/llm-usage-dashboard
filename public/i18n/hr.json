@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Trenutnim tempom do resetiranja ostaje oko {percent}%.",
       "shortfall": "Trenutnim tempom do resetiranja nedostaje oko {percent}%.",
-      "hitBeforeReset": "Trenutnim tempom limit ce biti dosegnut oko {duration} prije resetiranja.",
+      "hitBeforeReset": "Trenutnim tempom limit ce biti dosegnut oko {duration} prije resetiranja. ({time})",
       "fullWithReset": "Limit dosegnut; resetiranje {time}.",
       "fullNoReset": "Limit dosegnut; vrijeme resetiranja nije dostupno.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Mjerač",
       "bar": "Traka"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Ulaz",

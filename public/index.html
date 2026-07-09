@@ -28,9 +28,6 @@
           <button class="text-button ghost layout-reset-btn" id="layoutResetBtn" type="button" hidden data-i18n="layout.reset">
             Standardreihenfolge
           </button>
-          <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false" data-i18n="filter.showAll">
-            Alle anzeigen
-          </button>
           <button class="text-button" id="loginBtn" data-i18n="auth.login">Login</button>
           <button class="text-button ghost" id="logoutBtn" hidden data-i18n="auth.logout">Logout</button>
         </div>
@@ -82,6 +79,12 @@
       </section>
 
       <section class="provider-section" data-dashboard-panel-id="providers" data-dashboard-panel-label-key="providers.gridAria">
+        <div class="provider-section-toolbar">
+          <p class="eyebrow" data-i18n="providers.gridAria">Anbieter</p>
+          <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false" data-i18n="filter.showAll">
+            Alle anzeigen
+          </button>
+        </div>
         <section class="provider-view-notice" id="providerViewNotice" role="status" aria-live="polite" aria-atomic="true" hidden></section>
         <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
       </section>

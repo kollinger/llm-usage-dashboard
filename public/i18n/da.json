@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Med nuvaerende tempo er der cirka {percent}% tilbage ved nulstilling.",
       "shortfall": "Med nuvaerende tempo mangler der cirka {percent}% ved nulstilling.",
-      "hitBeforeReset": "Med nuvaerende tempo nas graensen cirka {duration} for nulstilling.",
+      "hitBeforeReset": "Med nuvaerende tempo nas graensen cirka {duration} for nulstilling. ({time})",
       "fullWithReset": "Graensen er naet; nulstilles {time}.",
       "fullNoReset": "Graensen er naet; nulstillingstid er ikke tilgaengelig.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Måler",
       "bar": "Bjælke"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Input",

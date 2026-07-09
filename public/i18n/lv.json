@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Pie pasreizeja tempa lidz atiestatei paliks ap {percent}%.",
       "shortfall": "Pie pasreizeja tempa lidz atiestatei pietruks ap {percent}%.",
-      "hitBeforeReset": "Pie pasreizeja tempa limits tiks sasniegts ap {duration} pirms atiestates.",
+      "hitBeforeReset": "Pie pasreizeja tempa limits tiks sasniegts ap {duration} pirms atiestates. ({time})",
       "fullWithReset": "Limits sasniegts; atiestate {time}.",
       "fullNoReset": "Limits sasniegts; atiestates laiks nav pieejams.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Mērītājs",
       "bar": "Josla"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Ievade",

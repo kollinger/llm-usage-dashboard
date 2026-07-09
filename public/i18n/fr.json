@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "Au rythme actuel, environ {percent}% restera a la reinitialisation.",
       "shortfall": "Au rythme actuel, il manquera environ {percent}% a la reinitialisation.",
-      "hitBeforeReset": "Au rythme actuel, la limite sera atteinte environ {duration} avant la reinitialisation.",
+      "hitBeforeReset": "Au rythme actuel, la limite sera atteinte environ {duration} avant la reinitialisation. ({time})",
       "fullWithReset": "Limite atteinte; reinitialisation {time}.",
       "fullNoReset": "Limite atteinte; heure de reinitialisation indisponible.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Jauge",
       "bar": "Barre"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Entrée",

@@ -412,7 +412,7 @@
     "pace": {
       "remaining": "La ritmul actual raman aproximativ {percent}% la resetare.",
       "shortfall": "La ritmul actual lipsesc aproximativ {percent}% la resetare.",
-      "hitBeforeReset": "La ritmul actual limita va fi atinsa cu aproximativ {duration} inainte de resetare.",
+      "hitBeforeReset": "La ritmul actual limita va fi atinsa cu aproximativ {duration} inainte de resetare. ({time})",
       "fullWithReset": "Limita atinsa; resetare {time}.",
       "fullNoReset": "Limita atinsa; ora resetarii nu este disponibila.",
       "unavailable": {
@@ -438,7 +438,7 @@
       "tachometer": "Indicator",
       "bar": "Bară"
     },
-    "remainingUntilReset": "{remaining} before reset ({time})"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
   },
   "tokens": {
     "input": "Intrare",

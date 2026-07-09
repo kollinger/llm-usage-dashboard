@@ -163,7 +163,7 @@ const providerMeta = {
   copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: "#6f42c1" },
   claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: "#d55e00" },
   anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
-  openai: { name: "OpenAI / GPT", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
+  openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
   gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: "#b94e5c" },
   ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
@@ -1757,7 +1757,7 @@ function bindEvents() {
     if (modeBtn) {
       state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
       requestChartLatestForViewChange();
-      if (state.usage) render();
+      if (state.usage) preservePageScrollDuring(render);
       return;
     }
     const breakdownBtn = e.target.closest("[data-chart-breakdown]");
@@ -1766,7 +1766,7 @@ function bindEvents() {
         ? breakdownBtn.dataset.chartBreakdown
         : "total";
       requestChartLatestForViewChange();
-      if (state.usage) render();
+      if (state.usage) preservePageScrollDuring(render);
       return;
     }
     const btn = e.target.closest("[data-chart-filter]");
@@ -3106,6 +3106,41 @@ function render() {
   renderSourceDiagnostics();
   renderSourceSettings();
   refreshIcons();
+}
+
+function preservePageScrollDuring(callback) {
+  const pageScrollState = capturePageScrollState();
+  try {
+    callback();
+  } finally {
+    restorePageScrollState(pageScrollState);
+  }
+}
+
+function capturePageScrollState() {
+  return {
+    left: Math.max(0, Number(window.scrollX ?? window.pageXOffset ?? document.documentElement?.scrollLeft ?? document.body?.scrollLeft) || 0),
+    top: Math.max(0, Number(window.scrollY ?? window.pageYOffset ?? document.documentElement?.scrollTop ?? document.body?.scrollTop) || 0)
+  };
+}
+
+function restorePageScrollState({ left = 0, top = 0 } = {}) {
+  const restore = () => {
+    if (typeof window.scrollTo === "function") {
+      window.scrollTo(left, top);
+      return;
+    }
+    if (document.documentElement) {
+      document.documentElement.scrollLeft = left;
+      document.documentElement.scrollTop = top;
+    }
+    if (document.body) {
+      document.body.scrollLeft = left;
+      document.body.scrollTop = top;
+    }
+  };
+  restore();
+  window.requestAnimationFrame(restore);
 }
 
 function buildProviders(usage) {
@@ -4603,15 +4638,15 @@ function renderLimitDetail(limit) {
   const rawDetail = [limit.resetLabel || limit.detail || "", isLimitDetailText(limit.valueLabel) ? limit.valueLabel : ""]
     .filter(Boolean)
     .join(" · ");
-  const explicitDetail = appendResetTime(rawDetail, limit.resetsAt);
+  const explicitDetail = appendResetTime(rawDetail, limit.resetsAt, limit);
   if (explicitDetail) return explicitDetail;
-  return renderLimitRemaining(limit.resetsAt);
+  return renderLimitRemaining(limit.resetsAt, limit);
 }
 
-function appendResetTime(label, resetsAt) {
+function appendResetTime(label, resetsAt, limit = null) {
   const text = String(label || "").trim();
   if (!text || !resetsAt) return text;
-  const time = formatDateTime(resetsAt);
+  const time = formatLimitResetDisplay(resetsAt, limit);
   if (!time || time === "--" || text.includes(time)) return text;
   return `${text} (${time})`;
 }
@@ -4721,21 +4756,49 @@ function roundGaugeCoordinate(value) {
   return Math.round(value * 100) / 100;
 }
 
-function renderLimitRemaining(resetsAt) {
+function renderLimitRemaining(resetsAt, limit = null) {
   if (!resetsAt) return "";
   const ms = Date.parse(resetsAt);
   if (!Number.isFinite(ms)) return t("limits.resetPrefix", { time: formatDateTime(resetsAt) });
   const remainingMs = ms - Date.now();
   if (remainingMs > 0) {
-    const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
-    const hours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-    const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
     return t("limits.remainingUntilReset", {
-      remaining: t("limits.remainingShort", { days, hours, minutes }),
-      time: formatDateTime(resetsAt)
+      remaining: formatDurationCompact(remainingMs),
+      time: formatLimitResetDisplay(resetsAt, limit)
     });
   }
-  return t("limits.resetPrefix", { time: formatDateTime(resetsAt) });
+  return t("limits.resetPrefix", { time: formatLimitResetDisplay(resetsAt, limit) });
+}
+
+function formatLimitResetDisplay(value, limit = null, now = new Date()) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  if (isFiveHourLimit(limit)) {
+    const time = formatHourMinute(value);
+    if (isSameLocalDay(date, now)) return time;
+    if (isTomorrowLocalDay(date, now)) return `${formatRelativeDayLabel(1)}, ${time}`;
+    return formatDateTime(value);
+  }
+  const dateTime = formatDateTime(value);
+  if (isWeeklyLimit(limit) && isTomorrowLocalDay(date, now)) {
+    return `${dateTime} (${formatRelativeDayLabel(1)})`;
+  }
+  return dateTime;
+}
+
+function isFiveHourLimit(limit) {
+  const windowMinutes = finiteUiNumberOrNull(limit?.windowMinutes ?? limit?.window_minutes);
+  if (windowMinutes !== null) return Math.abs(windowMinutes - 300) < 1;
+  const label = String(limit?.key || limit?.label || "").toLowerCase();
+  return /\b(5h|five[-\s]?hour)\b/.test(label);
+}
+
+function isWeeklyLimit(limit) {
+  const windowMinutes = finiteUiNumberOrNull(limit?.windowMinutes ?? limit?.window_minutes);
+  if (windowMinutes !== null) return Math.abs(windowMinutes - 7 * 24 * 60) < 1;
+  const label = String(limit?.key || limit?.label || "").toLowerCase();
+  return /\b(week|weekly|7d)\b/.test(label);
 }
 
 function limitDisplayStatus(limit) {
@@ -4757,7 +4820,7 @@ function limitPaceAssessment(limit, nowMs = Date.now()) {
   if (!limit || limit.status === "unavailable") return limitPaceUnavailable("noUsage");
   const used = finiteUiNumberOrNull(limit.usedPercent);
   if (used === null) return limitPaceUnavailable("noUsage");
-  const resetTime = limit.resetsAt ? formatDateTime(limit.resetsAt) : "";
+  const resetTime = limit.resetsAt ? formatLimitResetDisplay(limit.resetsAt, limit) : "";
   if (used >= 99.5) {
     return {
       status: "full",
@@ -4795,7 +4858,10 @@ function limitPaceAssessment(limit, nowMs = Date.now()) {
     if (beforeResetMs > 60 * 1000) {
       return {
         status: "risk",
-        message: t("limits.pace.hitBeforeReset", { duration: formatDurationCompact(beforeResetMs) })
+        message: t("limits.pace.hitBeforeReset", {
+          duration: formatDurationCompact(beforeResetMs),
+          time: formatDateTime(hitMs)
+        })
       };
     }
   }
@@ -5676,13 +5742,13 @@ function summarizeUsedModelApiCost(rows) {
 
 function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, providers) {
   const costSummary = summarizeCostWindow(filteredDaily, subscriptionHistory);
-  const rows = providers
+  const rows = dedupeSubscriptionPricingRows(providers
     .map((provider) => ({
       provider,
       subscription: provider.subscription,
       previous: previousSubscriptionEntry(subscriptionHistory, provider.id)
     }))
-    .filter((row) => row.subscription || row.previous);
+    .filter((row) => row.subscription || row.previous));
   const cards = rows.length
     ? rows.map(renderSubscriptionPricingCard).join("")
     : `<div class="pricing-empty">${escapeHtml(t("pricing.subscriptions.empty"))}</div>`;
@@ -5700,6 +5766,45 @@ function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, provi
     ${costSummary.note ? `<p class="cost-summary-note">${escapeHtml(costSummary.note)}</p>` : ""}
     <div class="subscription-cost-grid">${cards}</div>
   `;
+}
+
+function dedupeSubscriptionPricingRows(rows) {
+  const byFamily = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const family = subscriptionFixedCostFamily(row.provider?.id);
+    const current = byFamily.get(family);
+    if (!current || compareSubscriptionPricingRow(row, current) < 0) byFamily.set(family, row);
+  }
+  return Array.from(byFamily.values()).sort((left, right) =>
+    compareSubscriptionPricingRow(left, right) ||
+    subscriptionProviderDisplayOrder(left.provider?.id) - subscriptionProviderDisplayOrder(right.provider?.id)
+  );
+}
+
+function compareSubscriptionPricingRow(left, right) {
+  const leftPriority = subscriptionProviderDisplayOrder(left.provider?.id);
+  const rightPriority = subscriptionProviderDisplayOrder(right.provider?.id);
+  if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+  const leftKnown = subscriptionHasKnownAmount(left.subscription) || subscriptionHasKnownAmount(left.previous);
+  const rightKnown = subscriptionHasKnownAmount(right.subscription) || subscriptionHasKnownAmount(right.previous);
+  if (leftKnown !== rightKnown) return leftKnown ? -1 : 1;
+  return String(left.provider?.id || "").localeCompare(String(right.provider?.id || ""));
+}
+
+function subscriptionProviderDisplayOrder(providerId) {
+  return {
+    claudeCode: 0,
+    codex: 1,
+    copilot: 2,
+    gemini: 3,
+    anthropic: 50,
+    openai: 60,
+    codexSpark: 70
+  }[providerId] ?? 20;
+}
+
+function subscriptionHasKnownAmount(subscription) {
+  return Number(subscription?.monthlyCost || 0) > 0;
 }
 
 function renderSubscriptionPricingCard({ provider, subscription, previous }) {
@@ -6710,6 +6815,12 @@ function costSourceLabel(id) {
   return model ? `${sourceLabel(sourceId)} (${model})` : sourceLabel(sourceId);
 }
 
+function subscriptionFixedCostFamily(providerId) {
+  if (["codex", "codexSpark", "openai"].includes(providerId)) return "openai";
+  if (["claudeCode", "anthropic"].includes(providerId)) return "anthropic";
+  return providerId || "unknown";
+}
+
 function chartRangeForDaily(daily) {
   const dates = (Array.isArray(daily) ? daily : [])
     .map((day) => day.date)
@@ -6724,21 +6835,34 @@ function calculatePaidSubscriptionCost(subscriptionHistory, startDate, endDate) 
   if (!entries.length) {
     return { known: false, totalEur: 0, unsupportedCurrencies: [] };
   }
+  const start = parseDateOnly(startDate);
+  const end = parseDateOnly(endDate);
+  if (!start || !end || start > end) {
+    return { known: false, totalEur: 0, unsupportedCurrencies: [] };
+  }
   let totalEur = 0;
   let anyOverlap = false;
   const unsupportedCurrencies = new Set();
-  for (const entry of entries) {
-    const rangeStart = entry.effectiveFrom && entry.effectiveFrom > startDate ? entry.effectiveFrom : startDate;
-    const rangeEnd = entry.effectiveTo && entry.effectiveTo < endDate ? entry.effectiveTo : endDate;
-    if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) continue;
-    anyOverlap = true;
-    const amount = proratedSubscriptionEntryCost(entry, startDate, endDate);
-    if (amount === null) {
-      unsupportedCurrencies.add(String(entry.currency || "").toUpperCase());
-      continue;
+
+  for (const cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+    const day = formatDateOnlyForComparison(cursor);
+    const dailyByFamily = new Map();
+    for (const entry of entries) {
+      if (!subscriptionEntryCoversDay(entry, day)) continue;
+      anyOverlap = true;
+      const monthlyCost = Number(entry.monthlyCost || 0);
+      if (!(monthlyCost > 0)) continue;
+      const amount = convertSubscriptionAmountToEur(monthlyCost, entry.currency, cursor);
+      if (amount === null) {
+        unsupportedCurrencies.add(String(entry.currency || "").toUpperCase());
+        continue;
+      }
+      const family = subscriptionFixedCostFamily(entry.provider);
+      dailyByFamily.set(family, Math.max(Number(dailyByFamily.get(family) || 0), amount));
     }
-    totalEur += amount;
+    totalEur += Array.from(dailyByFamily.values()).reduce((sum, amount) => sum + amount, 0);
   }
+
   if (!anyOverlap) {
     return { known: false, totalEur: 0, unsupportedCurrencies: [] };
   }
@@ -6749,27 +6873,16 @@ function calculatePaidSubscriptionCost(subscriptionHistory, startDate, endDate) 
   };
 }
 
-function proratedSubscriptionEntryCost(entry, startDate, endDate) {
-  const rangeStart = entry.effectiveFrom && entry.effectiveFrom > startDate ? entry.effectiveFrom : startDate;
-  const rangeEnd = entry.effectiveTo && entry.effectiveTo < endDate ? entry.effectiveTo : endDate;
-  if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return 0;
+function subscriptionEntryCoversDay(entry, day) {
+  if (!entry?.effectiveFrom || entry.effectiveFrom > day) return false;
+  return !entry.effectiveTo || entry.effectiveTo >= day;
+}
 
-  const monthlyCost = Number(entry.monthlyCost || 0);
-  if (!(monthlyCost > 0)) return 0;
-
-  let total = 0;
-  const cursor = parseDateOnly(rangeStart);
-  const end = parseDateOnly(rangeEnd);
-  if (!cursor || !end) return 0;
-
-  while (cursor <= end) {
-    const dailyAmount = convertSubscriptionAmountToEur(monthlyCost, entry.currency, cursor);
-    if (dailyAmount === null) return null;
-    total += dailyAmount;
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return total;
+function formatDateOnlyForComparison(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function convertSubscriptionAmountToEur(monthlyCost, currency, date) {
@@ -6828,17 +6941,8 @@ function chartSourcesInUse(daily) {
 
 function chartTokenSegmentEntries(daily, mode) {
   if (mode === "model") return chartModelSegmentsInUse(daily);
-  if (mode === "provider") {
-    return chartSourcesInUse(daily).map((id) => ({
-      id,
-      type: "provider",
-      sourceId: id,
-      markId: id,
-      label: sourceLabel(id),
-      providerLabel: sourceLabel(id),
-      color: chartSourceColor(id)
-    }));
-  }
+  if (mode === "provider") return chartProviderSegmentsInUse(daily);
+  if (chartHasProviderBreakdown(daily)) return chartProviderSegmentsInUse(daily);
   return [
     {
       id: "total",
@@ -6849,6 +6953,24 @@ function chartTokenSegmentEntries(daily, mode) {
       color: "#5f6f68"
     }
   ];
+}
+
+function chartHasProviderBreakdown(daily) {
+  return (Array.isArray(daily) ? daily : []).some((day) =>
+    (Array.isArray(day.sources) ? day.sources : []).some((source) => Number(source.totalTokens || 0) > 0)
+  );
+}
+
+function chartProviderSegmentsInUse(daily) {
+  return chartSourcesInUse(daily).map((id) => ({
+    id,
+    type: "provider",
+    sourceId: id,
+    markId: id,
+    label: sourceLabel(id),
+    providerLabel: sourceLabel(id),
+    color: chartSourceColor(id)
+  }));
 }
 
 function chartSourceTotals(daily) {
@@ -8403,6 +8525,16 @@ function formatTime(value) {
   }).format(date);
 }
 
+function formatHourMinute(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  return new Intl.DateTimeFormat(currentLocale(), {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 function formatUpdatedAt(value) {
   if (!value) return "--";
   const date = new Date(value);
@@ -8463,6 +8595,21 @@ function isSameLocalDay(left, right) {
     left.getMonth() === right.getMonth() &&
     left.getDate() === right.getDate()
   );
+}
+
+function isTomorrowLocalDay(date, now = new Date()) {
+  const tomorrow = new Date(now);
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return isSameLocalDay(date, tomorrow);
+}
+
+function formatRelativeDayLabel(dayOffset) {
+  try {
+    return new Intl.RelativeTimeFormat(currentLocale(), { numeric: "auto" }).format(dayOffset, "day");
+  } catch {
+    return dayOffset === 1 ? "tomorrow" : `${dayOffset}d`;
+  }
 }
 
 function updatedDelayHint(providerId, value) {
