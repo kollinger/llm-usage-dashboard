@@ -20,6 +20,57 @@ const summary = summarizeTokenWindow([
 const empty = summarizeTokenWindow([
   { date: "2026-07-04", totalTokens: 0 }
 ]);
+const breakdownDaily = [
+  {
+    date: "2026-07-06",
+    totalTokens: 750,
+    sources: [
+      {
+        id: "codex",
+        totalTokens: 300,
+        models: [{ model: "GPT-5.3-Codex", inputTokens: 120, outputTokens: 180, totalTokens: 300 }]
+      },
+      {
+        id: "claudeCode",
+        totalTokens: 450,
+        models: [{ model: "Claude Sonnet 4.6", inputTokens: 210, cachedInputTokens: 40, outputTokens: 200, totalTokens: 450 }]
+      }
+    ]
+  },
+  {
+    date: "2026-07-07",
+    totalTokens: 125,
+    sources: [
+      {
+        id: "codex",
+        totalTokens: 125,
+        models: [{ model: "GPT-5.3-Codex", inputTokens: 40, outputTokens: 85, totalTokens: 125 }]
+      }
+    ]
+  }
+];
+const providerRows = summarizeProviderUsageForDaily(breakdownDaily).map((row) => ({
+  sourceId: row.sourceId,
+  totalTokens: row.totalTokens,
+  share: Math.round(row.share * 10) / 10,
+  topModel: row.topModel
+}));
+const modelRows = summarizeModelUsageForDaily(breakdownDaily).map((row) => ({
+  sourceId: row.sourceId,
+  model: row.model,
+  totalTokens: row.totalTokens
+}));
+const localOnlyModelRows = summarizeModelUsageForDaily([
+  { date: "2026-07-08", totalTokens: 90 }
+]).map((row) => ({
+  sourceId: row.sourceId,
+  model: row.model,
+  totalTokens: row.totalTokens
+}));
+const providerSummaryHtml = renderChartWindowInsights(breakdownDaily, "tokens", "provider");
+const modelSummaryHtml = renderChartWindowInsights(breakdownDaily, "tokens", "model");
+const totalToolbarHtml = renderTokenBreakdownSummary(breakdownDaily, "total");
+const costSummaryHtml = renderChartWindowInsights(breakdownDaily, "costs", "model");
 JSON.stringify({
   total: summary.total,
   activeDays: summary.activeDays,
@@ -31,7 +82,15 @@ JSON.stringify({
   hasActivity: summary.hasActivity,
   emptyHasActivity: empty.hasActivity,
   sameDaySpan: calendarDaySpan("2026-07-05", "2026-07-05"),
-  invalidSpan: calendarDaySpan("bad", "2026-07-05")
+  invalidSpan: calendarDaySpan("bad", "2026-07-05"),
+  providerRows,
+  modelRows,
+  localOnlyModelRows,
+  providerSummaryHasProviderTable: providerSummaryHtml.includes("provider-window-table"),
+  modelSummaryHasModelTable: modelSummaryHtml.includes("model-window-table"),
+  modelSummaryHasProviderTable: modelSummaryHtml.includes("provider-window-table"),
+  totalToolbarHasTopProvider: totalToolbarHtml.includes("chart.breakdownSummary.topProvider"),
+  costSummaryHasBreakdownTable: costSummaryHtml.includes("model-window-summary")
 });`,
   createAppContext(),
   { filename: appPath }
@@ -48,6 +107,32 @@ assert.equal(result.hasActivity, true);
 assert.equal(result.emptyHasActivity, false);
 assert.equal(result.sameDaySpan, 1);
 assert.equal(result.invalidSpan, 0);
+assert.deepEqual(result.providerRows, [
+  {
+    sourceId: "claudeCode",
+    totalTokens: 450,
+    share: 51.4,
+    topModel: { model: "Claude Sonnet 4.6", totalTokens: 450 }
+  },
+  {
+    sourceId: "codex",
+    totalTokens: 425,
+    share: 48.6,
+    topModel: { model: "GPT-5.3-Codex", totalTokens: 425 }
+  }
+]);
+assert.deepEqual(result.modelRows, [
+  { sourceId: "claudeCode", model: "Claude Sonnet 4.6", totalTokens: 450 },
+  { sourceId: "codex", model: "GPT-5.3-Codex", totalTokens: 425 }
+]);
+assert.deepEqual(result.localOnlyModelRows, [
+  { sourceId: "local", model: "chart.models.unknown", totalTokens: 90 }
+]);
+assert.equal(result.providerSummaryHasProviderTable, true);
+assert.equal(result.modelSummaryHasModelTable, true);
+assert.equal(result.modelSummaryHasProviderTable, false);
+assert.equal(result.totalToolbarHasTopProvider, true);
+assert.equal(result.costSummaryHasBreakdownTable, false);
 
 function createAppContext() {
   const elements = new Map();

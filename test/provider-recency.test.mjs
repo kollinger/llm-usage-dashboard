@@ -10,11 +10,13 @@ process.env.CODEX_LIVE_RATE_LIMITS = "false";
 
 const require = createRequire(import.meta.url);
 const { readCodexUsage, _test } = require("../server.js");
+const { aggregateUsageEvents } = require("../lib/usage-events.js");
 const { detectOpenAiPlanType, detectClaudePlanType, normalizePlanKey } = require("../lib/subscription-plan-detection");
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 await assertSubscriptionPlanDetection();
 await assertProviderVisibility();
+await assertGlmUsageImport();
 await assertFrontendUsageIntelligence();
 await assertSubscriptionConnectionLocalization();
 await assertNotificationLocalizationRegression();
@@ -141,6 +143,7 @@ state.usage = {
   },
   ollama: {},
   openai: {},
+  glm: {},
   gemini: {}
 };
 state.showAllProviders = false;
@@ -250,13 +253,87 @@ JSON.stringify({
   assert(result.activeIds.includes("codex"));
   assert(!result.activeIds.includes("copilot"));
   assert(!result.activeIds.includes("codexSpark"));
+  assert(!result.activeIds.includes("glm"));
   assert(result.allIds.includes("copilot"));
   assert(result.allIds.includes("codexSpark"));
+  assert(result.allIds.includes("glm"));
   assert.equal(result.showAllNoticeVisible, true);
   assert.match(result.showAllNoticeHtml, /All providers view/);
   assert.match(result.showAllNoticeHtml, /Inactive, empty, setup-only, and historical provider cards/);
   assert.equal(result.normalNoticeHidden, true);
   assert.equal(result.restoredNormalView, true);
+}
+
+async function assertGlmUsageImport() {
+  const root = await mkdtemp(path.join(os.tmpdir(), "glm-usage-"));
+  try {
+    const jsonl = path.join(root, "glm-events.jsonl");
+    const csv = path.join(root, "glm-events.csv");
+    await writeFile(
+      jsonl,
+      [
+        JSON.stringify({
+          id: "glm-jsonl-1",
+          provider: "z.ai",
+          created: 1783512000,
+          model: "glm-5.2",
+          usage: {
+            prompt_tokens: 1000,
+            prompt_tokens_details: { cached_tokens: 200 },
+            completion_tokens: 300,
+            completion_tokens_details: { reasoning_tokens: 50 },
+            total_tokens: 1350
+          }
+        }),
+        JSON.stringify({
+          id: "openai-jsonl-1",
+          provider: "openai",
+          created: 1783512000,
+          model: "gpt-5.5",
+          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
+        })
+      ].join("\n") + "\n"
+    );
+    await writeFile(
+      csv,
+      [
+        "timestamp,provider,model,input_tokens,cached_input_tokens,output_tokens,total_tokens",
+        "2026-07-08T13:00:00.000Z,glm,glm-4.7-flashx,100,10,20,130"
+      ].join("\n") + "\n"
+    );
+
+    const result = await _test.readGlmUsage({
+      sources: [
+        {
+          id: "test-glm",
+          providerId: "glm",
+          paths: [
+            { role: "usage_events_jsonl", path: jsonl },
+            { role: "usage_events_csv", path: csv }
+          ]
+        }
+      ]
+    });
+
+    assert.equal(result.status, "live");
+    assert.equal(result._usageEvents.length, 2);
+    assert.equal(result.totals.allTime.totalTokens, 1480);
+    assert.equal(result.byModel[0].model, "glm-5.2");
+    assert.equal(result.byModel[1].model, "glm-4.7-flashx");
+    assert(result._usageEvents.every((event) => event.providerId === "glm"));
+    assert(result._usageEvents.every((event) => event.metadata.sourceGroupId === "glm"));
+
+    const aggregate = aggregateUsageEvents(result._usageEvents, { now: Date.parse("2026-07-08T14:00:00.000Z") });
+    const glmSource = aggregate.sources.find((source) => source.id === "glm");
+    assert.equal(glmSource?.totalTokens, 1480);
+    const day = aggregate.daily.find((row) => row.date === "2026-07-08");
+    const source = day?.sources.find((entry) => entry.id === "glm");
+    assert.equal(source?.models.length, 2);
+    assert(source.models.some((row) => row.model === "glm-5.2" && row.totalTokens === 1350));
+    assert(source.models.some((row) => row.model === "glm-4.7-flashx" && row.totalTokens === 130));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 }
 
 async function assertCodexSparkRateLimitDoesNotMoveGpt55Usage() {
@@ -512,6 +589,15 @@ const unknownModelPricingHtml = renderUsedModelPricingView([
     ]
   }
 ]);
+const glmModelPricingHtml = renderUsedModelPricingView([
+  {
+    date: "${today}",
+    totalTokens: 1350,
+    sources: [
+      { id: "glm", totalTokens: 1350, models: [{ model: "glm-5.2", inputTokens: 1000, cachedInputTokens: 200, outputTokens: 300, reasoningOutputTokens: 50, totalTokens: 1350 }] }
+    ]
+  }
+]);
 const mixedApiCostSummary = summarizeUsedModelApiCost([
   { cost: { costed: true, eur: 1, currency: "EUR" } },
   { cost: { costed: true, eur: 2, currency: "USD" } }
@@ -549,7 +635,7 @@ const weeklyTomorrowResetCopy = formatLimitResetDisplay(
   resetCopyNow
 );
 const defaultUsageProjectionMode = state.usageProjectionMode;
-const sourceBarsHtml = renderSourceTotalBars([
+const sourceBarsHtml = renderTokenBreakdownSummary([
   {
     date: "${today}",
     totalTokens: 300,
@@ -558,7 +644,7 @@ const sourceBarsHtml = renderSourceTotalBars([
       { id: "claudeCode", totalTokens: 100 }
     ]
   }
-]);
+], "provider");
 state.chartBreakdownMode = "provider";
 renderChart(multiProviderDaily);
 const providerBreakdownChartHtml = els.chart.innerHTML;
@@ -800,6 +886,7 @@ const zeroLiveRate = smoothedLiveTokenRateForDisplay({
 }, liveRateBase + 10_000);
 const logoSamples = [
   renderProviderMark("Z.AI"),
+  renderProviderMark("glm"),
   renderProviderMark("MiniMax"),
   renderProviderMark("DeepSeek"),
   renderProviderMark("Alibaba"),
@@ -888,6 +975,11 @@ JSON.stringify({
     !usedModelPricingHtml.includes("Cost status") &&
     !usedModelPricingHtml.includes("Scope"),
   unknownModelPricingHonest: unknownModelPricingHtml.includes("No displayed row has a trusted API price"),
+  glmModelPricingCosted:
+    glmModelPricingHtml.includes("GLM/Z.AI") &&
+    glmModelPricingHtml.includes("glm-5.2") &&
+    glmModelPricingHtml.includes("GLM-5.2") &&
+    !glmModelPricingHtml.includes("Not priced"),
   mixedApiCostStatus: mixedApiCostSummary.status,
   mixedApiCostNote: mixedApiCostSummary.note,
   partialApiCostStatus: partialApiCostSummary.status,
@@ -1014,6 +1106,7 @@ JSON.stringify({
   logoSamplesCoverCatalogProviders:
     logoSamples.includes("provider-mark-zai") &&
     logoSamples.includes("assets/provider-logos/zai.svg") &&
+    logoSamples.includes("provider-mark-glm") &&
     logoSamples.includes("provider-mark-minimax") &&
     logoSamples.includes("assets/provider-logos/minimax.svg") &&
     logoSamples.includes("provider-mark-deepseek") &&
@@ -1161,6 +1254,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.topModelCosted, true);
   assert.equal(result.usedModelPricingHasTotal, true);
   assert.equal(result.unknownModelPricingHonest, true);
+  assert.equal(result.glmModelPricingCosted, true);
   assert.equal(result.mixedApiCostStatus, "mixed");
   assert.equal(result.mixedApiCostNote.includes("multiple currencies"), true);
   assert.equal(result.partialApiCostStatus, "partial");

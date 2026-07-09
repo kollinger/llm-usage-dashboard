@@ -408,8 +408,8 @@ const rawPricingModels = [
     inputUsd: 1.4,
     cachedInputUsd: 0.26,
     outputUsd: 4.4,
-    contextTokens: 128_000,
-    maxOutputTokens: 64_000,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -422,8 +422,8 @@ const rawPricingModels = [
     inputUsd: 1.4,
     cachedInputUsd: 0.26,
     outputUsd: 4.4,
-    contextTokens: 128_000,
-    maxOutputTokens: 64_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -436,8 +436,8 @@ const rawPricingModels = [
     inputUsd: 1,
     cachedInputUsd: 0.2,
     outputUsd: 3.2,
-    contextTokens: 128_000,
-    maxOutputTokens: 64_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -450,8 +450,8 @@ const rawPricingModels = [
     inputUsd: 1.2,
     cachedInputUsd: 0.24,
     outputUsd: 4,
-    contextTokens: 128_000,
-    maxOutputTokens: 64_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -464,8 +464,8 @@ const rawPricingModels = [
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
-    contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -478,8 +478,8 @@ const rawPricingModels = [
     inputUsd: 0.07,
     cachedInputUsd: 0.01,
     outputUsd: 0.4,
-    contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -492,8 +492,8 @@ const rawPricingModels = [
     inputUsd: 0,
     cachedInputUsd: 0,
     outputUsd: 0,
-    contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -506,8 +506,8 @@ const rawPricingModels = [
     inputUsd: 0.6,
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
-    contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    contextTokens: 200_000,
+    maxOutputTokens: 128_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -521,7 +521,7 @@ const rawPricingModels = [
     cachedInputUsd: 0.11,
     outputUsd: 2.2,
     contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 96_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -535,7 +535,7 @@ const rawPricingModels = [
     cachedInputUsd: 0.45,
     outputUsd: 8.9,
     contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 96_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -549,7 +549,7 @@ const rawPricingModels = [
     cachedInputUsd: 0.03,
     outputUsd: 1.1,
     contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 96_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -563,7 +563,7 @@ const rawPricingModels = [
     cachedInputUsd: 0.22,
     outputUsd: 4.5,
     contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 96_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -577,7 +577,7 @@ const rawPricingModels = [
     cachedInputUsd: 0,
     outputUsd: 0,
     contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 96_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true
@@ -591,7 +591,7 @@ const rawPricingModels = [
     cachedInputUsd: 0.1,
     outputUsd: 0.1,
     contextTokens: 128_000,
-    maxOutputTokens: 32_000,
+    maxOutputTokens: 16_000,
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
     china: true

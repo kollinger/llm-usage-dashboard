@@ -165,6 +165,7 @@ const providerMeta = {
   anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
   openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
   gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: "#b94e5c" },
+  glm: { name: "GLM/Z.AI", kickerKey: "providers.glm.kicker", accent: "#48505a" },
   ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
 
@@ -176,6 +177,7 @@ const providerBrandMeta = {
   anthropic: { label: "Anthropic", mark: "An", logo: "anthropic.svg", accent: providerMeta.anthropic.accent },
   openai: { label: "OpenAI", mark: "AI", logo: "openai.svg", accent: providerMeta.openai.accent },
   gemini: { label: "Google Gemini", mark: "G", logo: "gemini.svg", accent: providerMeta.gemini.accent },
+  glm: { label: "GLM/Z.AI", mark: "Z", logo: "zai.svg", accent: providerMeta.glm.accent },
   ollama: { label: "Ollama", mark: "Ol", accent: providerMeta.ollama.accent },
   minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: "#2459d8" },
   deepseek: { label: "DeepSeek", mark: "DS", logo: "deepseek.svg", accent: "#4d63d8" },
@@ -203,6 +205,8 @@ const providerBrandAliases = new Map([
   ["google", "gemini"],
   ["googlegemini", "gemini"],
   ["gemini", "gemini"],
+  ["glm", "glm"],
+  ["glmzai", "glm"],
   ["ollama", "ollama"],
   ["minimax", "minimax"],
   ["deepseek", "deepseek"],
@@ -210,7 +214,6 @@ const providerBrandAliases = new Map([
   ["qwen", "alibaba"],
   ["alibabaqwen", "alibaba"],
   ["zai", "zai"],
-  ["glm", "zai"],
   ["zaiglm", "zai"],
   ["xai", "xai"],
   ["grok", "xai"],
@@ -295,7 +298,7 @@ const MODAL_BACKDROP_GRACE_MS = 450;
 const translationCache = new Map();
 const dialogOpenedAt = new WeakMap();
 const dialogPointerStartedInside = new WeakMap();
-const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "openai", "anthropic", "local"];
+const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "glm", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
   codexSpark: providerMeta.codexSpark.accent,
@@ -303,6 +306,7 @@ const chartSourceColors = {
   claudeCode: providerMeta.claudeCode.accent,
   ollama: providerMeta.ollama.accent,
   gemini: providerMeta.gemini.accent,
+  glm: providerMeta.glm.accent,
   openai: providerMeta.openai.accent,
   anthropic: providerMeta.anthropic.accent,
   local: "#23745c"
@@ -1137,8 +1141,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 64000,
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1160,8 +1164,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 64000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1182,8 +1186,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 64000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1204,8 +1208,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 64000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1227,8 +1231,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 32000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1250,8 +1254,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 32000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1273,8 +1277,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 32000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1296,8 +1300,8 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 32000,
+    contextTokens: 200000,
+    maxOutputTokens: 128000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1320,7 +1324,7 @@ const pricingModels = [
     priceStatus: "official",
     availability: "ga",
     contextTokens: 128000,
-    maxOutputTokens: 32000,
+    maxOutputTokens: 96000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1343,7 +1347,7 @@ const pricingModels = [
     priceStatus: "official",
     availability: "ga",
     contextTokens: 128000,
-    maxOutputTokens: 32000,
+    maxOutputTokens: 96000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1366,7 +1370,7 @@ const pricingModels = [
     priceStatus: "official",
     availability: "ga",
     contextTokens: 128000,
-    maxOutputTokens: 32000,
+    maxOutputTokens: 96000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1389,7 +1393,7 @@ const pricingModels = [
     priceStatus: "official",
     availability: "ga",
     contextTokens: 128000,
-    maxOutputTokens: 32000,
+    maxOutputTokens: 96000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1412,7 +1416,7 @@ const pricingModels = [
     priceStatus: "official",
     availability: "ga",
     contextTokens: 128000,
-    maxOutputTokens: 32000,
+    maxOutputTokens: 96000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -1434,7 +1438,7 @@ const pricingModels = [
     priceStatus: "official",
     availability: "ga",
     contextTokens: 128000,
-    maxOutputTokens: 32000,
+    maxOutputTokens: 16000,
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
@@ -3097,9 +3101,9 @@ function render() {
     els.sourceTotals.innerHTML = renderCostSummary(filteredDaily, state.subscriptionHistory);
   } else {
     renderChart(filteredDaily, chartScrollState);
-    els.sourceTotals.innerHTML = renderSourceTotalBars(filteredDaily);
+    els.sourceTotals.innerHTML = renderTokenBreakdownSummary(filteredDaily, state.chartBreakdownMode);
   }
-  els.chartWindowInsights.innerHTML = renderChartWindowInsights(filteredDaily, state.chartMode);
+  els.chartWindowInsights.innerHTML = renderChartWindowInsights(filteredDaily, state.chartMode, state.chartBreakdownMode);
   renderTokenList(usage.local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
   renderPricing(usage.local, filteredDaily, providers);
@@ -3151,6 +3155,7 @@ function buildProviders(usage) {
     normalizeCodexSparkProvider(usage.codex?.spark, usage.codex?.subscription),
     normalizeLocalProvider("copilot", usage.copilot),
     normalizeLocalProvider("ollama", usage.ollama),
+    normalizeLocalProvider("glm", usage.glm),
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
   ];
@@ -3182,14 +3187,57 @@ function renderChartBreakdownToggle() {
     .join("");
 }
 
-function renderSourceTotalBars(daily) {
-  const sources = sourceTotalsForDaily(daily);
+function renderTokenBreakdownSummary(daily, breakdownMode) {
+  if (breakdownMode === "model") return renderModelTotalBars(daily);
+  if (breakdownMode === "provider") return renderProviderTotalBars(daily);
+  return renderTotalBreakdownSummary(daily);
+}
+
+function renderTotalBreakdownSummary(daily) {
+  const summary = summarizeTokenWindow(daily);
+  if (!summary.hasActivity) return "--";
+  const providers = summarizeProviderUsageForDaily(daily);
+  const models = summarizeModelUsageForDaily(daily);
+  const topProvider = providers[0] || null;
+  const topModel = models[0] || null;
+  const coverage = [
+    t("chart.breakdownSummary.providerCount", { count: formatNumber(providers.length) }),
+    t("chart.breakdownSummary.modelCount", { count: formatNumber(models.length) })
+  ].join(" · ");
+  const rows = [
+    {
+      label: t("chart.breakdownSummary.topProvider"),
+      detail: topProvider ? renderProviderInlineLabel(topProvider.sourceId, sourceLabel(topProvider.sourceId), { size: "xs" }) : escapeHtml(t("chart.breakdownSummary.noProvider")),
+      value: topProvider ? formatTokens(topProvider.totalTokens) : "--"
+    },
+    {
+      label: t("chart.breakdownSummary.topModel"),
+      detail: topModel ? escapeHtml(`${topModel.model} · ${sourceLabel(topModel.sourceId)}`) : escapeHtml(t("chart.breakdownSummary.noModel")),
+      value: topModel ? formatTokens(topModel.totalTokens) : "--"
+    },
+    {
+      label: t("chart.breakdownSummary.coverage"),
+      detail: escapeHtml(coverage),
+      value: formatTokens(summary.total)
+    }
+  ];
+  return `
+    <div class="source-bars-title">
+      <span>${escapeHtml(t("chart.breakdownSummary.totalTitle"))}</span>
+      <strong>${formatTokens(summary.total)}</strong>
+    </div>
+    ${renderSourceSummaryRows(rows)}
+  `;
+}
+
+function renderProviderTotalBars(daily) {
+  const sources = summarizeProviderUsageForDaily(daily);
   if (!sources.length) return "--";
   const max = Math.max(...sources.map((source) => source.totalTokens), 1);
   const total = sources.reduce((sum, source) => sum + source.totalTokens, 0);
   return `
     <div class="source-bars-title">
-      <span>${escapeHtml(t("chart.sourceTotalTitle"))}</span>
+      <span>${escapeHtml(t("chart.breakdownSummary.providerTitle"))}</span>
       <strong>${formatTokens(total)}</strong>
     </div>
     ${sources
@@ -3197,10 +3245,10 @@ function renderSourceTotalBars(daily) {
         const share = total ? (source.totalTokens / total) * 100 : 0;
         const width = Math.max(0.8, (source.totalTokens / max) * 100);
         return `
-          <div class="source-bar-row" title="${escapeHtml(`${sourceLabel(source.id)} · ${formatTokens(source.totalTokens)} · ${formatSharePercent(share)}`)}">
-            <span class="source-bar-name">${renderProviderInlineLabel(source.id, sourceLabel(source.id), { size: "xs" })}</span>
+          <div class="source-bar-row" title="${escapeHtml(`${sourceLabel(source.sourceId)} · ${formatTokens(source.totalTokens)} · ${formatSharePercent(share)}`)}">
+            <span class="source-bar-name">${renderProviderInlineLabel(source.sourceId, sourceLabel(source.sourceId), { size: "xs" })}</span>
             <span class="source-bar-track" aria-hidden="true">
-              <span class="source-bar-fill" style="--bar-width: ${width}; --accent: ${chartSourceColor(source.id)}"></span>
+              <span class="source-bar-fill" style="--bar-width: ${width}; --accent: ${chartSourceColor(source.sourceId)}"></span>
             </span>
             <span class="source-bar-value">${formatTokens(source.totalTokens)}</span>
           </div>
@@ -3210,31 +3258,46 @@ function renderSourceTotalBars(daily) {
   `;
 }
 
-function sourceTotalsForDaily(daily) {
-  const totals = new Map();
-  for (const day of Array.isArray(daily) ? daily : []) {
-    const sources = Array.isArray(day.sources) ? day.sources : [];
-    if (!sources.length && Number(day.totalTokens || 0) > 0) {
-      totals.set("local", Number(totals.get("local") || 0) + Number(day.totalTokens || 0));
-    }
-    for (const source of sources) {
-      const totalTokens = Number(source.totalTokens || 0);
-      if (!totalTokens) continue;
-      totals.set(source.id, Number(totals.get(source.id) || 0) + totalTokens);
-    }
-  }
-  const sources = Array.from(totals.entries()).map(([id, totalTokens]) => ({ id, totalTokens }));
-  if (sources.length) return sortSourceTotals(sources);
-  return [];
+function renderModelTotalBars(daily) {
+  const models = summarizeModelUsageForDaily(daily);
+  if (!models.length) return "--";
+  const total = models.reduce((sum, model) => sum + model.totalTokens, 0);
+  const max = Math.max(...models.map((model) => model.totalTokens), 1);
+  return `
+    <div class="source-bars-title">
+      <span>${escapeHtml(t("chart.breakdownSummary.modelTitle"))}</span>
+      <strong>${formatTokens(total)}</strong>
+    </div>
+    ${models
+      .slice(0, 5)
+      .map((model) => {
+        const share = total ? (model.totalTokens / total) * 100 : 0;
+        const width = Math.max(0.8, (model.totalTokens / max) * 100);
+        const label = `${model.model} · ${sourceLabel(model.sourceId)}`;
+        return `
+          <div class="source-bar-row" title="${escapeHtml(`${label} · ${formatTokens(model.totalTokens)} · ${formatSharePercent(share)}`)}">
+            <span class="source-bar-name source-bar-model-name">${renderProviderMark(model.sourceId, { label: sourceLabel(model.sourceId), size: "tiny" })}<span>${escapeHtml(model.model)}</span></span>
+            <span class="source-bar-track" aria-hidden="true">
+              <span class="source-bar-fill" style="--bar-width: ${width}; --accent: ${chartModelColor(model.sourceId, model.model)}"></span>
+            </span>
+            <span class="source-bar-value">${formatTokens(model.totalTokens)}</span>
+          </div>
+        `;
+      })
+      .join("")}
+  `;
 }
 
-function sortSourceTotals(sources) {
-  return [...sources].sort((a, b) => {
-    if (b.totalTokens !== a.totalTokens) return b.totalTokens - a.totalTokens;
-    const left = chartSourceOrder.indexOf(a.id);
-    const right = chartSourceOrder.indexOf(b.id);
-    return (left === -1 ? Number.MAX_SAFE_INTEGER : left) - (right === -1 ? Number.MAX_SAFE_INTEGER : right);
-  });
+function renderSourceSummaryRows(rows) {
+  return rows
+    .map((row) => `
+      <div class="source-bar-row source-summary-row">
+        <span class="source-bar-name">${escapeHtml(row.label)}</span>
+        <span class="source-bar-track source-summary-detail">${row.detail}</span>
+        <span class="source-bar-value">${escapeHtml(row.value)}</span>
+      </div>
+    `)
+    .join("");
 }
 
 function renderOverviewHistory(daily) {
@@ -3976,6 +4039,8 @@ function localizeProviderMessage(message, fallbackKey) {
     "Keine lokalen Copilot CLI Session-Metriken gefunden.": "providers.messages.noCopilotSessionMetrics",
     "Keine lokalen Gemini Usage-Logs gefunden.": "providers.messages.noGeminiLogs",
     "Gemini local usage updates only when local log files contain new usage metadata.": "providers.updateDelayHints.gemini",
+    "No local GLM/Z.AI usage events found.": "providers.messages.noGlmEvents",
+    "GLM/Z.AI tokens from local imports.": "providers.messages.glmImportTokens",
     "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
     "Keine lokalen Ollama-Logs gefunden.": "providers.messages.noOllamaLogs"
   };
@@ -6010,8 +6075,8 @@ function normalizeBillingTotals(sourceId, totals) {
   const cacheCreation = Number(totals?.cacheCreationInputTokens || 0);
   const output = Number(totals?.outputTokens || 0);
   const reasoning = Number(totals?.reasoningOutputTokens || 0);
-  const inputIncludesCached = ["codex", "codexSpark", "gemini", "openai"].includes(sourceId);
-  const outputIncludesReasoning = ["codex", "codexSpark", "openai"].includes(sourceId);
+  const inputIncludesCached = ["codex", "codexSpark", "gemini", "glm", "openai"].includes(sourceId);
+  const outputIncludesReasoning = ["codex", "codexSpark", "glm", "openai"].includes(sourceId);
 
   return {
     inputTokens: inputIncludesCached ? Math.max(input - cached, 0) : input,
@@ -6107,7 +6172,7 @@ function renderChartFilterBar(daily) {
     .join("");
 }
 
-function renderChartWindowInsights(daily, mode) {
+function renderChartWindowInsights(daily, mode, breakdownMode = state.chartBreakdownMode) {
   const summary = mode === "costs" ? summarizeCostWindowInsights(daily) : summarizeTokenWindow(daily);
   if (!summary.hasActivity) {
     return `<div class="chart-window-empty">${escapeHtml(t("chart.insights.noData"))}</div>`;
@@ -6149,13 +6214,73 @@ function renderChartWindowInsights(daily, mode) {
       </div>
     `)
     .join("");
-  return `${insightCards}${renderModelWindowSummary(daily)}`;
+  return mode === "costs" ? insightCards : `${insightCards}${renderBreakdownWindowSummary(daily, breakdownMode)}`;
 }
 
 function selectedRangeInsightDetail() {
   return t("chart.insights.selectedRangeDetail", {
     range: chartRangeLabel(state.chartTimeFilter)
   });
+}
+
+function renderBreakdownWindowSummary(daily, breakdownMode) {
+  if (breakdownMode === "model") return renderModelWindowSummary(daily);
+  return renderProviderWindowSummary(daily, breakdownMode);
+}
+
+function renderProviderWindowSummary(daily, breakdownMode = "provider") {
+  const rows = summarizeProviderUsageForDaily(daily);
+  if (!rows.length) return "";
+  const models = summarizeModelUsageForDaily(daily);
+  const topProvider = rows[0];
+  const topModel = models[0] || null;
+  const headingKey = breakdownMode === "total" ? "chart.totalBreakdown.heading" : "chart.providers.heading";
+  const rangeKey = breakdownMode === "total" ? "chart.totalBreakdown.range" : "chart.providers.range";
+  return `
+    <div class="model-window-summary breakdown-window-summary">
+      <div class="model-window-head">
+        <div>
+          <span>${escapeHtml(t(headingKey))}</span>
+          <strong>${escapeHtml(t(rangeKey, { range: chartRangeLabel(state.chartTimeFilter) }))}</strong>
+        </div>
+        <div class="model-window-topline">
+          <span>${escapeHtml(t("chart.providers.topTokens", {
+            provider: sourceLabel(topProvider.sourceId),
+            tokens: formatTokens(topProvider.totalTokens)
+          }))}</span>
+          <span>${escapeHtml(topModel
+            ? t("chart.providers.topModel", { model: topModel.model, tokens: formatTokens(topModel.totalTokens) })
+            : t("chart.providers.noModel"))}</span>
+        </div>
+      </div>
+      <div class="model-window-table-wrap">
+        <table class="model-window-table provider-window-table">
+          <thead>
+            <tr>
+              <th scope="col">${escapeHtml(t("chart.providers.columns.provider"))}</th>
+              <th scope="col">${escapeHtml(t("chart.providers.columns.tokens"))}</th>
+              <th scope="col">${escapeHtml(t("chart.providers.columns.share"))}</th>
+              <th scope="col">${escapeHtml(t("chart.providers.columns.topModel"))}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.slice(0, 6).map(renderProviderUsageRow).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderProviderUsageRow(row) {
+  return `
+    <tr>
+      <th scope="row">${renderProviderInlineLabel(row.sourceId, sourceLabel(row.sourceId), { size: "tiny" })}</th>
+      <td>${escapeHtml(formatTokens(row.totalTokens))}</td>
+      <td>${escapeHtml(formatSharePercent(row.share))}</td>
+      <td>${row.topModel ? escapeHtml(`${row.topModel.model} · ${formatTokens(row.topModel.totalTokens)}`) : escapeHtml(t("chart.providers.noModel"))}</td>
+    </tr>
+  `;
 }
 
 function renderModelWindowSummary(daily) {
@@ -6222,25 +6347,18 @@ function summarizeModelUsageForDaily(daily) {
   const modelMap = new Map();
   for (const day of Array.isArray(daily) ? daily : []) {
     const sources = Array.isArray(day.sources) ? day.sources : [];
+    if (!sources.length && Number(day.totalTokens || 0) > 0) {
+      addModelUsageToMap(modelMap, "local", t("chart.models.unknown"), { totalTokens: Number(day.totalTokens || 0) });
+      continue;
+    }
     for (const source of sources) {
       const models = Array.isArray(source.models) ? source.models : [];
+      if (!models.length && Number(source.totalTokens || 0) > 0) {
+        addModelUsageToMap(modelMap, source.id || "local", t("chart.models.unknown"), { totalTokens: Number(source.totalTokens || 0) });
+        continue;
+      }
       for (const model of models) {
-        const modelName = String(model.model || "unknown").trim() || "unknown";
-        const key = `${source.id || "local"}::${modelName}`;
-        if (!modelMap.has(key)) {
-          modelMap.set(key, {
-            sourceId: source.id || "local",
-            model: modelName,
-            inputTokens: 0,
-            cacheCreationInputTokens: 0,
-            cachedInputTokens: 0,
-            outputTokens: 0,
-            reasoningOutputTokens: 0,
-            totalTokens: 0,
-            cost: { eur: null, costed: false }
-          });
-        }
-        addUiUsageTotals(modelMap.get(key), model);
+        addModelUsageToMap(modelMap, source.id || "local", model.model || t("chart.models.unknown"), model);
       }
     }
   }
@@ -6255,6 +6373,83 @@ function summarizeModelUsageForDaily(daily) {
     })
     .filter((row) => row.totalTokens > 0)
     .sort((a, b) => b.totalTokens - a.totalTokens || String(a.model).localeCompare(String(b.model), currentLocale()));
+}
+
+function summarizeProviderUsageForDaily(daily) {
+  const providerMap = new Map();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    const sources = Array.isArray(day.sources) ? day.sources : [];
+    if (!sources.length && Number(day.totalTokens || 0) > 0) {
+      addProviderUsageToMap(providerMap, "local", {
+        totalTokens: Number(day.totalTokens || 0),
+        models: []
+      });
+      continue;
+    }
+    for (const source of sources) {
+      addProviderUsageToMap(providerMap, source.id || "local", source);
+    }
+  }
+  const total = Array.from(providerMap.values()).reduce((sum, row) => sum + row.totalTokens, 0);
+  return Array.from(providerMap.values())
+    .map((row) => ({
+      ...row,
+      share: total ? (row.totalTokens / total) * 100 : 0,
+      topModel: topProviderModel(row.modelTotals)
+    }))
+    .filter((row) => row.totalTokens > 0)
+    .sort((a, b) => {
+      if (b.totalTokens !== a.totalTokens) return b.totalTokens - a.totalTokens;
+      const left = chartSourceOrder.indexOf(a.sourceId);
+      const right = chartSourceOrder.indexOf(b.sourceId);
+      return (left === -1 ? Number.MAX_SAFE_INTEGER : left) - (right === -1 ? Number.MAX_SAFE_INTEGER : right);
+    });
+}
+
+function addModelUsageToMap(modelMap, sourceId, modelName, usage) {
+  const label = String(modelName || t("chart.models.unknown")).trim() || t("chart.models.unknown");
+  const key = `${sourceId || "local"}::${label}`;
+  if (!modelMap.has(key)) {
+    modelMap.set(key, {
+      sourceId: sourceId || "local",
+      model: label,
+      inputTokens: 0,
+      cacheCreationInputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      reasoningOutputTokens: 0,
+      totalTokens: 0,
+      cost: { eur: null, costed: false }
+    });
+  }
+  addUiUsageTotals(modelMap.get(key), usage);
+}
+
+function addProviderUsageToMap(providerMap, sourceId, source) {
+  const id = sourceId || "local";
+  if (!providerMap.has(id)) {
+    providerMap.set(id, {
+      sourceId: id,
+      totalTokens: 0,
+      modelTotals: new Map()
+    });
+  }
+  const row = providerMap.get(id);
+  row.totalTokens += Number(source.totalTokens || 0);
+  for (const model of Array.isArray(source.models) ? source.models : []) {
+    const modelName = String(model.model || t("chart.models.unknown")).trim() || t("chart.models.unknown");
+    const totalTokens = modelRowTotalTokens(model);
+    if (!totalTokens) continue;
+    row.modelTotals.set(modelName, Number(row.modelTotals.get(modelName) || 0) + totalTokens);
+  }
+}
+
+function topProviderModel(modelTotals) {
+  const models = Array.from(modelTotals instanceof Map ? modelTotals.entries() : [])
+    .map(([model, totalTokens]) => ({ model, totalTokens }))
+    .filter((row) => row.totalTokens > 0)
+    .sort((a, b) => b.totalTokens - a.totalTokens || a.model.localeCompare(b.model, currentLocale()));
+  return models[0] || null;
 }
 
 function addUiUsageTotals(target, source) {

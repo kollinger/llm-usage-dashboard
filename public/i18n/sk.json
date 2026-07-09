@@ -120,7 +120,36 @@
       "model": "Modely"
     },
     "breakdownToggleAria": "Rozdelenie tokenov",
-    "overviewAria": "Compact token history by provider"
+    "overviewAria": "Compact token history by provider",
+    "breakdownSummary": {
+      "totalTitle": "Total window",
+      "providerTitle": "Provider share",
+      "modelTitle": "Model share",
+      "topProvider": "Top provider",
+      "topModel": "Top model",
+      "coverage": "Coverage",
+      "providerCount": "{count} providers",
+      "modelCount": "{count} models",
+      "noProvider": "No provider breakdown",
+      "noModel": "No model breakdown"
+    },
+    "providers": {
+      "heading": "Providers used",
+      "range": "{range} provider mix",
+      "topTokens": "Top by tokens: {provider} · {tokens}",
+      "topModel": "Top model: {model} · {tokens}",
+      "noModel": "No model details",
+      "columns": {
+        "provider": "Provider",
+        "tokens": "Tokens",
+        "share": "Share",
+        "topModel": "Top model"
+      }
+    },
+    "totalBreakdown": {
+      "heading": "Total summary",
+      "range": "{range} aggregate"
+    }
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -290,6 +319,9 @@
     "gemini": {
       "kicker": "Gemini"
     },
+    "glm": {
+      "kicker": "OpenAI-compatible import"
+    },
     "ollama": {
       "kicker": "Ollama"
     },
@@ -304,6 +336,8 @@
       "sevenDays": "7 dní",
       "noCodexSparkEvents": "Nenašli sa žiadne udalosti Codex 5.3 Spark.",
       "noGeminiLogs": "Nenašli sa žiadne lokálne Gemini usage logy.",
+      "glmImportTokens": "GLM/Z.AI tokens from local imports.",
+      "noGlmEvents": "No local GLM/Z.AI usage events found.",
       "ollamaLogTokens": "Lokálne Ollama tokeny z logov",
       "noOllamaLogs": "Nenašli sa žiadne lokálne Ollama logy.",
       "copilotLogTokens": "Copilot CLI tokens 24h",
@@ -333,6 +367,7 @@
       "claudeCode": "This Claude Code card combines statusline, local logs, and Claude.ai billing or usage data. Updates can lag when Claude Code is closed, the statusline has not run, or Claude.ai cookies/API access are unavailable.",
       "copilot": "GitHub Copilot CLI usage is written after sessions shut down, and live quota probing depends on the local Copilot CLI. The timestamp can lag while a session is still open or the probe is unavailable.",
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
+      "glm": "GLM/Z.AI updates when local JSON, JSONL, or CSV usage imports contain OpenAI-compatible GLM token counts.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
     },
     "freshness": {

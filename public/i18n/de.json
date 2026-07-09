@@ -120,7 +120,36 @@
       "model": "Modell"
     },
     "breakdownToggleAria": "Token-Aufschlüsselung",
-    "overviewAria": "Kompakter Token-Verlauf nach Anbieter"
+    "overviewAria": "Kompakter Token-Verlauf nach Anbieter",
+    "breakdownSummary": {
+      "totalTitle": "Gesamtfenster",
+      "providerTitle": "Anbieteranteile",
+      "modelTitle": "Modellanteile",
+      "topProvider": "Top-Anbieter",
+      "topModel": "Top-Modell",
+      "coverage": "Abdeckung",
+      "providerCount": "{count} Anbieter",
+      "modelCount": "{count} Modelle",
+      "noProvider": "Keine Anbieter-Aufschlüsselung",
+      "noModel": "Keine Modell-Aufschlüsselung"
+    },
+    "providers": {
+      "heading": "Genutzte Anbieter",
+      "range": "Anbietermix {range}",
+      "topTokens": "Nach Tokens vorn: {provider} · {tokens}",
+      "topModel": "Top-Modell: {model} · {tokens}",
+      "noModel": "Keine Modelldetails",
+      "columns": {
+        "provider": "Anbieter",
+        "tokens": "Tokens",
+        "share": "Anteil",
+        "topModel": "Top-Modell"
+      }
+    },
+    "totalBreakdown": {
+      "heading": "Gesamtübersicht",
+      "range": "Aggregation {range}"
+    }
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -290,6 +319,9 @@
     "gemini": {
       "kicker": "Gemini"
     },
+    "glm": {
+      "kicker": "OpenAI-kompatibler Import"
+    },
     "ollama": {
       "kicker": "Ollama"
     },
@@ -304,6 +336,8 @@
       "sevenDays": "7 Tage",
       "noCodexSparkEvents": "Keine Codex 5.3 Spark Events gefunden.",
       "noGeminiLogs": "Keine lokalen Gemini-Nutzungslogs gefunden.",
+      "glmImportTokens": "GLM/Z.AI-Tokens aus lokalen Importen.",
+      "noGlmEvents": "Keine lokalen GLM/Z.AI-Nutzungsereignisse gefunden.",
       "ollamaLogTokens": "Lokale Ollama-Tokens aus Logs",
       "noOllamaLogs": "Keine lokalen Ollama-Logs gefunden.",
       "copilotLogTokens": "Copilot-CLI-Tokens 24h",
@@ -333,6 +367,7 @@
       "claudeCode": "Diese Claude-Code-Karte kombiniert Statusline, lokale Logs und Claude.ai Billing-/Nutzungsdaten. Verzögerungen sind möglich, wenn Claude Code geschlossen ist, die Statusline nicht gelaufen ist oder Claude.ai-Cookies/API-Zugriff fehlen.",
       "copilot": "GitHub-Copilot-CLI-Nutzung wird erst nach Session-Ende geschrieben; Live-Quota hängt vom lokalen Copilot CLI ab. Der Stand kann daher während offener Sessions oder bei fehlgeschlagener Abfrage verzögert sein.",
       "gemini": "Gemini lokal aktualisiert sich nur, wenn lokale Logdateien neue Nutzungsmetadaten enthalten.",
+      "glm": "GLM/Z.AI aktualisiert sich, wenn lokale JSON-, JSONL- oder CSV-Nutzungsimporte OpenAI-kompatible GLM-Tokenzahlen enthalten.",
       "ollama": "Ollama aktualisiert sich nur, wenn Anfragen über den lokalen Proxy bzw. die Logdatei des Dashboards laufen."
     },
     "freshness": {

@@ -35,6 +35,8 @@ const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
+const GLM_USAGE_EVENTS_FILE = path.join(DATA_DIR, "glm-usage-events.jsonl");
+const GLM_USAGE_EVENTS_CSV_FILE = path.join(DATA_DIR, "glm-usage-events.csv");
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -666,6 +668,7 @@ async function readUsageDashboard({ force = false } = {}) {
       copilotRaw,
       claudeCodeRaw,
       geminiRaw,
+      glmRaw,
       ollamaRaw,
       openaiRaw,
       anthropicRaw
@@ -684,6 +687,7 @@ async function readUsageDashboard({ force = false } = {}) {
       readCopilotUsage({ sources: localSources.copilot }).catch((error) => providerError("copilot", error)),
       readClaudeCodeUsage({ sources: localSources.claudeCode }).catch((error) => providerError("claudeCode", error)),
       readGeminiUsage({ sources: localSources.gemini }).catch((error) => providerError("gemini", error)),
+      readGlmUsage({ sources: localSources.glm }).catch((error) => providerError("glm", error)),
       readOllamaUsage({ sources: localSources.ollama }).catch((error) => providerError("ollama", error)),
       readOpenAiUsage().catch((error) => providerError("openai", error)),
       readAnthropicUsage().catch((error) => providerError("anthropic", error))
@@ -699,6 +703,7 @@ async function readUsageDashboard({ force = false } = {}) {
       accountBilling
     );
     const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini", officialPricing, accountBilling);
+    const glm = glmRaw;
     const ollama = ollamaRaw;
     const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai", officialPricing, accountBilling);
     const anthropic = mergeProviderSubscription(
@@ -709,7 +714,7 @@ async function readUsageDashboard({ force = false } = {}) {
       accountBilling
     );
     await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
-    const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, ollama]);
+    const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, glm, ollama]);
 
     const now = new Date().toISOString();
     return {
@@ -718,6 +723,7 @@ async function readUsageDashboard({ force = false } = {}) {
       copilot: stripProviderUsageEvents(copilot),
       claudeCode: stripProviderUsageEvents(claudeCode),
       gemini: stripProviderUsageEvents(gemini),
+      glm: stripProviderUsageEvents(glm),
       ollama: stripProviderUsageEvents(ollama),
       local,
       openai,
@@ -1562,6 +1568,7 @@ function buildReaderSources(connectedSources = []) {
       { role: "tmp", path: path.join(GEMINI_HOME, "tmp"), kind: "directory" },
       { role: "home", path: GEMINI_HOME, kind: "directory" }
     ])],
+    glm: defaultGlmSources(),
     ollama: [defaultFileSource("ollama", "Ollama", OLLAMA_USAGE_FILE, "usage_file")]
   };
 
@@ -1588,6 +1595,15 @@ function defaultCodexSources() {
     { role: "sessions", path: path.join(home, "sessions"), kind: "directory" },
     { role: "archived_sessions", path: path.join(home, "archived_sessions"), kind: "directory" }
   ]));
+}
+
+function defaultGlmSources() {
+  return [
+    defaultManualImportSource("glm", "GLM/Z.AI", [
+      { role: "usage_events_jsonl", path: GLM_USAGE_EVENTS_FILE, kind: "file" },
+      { role: "usage_events_csv", path: GLM_USAGE_EVENTS_CSV_FILE, kind: "file" }
+    ])
+  ];
 }
 
 function defaultHomeSource(providerId, label, home, paths) {
@@ -1638,6 +1654,34 @@ function defaultFileSource(providerId, label, file, role) {
     discovery: {
       method: "configured-data-dir",
       confidence: "high",
+      checkedAt: new Date().toISOString(),
+      evidence: []
+    },
+    privacy: {
+      scope: "metadata_only",
+      forbidden: ["credentials", "raw_transcripts", "provider_payloads"]
+    }
+  };
+}
+
+function defaultManualImportSource(providerId, label, paths) {
+  const owner = currentOwner(DATA_DIR);
+  return {
+    id: sourceId(providerId, owner.uid ?? "current", paths.map((entry) => entry.path)),
+    providerId,
+    kind: "manual_import",
+    label: `${label} - current data dir`,
+    owner,
+    paths: paths.map((entry) => ({
+      ...entry,
+      exists: false,
+      readable: true,
+      permission: "configured"
+    })),
+    accessStatus: "readable",
+    discovery: {
+      method: "configured-data-dir",
+      confidence: "medium",
       checkedAt: new Date().toISOString(),
       evidence: []
     },
@@ -4293,6 +4337,329 @@ async function readGeminiUsage(options = {}) {
     daily: buildDaily(usage.dailyMap),
     _usageEvents: usageEvents
   };
+}
+
+const GLM_USAGE_IMPORT_ROLES = [
+  "usage_events",
+  "usage_events_jsonl",
+  "usage_events_csv",
+  "openai_compatible_log",
+  "usage_file",
+  "usage_dir"
+];
+const GLM_USAGE_IMPORT_EXTENSIONS = new Set([".json", ".jsonl", ".ndjson", ".log", ".csv"]);
+const GLM_NO_EVENTS_MESSAGE = "No local GLM/Z.AI usage events found.";
+const GLM_EVENTS_MESSAGE = "GLM/Z.AI tokens from local imports.";
+
+async function readGlmUsage(options = {}) {
+  const files = await glmUsageFileRecords(options.sources || buildReaderSources().glm);
+  const usage = createUsageAccumulator();
+  const modelMap = new Map();
+  let firstEvent = null;
+  let latestEvent = null;
+  let eventCount = 0;
+  let filesWithEvents = 0;
+  const usageEvents = [];
+
+  for (const fileRecord of files) {
+    let fileEvents = 0;
+    const onObject = (event, meta) => {
+      const normalizedEvent = normalizeGlmUsageImportEvent(event, fileRecord, meta);
+      if (!normalizedEvent) return;
+      usageEvents.push(normalizedEvent);
+      addUsageEvent(usage, normalizedEvent.timestampMs, normalizedEvent.usage);
+
+      if (!modelMap.has(normalizedEvent.model)) modelMap.set(normalizedEvent.model, createUsageTotals());
+      addUsage(modelMap.get(normalizedEvent.model), normalizedEvent.usage);
+
+      eventCount += 1;
+      fileEvents += 1;
+      const timestamp = new Date(normalizedEvent.timestampMs).toISOString();
+      if (!firstEvent || normalizedEvent.timestampMs < Date.parse(firstEvent.timestamp)) {
+        firstEvent = {
+          timestamp,
+          model: normalizedEvent.model,
+          file: fileRecord.file
+        };
+      }
+      if (!latestEvent || normalizedEvent.timestampMs > Date.parse(latestEvent.timestamp)) {
+        latestEvent = {
+          timestamp,
+          model: normalizedEvent.model,
+          usage: normalizeUsage(normalizedEvent.usage),
+          file: fileRecord.file
+        };
+      }
+    };
+    if (path.extname(fileRecord.file).toLowerCase() === ".csv") await readCsvUsageObjects(fileRecord.file, onObject);
+    else await readUsageObjects(fileRecord.file, onObject);
+    if (fileEvents) filesWithEvents += 1;
+  }
+
+  return {
+    id: "glm",
+    status: latestEvent ? "live" : "empty",
+    updatedAt: new Date().toISOString(),
+    message: latestEvent ? GLM_EVENTS_MESSAGE : GLM_NO_EVENTS_MESSAGE,
+    source: {
+      usageFiles: [GLM_USAGE_EVENTS_FILE, GLM_USAGE_EVENTS_CSV_FILE],
+      filesScanned: files.length,
+      filesWithEvents,
+      eventCount,
+      latestUsageAt: latestEvent?.timestamp || null,
+      protocol: "openai_compatible"
+    },
+    latest: latestEvent
+      ? {
+          timestamp: latestEvent.timestamp,
+          model: latestEvent.model,
+          last: latestEvent.usage
+        }
+      : null,
+    first: firstEvent
+      ? {
+          timestamp: firstEvent.timestamp,
+          model: firstEvent.model,
+          file: firstEvent.file
+        }
+      : null,
+    totals: finalizeUsageAccumulator(usage),
+    limits: null,
+    byModel: Array.from(modelMap.entries())
+      .map(([model, modelUsage]) => ({ model, ...modelUsage }))
+      .sort((a, b) => b.totalTokens - a.totalTokens)
+      .slice(0, 8),
+    daily: buildDaily(usage.dailyMap),
+    _usageEvents: usageEvents
+  };
+}
+
+async function glmUsageFileRecords(sources) {
+  const records = [];
+  const seen = new Set();
+  for (const entry of sourcePathEntries(sources, GLM_USAGE_IMPORT_ROLES)) {
+    for (const file of await usageImportFilesForPath(entry.path, isGlmUsageImportFile)) {
+      const realPath = await safeRealpath(file);
+      if (seen.has(realPath)) continue;
+      seen.add(realPath);
+      records.push({
+        file,
+        realPath,
+        sourceId: entry.source.id,
+        source: entry.source
+      });
+    }
+  }
+  return records;
+}
+
+async function usageImportFilesForPath(filePath, predicate) {
+  let stat;
+  try {
+    stat = await fsp.stat(filePath);
+  } catch {
+    return [];
+  }
+  if (stat.isFile()) return predicate(filePath) ? [filePath] : [];
+  if (stat.isDirectory()) return listFiles(filePath, predicate);
+  return [];
+}
+
+function isGlmUsageImportFile(file) {
+  return GLM_USAGE_IMPORT_EXTENSIONS.has(path.extname(file).toLowerCase());
+}
+
+function normalizeGlmUsageImportEvent(event, fileRecord, meta) {
+  if (!event || typeof event !== "object") return null;
+  const provider = findFirstValue(event, [
+    "providerId",
+    "provider",
+    "provider_id",
+    "vendor",
+    "sourceProvider",
+    "source_provider"
+  ]);
+  const model = findModelName(event) || (isGlmProviderMarker(provider) ? "glm" : null);
+  if (!model || (!isGlmModelName(model) && !isGlmProviderMarker(provider))) return null;
+
+  const usage = normalizeGlmImportUsage(event);
+  if (!usage.total_tokens) return null;
+
+  const timestampMs = findTimestampMs(event) || normalizeCreatedTimestampMs(event.created) || safeStatMtime(fileRecord.file);
+  if (!Number.isFinite(timestampMs)) return null;
+
+  return {
+    providerId: "glm",
+    sourceId: fileRecord.sourceId,
+    eventId: findFirstValue(event, ["eventId", "event_id", "id", "requestId", "request_id", "responseId", "response_id"]) || null,
+    timestampMs,
+    model: String(model).slice(0, 160),
+    usage,
+    evidence: {
+      realpath: fileRecord.realPath,
+      realpathHash: hashEvidencePath(fileRecord.realPath),
+      line: meta?.line,
+      index: meta?.index
+    },
+    metadata: {
+      sourceGroupId: "glm",
+      sourceType: "manual_import"
+    }
+  };
+}
+
+function isGlmProviderMarker(value) {
+  return /^(glm|zai|z\.ai|z-ai|zhipu|chatglm)$/i.test(String(value || "").trim());
+}
+
+function isGlmModelName(value) {
+  return /^glm(?:[-_.]|$)/i.test(String(value || "").trim());
+}
+
+function normalizeGlmImportUsage(event) {
+  const usage = findGlmUsageObject(event) || {};
+  const input = firstFiniteNumber(
+    usage.input_tokens,
+    usage.inputTokens,
+    usage.prompt_tokens,
+    usage.promptTokens,
+    usage.prompt
+  );
+  const cached = firstFiniteNumber(
+    usage.cached_input_tokens,
+    usage.cachedInputTokens,
+    usage.cache_read_input_tokens,
+    usage.cacheReadInputTokens,
+    usage.input_cached_tokens,
+    usage.prompt_tokens_details?.cached_tokens,
+    usage.promptTokensDetails?.cachedTokens,
+    usage.input_tokens_details?.cached_tokens,
+    usage.inputTokensDetails?.cachedTokens
+  );
+  const output = firstFiniteNumber(
+    usage.output_tokens,
+    usage.outputTokens,
+    usage.completion_tokens,
+    usage.completionTokens,
+    usage.candidates_token_count,
+    usage.output
+  );
+  const reasoning = firstFiniteNumber(
+    usage.reasoning_output_tokens,
+    usage.reasoningOutputTokens,
+    usage.thoughts_token_count,
+    usage.completion_tokens_details?.reasoning_tokens,
+    usage.completionTokensDetails?.reasoningTokens,
+    usage.output_tokens_details?.reasoning_tokens,
+    usage.outputTokensDetails?.reasoningTokens
+  );
+  const total = firstFiniteNumber(usage.total_tokens, usage.totalTokens, usage.total);
+
+  return {
+    input_tokens: input,
+    cached_input_tokens: cached,
+    output_tokens: output,
+    reasoning_output_tokens: reasoning,
+    total_tokens: total > 0 ? total : input + cached + output + reasoning
+  };
+}
+
+function findGlmUsageObject(event) {
+  const direct = event.usage || event.usage_metadata || event.usageMetadata || event.token_usage || event.tokenUsage;
+  if (direct && typeof direct === "object") return direct;
+  return findFirstObject(event, (object) => {
+    return (
+      object.input_tokens !== undefined ||
+      object.inputTokens !== undefined ||
+      object.prompt_tokens !== undefined ||
+      object.output_tokens !== undefined ||
+      object.outputTokens !== undefined ||
+      object.completion_tokens !== undefined ||
+      object.total_tokens !== undefined ||
+      object.totalTokens !== undefined
+    );
+  });
+}
+
+function normalizeCreatedTimestampMs(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  return Math.abs(number) < 1e12 ? number * 1000 : number;
+}
+
+function firstFiniteNumber(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+    const normalized = typeof value === "string" ? value.trim().replace(",", ".") : value;
+    const number = Number(normalized);
+    if (Number.isFinite(number) && number > 0) return number;
+  }
+  return 0;
+}
+
+async function readCsvUsageObjects(file, onObject) {
+  let rows;
+  try {
+    rows = parseCsvRows(await fsp.readFile(file, "utf8"));
+  } catch {
+    return;
+  }
+  if (rows.length < 2) return;
+  const headers = rows[0].map(canonicalCsvHeader);
+  for (let index = 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (!row.some((cell) => String(cell || "").trim())) continue;
+    const object = {};
+    headers.forEach((key, cellIndex) => {
+      if (key) object[key] = row[cellIndex] ?? "";
+    });
+    onObject(object, { file, line: index + 1, index: index - 1 });
+  }
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+      continue;
+    }
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+    cell += char;
+  }
+  row.push(cell);
+  if (row.some((value) => value !== "") || text.endsWith(",")) rows.push(row);
+  return rows;
+}
+
+function canonicalCsvHeader(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^\uFEFF/u, "")
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_match, char) => char.toUpperCase());
 }
 
 async function readOllamaUsage(options = {}) {
@@ -7004,12 +7371,14 @@ module.exports = {
   startDashboard,
   readCodexUsage,
   readClaudeCodeUsage,
+  readGlmUsage,
   createTimedCache,
   invalidateTimedCache,
   readThroughCache,
   _test: {
     copilotLimitsFromQuota,
     readGeminiUsage,
+    readGlmUsage,
     parseDarwinSwapUsage,
     parseLinuxMeminfoSwap,
     parseProcessRows,

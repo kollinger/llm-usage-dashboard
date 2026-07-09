@@ -1694,6 +1694,19 @@ button.subscription-connection-action {
   max-width: 100%;
 }
 
+.source-bar-model-name {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.source-bar-model-name > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .source-bar-value {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -1714,6 +1727,24 @@ button.subscription-connection-action {
   height: 100%;
   border-radius: inherit;
   background: var(--accent, var(--green));
+}
+
+.source-summary-detail {
+  height: auto;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 780;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-summary-detail .provider-inline-label {
+  max-width: 100%;
 }
 
 .cost-summary-track {
@@ -2592,6 +2623,10 @@ button.subscription-connection-action {
   width: 100%;
   min-width: 680px;
   border-collapse: collapse;
+}
+
+.provider-window-table {
+  min-width: 560px;
 }
 
 .model-window-table th,
