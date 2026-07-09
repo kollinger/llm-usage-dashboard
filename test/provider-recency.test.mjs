@@ -153,6 +153,8 @@ const showAllNoticeHtml = els.providerViewNotice.innerHTML;
 state.showAllProviders = false;
 updateProviderViewNotice(orderProviders(buildProviders(state.usage)));
 const normalNoticeHidden = els.providerViewNotice.hidden;
+const staleCopilotUsageAt = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+const recentCopilotUsageAt = new Date().toISOString();
 JSON.stringify({
   neutralCopilot: providerHasUsage({
     id: "copilot",
@@ -166,12 +168,38 @@ JSON.stringify({
     ],
     creditRows: []
   }),
-  fullCopilot: providerHasUsage({
+  staleQuotaCopilot: providerHasUsage({
     id: "copilot",
     status: "live",
     todayTokens: 0,
     apiTokens: 0,
     cost: 0,
+    usageUpdatedAt: staleCopilotUsageAt,
+    limitRows: [
+      { key: "copilotChat", label: "Copilot chat", usedPercent: 0.1, remainingPercent: 99.9, valueLabel: "0 / 200" }
+    ],
+    creditRows: []
+  }),
+  staleFullCopilot: providerHasUsage({
+    id: "copilot",
+    status: "live",
+    todayTokens: 0,
+    apiTokens: 0,
+    cost: 0,
+    usageUpdatedAt: staleCopilotUsageAt,
+    limitRows: [
+      { key: "copilotPremiumInteractions", label: "Premium requests", usedPercent: 100, remainingPercent: 0, valueLabel: "16 / 16" }
+    ],
+    limitAlert: { title: "Limit full", text: "Premium requests is full." },
+    creditRows: []
+  }),
+  recentFullCopilot: providerHasUsage({
+    id: "copilot",
+    status: "live",
+    todayTokens: 0,
+    apiTokens: 0,
+    cost: 0,
+    usageUpdatedAt: recentCopilotUsageAt,
     limitRows: [
       { key: "copilotPremiumInteractions", label: "Premium requests", usedPercent: 100, remainingPercent: 0, valueLabel: "16 / 16" }
     ],
@@ -214,7 +242,9 @@ JSON.stringify({
   ));
 
   assert.equal(result.neutralCopilot, false);
-  assert.equal(result.fullCopilot, true);
+  assert.equal(result.staleQuotaCopilot, false);
+  assert.equal(result.staleFullCopilot, false);
+  assert.equal(result.recentFullCopilot, true);
   assert.equal(result.neutralSpark, false);
   assert.equal(result.activeCodexLimit, true);
   assert(result.activeIds.includes("codex"));
@@ -574,7 +604,8 @@ const normalizedClaudeConnectionCardHtml = renderProvider(normalizeLocalProvider
     mode: "refresh",
     url: "https://claude.ai/settings/billing",
     labelKey: "subscriptions.connectionActions.claudeRefresh",
-    statusKey: "subscriptions.connectionStatus.claudeRefreshRequired"
+    statusKey: "subscriptions.connectionActions.claudeRefresh",
+    rereadOnly: true
   }
 }));
 const limitBarsHtml = renderLimitBars({
@@ -624,10 +655,12 @@ const claudeLoginCardHtml = renderProvider({
   status: "empty",
   creditRows: [],
   subscriptionConnectionAction: {
-    mode: "login",
+    provider: "claude",
+    mode: "refresh",
     url: "https://claude.ai/settings/billing",
-    labelKey: "subscriptions.connectionActions.claudeLogin",
-    statusKey: "subscriptions.connectionStatus.claudeLoginRequired"
+    labelKey: "subscriptions.connectionActions.claudeRefresh",
+    statusKey: "subscriptions.connectionActions.claudeRefresh",
+    rereadOnly: true
   },
   foot: [],
   message: "Logged tokens"
@@ -650,7 +683,8 @@ const claudeConflictCardHtml = renderProvider({
     mode: "refresh",
     url: "https://claude.ai/settings/billing",
     labelKey: "subscriptions.connectionActions.claudeRefresh",
-    statusKey: "subscriptions.connectionStatus.claudeRefreshRequired"
+    statusKey: "subscriptions.connectionActions.claudeRefresh",
+    rereadOnly: true
   },
   foot: [],
   message: "Logged tokens"
@@ -768,6 +802,11 @@ const loadingCodexConnectionHtml = renderProviderSubscriptionConnection({
     statusKey: "subscriptions.connectionStatus.chatgptLoginRequired"
   }
 });
+const relativeFreshnessText = providerFreshnessRows({
+  usageUpdatedAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+  limitsUpdatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  priceUpdatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+}).map((row) => row.label).join(" ");
 JSON.stringify({
   filters: CHART_FILTERS,
   h24Total,
@@ -783,7 +822,8 @@ JSON.stringify({
   usedModelPricingHasTotal:
     usedModelPricingHtml.includes("API cost total") &&
     usedModelPricingHtml.includes("<tfoot>") &&
-    usedModelPricingHtml.includes("Cost status"),
+    !usedModelPricingHtml.includes("Cost status") &&
+    !usedModelPricingHtml.includes("Scope"),
   unknownModelPricingHonest: unknownModelPricingHtml.includes("No displayed row has a trusted API price"),
   mixedApiCostStatus: mixedApiCostSummary.status,
   mixedApiCostNote: mixedApiCostSummary.note,
@@ -862,7 +902,11 @@ JSON.stringify({
     providerCardHtml.includes("provider-freshness") &&
     providerCardHtml.includes("Usage") &&
     providerCardHtml.includes("Limits") &&
-    providerCardHtml.includes("Catalog"),
+    providerCardHtml.includes("Prices"),
+  relativeFreshness:
+    /12 minutes ago/.test(relativeFreshnessText) &&
+    /2 hours ago/.test(relativeFreshnessText) &&
+    /3 days ago/.test(relativeFreshnessText),
   normalizedProviderConnectionActions:
     normalizedCodexConnectionCardHtml.includes("Log in to ChatGPT and read plan") &&
     normalizedCodexConnectionCardHtml.includes("https://chatgpt.com/#settings/Billing") &&
@@ -871,16 +915,16 @@ JSON.stringify({
     normalizedCodexConnectionCardHtml.includes("Read plan now") &&
     !normalizedCodexConnectionCardHtml.includes("Pro (Cost unknown)") &&
     !normalizedCodexConnectionCardHtml.includes("pro (Cost unknown)") &&
-    !/plan-badge[^>]*>\\s*pro\\s*</iu.test(normalizedCodexConnectionCardHtml) &&
+    !/plan-badge[^>]*>\\s*pro\\s*</iu.test(normalizedCodexConnectionCardHtml),
+  normalizedClaudeConnectionAction:
     normalizedClaudeConnectionCardHtml.includes("Read Claude plan again") &&
-    normalizedClaudeConnectionCardHtml.includes("https://claude.ai/settings/billing") &&
-    normalizedClaudeConnectionCardHtml.includes("data-subscription-provider-open") &&
+    !normalizedClaudeConnectionCardHtml.includes("data-subscription-provider-open") &&
     normalizedClaudeConnectionCardHtml.includes("data-subscription-reread") &&
-    normalizedClaudeConnectionCardHtml.includes("Read plan now"),
-  providerCardFableQuotaAudit:
-    providerCardHtml.includes("Fable quota source") &&
-    providerCardHtml.includes("no synthetic quota is shown") &&
-    providerCardHtml.includes("limit-context-row") &&
+    normalizedClaudeConnectionCardHtml.includes("Read plan now") &&
+    !normalizedClaudeConnectionCardHtml.includes("Log in to Claude.ai"),
+  providerCardNoFableQuotaAudit:
+    !providerCardHtml.includes("Fable quota source") &&
+    !providerCardHtml.includes("no synthetic quota is shown") &&
     providerCardHtml.includes("limit-tachometer-gauge") &&
     !providerCardHtml.includes("ring-row"),
   claudeCodeUsesCurrentUsageComponent:
@@ -933,14 +977,14 @@ JSON.stringify({
     claudeTachometerLimitBarsHtml.includes("limit-bars-mode-bar") &&
     claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
     !claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
-	  claudeLoginAction:
-	    claudeLoginCardHtml.includes("Log in to Claude and read plan") &&
-	    claudeLoginCardHtml.includes("https://claude.ai/settings/billing") &&
-	    claudeLoginCardHtml.includes("Claude login required") &&
-	    claudeLoginCardHtml.includes("data-subscription-provider-open") &&
-	    claudeLoginCardHtml.includes("data-subscription-reread") &&
-	    claudeLoginCardHtml.includes("Read plan now") &&
-	    claudeLoginCardHtml.includes("Open the provider page"),
+	    claudeLoginAction:
+		    claudeLoginCardHtml.includes("Read Claude plan again") &&
+		    !claudeLoginCardHtml.includes("Log in to Claude and read plan") &&
+		    !claudeLoginCardHtml.includes("Claude login required") &&
+		    !claudeLoginCardHtml.includes("data-subscription-provider-open") &&
+		    claudeLoginCardHtml.includes("data-subscription-reread") &&
+		    claudeLoginCardHtml.includes("Read plan now") &&
+		    !claudeLoginCardHtml.includes("Open the provider page"),
 		  connectionRereadFlow:
 		    pendingPlanReadProvider === "claude" &&
 		    autoPlanReadTriggered === true &&
@@ -956,8 +1000,8 @@ JSON.stringify({
 	    claudeConflictCardHtml.includes("Claude Max: conflicting sources") &&
 	    claudeConflictCardHtml.includes("Claude Max 20x") &&
 	    claudeConflictCardHtml.includes("Claude Max 5x") &&
-	    claudeConflictCardHtml.includes("Read Claude plan again") &&
-	    claudeConflictCardHtml.includes("Read plan now"),
+	    claudeConflictCardHtml.includes("Read plan now") &&
+	    !claudeConflictCardHtml.includes("data-subscription-provider-open"),
   rejectedPaceLegendRemoved: !limitBarsHtml.includes("limit-status-note"),
   riskLimitBarHasTachometerGauge:
     riskLimitTachometerHtml.includes("limit-tachometer-gauge") &&
@@ -982,11 +1026,9 @@ JSON.stringify({
     risingLiveRate.input.value > 0,
   liveRateDecaysToZero: decayedLiveRate.value === 0,
   liveRateKeepsZero: zeroLiveRate.value === 0,
-	  fableLimitRowVisible:
-	    claudeWithFableHtml.includes(">Fable<") &&
-	    claudeWithFableHtml.includes("--accent: " + providerMeta.claudeCode.accent),
-  fableQuotaAvailableAudit:
-    claudeWithFableHtml.includes("Distinct Fable quota was machine-readable"),
+  fableLimitRowHidden:
+    !claudeWithFableHtml.includes(">Fable<") &&
+    !claudeWithFableHtml.includes("Distinct Fable quota was machine-readable"),
 	  mixedCurrencyDeltaHidden: !mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
   sameCurrencyDeltaHidden: !sameCurrencySubscriptionCard.includes("$20.00")
 });`,
@@ -1079,8 +1121,10 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.providerCardUsesPlanBadgeOnly, true);
   assert.equal(result.providerCardHasLogo, true);
   assert.equal(result.providerCardFreshness, true);
+  assert.equal(result.relativeFreshness, true);
   assert.equal(result.normalizedProviderConnectionActions, true);
-  assert.equal(result.providerCardFableQuotaAudit, true);
+  assert.equal(result.normalizedClaudeConnectionAction, true);
+  assert.equal(result.providerCardNoFableQuotaAudit, true);
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
@@ -1109,8 +1153,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.liveRateRisesFromSamples, true);
   assert.equal(result.liveRateDecaysToZero, true);
   assert.equal(result.liveRateKeepsZero, true);
-  assert.equal(result.fableLimitRowVisible, true);
-  assert.equal(result.fableQuotaAvailableAudit, true);
+  assert.equal(result.fableLimitRowHidden, true);
   assert.equal(result.mixedCurrencyDeltaHidden, true);
   assert.equal(result.sameCurrencyDeltaHidden, true);
 
@@ -1124,6 +1167,39 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(browserSnapshot.subscription.planType, "Claude Max 5x");
   assert.equal(browserSnapshot.subscription.monthlyCost, 100);
   assert.equal(browserSnapshot.subscription.source, "claude_browser_sync");
+  const preservedBrowserSnapshot = _test.mergeClaudeBrowserCreditsSnapshots(
+    browserSnapshot,
+    _test.normalizeClaudeBrowserCreditsSnapshot({
+      status: "expired",
+      reason: "claude_login_required",
+      source: "chrome",
+      cookieName: "sessionKey",
+      updatedAt: "2026-07-08T00:30:00Z"
+    })
+  );
+  assert.equal(preservedBrowserSnapshot.status, "available");
+  assert.equal(preservedBrowserSnapshot.reason, null);
+  assert.equal(preservedBrowserSnapshot.subscription.planType, "Claude Max 5x");
+  assert.equal(preservedBrowserSnapshot.subscription.updatedAt, browserSnapshot.subscription.updatedAt);
+  const readableClaudeAction = _test.resolveClaudePlanSignals({
+    browserCredits: {
+      status: "expired",
+      reason: "claude_login_required",
+      source: "chrome",
+      cookieName: "sessionKey"
+    }
+  }).connectionAction;
+  assert.equal(readableClaudeAction.mode, "refresh");
+  assert.equal(readableClaudeAction.statusKey, readableClaudeAction.labelKey);
+  assert.equal(readableClaudeAction.rereadOnly, true);
+  const missingClaudeAction = _test.resolveClaudePlanSignals({
+    browserCredits: {
+      status: "expired",
+      reason: "claude_login_required"
+    }
+  }).connectionAction;
+  assert.equal(missingClaudeAction.mode, "login");
+  assert.equal(missingClaudeAction.rereadOnly, undefined);
 
 const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     subscription: { name: "Claude Max", unit_amount: 10000, currency: "USD" }

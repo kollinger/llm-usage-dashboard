@@ -249,7 +249,9 @@ assert.deepEqual(
   ["Claude Max 20x", "Claude Max 5x"]
 );
 assert.equal(claudeConflict.connectionAction.url, "https://claude.ai/settings/billing");
-assert.equal(claudeConflict.connectionAction.labelKey, "subscriptions.connectionActions.claudeLogin");
+assert.equal(claudeConflict.connectionAction.labelKey, "subscriptions.connectionActions.claudeRefresh");
+assert.equal(claudeConflict.connectionAction.statusKey, "subscriptions.connectionActions.claudeRefresh");
+assert.equal(claudeConflict.connectionAction.rereadOnly, true);
 
 const claudeBrowserWithoutPlan = _test.resolveClaudePlanSignals({
   browserCredits: {
@@ -262,7 +264,9 @@ const claudeBrowserWithoutPlan = _test.resolveClaudePlanSignals({
 assert.equal(claudeBrowserWithoutPlan.planType, null);
 assert.equal(claudeBrowserWithoutPlan.subscription, null);
 assert.equal(claudeBrowserWithoutPlan.connectionAction.url, "https://claude.ai/settings/billing");
-assert.equal(claudeBrowserWithoutPlan.connectionAction.labelKey, "subscriptions.connectionActions.claudeLogin");
+assert.equal(claudeBrowserWithoutPlan.connectionAction.labelKey, "subscriptions.connectionActions.claudeRefresh");
+assert.equal(claudeBrowserWithoutPlan.connectionAction.statusKey, "subscriptions.connectionActions.claudeRefresh");
+assert.equal(claudeBrowserWithoutPlan.connectionAction.rereadOnly, true);
 
 const claudeBrowserBillingWins = _test.resolveClaudePlanSignals({
   browserSubscription: { planType: "Claude Max 20x", monthlyCost: 180, currency: "EUR", updatedAt: "2026-07-08T10:10:00Z" },

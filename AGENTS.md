@@ -108,6 +108,11 @@ launch the installed `/Applications/LLM Usage Dashboard.app` directly. Do not
 treat a desktop build as final based only on `npm run electron`, `dist:dir`, or
 an older `dist/` artifact.
 
+For every review handoff that includes app-visible behavior, create this fresh
+M1 macOS review build even when implementation, Docker, broad builds, or browser
+QA ran on Manjaro. Record the source branch/commit and included tickets with the
+handoff so review never comes from an older local Git state or stale artifact.
+
 ## Versioning
 
 - Use Semantic Versioning for releases and tags: `MAJOR.MINOR.PATCH` (for example `v1.4.2`).

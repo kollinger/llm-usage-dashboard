@@ -119,7 +119,8 @@
       "provider": "Πάροχος",
       "model": "Μοντέλο"
     },
-    "breakdownToggleAria": "Ανάλυση token"
+    "breakdownToggleAria": "Ανάλυση token",
+    "overviewAria": "Compact token history by provider"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -253,8 +254,6 @@
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
       "empty": "No model-level token data is available for the selected range.",
       "totalLabel": "Σύνολο κόστους API",
-      "totalScope": "Πεδίο",
-      "totalStatus": "Κατάσταση κόστους",
       "totalComplete": "Πλήρες",
       "totalPartial": "Μερικό",
       "totalUnknown": "Άγνωστο",
@@ -336,11 +335,6 @@
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
     },
-    "fableQuotaAudit": {
-      "heading": "Πηγή ορίου Fable",
-      "available": "Το ξεχωριστό όριο Fable ήταν μηχανικά αναγνώσιμο και εμφανίζεται σε δική του σειρά.",
-      "unavailable": "Η γραμμή κατάστασης Claude, τα δεδομένα προγράμματος περιήγησης/λογαριασμού και τα τοπικά αρχεία καταγραφής δεν εξέθεσαν ξεχωριστό όριο Fable· δεν εμφανίζεται τεχνητό όριο."
-    },
     "freshness": {
       "ariaLabel": "Χρόνος δεδομένων παρόχου",
       "usage": "Χρήση {time}",
@@ -391,7 +385,6 @@
     "currentSession": "Τρέχουσα συνεδρία",
     "allModels": "Όλα τα μοντέλα",
     "claudeDesign": "Claude Design",
-    "fable": "Fable",
     "sonnetOnly": "Μόνο Sonnet",
     "default": "Όριο",
     "resetPrefix": "Reset {time}",
@@ -444,7 +437,8 @@
     "view": {
       "tachometer": "Μετρητής",
       "bar": "Γραμμή"
-    }
+    },
+    "remainingUntilReset": "{remaining} before reset ({time})"
   },
   "tokens": {
     "input": "Είσοδος",
@@ -545,7 +539,6 @@
       "nativeDurationMinutes": "{minutes} λ",
       "nativeWindowFiveHour": "Παράθυρο 5 ωρών",
       "nativeWindowWeekly": "Εβδομαδιαίο όριο",
-      "nativeWindowFable": "Όριο Fable",
       "nativeWindowSonnetOnly": "Όριο μόνο Sonnet",
       "nativeWindowClaudeDesign": "Όριο Claude Design",
       "nativeWindowGeneric": "Όριο"

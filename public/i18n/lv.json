@@ -119,7 +119,8 @@
       "provider": "Pakalpojumu sniedzējs",
       "model": "Modelis"
     },
-    "breakdownToggleAria": "Tokenu sadalījums"
+    "breakdownToggleAria": "Tokenu sadalījums",
+    "overviewAria": "Compact token history by provider"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -253,8 +254,6 @@
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
       "empty": "No model-level token data is available for the selected range.",
       "totalLabel": "API izmaksas kopā",
-      "totalScope": "Tvērums",
-      "totalStatus": "Izmaksu statuss",
       "totalComplete": "Pilns",
       "totalPartial": "Daļējs",
       "totalUnknown": "Nezināms",
@@ -336,11 +335,6 @@
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
     },
-    "fableQuotaAudit": {
-      "heading": "Fable kvotas avots",
-      "available": "Atsevišķa Fable kvota bija mašīnlasāma un tiek rādīta savā rindā.",
-      "unavailable": "Claude statusa josla, pārlūka/konta dati un lokālie žurnāli neatklāja atsevišķu Fable kvotu; sintētiska kvota netiek rādīta."
-    },
     "freshness": {
       "ariaLabel": "Piegādātāja datu laiks",
       "usage": "Lietojums {time}",
@@ -391,7 +385,6 @@
     "currentSession": "Pašreizējā sesija",
     "allModels": "Visi modeļi",
     "claudeDesign": "Claude Design",
-    "fable": "Fable",
     "sonnetOnly": "Tikai Sonnet",
     "default": "Limits",
     "resetPrefix": "Atiestatīšana {time}",
@@ -444,7 +437,8 @@
     "view": {
       "tachometer": "Mērītājs",
       "bar": "Josla"
-    }
+    },
+    "remainingUntilReset": "{remaining} before reset ({time})"
   },
   "tokens": {
     "input": "Ievade",
@@ -545,7 +539,6 @@
       "nativeDurationMinutes": "{minutes} min.",
       "nativeWindowFiveHour": "5 stundu logs",
       "nativeWindowWeekly": "Nedēļas limits",
-      "nativeWindowFable": "Fable limits",
       "nativeWindowSonnetOnly": "Tikai Sonnet limits",
       "nativeWindowClaudeDesign": "Claude Design limits",
       "nativeWindowGeneric": "Limits"

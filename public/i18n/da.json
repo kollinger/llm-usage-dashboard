@@ -119,7 +119,8 @@
       "provider": "Udbyder",
       "model": "Modeller"
     },
-    "breakdownToggleAria": "Tokenopdeling"
+    "breakdownToggleAria": "Tokenopdeling",
+    "overviewAria": "Compact token history by provider"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -253,8 +254,6 @@
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
       "empty": "No model-level token data is available for the selected range.",
       "totalLabel": "API-omkostninger i alt",
-      "totalScope": "Omfang",
-      "totalStatus": "Omkostningsstatus",
       "totalComplete": "Komplet",
       "totalPartial": "Delvis",
       "totalUnknown": "Ukendt",
@@ -336,11 +335,6 @@
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
     },
-    "fableQuotaAudit": {
-      "heading": "Fable-kvotekilde",
-      "available": "En særskilt Fable-kvote var maskinlæsbar og vises som sin egen række.",
-      "unavailable": "Claude-statuslinjen, browser-/kontodata og lokale logs eksponerede ikke en særskilt Fable-kvote; der vises ingen syntetisk kvote."
-    },
     "freshness": {
       "ariaLabel": "Datatidspunkt for udbyder",
       "usage": "Forbrug {time}",
@@ -391,7 +385,6 @@
     "currentSession": "Aktuel session",
     "allModels": "Alle modeller",
     "claudeDesign": "Claude Design",
-    "fable": "Fable",
     "sonnetOnly": "Kun Sonnet",
     "default": "Grænse",
     "resetPrefix": "Nulstilling {time}",
@@ -444,7 +437,8 @@
     "view": {
       "tachometer": "Måler",
       "bar": "Bjælke"
-    }
+    },
+    "remainingUntilReset": "{remaining} before reset ({time})"
   },
   "tokens": {
     "input": "Input",
@@ -545,7 +539,6 @@
       "nativeDurationMinutes": "{minutes} min",
       "nativeWindowFiveHour": "5-timers vindue",
       "nativeWindowWeekly": "Ugentlig grænse",
-      "nativeWindowFable": "Fable-grænse",
       "nativeWindowSonnetOnly": "Kun Sonnet-grænse",
       "nativeWindowClaudeDesign": "Claude Design-grænse",
       "nativeWindowGeneric": "Grænse"

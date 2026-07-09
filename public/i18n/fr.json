@@ -119,7 +119,8 @@
       "provider": "Fournisseur",
       "model": "Modèle"
     },
-    "breakdownToggleAria": "Répartition des tokens"
+    "breakdownToggleAria": "Répartition des tokens",
+    "overviewAria": "Compact token history by provider"
   },
   "tokenMix": {
     "eyebrow": "Token Mix",
@@ -253,8 +254,6 @@
       "description": "Actual logged model usage matched to the local pricing catalog where possible.",
       "empty": "No model-level token data is available for the selected range.",
       "totalLabel": "Coût API total",
-      "totalScope": "Périmètre",
-      "totalStatus": "État du coût",
       "totalComplete": "Complet",
       "totalPartial": "Partiel",
       "totalUnknown": "Inconnu",
@@ -336,11 +335,6 @@
       "gemini": "Gemini local usage updates only when local log files contain new usage metadata.",
       "ollama": "Ollama usage updates only when requests pass through the dashboard's local proxy/log file."
     },
-    "fableQuotaAudit": {
-      "heading": "Source du quota Fable",
-      "available": "Le quota Fable distinct était lisible par machine et s’affiche sur sa propre ligne.",
-      "unavailable": "La barre d’état Claude, les données navigateur/compte et les journaux locaux n’exposent aucun quota Fable distinct ; aucun quota synthétique n’est affiché."
-    },
     "freshness": {
       "ariaLabel": "Horodatage des données fournisseur",
       "usage": "Usage {time}",
@@ -391,7 +385,6 @@
     "currentSession": "Session actuelle",
     "allModels": "Tous les modèles",
     "claudeDesign": "Claude Design",
-    "fable": "Fable",
     "sonnetOnly": "Sonnet uniquement",
     "default": "Limite",
     "resetPrefix": "Réinitialisation {time}",
@@ -444,7 +437,8 @@
     "view": {
       "tachometer": "Jauge",
       "bar": "Barre"
-    }
+    },
+    "remainingUntilReset": "{remaining} before reset ({time})"
   },
   "tokens": {
     "input": "Entrée",
@@ -545,7 +539,6 @@
       "nativeDurationMinutes": "{minutes} min",
       "nativeWindowFiveHour": "Fenêtre de 5 heures",
       "nativeWindowWeekly": "Limite hebdomadaire",
-      "nativeWindowFable": "Limite Fable",
       "nativeWindowSonnetOnly": "Limite Sonnet uniquement",
       "nativeWindowClaudeDesign": "Limite Claude Design",
       "nativeWindowGeneric": "Limite"

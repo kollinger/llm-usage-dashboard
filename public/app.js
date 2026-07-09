@@ -18,6 +18,7 @@ const state = {
   draggingProviderId: null,
   dashboardPointerDrag: null,
   pointerDrag: null,
+  overviewChartRendered: false,
   chartRendered: false,
   chartScrollToLatest: true,
   chartUserScrolledAwayFromLatest: false,
@@ -129,6 +130,9 @@ const els = {
   tokensTotal: document.getElementById("tokensTotal"),
   tokensTotalTile: document.getElementById("tokensTotal")?.closest(".metric-tile") || null,
   recordDay: document.getElementById("recordDay"),
+  overviewHistoryPanel: document.getElementById("overviewHistoryPanel"),
+  overviewHistoryChart: document.getElementById("overviewHistoryChart"),
+  overviewHistoryLegend: document.getElementById("overviewHistoryLegend"),
   chartTitle: document.getElementById("chartTitle"),
   chartModeToggle: document.getElementById("chartModeToggle"),
   chartBreakdownToggle: document.getElementById("chartBreakdownToggle"),
@@ -215,11 +219,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1448;
-const FX_DATE = "2026-07-03";
-const PRICING_DATE = "2026-07-06";
-const SCORE_DATE = "2026-07-06";
-const PRICING_CATALOG_VERSION = "2026.07.06";
+const USD_PER_EUR = 1.1404;
+const FX_DATE = "2026-07-08";
+const PRICING_DATE = "2026-07-09";
+const SCORE_DATE = "2026-07-09";
+const PRICING_CATALOG_VERSION = "2026.07.09";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -284,6 +288,7 @@ const SYSTEM_LIVE_POLL_INTERVAL_MS = 5_000;
 const SUBSCRIPTION_REREAD_AUTO_REFRESH_MS = 5 * 60 * 1000;
 const SUBSCRIPTION_REREAD_SYNC_TIMEOUT_MS = 30_000;
 const UPDATED_STALE_AFTER_MS = 60 * 60 * 1000;
+const COPILOT_ACTIVE_USAGE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const SETTINGS_AUTOSAVE_DELAY_MS = 500;
 const SETTINGS_TOAST_MS = 1800;
 const MODAL_BACKDROP_GRACE_MS = 450;
@@ -585,7 +590,29 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.5 Pro",
+    aliases: [
+      "gpt-5.5-pro",
+      "gpt-5-5-pro"
+    ],
+    region: "API/Codex",
+    inputUsd: 30,
+    cachedInputUsd: null,
+    outputUsd: 180,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "OpenAI",
@@ -607,7 +634,29 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.4 Pro",
+    aliases: [
+      "gpt-5.4-pro",
+      "gpt-5-4-pro"
+    ],
+    region: "API/Codex",
+    inputUsd: 30,
+    cachedInputUsd: null,
+    outputUsd: 180,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "OpenAI",
@@ -629,7 +678,29 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.4 Nano",
+    aliases: [
+      "gpt-5.4-nano",
+      "gpt-5-4-nano"
+    ],
+    region: "API/Codex",
+    inputUsd: 0.2,
+    cachedInputUsd: 0.02,
+    outputUsd: 1.25,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 64000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "OpenAI",
@@ -652,7 +723,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "OpenAI",
@@ -675,7 +746,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "OpenAI",
@@ -697,7 +768,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "Anthropic",
@@ -720,7 +791,31 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
+  },
+  {
+    provider: "Anthropic",
+    model: "Claude Mythos 5",
+    aliases: [
+      "claude-mythos-5",
+      "anthropic.claude-mythos-5"
+    ],
+    region: "Limited availability",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "preview",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "Anthropic",
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    sourceReviewDate: "2026-07-09",
+    sourceNotes: "Invitation-only Project Glasswing model with Fable 5 specs and pricing."
   },
   {
     provider: "Anthropic",
@@ -746,7 +841,32 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
+  },
+  {
+    provider: "Anthropic",
+    model: "Claude Sonnet 5",
+    aliases: [
+      "claude-sonnet-5",
+      "anthropic.claude-sonnet-5",
+      "claude-sonnet-5-0"
+    ],
+    region: "Intro pricing through 2026-08-31",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 10,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "Anthropic",
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing",
+    sourceReviewDate: "2026-07-09",
+    sourceNotes: "Introductory pricing applies through August 31, 2026; standard pricing starts September 1, 2026."
   },
   {
     provider: "Anthropic",
@@ -772,7 +892,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "Anthropic",
@@ -796,7 +916,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "MiniMax",
@@ -817,7 +937,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "MiniMax",
     sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -840,7 +960,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "Google",
@@ -863,7 +983,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "Google",
@@ -885,7 +1005,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "DeepSeek",
@@ -906,7 +1026,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -928,7 +1048,31 @@ const pricingModels = [
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
+    china: true
+  },
+  {
+    provider: "Alibaba",
+    model: "Qwen3.7-Max",
+    aliases: [
+      "qwen3.7-max",
+      "qwen3-7-max",
+      "qwen3.7-max-2026-06-08"
+    ],
+    region: "Global <=1M",
+    inputUsd: 1.65,
+    cachedInputUsd: null,
+    outputUsd: 4.951,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Alibaba",
+    sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -951,7 +1095,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -975,7 +1119,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -998,7 +1142,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1021,7 +1165,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1043,7 +1187,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1065,7 +1209,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1088,7 +1232,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1111,7 +1255,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1134,7 +1278,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1157,7 +1301,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1180,7 +1324,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1203,7 +1347,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1226,7 +1370,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1249,7 +1393,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1272,7 +1416,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1294,7 +1438,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1317,7 +1461,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1340,7 +1484,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     china: true
   },
   {
@@ -1363,7 +1507,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     sourceNotes: "Chat API table lists Cached input at $0.20 per 1M tokens."
   },
   {
@@ -1386,7 +1530,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-07-06",
+    sourceReviewDate: "2026-07-09",
     sourceNotes: "Code API table lists Cached input at $0.20 per 1M tokens."
   },
   {
@@ -1409,7 +1553,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   },
   {
     provider: "Mistral",
@@ -1431,14 +1575,14 @@ const pricingModels = [
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-07-06"
+    sourceReviewDate: "2026-07-09"
   }
 ];
 
 const costPricingModelBySource = {
   codex: pricingModels.find((price) => price.model === "GPT-5.3-Codex") || null,
   codexSpark: pricingModels.find((price) => price.model === "GPT-5.3-Codex-Spark") || null,
-  claudeCode: pricingModels.find((price) => price.model === "Claude Sonnet 4.6") || null,
+  claudeCode: pricingModels.find((price) => price.model === "Claude Sonnet 5") || null,
   gemini: pricingModels.find((price) => price.model === "Gemini 3.5 Flash") || null
 };
 
@@ -1458,12 +1602,17 @@ const pricingModelAliasByCanonicalName = new Map(
 
 const modelQualityScores = {
   "Claude Fable 5": 100,
+  "Claude Mythos 5": 99,
+  "GPT-5.5 Pro": 99,
   "Claude Opus 4.8": 98,
   "GPT-5.5": 97,
+  "Claude Sonnet 5": 96,
   "GLM-5.2": 95,
   "Gemini 3.1 Pro Preview": 94,
   "GLM-5.1": 93,
   "DeepSeek V4 Pro": 92,
+  "Qwen3.7-Max": 90,
+  "GPT-5.4 Pro": 89,
   "MiniMax M3": 88,
   "GPT-5.4": 87,
   "GPT-5.3-Codex": 86,
@@ -1489,6 +1638,7 @@ const modelQualityScores = {
   "GLM-4.5-Air": 66,
   "Mistral Small 3.2": 65,
   "Claude Haiku 4.5": 64,
+  "GPT-5.4 Nano": 63,
   "Gemini 3.1 Flash-Lite": 62,
   "GLM-4.7-FlashX": 61,
   "step-3.5-flash": 58,
@@ -2875,6 +3025,9 @@ function renderLocked() {
   if (els.chartTitle) els.chartTitle.textContent = t("chart.heading");
   if (els.chartModeToggle) els.chartModeToggle.innerHTML = "";
   if (els.chartBreakdownToggle) els.chartBreakdownToggle.innerHTML = "";
+  if (els.overviewHistoryPanel) els.overviewHistoryPanel.hidden = true;
+  if (els.overviewHistoryChart) els.overviewHistoryChart.innerHTML = "";
+  if (els.overviewHistoryLegend) els.overviewHistoryLegend.innerHTML = "";
   els.chart.innerHTML = "";
   els.chartLegend.innerHTML = "";
   els.chartFilterBar.innerHTML = "";
@@ -2894,6 +3047,7 @@ function renderLocked() {
   }
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
+  state.overviewChartRendered = false;
   state.chartRendered = false;
   state.layoutEditMode = false;
   state.keyboardDragSectionId = null;
@@ -2926,6 +3080,7 @@ function render() {
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
   renderSummary(visibleProviders, usage.local, filteredDaily);
+  renderOverviewHistory(allDaily);
   if (els.chartTitle) {
     els.chartTitle.textContent = state.chartMode === "costs" ? t("chart.headingCosts") : t("chart.heading");
   }
@@ -3044,6 +3199,104 @@ function sortSourceTotals(sources) {
     const left = chartSourceOrder.indexOf(a.id);
     const right = chartSourceOrder.indexOf(b.id);
     return (left === -1 ? Number.MAX_SAFE_INTEGER : left) - (right === -1 ? Number.MAX_SAFE_INTEGER : right);
+  });
+}
+
+function renderOverviewHistory(daily) {
+  if (!els.overviewHistoryPanel || !els.overviewHistoryChart || !els.overviewHistoryLegend) return;
+  const rows = (Array.isArray(daily) ? daily : []).filter((day) => Number(day.totalTokens || 0) > 0);
+  if (!rows.length) {
+    els.overviewHistoryPanel.hidden = true;
+    els.overviewHistoryChart.innerHTML = "";
+    els.overviewHistoryLegend.innerHTML = "";
+    state.overviewChartRendered = false;
+    return;
+  }
+
+  els.overviewHistoryPanel.hidden = false;
+  const viewportWidth = Math.max(640, els.overviewHistoryChart.clientWidth || 640);
+  const height = 54;
+  const chartTop = 4;
+  const axisY = 48;
+  const chartHeight = axisY - chartTop;
+  const sourceIds = chartSourcesInUse(rows);
+  const segmentEntries = sourceIds.map((id) => ({
+    id,
+    type: "provider",
+    sourceId: id,
+    markId: id,
+    label: sourceLabel(id),
+    providerLabel: sourceLabel(id),
+    color: chartSourceColor(id)
+  }));
+  const max = Math.max(...rows.map((day) => Number(day.totalTokens || 0)), 1);
+  const visibleDays = Math.min(rows.length, viewportWidth >= 1000 ? 72 : 48);
+  const barGap = 3;
+  const barWidth = Math.max(
+    4,
+    (viewportWidth - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
+  );
+  const width = Math.max(viewportWidth, rows.length * barWidth + Math.max(0, rows.length - 1) * barGap);
+  const previousScroller = els.overviewHistoryChart.querySelector(".overview-history-scroll");
+  const previousScrollLeft = previousScroller?.scrollLeft || 0;
+  const wasPinnedToEnd =
+    !state.overviewChartRendered ||
+    !previousScroller ||
+    previousScroller.scrollWidth - previousScroller.clientWidth - previousScrollLeft < 24;
+
+  const bars = rows
+    .map((day, index) => {
+      const x = index * (barWidth + barGap);
+      const fullLabel = formatFullDate(day.date);
+      const visibleSegments = chartVisibleSegments(chartSegmentsForDay(day, segmentEntries), max, chartHeight);
+      let yCursor = axisY;
+      return visibleSegments
+        .map((segment, segmentIndex) => {
+          const h = segment.height;
+          if (h <= 0) return "";
+          yCursor -= h;
+          const radius = 2;
+          const clipId = `overviewBarClip-${index}-${segmentIndex}`;
+          const isOnlySegment = visibleSegments.length === 1;
+          const isTopSegment = segmentIndex === visibleSegments.length - 1;
+          const isBottomSegment = segmentIndex === 0;
+          const clipPath = isOnlySegment
+            ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
+            : isTopSegment
+              ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, 0, 0)
+              : isBottomSegment
+                ? roundedRectPath(x, yCursor, barWidth, h, 0, 0, radius, radius)
+                : roundedRectPath(x, yCursor, barWidth, h, 0, 0, 0, 0);
+          return `
+            <clipPath id="${clipId}">
+              <path d="${clipPath}"></path>
+            </clipPath>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSegmentColor(segment)}">
+              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${formatTokens(segment.totalTokens)}`)}</title>
+            </rect>
+          `;
+        })
+        .join("");
+    })
+    .join("");
+
+  els.overviewHistoryChart.innerHTML = `
+    <div class="overview-history-scroll">
+      <div class="overview-history-canvas" style="width: ${width}px">
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.overviewAria"))}" style="width: ${width}px">
+          ${bars}
+        </svg>
+      </div>
+    </div>
+  `;
+  els.overviewHistoryLegend.innerHTML = renderChartLegend(segmentEntries);
+  window.requestAnimationFrame(() => {
+    const scroller = els.overviewHistoryChart.querySelector(".overview-history-scroll");
+    if (!scroller) return;
+    scroller.scrollLeft = wasPinnedToEnd
+      ? scroller.scrollWidth - scroller.clientWidth
+      : previousScrollLeft;
+    state.overviewChartRendered = true;
   });
 }
 
@@ -3546,13 +3799,13 @@ function normalizeLimitRows(limits) {
   return [
     normalizeLimitRow(limits.fiveHour ? { key: "fiveHour", label: t("limits.fiveHour"), ...limits.fiveHour } : null),
     normalizeLimitRow(limits.weekly ? { key: "weekly", label: t("limits.weekly"), ...limits.weekly } : null),
-    normalizeLimitRow(limits.fable ? { key: "fable", label: t("limits.fable"), ...limits.fable } : null),
     normalizeLimitRow(limits.sonnetOnly ? { key: "sonnetOnly", label: t("limits.sonnetOnly"), ...limits.sonnetOnly } : null)
   ].filter(Boolean);
 }
 
 function normalizeLimitRow(row) {
   if (!row) return null;
+  if (isFableLimit(row)) return null;
   const usedPercentValue = finiteUiNumberOrNull(row.usedPercent);
   const hasUsedPercent = usedPercentValue !== null;
   const status = row.status ? String(row.status) : null;
@@ -3562,6 +3815,10 @@ function normalizeLimitRow(row) {
   const remainingPercentValue = finiteUiNumberOrNull(row.remainingPercent);
   const windowMinutes = finiteUiNumberOrNull(row.windowMinutes ?? row.window_minutes);
   const resetsAt = row.resetsAt || null;
+  const rawValueLabel = row.valueLabel ? String(row.valueLabel).trim() : "";
+  const rawResetLabel = row.resetLabel || row.detail ? String(row.resetLabel || row.detail).trim() : "";
+  const valueIsDetail = rawValueLabel && isLimitDetailText(rawValueLabel);
+  const resetLabel = [rawResetLabel, valueIsDetail ? rawValueLabel : ""].filter(Boolean).join(" · ") || null;
   return {
     key: row.key || row.label || "limit",
     label: limitLabel(row),
@@ -3574,11 +3831,21 @@ function normalizeLimitRow(row) {
         : remainingPercentValue !== null
           ? Math.max(0, Math.min(100, remainingPercentValue))
           : Math.max(0, 100 - usedPercent),
-    valueLabel: row.valueLabel || statusValueLabel,
+    valueLabel: valueIsDetail ? statusValueLabel : rawValueLabel || statusValueLabel,
     windowMinutes,
     resetsAt,
-    resetLabel: row.resetLabel || row.detail || null
+    resetLabel
   };
+}
+
+function isFableLimit(row) {
+  return /fable/i.test(`${row.key || ""} ${row.label || ""} ${row.limitLabel || ""} ${row.name || ""}`);
+}
+
+function isLimitDetailText(value) {
+  return /\b(current pace|at current pace|before reset|reset in|resets? in|projected|projection|tempo|bei aktuellem tempo)\b/i.test(
+    String(value || "")
+  );
 }
 
 function finiteUiNumberOrNull(value) {
@@ -3764,10 +4031,17 @@ function providerHasUsage(provider) {
     provider.apiTokens,
     provider.cost
   ].some((value) => Number(value || 0) > 0);
-  const hasMeaningfulLimitTelemetry = providerHasMeaningfulLimitTelemetry(provider);
-  const needsAttention = provider.status === "error" || Boolean(provider.limitAlert);
+  const allowLimitTelemetry = provider.id !== "copilot" || hasActiveUsage || providerHasRecentUsage(provider, COPILOT_ACTIVE_USAGE_WINDOW_MS);
+  const hasMeaningfulLimitTelemetry = allowLimitTelemetry && providerHasMeaningfulLimitTelemetry(provider);
+  const needsAttention = provider.status === "error" || (allowLimitTelemetry && Boolean(provider.limitAlert));
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
   return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi;
+}
+
+function providerHasRecentUsage(provider, windowMs) {
+  const timestamp = Date.parse(provider?.usageUpdatedAt || "");
+  if (!Number.isFinite(timestamp)) return false;
+  return Date.now() - timestamp <= windowMs;
 }
 
 function providerHasMeaningfulLimitTelemetry(provider) {
@@ -3937,24 +4211,24 @@ function providerFreshnessRows(provider) {
   const limitsTime = provider?.limitsUpdatedAt || null;
   if (usageTime) {
     rows.push({
-      label: t("providers.freshness.usage", { time: formatUpdatedAt(usageTime) }),
+      label: t("providers.freshness.usage", { time: formatRelativeUpdatedAt(usageTime) }),
       title: t("providers.freshness.usage", { time: formatUpdatedAtFull(usageTime) })
     });
   }
   if (limitsTime && limitsTime !== usageTime) {
     rows.push({
-      label: t("providers.freshness.limits", { time: formatUpdatedAt(limitsTime) }),
+      label: t("providers.freshness.limits", { time: formatRelativeUpdatedAt(limitsTime) }),
       title: t("providers.freshness.limits", { time: formatUpdatedAtFull(limitsTime) })
     });
   }
   if (provider?.priceUpdatedAt) {
     rows.push({
-      label: t("providers.freshness.prices", { time: formatUpdatedAt(provider.priceUpdatedAt) }),
+      label: t("providers.freshness.prices", { time: formatRelativeUpdatedAt(provider.priceUpdatedAt) }),
       title: t("providers.freshness.prices", { time: formatUpdatedAtFull(provider.priceUpdatedAt) })
     });
   } else if (provider?.catalogReviewedAt) {
     rows.push({
-      label: t("providers.freshness.catalog", { date: provider.catalogReviewedAt }),
+      label: t("providers.freshness.prices", { time: formatRelativeUpdatedAt(provider.catalogReviewedAt) }),
       title: t("providers.freshness.catalog", { date: provider.catalogReviewedAt })
     });
   }
@@ -4007,10 +4281,12 @@ function renderProviderSubscriptionConnection(provider) {
   const connectionProvider = action?.provider || providerSubscriptionConnectionProvider(provider?.id);
   const mode = action?.mode || "refresh";
   const isReading = state.subscriptionRereadProvider === connectionProvider;
+  const showProviderOpenAction = Boolean(action?.url && !action?.rereadOnly);
+  const showRereadAction = action?.rereadOnly !== false;
   const actionHtml = action
     ? `
       <span class="subscription-connection-actions">
-        ${action.url ? `<a
+        ${showProviderOpenAction ? `<a
           class="subscription-connection-action${isReading ? " is-loading" : ""}"
           href="${escapeHtml(action.url)}"
           target="_blank"
@@ -4021,15 +4297,15 @@ function renderProviderSubscriptionConnection(provider) {
           data-subscription-provider="${escapeHtml(connectionProvider)}"
           data-subscription-mode="${escapeHtml(mode)}"
         >${escapeHtml(subscriptionConnectionActionLabel(action))}</a>` : ""}
-        <button
+        ${showRereadAction ? `<button
           type="button"
           class="subscription-connection-action${isReading ? " is-loading" : ""}"
           ${isReading ? "disabled aria-busy=\"true\"" : ""}
           data-subscription-reread
           data-subscription-provider="${escapeHtml(connectionProvider)}"
-        >${escapeHtml(t("subscriptions.connectionActions.rereadPlan"))}</button>
+        >${escapeHtml(t("subscriptions.connectionActions.rereadPlan"))}</button>` : ""}
       </span>
-      <small class="subscription-connection-help">${escapeHtml(t("subscriptions.connectionHelp"))}</small>
+      ${showProviderOpenAction ? `<small class="subscription-connection-help">${escapeHtml(t("subscriptions.connectionHelp"))}</small>` : ""}
     `
     : "";
   return `
@@ -4181,20 +4457,6 @@ function subscriptionAccountBillingAuditStatus(subscription, detectedPrice) {
   return t("subscriptions.sourceAudit.notAvailable");
 }
 
-function renderFableQuotaContext(provider, rows) {
-  if (provider.id !== "claudeCode") return "";
-  const hasFableLimit = (rows || provider.limitRows || []).some((row) => row.key === "fable");
-  return `
-    <div class="limit-context-row fable-quota-audit">
-      <div class="limit-bar-top">
-        <strong>${escapeHtml(t("providers.fableQuotaAudit.heading"))}</strong>
-        <span>${escapeHtml(hasFableLimit ? t("limits.status.ok") : t("limits.status.unknown"))}</span>
-      </div>
-      <p class="limit-detail">${escapeHtml(hasFableLimit ? t("providers.fableQuotaAudit.available") : t("providers.fableQuotaAudit.unavailable"))}</p>
-    </div>
-  `;
-}
-
 function renderLimitAlert(provider) {
   if (!provider.limitAlert) return "";
   return `
@@ -4221,6 +4483,7 @@ function renderProviderFootRow(row) {
 
 function renderClaudeCreditHint(provider) {
   if (provider.id !== "claudeCode" || provider.creditRows?.length) return "";
+  if (provider.subscription?.planType || provider.subscriptionConnectionAction?.rereadOnly) return "";
   const status = provider.claudeBrowserCredits?.status || "missing";
   if (status === "available") return "";
   const hint = t("providers.messages.claudeBrowserLoginHint");
@@ -4271,7 +4534,6 @@ function renderLimitBars(provider) {
     <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
       ${renderUsageProjectionModeToggle(mode)}
       ${rows.map((row) => renderLimitBar(row, provider.accent, mode)).join("")}
-      ${renderFableQuotaContext(provider, rows)}
     </div>
   `;
 }
@@ -4307,7 +4569,7 @@ function renderLimitBar(row, accent, mode = "tachometer") {
   const leftDetail = hasUsedPercent
     ? `${t("limits.usedValue", { percent: used })} · ${t("limits.leftValue", { percent: remaining })}`
     : "";
-  const resetDetail = row.resetLabel || renderLimitRemaining(row.resetsAt);
+  const resetDetail = renderLimitDetail(row);
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
   const pace = limitPaceAssessment(row);
@@ -4328,12 +4590,30 @@ function renderLimitBar(row, accent, mode = "tachometer") {
               : ""
           }
           ${detail ? `<p class="limit-detail">${escapeHtml(detail)}</p>` : ""}
-          <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
         </div>
         ${gauge}
+        <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
       </div>
     </div>
   `;
+}
+
+function renderLimitDetail(limit) {
+  if (!limit) return "";
+  const rawDetail = [limit.resetLabel || limit.detail || "", isLimitDetailText(limit.valueLabel) ? limit.valueLabel : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const explicitDetail = appendResetTime(rawDetail, limit.resetsAt);
+  if (explicitDetail) return explicitDetail;
+  return renderLimitRemaining(limit.resetsAt);
+}
+
+function appendResetTime(label, resetsAt) {
+  const text = String(label || "").trim();
+  if (!text || !resetsAt) return text;
+  const time = formatDateTime(resetsAt);
+  if (!time || time === "--" || text.includes(time)) return text;
+  return `${text} (${time})`;
 }
 
 function renderLimitProjectionVisualization(row, accent, mode = "tachometer") {
@@ -4450,7 +4730,10 @@ function renderLimitRemaining(resetsAt) {
     const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
     const hours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
     const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-    return `${t("limits.remainingShort", { days, hours, minutes })} · ${formatDateTime(resetsAt)}`;
+    return t("limits.remainingUntilReset", {
+      remaining: t("limits.remainingShort", { days, hours, minutes }),
+      time: formatDateTime(resetsAt)
+    });
   }
   return t("limits.resetPrefix", { time: formatDateTime(resetsAt) });
 }
@@ -5297,14 +5580,6 @@ function renderUsedModelPricingView(filteredDaily) {
         <span>${escapeHtml(t("pricing.usedModels.totalLabel"))}</span>
         <strong>${escapeHtml(costSummary.valueLabel)}</strong>
       </div>
-      <div>
-        <span>${escapeHtml(t("pricing.usedModels.totalScope"))}</span>
-        <strong>${escapeHtml(chartRangeLabel(state.chartTimeFilter))}</strong>
-      </div>
-      <div>
-        <span>${escapeHtml(t("pricing.usedModels.totalStatus"))}</span>
-        <strong>${escapeHtml(costSummary.statusLabel)}</strong>
-      </div>
     </div>
     ${costSummary.note ? `<p class="cost-summary-note">${escapeHtml(costSummary.note)}</p>` : ""}
     <div class="price-table-wrap">
@@ -5325,7 +5600,7 @@ function renderUsedModelPricingView(filteredDaily) {
           <tr class="used-model-total-row">
             <th scope="row" colspan="5">${escapeHtml(t("pricing.usedModels.totalRow"))}</th>
             <td class="numeric cost-cell">${escapeHtml(costSummary.valueLabel)}</td>
-            <td>${escapeHtml(costSummary.statusLabel)}</td>
+            <td></td>
           </tr>
         </tfoot>
       </table>
@@ -5951,88 +6226,23 @@ function renderChart(daily, scrollState = captureChartScrollState()) {
     return;
   }
 
-  const viewportWidth = Math.max(900, els.chart.clientWidth || 900);
-  const height = 300;
-  const pad = 64;
-  const chartTop = 28;
-  const axisY = height - 64;
-  const dateLabelY = height - 42;
-  const chartHeight = axisY - chartTop;
   const segmentEntries = chartTokenSegmentEntries(daily, state.chartBreakdownMode);
   const max = Math.max(...daily.map((d) => d.totalTokens), 1);
   const scale = chartTokenScale(max);
-  const visibleDays = Math.min(daily.length, viewportWidth >= 1200 ? 21 : 16);
-  const barGap = 8;
-  const barWidth = Math.max(
-    24,
-    (viewportWidth - pad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
-  );
-  const width = Math.max(viewportWidth, pad * 2 + daily.length * barWidth + Math.max(0, daily.length - 1) * barGap);
-  const previousScrollLeft = scrollState.previousScrollLeft;
-  const wasPinnedToEnd = scrollState.scrollToLatest;
-
-  const bars = daily
-    .map((d, index) => {
-      const x = pad + index * (barWidth + barGap);
-      const label = formatChartDate(d.date);
-      const fullLabel = formatFullDate(d.date);
-      const segments = chartSegmentsForDay(d, segmentEntries);
-      const visibleSegments = chartVisibleSegments(segments, scale.max, chartHeight);
-      let yCursor = axisY;
-      const segmentRects = visibleSegments
-        .map((segment, segmentIndex) => {
-          const h = segment.height;
-          if (h <= 0) return "";
-          yCursor -= h;
-          const radius = 3;
-          const clipId = `barClip-${index}-${segmentIndex}`;
-          const isOnlySegment = visibleSegments.length === 1;
-          const isTopSegment = segmentIndex === visibleSegments.length - 1;
-          const isBottomSegment = segmentIndex === 0;
-          const clipPath = isOnlySegment
-            ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
-            : isTopSegment
-              ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, 0, 0)
-              : isBottomSegment
-                ? roundedRectPath(x, yCursor, barWidth, h, 0, 0, radius, radius)
-                : roundedRectPath(x, yCursor, barWidth, h, 0, 0, 0, 0);
-          return `
-            <clipPath id="${clipId}">
-              <path d="${clipPath}"></path>
-            </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSegmentColor(segment)}">
-              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${formatTokens(segment.totalTokens)}`)}</title>
-            </rect>
-          `;
-        })
-        .join("");
-      return `
-        ${segmentRects}
-        <text x="${x + barWidth / 2}" y="${dateLabelY}" text-anchor="middle" class="axis-label">${label}</text>
-      `;
-    })
-    .join("");
-  const gridLines = scale.ticks
-    .map((tick) => {
-      const y = axisY - (chartHeight * tick) / scale.max;
-      return `
-        <line x1="${pad}" y1="${y}" x2="${width - pad}" y2="${y}" class="chart-grid-line"></line>
-        <text x="${pad - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${formatTokens(tick)}</text>
-        <text x="${width - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${formatTokens(tick)}</text>
-      `;
-    })
-    .join("");
-  els.chart.innerHTML = `
-    <div class="chart-canvas" style="width: ${width}px">
-    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.svgAria"))}" style="width: ${width}px">
-      ${gridLines}
-      <line x1="${pad}" y1="${axisY}" x2="${width - pad}" y2="${axisY}" stroke="#dfe5dd"></line>
-      ${bars}
-    </svg>
-    </div>
-  `;
+  renderStackedHistoryChart({
+    rows: daily,
+    scale,
+    ariaLabel: t("chart.svgAria"),
+    clipPrefix: "barClip",
+    scrollState,
+    tickFormatter: formatTokens,
+    segmentsForRow: (row) => chartSegmentsForDay(row, segmentEntries),
+    segmentValue: (segment) => segment.totalTokens,
+    segmentLabel: (segment) => segment.label,
+    segmentTitleValue: (segment) => formatTokens(segment.totalTokens),
+    segmentColor: chartSegmentColor
+  });
   els.chartLegend.innerHTML = renderChartLegend(segmentEntries);
-  finishChartRenderScroll(previousScrollLeft, wasPinnedToEnd);
 }
 
 function renderCostChart(daily, scrollState = captureChartScrollState()) {
@@ -6045,35 +6255,76 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
     return;
   }
 
+  const sourceIds = costSourcesInUse(rowsWithCost);
+  const max = Math.max(...rowsWithCost.map((row) => row.totalEur), 0.01);
+  const scale = chartCostScale(max);
+  renderStackedHistoryChart({
+    rows: rowsWithCost,
+    scale,
+    ariaLabel: t("chart.costs.svgAria"),
+    clipPrefix: "costBarClip",
+    scrollState,
+    tickFormatter: formatChartEuro,
+    segmentsForRow: (day) =>
+      sourceIds
+        .map((id) => ({
+          id,
+          label: sourceLabel(id),
+          totalEur: Number(day.sourcesById.get(id) || 0)
+        }))
+        .filter((segment) => segment.totalEur > 0),
+    segmentValue: (segment) => segment.totalEur,
+    segmentLabel: (segment) => segment.label,
+    segmentTitleValue: (segment) => formatEuro(segment.totalEur),
+    segmentColor: (segment) => chartSourceColor(segment.id)
+  });
+  els.chartLegend.innerHTML = renderChartLegend(sourceIds);
+}
+
+function renderStackedHistoryChart({
+  rows,
+  scale,
+  ariaLabel,
+  clipPrefix,
+  scrollState,
+  tickFormatter,
+  segmentsForRow,
+  segmentValue,
+  segmentLabel,
+  segmentTitleValue,
+  segmentColor
+}) {
   const viewportWidth = Math.max(900, els.chart.clientWidth || 900);
   const height = 300;
-  const pad = 64;
+  const axisWidth = 72;
+  const plotPad = 16;
   const chartTop = 28;
   const axisY = height - 64;
   const dateLabelY = height - 42;
   const chartHeight = axisY - chartTop;
-  const sourceIds = costSourcesInUse(rowsWithCost);
-  const max = Math.max(...rowsWithCost.map((row) => row.totalEur), 0.01);
-  const scale = chartCostScale(max);
-  const visibleDays = Math.min(rowsWithCost.length, viewportWidth >= 1200 ? 21 : 16);
+  const plotViewportWidth = Math.max(360, viewportWidth - axisWidth);
+  const visibleDays = Math.min(rows.length, viewportWidth >= 1200 ? 21 : 16);
   const barGap = 8;
   const barWidth = Math.max(
     24,
-    (viewportWidth - pad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
+    (plotViewportWidth - plotPad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
   );
-  const width = Math.max(viewportWidth, pad * 2 + rowsWithCost.length * barWidth + Math.max(0, rowsWithCost.length - 1) * barGap);
-  const previousScrollLeft = scrollState.previousScrollLeft;
-  const wasPinnedToEnd = scrollState.scrollToLatest;
+  const plotWidth = Math.max(
+    plotViewportWidth,
+    plotPad * 2 + rows.length * barWidth + Math.max(0, rows.length - 1) * barGap
+  );
 
-  const bars = rowsWithCost
-    .map((day, index) => {
-      const x = pad + index * (barWidth + barGap);
-      const label = formatChartDate(day.date);
-      const fullLabel = formatFullDate(day.date);
-      const segments = sourceIds
-        .map((id) => ({ id, totalEur: Number(day.sourcesById.get(id) || 0) }))
-        .filter((segment) => segment.totalEur > 0);
-      const visibleSegments = chartVisibleCostSegments(segments, scale.max, chartHeight);
+  const bars = rows
+    .map((row, index) => {
+      const x = plotPad + index * (barWidth + barGap);
+      const label = formatChartDate(row.date);
+      const fullLabel = formatFullDate(row.date);
+      const rawSegments = segmentsForRow(row);
+      const normalizedSegments = rawSegments.map((segment) => ({
+        ...segment,
+        totalTokens: segmentValue(segment)
+      }));
+      const visibleSegments = chartVisibleSegments(normalizedSegments, scale.max, chartHeight);
       let yCursor = axisY;
       const segmentRects = visibleSegments
         .map((segment, segmentIndex) => {
@@ -6081,7 +6332,7 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
           if (h <= 0) return "";
           yCursor -= h;
           const radius = 3;
-          const clipId = `costBarClip-${index}-${segmentIndex}`;
+          const clipId = `${clipPrefix}-${index}-${segmentIndex}`;
           const isOnlySegment = visibleSegments.length === 1;
           const isTopSegment = segmentIndex === visibleSegments.length - 1;
           const isBottomSegment = segmentIndex === 0;
@@ -6096,8 +6347,8 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSourceColor(segment.id)}">
-              <title>${escapeHtml(`${fullLabel} · ${sourceLabel(segment.id)} · ${formatEuro(segment.totalEur)}`)}</title>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}">
+              <title>${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}</title>
             </rect>
           `;
         })
@@ -6108,27 +6359,37 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
       `;
     })
     .join("");
+
+  const axisLabels = scale.ticks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / scale.max;
+      return `<text x="${axisWidth - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${escapeHtml(tickFormatter(tick))}</text>`;
+    })
+    .join("");
   const gridLines = scale.ticks
     .map((tick) => {
       const y = axisY - (chartHeight * tick) / scale.max;
-      return `
-        <line x1="${pad}" y1="${y}" x2="${width - pad}" y2="${y}" class="chart-grid-line"></line>
-        <text x="${pad - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${escapeHtml(formatChartEuro(tick))}</text>
-        <text x="${width - 8}" y="${Math.max(14, y - 6)}" text-anchor="end" class="axis-label">${escapeHtml(formatChartEuro(tick))}</text>
-      `;
+      return `<line x1="0" y1="${y}" x2="${plotWidth}" y2="${y}" class="chart-grid-line"></line>`;
     })
     .join("");
+
   els.chart.innerHTML = `
-    <div class="chart-canvas" style="width: ${width}px">
-    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.costs.svgAria"))}" style="width: ${width}px">
-      ${gridLines}
-      <line x1="${pad}" y1="${axisY}" x2="${width - pad}" y2="${axisY}" stroke="#dfe5dd"></line>
-      ${bars}
-    </svg>
+    <div class="chart-frame">
+      <svg class="chart-axis" viewBox="0 0 ${axisWidth} ${height}" aria-hidden="true">
+        ${axisLabels}
+      </svg>
+      <div class="chart-scroll">
+        <div class="chart-canvas" style="width: ${plotWidth}px">
+          <svg viewBox="0 0 ${plotWidth} ${height}" role="img" aria-label="${escapeHtml(ariaLabel)}" style="width: ${plotWidth}px">
+            ${gridLines}
+            <line x1="0" y1="${axisY}" x2="${plotWidth}" y2="${axisY}" stroke="#dfe5dd"></line>
+            ${bars}
+          </svg>
+        </div>
+      </div>
     </div>
   `;
-  els.chartLegend.innerHTML = renderChartLegend(sourceIds);
-  finishChartRenderScroll(previousScrollLeft, wasPinnedToEnd);
+  finishChartRenderScroll(scrollState.previousScrollLeft, scrollState.scrollToLatest);
 }
 
 function shouldScrollChartToLatest(previousScrollLeft) {
@@ -6136,7 +6397,7 @@ function shouldScrollChartToLatest(previousScrollLeft) {
 }
 
 function captureChartScrollState() {
-  const previousScrollLeft = Math.max(0, Number(els.chart.scrollLeft) || 0);
+  const previousScrollLeft = Math.max(0, Number(chartScroller().scrollLeft) || 0);
   return {
     previousScrollLeft,
     scrollToLatest: shouldScrollChartToLatest(previousScrollLeft)
@@ -6145,10 +6406,12 @@ function captureChartScrollState() {
 
 function finishChartRenderScroll(previousScrollLeft, scrollToLatest) {
   window.requestAnimationFrame(() => {
+    const scroller = chartScroller();
+    if (scroller !== els.chart) scroller.addEventListener("scroll", handleChartScroll, { passive: true });
     const maxScrollLeft = chartMaxScrollLeft();
     state.chartProgrammaticScroll = true;
     try {
-      els.chart.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
+      scroller.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
     } finally {
       state.chartProgrammaticScroll = false;
     }
@@ -6176,12 +6439,17 @@ function updateChartManualScrollState() {
   state.chartUserScrolledAwayFromLatest = !isChartScrolledToLatest();
 }
 
-function isChartScrolledToLatest(scrollLeft = els.chart.scrollLeft) {
+function isChartScrolledToLatest(scrollLeft = chartScroller().scrollLeft) {
   return chartMaxScrollLeft() - Math.max(0, Number(scrollLeft) || 0) <= CHART_LATEST_SCROLL_TOLERANCE_PX;
 }
 
 function chartMaxScrollLeft() {
-  return Math.max(0, Number(els.chart.scrollWidth || 0) - Number(els.chart.clientWidth || 0));
+  const scroller = chartScroller();
+  return Math.max(0, Number(scroller.scrollWidth || 0) - Number(scroller.clientWidth || 0));
+}
+
+function chartScroller() {
+  return els.chart?.querySelector(".chart-scroll") || els.chart;
 }
 
 function buildCostDaily(daily) {
@@ -8118,6 +8386,7 @@ function shortReset(value) {
   return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
@@ -8147,6 +8416,31 @@ function formatUpdatedAt(value) {
     minute: "2-digit",
     second: "2-digit"
   }).format(date);
+}
+
+function formatRelativeUpdatedAt(value) {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  const diffMs = Date.now() - date.getTime();
+  const absMs = Math.abs(diffMs);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+  let unit = "minute";
+  let valueInUnit = Math.round(diffMs / minuteMs);
+  if (absMs >= dayMs) {
+    unit = "day";
+    valueInUnit = Math.round(diffMs / dayMs);
+  } else if (absMs >= hourMs) {
+    unit = "hour";
+    valueInUnit = Math.round(diffMs / hourMs);
+  }
+  try {
+    return new Intl.RelativeTimeFormat(currentLocale(), { numeric: "always" }).format(-valueInUnit, unit);
+  } catch {
+    return formatUpdatedAt(value);
+  }
 }
 
 function formatUpdatedAtFull(value) {
@@ -8199,6 +8493,7 @@ function formatDateTime(value) {
   return new Intl.DateTimeFormat(currentLocale(), {
     day: "2-digit",
     month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);

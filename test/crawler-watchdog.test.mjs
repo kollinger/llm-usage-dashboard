@@ -107,8 +107,8 @@ assert.match(trigger.dedupeKey, /^codex\|readCodexUsage\|missing\|/u);
     const server = require(serverPath);
     const claude = await server.readClaudeCodeUsage();
     assert(claude.byModel.some((row) => row.model === "claude-fable-5"), "Claude Fable model usage should be preserved");
-    assert.equal(claude.limits?.fable?.usedPercent, 29);
-    assert(claude.limits.rows.some((row) => row.key === "fable"), "Claude Fable limit row should render when present");
+    assert.equal(claude.limits?.fable, undefined);
+    assert(!claude.limits.rows.some((row) => row.key === "fable"), "Claude Fable quota should not render as a normal subscription limit");
   } finally {
     delete require.cache[serverPath];
     for (const key of Object.keys(process.env)) {

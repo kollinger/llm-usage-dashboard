@@ -5,9 +5,9 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const I18N_DIR = new URL("../public/i18n/", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_CATALOG_VERSION = "2026.07.06";
-const PRICING_REVIEW_DATE = "2026-07-06";
-const SCORE_REVIEW_DATE = "2026-07-06";
+const PRICING_CATALOG_VERSION = "2026.07.09";
+const PRICING_REVIEW_DATE = "2026-07-09";
+const SCORE_REVIEW_DATE = "2026-07-09";
 const PRICING_MAX_AGE_DAYS = 45;
 
 const REQUIRED_PROVIDER_COVERAGE = [
@@ -26,14 +26,21 @@ const REQUIRED_PROVIDER_COVERAGE = [
 const REQUIRED_MODEL_COVERAGE = [
   "Claude Fable 5",
   "Claude Haiku 4.5",
+  "Claude Mythos 5",
   "Claude Opus 4.8",
+  "Claude Sonnet 5",
   "Claude Sonnet 4.6",
+  "GPT-5.5 Pro",
+  "GPT-5.4 Pro",
+  "GPT-5.4 Nano",
   "GLM-5.2",
+  "GLM-4.7-FlashX",
   "Gemini 3.1 Pro Preview",
   "Grok 4.3",
   "Grok Build 0.1",
   "MiniMax M3",
   "Mistral Large 2",
+  "Qwen3.7-Max",
   "Qwen3-Max",
   "step-3.7-flash"
 ];
@@ -56,6 +63,19 @@ const rawPricingModels = [
   },
   {
     provider: "OpenAI",
+    model: "GPT-5.5 Pro",
+    aliases: ["gpt-5.5-pro", "gpt-5-5-pro"],
+    region: "API/Codex",
+    inputUsd: 30,
+    cachedInputUsd: null,
+    outputUsd: 180,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+  },
+  {
+    provider: "OpenAI",
     model: "GPT-5.4",
     aliases: ["gpt-5.4", "gpt-5-4"],
     region: "API/Codex",
@@ -64,6 +84,19 @@ const rawPricingModels = [
     outputUsd: 15,
     contextTokens: 1_000_000,
     maxOutputTokens: 64_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.4 Pro",
+    aliases: ["gpt-5.4-pro", "gpt-5-4-pro"],
+    region: "API/Codex",
+    inputUsd: 30,
+    cachedInputUsd: null,
+    outputUsd: 180,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
@@ -78,6 +111,19 @@ const rawPricingModels = [
     contextTokens: 1_000_000,
     maxOutputTokens: 64_000,
     source: "OpenAI Codex",
+    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.4 Nano",
+    aliases: ["gpt-5.4-nano", "gpt-5-4-nano"],
+    region: "API/Codex",
+    inputUsd: 0.2,
+    cachedInputUsd: 0.02,
+    outputUsd: 1.25,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 64_000,
+    source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing"
   },
   {
@@ -135,6 +181,22 @@ const rawPricingModels = [
   },
   {
     provider: "Anthropic",
+    model: "Claude Mythos 5",
+    aliases: ["claude-mythos-5", "anthropic.claude-mythos-5"],
+    region: "Limited availability",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 128_000,
+    availability: "preview",
+    source: "Anthropic",
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    sourceNotes: "Invitation-only Project Glasswing model with Fable 5 specs and pricing."
+  },
+  {
+    provider: "Anthropic",
     model: "Claude Opus 4.8",
     aliases: [
       "claude-opus-4-8",
@@ -152,6 +214,25 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview"
+  },
+  {
+    provider: "Anthropic",
+    model: "Claude Sonnet 5",
+    aliases: [
+      "claude-sonnet-5",
+      "anthropic.claude-sonnet-5",
+      "claude-sonnet-5-0"
+    ],
+    region: "Intro pricing through 2026-08-31",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 10,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 128_000,
+    source: "Anthropic",
+    sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing",
+    sourceNotes: "Introductory pricing applies through August 31, 2026; standard pricing starts September 1, 2026."
   },
   {
     provider: "Anthropic",
@@ -272,6 +353,21 @@ const rawPricingModels = [
     maxOutputTokens: 8_000,
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
+    china: true
+  },
+  {
+    provider: "Alibaba",
+    model: "Qwen3.7-Max",
+    aliases: ["qwen3.7-max", "qwen3-7-max", "qwen3.7-max-2026-06-08"],
+    region: "Global <=1M",
+    inputUsd: 1.65,
+    cachedInputUsd: null,
+    outputUsd: 4.951,
+    contextTokens: 1_000_000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Alibaba",
+    sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     china: true
   },
   {
@@ -594,12 +690,17 @@ const rawPricingModels = [
 
 const modelQualityScores = {
   "Claude Fable 5": 100,
+  "Claude Mythos 5": 99,
+  "GPT-5.5 Pro": 99,
   "Claude Opus 4.8": 98,
   "GPT-5.5": 97,
+  "Claude Sonnet 5": 96,
   "GLM-5.2": 95,
   "Gemini 3.1 Pro Preview": 94,
   "GLM-5.1": 93,
   "DeepSeek V4 Pro": 92,
+  "Qwen3.7-Max": 90,
+  "GPT-5.4 Pro": 89,
   "MiniMax M3": 88,
   "GPT-5.4": 87,
   "GPT-5.3-Codex": 86,
@@ -625,6 +726,7 @@ const modelQualityScores = {
   "GLM-4.5-Air": 66,
   "Mistral Small 3.2": 65,
   "Claude Haiku 4.5": 64,
+  "GPT-5.4 Nano": 63,
   "Gemini 3.1 Flash-Lite": 62,
   "GLM-4.7-FlashX": 61,
   "step-3.5-flash": 58,
