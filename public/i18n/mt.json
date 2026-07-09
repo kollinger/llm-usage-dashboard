@@ -42,6 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Tokens illoggjati b’kollox",
+    "recordDayLabel": "Jum rekord",
     "recordDay": "Jum rekord: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",

@@ -22,9 +22,6 @@
           <button class="icon-button" id="settingsBtn" aria-label="Einstellungen" title="Einstellungen" data-i18n-aria-label="actions.settings" data-i18n-title="actions.settings">
             <i data-lucide="sliders-horizontal"></i>
           </button>
-          <button class="icon-button" id="layoutEditBtn" type="button" aria-label="Layout bearbeiten" title="Layout bearbeiten" aria-pressed="false" data-i18n-aria-label="layout.edit" data-i18n-title="layout.edit">
-            <i data-lucide="pencil"></i>
-          </button>
           <button class="text-button ghost layout-reset-btn" id="layoutResetBtn" type="button" hidden data-i18n="layout.reset">
             Standardreihenfolge
           </button>
@@ -34,26 +31,30 @@
       </header>
 
       <div class="dashboard-layout" id="dashboardLayout">
-      <section class="summary-strip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel" data-dashboard-panel-id="overview" data-dashboard-panel-label-key="summary.ariaLabel">
-        <div class="metric-tile">
+      <section class="summary-strip" id="summaryStrip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel" data-dashboard-panel-id="overview" data-dashboard-panel-label-key="summary.ariaLabel">
+        <div class="metric-tile" data-summary-metric-id="five-hour" data-summary-metric-label-key="summary.fiveHourOpen">
           <span data-i18n="summary.fiveHourOpen">5h frei</span>
           <strong id="fiveHourOpen">--</strong>
           <span class="metric-note" data-i18n="summary.quotaWindowNote">Provider-Zeitfenster</span>
         </div>
-        <div class="metric-tile">
+        <div class="metric-tile" data-summary-metric-id="weekly" data-summary-metric-label-key="summary.weeklyOpen">
           <span data-i18n="summary.weeklyOpen">Woche frei</span>
           <strong id="weeklyOpen">--</strong>
           <span class="metric-note" data-i18n="summary.quotaWindowNote">Provider-Zeitfenster</span>
         </div>
-        <div class="metric-tile">
+        <div class="metric-tile" data-summary-metric-id="tokens-today" data-summary-metric-label-key="summary.tokensToday">
           <span id="tokensRangeLabel" data-i18n="summary.tokensToday">Geloggte Tokens heute</span>
           <strong id="tokensToday">--</strong>
           <span class="metric-note" id="tokensRangeNote" hidden></span>
         </div>
-        <div class="metric-tile">
+        <div class="metric-tile" data-summary-metric-id="tokens-total" data-summary-metric-label-key="summary.tokensTotal">
           <span data-i18n="summary.tokensTotal">Geloggte Tokens gesamt</span>
           <strong id="tokensTotal">--</strong>
-          <span class="metric-note" id="recordDay" hidden></span>
+        </div>
+        <div class="metric-tile" data-summary-metric-id="record-day" data-summary-metric-label-key="summary.recordDayLabel">
+          <span data-i18n="summary.recordDayLabel">Rekordtag</span>
+          <strong id="recordDayTokens">--</strong>
+          <span class="metric-note" id="recordDayDate" hidden></span>
         </div>
       </section>
 

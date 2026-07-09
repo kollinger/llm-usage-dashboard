@@ -42,6 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Celkovo zalogované tokeny",
+    "recordDayLabel": "Rekordný deň",
     "recordDay": "Rekordný deň: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",

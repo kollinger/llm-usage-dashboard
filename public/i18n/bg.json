@@ -42,6 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Общо записани токени",
+    "recordDayLabel": "Рекорден ден",
     "recordDay": "Рекорден ден: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",

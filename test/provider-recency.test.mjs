@@ -486,7 +486,8 @@ const recordDay = findRecordDay(daily);
 renderSummary([], local, filterDailyByRange(daily, "today"));
 const renderedTokensToday = document.getElementById("tokensToday").textContent;
 const renderedTokensTotal = document.getElementById("tokensTotal").textContent;
-const renderedRecordDayNote = document.getElementById("recordDay").textContent;
+const renderedRecordDayTokens = document.getElementById("recordDayTokens").textContent;
+const renderedRecordDayDate = document.getElementById("recordDayDate").textContent;
 const models = summarizeModelUsageForDaily(daily);
 const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" }, {}, "codex");
 const detectedSubscription = normalizeSubscription(null, { planType: "Pro", source: "codex_app_server" }, "codex");
@@ -963,10 +964,12 @@ JSON.stringify({
   todayTotal,
   todaySummaryTotal,
   recordDayTokens: recordDay?.totalTokens,
-  recordDayLabel: t("summary.tokensTotal"),
+  recordDayLabel: t("summary.recordDayLabel"),
+  recordDayFormattedDate: formatFullDate(recordDay?.date),
   renderedTokensToday,
   renderedTokensTotal,
-  renderedRecordDayNote,
+  renderedRecordDayTokens,
+  renderedRecordDayDate,
   topModel: models[0]?.model,
   topModelCosted: models[0]?.cost?.costed,
   usedModelPricingHasTotal:
@@ -1245,11 +1248,11 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.todayTotal, 222);
   assert.equal(result.todaySummaryTotal, 222);
   assert.equal(result.recordDayTokens, 500);
-  assert.equal(result.recordDayLabel, "Logged tokens total");
+  assert.equal(result.recordDayLabel, "Record day");
   assert.equal(result.renderedTokensToday, "222");
   assert.equal(result.renderedTokensTotal, "789");
-  assert.equal(result.renderedRecordDayNote.includes("Record day:"), true);
-  assert.equal(result.renderedRecordDayNote.includes("500"), true);
+  assert.equal(result.renderedRecordDayTokens, "500");
+  assert.equal(result.renderedRecordDayDate, result.recordDayFormattedDate);
   assert.equal(result.topModel, "claude-fable-5");
   assert.equal(result.topModelCosted, true);
   assert.equal(result.usedModelPricingHasTotal, true);

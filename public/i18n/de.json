@@ -42,6 +42,7 @@
     "weeklyOpen": "Wochenlimit frei",
     "tokensToday": "Geloggte Tokens heute",
     "tokensTotal": "Geloggte Tokens gesamt",
+    "recordDayLabel": "Rekordtag",
     "recordDay": "Rekord-Tag: {date} · {tokens}",
     "quotaWindowNote": "Provider-Zeitfenster",
     "tokensRange": "Geloggte Tokens: {range}",

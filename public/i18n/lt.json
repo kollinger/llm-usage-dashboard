@@ -42,6 +42,7 @@
     "weeklyOpen": "Week quota free",
     "tokensToday": "Logged tokens today",
     "tokensTotal": "Iš viso įrašyti žetonai",
+    "recordDayLabel": "Rekordinė diena",
     "recordDay": "Rekordinė diena: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",

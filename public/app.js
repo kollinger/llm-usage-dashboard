@@ -7,16 +7,21 @@ const state = {
   queuedUsageIndicator: false,
   refreshIndicator: false,
   showAllProviders: false,
-  layoutEditMode: false,
+  layoutEditMode: true,
   dashboardSectionOrder: [],
+  summaryMetricOrder: [],
   providerOrder: [],
   keyboardDragSectionId: null,
   keyboardOriginalDashboardSectionOrder: null,
+  keyboardDragSummaryMetricId: null,
+  keyboardOriginalSummaryMetricOrder: null,
   keyboardDragProviderId: null,
   keyboardOriginalProviderOrder: null,
   draggingSectionId: null,
+  draggingSummaryMetricId: null,
   draggingProviderId: null,
   dashboardPointerDrag: null,
+  summaryMetricPointerDrag: null,
   pointerDrag: null,
   overviewChartRendered: false,
   chartRendered: false,
@@ -53,6 +58,7 @@ const state = {
 const els = {
   appShell: document.querySelector("main.app-shell"),
   dashboardLayout: document.getElementById("dashboardLayout"),
+  summaryStrip: document.getElementById("summaryStrip"),
   providerGrid: document.getElementById("providerGrid"),
   providerViewNotice: document.getElementById("providerViewNotice"),
   sourceDiagnosticsSection: document.getElementById("sourceDiagnosticsSection"),
@@ -63,7 +69,6 @@ const els = {
   diagnosticsRecheckBtn: document.getElementById("diagnosticsRecheckBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
-  layoutEditBtn: document.getElementById("layoutEditBtn"),
   layoutResetBtn: document.getElementById("layoutResetBtn"),
   layoutLiveRegion: document.getElementById("layoutLiveRegion"),
   providerFilterBtn: document.getElementById("providerFilterBtn"),
@@ -129,7 +134,8 @@ const els = {
   tokensRangeNote: document.getElementById("tokensRangeNote"),
   tokensTotal: document.getElementById("tokensTotal"),
   tokensTotalTile: document.getElementById("tokensTotal")?.closest(".metric-tile") || null,
-  recordDay: document.getElementById("recordDay"),
+  recordDayTokens: document.getElementById("recordDayTokens"),
+  recordDayDate: document.getElementById("recordDayDate"),
   overviewHistoryPanel: document.getElementById("overviewHistoryPanel"),
   overviewHistoryChart: document.getElementById("overviewHistoryChart"),
   overviewHistoryLegend: document.getElementById("overviewHistoryLegend"),
@@ -232,6 +238,7 @@ const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const CHART_LATEST_SCROLL_TOLERANCE_PX = 24;
 const DASHBOARD_SECTION_ORDER_STORAGE_KEY = "llmUsage.dashboardSectionOrder";
+const SUMMARY_METRIC_ORDER_STORAGE_KEY = "llmUsage.summaryMetricOrder";
 const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
 const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "overview",
@@ -242,6 +249,7 @@ const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "pricing",
   "diagnostics"
 ];
+const DEFAULT_SUMMARY_METRIC_ORDER = ["five-hour", "weekly", "tokens-today", "tokens-total", "record-day"];
 const LANGUAGE_OPTIONS = [
   { code: "bg", flag: "🇧🇬", label: "Български", locale: "bg-BG" },
   { code: "cs", flag: "🇨🇿", label: "Čeština", locale: "cs-CZ" },
@@ -1658,6 +1666,8 @@ async function init() {
   loadProviderFilterPreference();
   loadDashboardSectionOrderPreference();
   applyDashboardSectionOrder();
+  loadSummaryMetricOrderPreference();
+  applySummaryMetricOrder();
   loadProviderOrderPreference();
   loadUsageProjectionModePreference();
   bindEvents();
@@ -1682,7 +1692,6 @@ function bindEvents() {
   els.loginBtn.addEventListener("click", () => openModalDialog(els.loginDialog));
   els.logoutBtn.addEventListener("click", logout);
   els.settingsBtn.addEventListener("click", openSettings);
-  els.layoutEditBtn?.addEventListener("click", toggleLayoutEditMode);
   els.layoutResetBtn?.addEventListener("click", resetLayoutOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
@@ -1703,6 +1712,15 @@ function bindEvents() {
   els.dashboardLayout?.addEventListener("pointerup", handleDashboardSectionPointerUp);
   els.dashboardLayout?.addEventListener("pointercancel", cancelDashboardSectionPointerDrag);
   els.dashboardLayout?.addEventListener("keydown", handleDashboardSectionKeyboardReorder);
+  els.summaryStrip?.addEventListener("dragstart", handleSummaryMetricDragStart);
+  els.summaryStrip?.addEventListener("dragover", handleSummaryMetricDragOver);
+  els.summaryStrip?.addEventListener("drop", handleSummaryMetricDrop);
+  els.summaryStrip?.addEventListener("dragend", endSummaryMetricDrag);
+  els.summaryStrip?.addEventListener("pointerdown", handleSummaryMetricPointerDown);
+  els.summaryStrip?.addEventListener("pointermove", handleSummaryMetricPointerMove);
+  els.summaryStrip?.addEventListener("pointerup", handleSummaryMetricPointerUp);
+  els.summaryStrip?.addEventListener("pointercancel", cancelSummaryMetricPointerDrag);
+  els.summaryStrip?.addEventListener("keydown", handleSummaryMetricKeyboardReorder);
   els.providerGrid?.addEventListener("dragstart", handleProviderDragStart);
   els.providerGrid?.addEventListener("dragover", handleProviderDragOver);
   els.providerGrid?.addEventListener("drop", handleProviderDrop);
@@ -1932,6 +1950,15 @@ function loadDashboardSectionOrderPreference() {
   }
 }
 
+function loadSummaryMetricOrderPreference() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SUMMARY_METRIC_ORDER_STORAGE_KEY) || "[]");
+    state.summaryMetricOrder = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+  } catch {
+    state.summaryMetricOrder = [];
+  }
+}
+
 function loadProviderOrderPreference() {
   try {
     const saved = JSON.parse(localStorage.getItem(PROVIDER_ORDER_STORAGE_KEY) || "[]");
@@ -1985,40 +2012,27 @@ function toggleProviderFilter() {
   if (state.usage) render();
 }
 
-function toggleLayoutEditMode() {
-  state.layoutEditMode = !state.layoutEditMode;
-  state.keyboardDragSectionId = null;
-  state.keyboardOriginalDashboardSectionOrder = null;
-  state.keyboardDragProviderId = null;
-  state.keyboardOriginalProviderOrder = null;
-  endDashboardSectionDrag();
-  cleanupDashboardSectionPointerDrag();
-  clearProviderDropTarget();
-  removeProviderDragGhost();
-  if (state.usage) {
-    render();
-  } else {
-    updateDashboardLayoutMode();
-    updateLayoutControls([], []);
-    refreshIcons();
-  }
-}
-
 function resetLayoutOrder() {
   const providers = state.usage ? buildProviders(state.usage) : [];
   state.keyboardDragSectionId = null;
   state.keyboardOriginalDashboardSectionOrder = null;
+  state.keyboardDragSummaryMetricId = null;
+  state.keyboardOriginalSummaryMetricOrder = null;
   state.keyboardDragProviderId = null;
   state.keyboardOriginalProviderOrder = null;
   state.draggingSectionId = null;
+  state.draggingSummaryMetricId = null;
+  cleanupSummaryMetricPointerDrag();
   state.providerOrder = providers.map((provider) => provider.id);
   saveProviderOrder();
+  applySummaryMetricOrder(DEFAULT_SUMMARY_METRIC_ORDER, { persist: true });
   applyDashboardSectionOrder(DEFAULT_DASHBOARD_SECTION_ORDER, { persist: true });
   announceLayoutChange(t("layout.resetDone"));
   if (state.usage) {
     render();
   } else {
     updateDashboardLayoutMode();
+    updateSummaryMetricLayout();
     updateLayoutControls([], []);
     refreshIcons();
   }
@@ -2181,6 +2195,165 @@ function updateDashboardLayoutMode() {
   }
 }
 
+function summaryMetricIds() {
+  return Array.from(els.summaryStrip?.querySelectorAll(":scope > .metric-tile[data-summary-metric-id]") || [])
+    .map((tile) => tile.dataset.summaryMetricId)
+    .filter(Boolean);
+}
+
+function normalizeSummaryMetricOrder(order) {
+  const metricIds = summaryMetricIds();
+  const validIds = new Set(metricIds);
+  const normalized = [];
+  for (const id of Array.isArray(order) && order.length ? order : DEFAULT_SUMMARY_METRIC_ORDER) {
+    if (validIds.has(id) && !normalized.includes(id)) normalized.push(id);
+  }
+  for (const id of DEFAULT_SUMMARY_METRIC_ORDER) {
+    if (validIds.has(id) && !normalized.includes(id)) normalized.push(id);
+  }
+  for (const id of metricIds) {
+    if (!normalized.includes(id)) normalized.push(id);
+  }
+  return normalized;
+}
+
+function saveSummaryMetricOrder() {
+  try {
+    localStorage.setItem(SUMMARY_METRIC_ORDER_STORAGE_KEY, JSON.stringify(state.summaryMetricOrder));
+  } catch {
+    // Keep the edited order for this session if storage is unavailable.
+  }
+}
+
+function applySummaryMetricOrder(nextOrder = state.summaryMetricOrder, { persist = false } = {}) {
+  if (!els.summaryStrip) return;
+  state.summaryMetricOrder = normalizeSummaryMetricOrder(nextOrder);
+  const tilesById = new Map(
+    Array.from(els.summaryStrip.querySelectorAll(":scope > .metric-tile[data-summary-metric-id]")).map((tile) => [
+      tile.dataset.summaryMetricId,
+      tile
+    ])
+  );
+  for (const id of state.summaryMetricOrder) {
+    const tile = tilesById.get(id);
+    if (tile) els.summaryStrip.appendChild(tile);
+  }
+  if (persist) saveSummaryMetricOrder();
+  updateSummaryMetricLayout();
+}
+
+function summaryMetricTileById(metricId) {
+  const selector = `.metric-tile[data-summary-metric-id="${escapeSelectorValue(metricId)}"]`;
+  return els.summaryStrip?.querySelector(`:scope > ${selector}`);
+}
+
+function currentVisibleSummaryMetricIds() {
+  return summaryMetricIds().filter((id) => {
+    const tile = summaryMetricTileById(id);
+    return tile && !tile.hidden;
+  });
+}
+
+function moveSummaryMetricRelativeToTarget(draggedId, targetId, afterTarget = false) {
+  if (!els.summaryStrip || draggedId === targetId) return false;
+  const metricIds = summaryMetricIds();
+  const nextOrder = normalizeSummaryMetricOrder(state.summaryMetricOrder);
+  const fromIndex = nextOrder.indexOf(draggedId);
+  const targetIndex = nextOrder.indexOf(targetId);
+  if (!metricIds.includes(draggedId) || !metricIds.includes(targetId) || fromIndex === -1 || targetIndex === -1) return false;
+  let insertIndex = targetIndex + (afterTarget ? 1 : 0);
+  nextOrder.splice(fromIndex, 1);
+  if (fromIndex < insertIndex) insertIndex -= 1;
+  nextOrder.splice(Math.max(0, Math.min(insertIndex, nextOrder.length)), 0, draggedId);
+  applySummaryMetricOrder(nextOrder, { persist: true });
+  return true;
+}
+
+function moveSummaryMetricByVisibleDelta(metricId, delta) {
+  const visibleIds = currentVisibleSummaryMetricIds();
+  const fromIndex = visibleIds.indexOf(metricId);
+  const toIndex = fromIndex + delta;
+  if (fromIndex === -1 || toIndex < 0 || toIndex >= visibleIds.length) return false;
+  return moveSummaryMetricRelativeToTarget(metricId, visibleIds[toIndex], delta > 0);
+}
+
+function summaryMetricTileFromEvent(event) {
+  return event.target?.closest?.(".metric-tile[data-summary-metric-id]");
+}
+
+function summaryMetricHandleFromEvent(event) {
+  return event.target?.closest?.("[data-summary-metric-drag-handle]");
+}
+
+function summaryMetricName(metricId) {
+  const tile = summaryMetricTileById(metricId);
+  if (!tile) return metricId;
+  const labelKey = tile.dataset.summaryMetricLabelKey;
+  return labelKey
+    ? t(labelKey, {}, tile.querySelector("[data-i18n]")?.textContent?.trim() || metricId)
+    : tile.querySelector("[data-i18n]")?.textContent?.trim() || metricId;
+}
+
+function summaryMetricPosition(metricId) {
+  const visibleIds = currentVisibleSummaryMetricIds();
+  const index = visibleIds.indexOf(metricId);
+  return { position: index + 1, total: visibleIds.length };
+}
+
+function announceSummaryMetricMove(metricId, key = "layout.moved") {
+  const { position, total } = summaryMetricPosition(metricId);
+  announceLayoutChange(t(key, { name: summaryMetricName(metricId), position, total }));
+}
+
+function focusSummaryMetricHandle(metricId) {
+  window.requestAnimationFrame(() => {
+    const selector = `[data-summary-metric-drag-handle][data-summary-metric-id="${escapeSelectorValue(metricId)}"]`;
+    els.summaryStrip?.querySelector(selector)?.focus();
+  });
+}
+
+function renderSummaryMetricDragHandle(metricId, index, total) {
+  const name = summaryMetricName(metricId);
+  const active = state.keyboardDragSummaryMetricId === metricId;
+  return `
+    <button
+      type="button"
+      class="summary-metric-drag-handle${active ? " is-active" : ""}"
+      data-summary-metric-drag-handle
+      data-summary-metric-id="${escapeHtml(metricId)}"
+      aria-label="${escapeHtml(t("layout.dragHandle", { name }))}"
+      aria-pressed="${active}"
+      title="${escapeHtml(t("layout.dragHandle", { name }))}"
+    >
+      <i data-lucide="grip-vertical"></i>
+      <span class="layout-position">${escapeHtml(`${index + 1}/${total}`)}</span>
+    </button>
+  `;
+}
+
+function updateSummaryMetricLayout() {
+  if (!els.summaryStrip) return;
+  const visibleIds = currentVisibleSummaryMetricIds();
+  const visibleIndexById = new Map(visibleIds.map((id, index) => [id, index]));
+  for (const tile of els.summaryStrip.querySelectorAll(":scope > .metric-tile[data-summary-metric-id]")) {
+    const metricId = tile.dataset.summaryMetricId;
+    const visibleIndex = visibleIndexById.get(metricId);
+    const existingHandle = tile.querySelector(":scope > [data-summary-metric-drag-handle]");
+    if (!state.layoutEditMode || visibleIndex === undefined) {
+      tile.removeAttribute("draggable");
+      existingHandle?.remove();
+      continue;
+    }
+    tile.setAttribute("draggable", "true");
+    const handleMarkup = renderSummaryMetricDragHandle(metricId, visibleIndex, visibleIds.length);
+    if (existingHandle) {
+      existingHandle.outerHTML = handleMarkup;
+    } else {
+      tile.insertAdjacentHTML("afterbegin", handleMarkup);
+    }
+  }
+}
+
 function normalizeProviderOrder(order, providerIds) {
   const validIds = new Set(providerIds);
   const normalized = [];
@@ -2287,8 +2460,233 @@ function escapeSelectorValue(value) {
   return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 }
 
+function handleSummaryMetricDragStart(event) {
+  if (!state.layoutEditMode || state.draggingSectionId || state.draggingProviderId) return;
+  const handle = summaryMetricHandleFromEvent(event);
+  const tile = summaryMetricTileFromEvent(event);
+  if (!handle || !tile) {
+    if (tile) event.preventDefault();
+    return;
+  }
+  state.draggingSummaryMetricId = tile.dataset.summaryMetricId;
+  tile.classList.add("is-dragging");
+  try {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", state.draggingSummaryMetricId);
+  } catch {
+    // Drag data is advisory; state.draggingSummaryMetricId is the source of truth.
+  }
+}
+
+function handleSummaryMetricDragOver(event) {
+  if (!state.layoutEditMode || !state.draggingSummaryMetricId || state.draggingSectionId || state.draggingProviderId) return;
+  const tile = summaryMetricTileFromEvent(event);
+  if (!tile || tile.dataset.summaryMetricId === state.draggingSummaryMetricId) {
+    clearSummaryMetricDropTarget();
+    return;
+  }
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+  const placement = resolveDropPlacement(tile, event.clientX, event.clientY);
+  setSummaryMetricDropTarget(tile, placement.after);
+}
+
+function handleSummaryMetricDrop(event) {
+  if (!state.layoutEditMode || state.draggingSectionId || state.draggingProviderId) return;
+  const tile = summaryMetricTileFromEvent(event);
+  const draggedId = state.draggingSummaryMetricId || event.dataTransfer?.getData("text/plain");
+  if (!tile || !draggedId || tile.dataset.summaryMetricId === draggedId) {
+    endSummaryMetricDrag();
+    return;
+  }
+  event.preventDefault();
+  const placement = resolveDropPlacement(tile, event.clientX, event.clientY);
+  const moved = moveSummaryMetricRelativeToTarget(draggedId, tile.dataset.summaryMetricId, placement.after);
+  endSummaryMetricDrag();
+  if (moved) {
+    announceSummaryMetricMove(draggedId, "layout.dropped");
+    focusSummaryMetricHandle(draggedId);
+    updateLayoutControls();
+    refreshIcons();
+  }
+}
+
+function endSummaryMetricDrag() {
+  state.draggingSummaryMetricId = null;
+  els.summaryStrip?.querySelectorAll(".is-dragging").forEach((tile) => tile.classList.remove("is-dragging"));
+  clearSummaryMetricDropTarget();
+}
+
+function setSummaryMetricDropTarget(tile, after) {
+  clearSummaryMetricDropTarget(tile);
+  tile.classList.add("is-drop-target", after ? "is-drop-after" : "is-drop-before");
+}
+
+function clearSummaryMetricDropTarget(exceptTile = null) {
+  els.summaryStrip?.querySelectorAll(".is-drop-target").forEach((tile) => {
+    if (tile === exceptTile) return;
+    tile.classList.remove("is-drop-target", "is-drop-before", "is-drop-after");
+  });
+}
+
+function handleSummaryMetricPointerDown(event) {
+  if (!state.layoutEditMode || state.dashboardPointerDrag || state.pointerDrag) return;
+  const handle = summaryMetricHandleFromEvent(event);
+  const tile = summaryMetricTileFromEvent(event);
+  if (!handle || !tile) return;
+  if (event.pointerType !== "mouse") event.preventDefault();
+  state.summaryMetricPointerDrag = {
+    id: tile.dataset.summaryMetricId,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    targetId: null,
+    after: false,
+    active: false,
+    handle
+  };
+  try {
+    handle.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is best effort; document.elementFromPoint still drives the drop target.
+  }
+}
+
+function handleSummaryMetricPointerMove(event) {
+  const drag = state.summaryMetricPointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId || state.dashboardPointerDrag || state.pointerDrag) return;
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  if (!drag.active && Math.hypot(dx, dy) < 6) return;
+  event.preventDefault();
+  if (!drag.active) {
+    drag.active = true;
+    createSummaryMetricDragGhost(drag.id, event.clientX, event.clientY);
+    summaryMetricTileById(drag.id)?.classList.add("is-dragging");
+  }
+  moveSummaryMetricDragGhost(event.clientX, event.clientY);
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.(".metric-tile[data-summary-metric-id]");
+  if (!target || target.dataset.summaryMetricId === drag.id) {
+    clearSummaryMetricDropTarget();
+    drag.targetId = null;
+    return;
+  }
+  const placement = resolveDropPlacement(target, event.clientX, event.clientY);
+  drag.targetId = target.dataset.summaryMetricId;
+  drag.after = placement.after;
+  setSummaryMetricDropTarget(target, placement.after);
+}
+
+function handleSummaryMetricPointerUp(event) {
+  const drag = state.summaryMetricPointerDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const moved = drag.active && drag.targetId ? moveSummaryMetricRelativeToTarget(drag.id, drag.targetId, drag.after) : false;
+  cleanupSummaryMetricPointerDrag();
+  if (moved) {
+    announceSummaryMetricMove(drag.id, "layout.dropped");
+    focusSummaryMetricHandle(drag.id);
+    updateLayoutControls();
+    refreshIcons();
+  }
+}
+
+function cancelSummaryMetricPointerDrag(event) {
+  if (event && state.summaryMetricPointerDrag?.pointerId !== event.pointerId) return;
+  cleanupSummaryMetricPointerDrag();
+}
+
+function cleanupSummaryMetricPointerDrag() {
+  removeSummaryMetricDragGhost();
+  state.summaryMetricPointerDrag = null;
+  endSummaryMetricDrag();
+}
+
+function createSummaryMetricDragGhost(metricId, clientX, clientY) {
+  removeSummaryMetricDragGhost();
+  const tile = summaryMetricTileById(metricId);
+  if (!tile) return;
+  const rect = tile.getBoundingClientRect();
+  const ghost = tile.cloneNode(true);
+  ghost.classList.add("summary-metric-drag-ghost");
+  ghost.style.width = `${rect.width}px`;
+  document.body.appendChild(ghost);
+  state.summaryMetricPointerDrag.ghost = ghost;
+  moveSummaryMetricDragGhost(clientX, clientY);
+}
+
+function moveSummaryMetricDragGhost(clientX, clientY) {
+  const ghost = state.summaryMetricPointerDrag?.ghost;
+  if (!ghost) return;
+  ghost.style.transform = `translate(${clientX + 12}px, ${clientY + 12}px)`;
+}
+
+function removeSummaryMetricDragGhost() {
+  if (!state.summaryMetricPointerDrag?.ghost) return;
+  state.summaryMetricPointerDrag.ghost.remove();
+  state.summaryMetricPointerDrag.ghost = null;
+}
+
+function handleSummaryMetricKeyboardReorder(event) {
+  if (!state.layoutEditMode) return;
+  if (dashboardSectionHandleFromEvent(event)) return;
+  const handle = summaryMetricHandleFromEvent(event);
+  if (!handle) return;
+  const metricId = handle.dataset.summaryMetricId;
+  const isGrabbed = state.keyboardDragSummaryMetricId === metricId;
+
+  if (!isGrabbed && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    state.keyboardDragSummaryMetricId = metricId;
+    state.keyboardOriginalSummaryMetricOrder = state.summaryMetricOrder.slice();
+    announceSummaryMetricMove(metricId, "layout.grabbed");
+    updateSummaryMetricLayout();
+    refreshIcons();
+    focusSummaryMetricHandle(metricId);
+    return;
+  }
+
+  if (!isGrabbed) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (state.keyboardOriginalSummaryMetricOrder) applySummaryMetricOrder(state.keyboardOriginalSummaryMetricOrder, { persist: true });
+    state.keyboardDragSummaryMetricId = null;
+    state.keyboardOriginalSummaryMetricOrder = null;
+    announceLayoutChange(t("layout.cancelled"));
+    updateSummaryMetricLayout();
+    updateLayoutControls();
+    refreshIcons();
+    focusSummaryMetricHandle(metricId);
+    return;
+  }
+
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    state.keyboardDragSummaryMetricId = null;
+    state.keyboardOriginalSummaryMetricOrder = null;
+    announceSummaryMetricMove(metricId, "layout.dropped");
+    updateSummaryMetricLayout();
+    updateLayoutControls();
+    refreshIcons();
+    focusSummaryMetricHandle(metricId);
+    return;
+  }
+
+  const direction = event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : 0;
+  if (!direction) return;
+  event.preventDefault();
+  const moved = moveSummaryMetricByVisibleDelta(metricId, direction);
+  if (moved) {
+    announceSummaryMetricMove(metricId);
+    updateLayoutControls();
+    refreshIcons();
+    focusSummaryMetricHandle(metricId);
+  }
+}
+
 function handleProviderDragStart(event) {
-  if (!state.layoutEditMode || state.draggingSectionId || dashboardSectionHandleFromEvent(event)) return;
+  if (!state.layoutEditMode || state.draggingSectionId || state.draggingSummaryMetricId || dashboardSectionHandleFromEvent(event)) return;
   const handle = providerHandleFromEvent(event);
   const card = providerCardFromEvent(event);
   if (!handle || !card) {
@@ -2306,7 +2704,7 @@ function handleProviderDragStart(event) {
 }
 
 function handleProviderDragOver(event) {
-  if (!state.layoutEditMode || !state.draggingProviderId || state.draggingSectionId) return;
+  if (!state.layoutEditMode || !state.draggingProviderId || state.draggingSectionId || state.draggingSummaryMetricId) return;
   const card = providerCardFromEvent(event);
   if (!card || card.dataset.providerId === state.draggingProviderId) {
     clearProviderDropTarget();
@@ -2319,7 +2717,7 @@ function handleProviderDragOver(event) {
 }
 
 function handleProviderDrop(event) {
-  if (!state.layoutEditMode || state.draggingSectionId) return;
+  if (!state.layoutEditMode || state.draggingSectionId || state.draggingSummaryMetricId) return;
   const card = providerCardFromEvent(event);
   const draggedId = state.draggingProviderId || event.dataTransfer?.getData("text/plain");
   if (!card || !draggedId || card.dataset.providerId === draggedId) {
@@ -2363,7 +2761,7 @@ function clearProviderDropTarget(exceptCard = null) {
 }
 
 function handleProviderPointerDown(event) {
-  if (!state.layoutEditMode || state.dashboardPointerDrag || dashboardSectionHandleFromEvent(event)) return;
+  if (!state.layoutEditMode || state.dashboardPointerDrag || state.summaryMetricPointerDrag || dashboardSectionHandleFromEvent(event)) return;
   const handle = providerHandleFromEvent(event);
   const card = providerCardFromEvent(event);
   if (!handle || !card) return;
@@ -2387,7 +2785,7 @@ function handleProviderPointerDown(event) {
 
 function handleProviderPointerMove(event) {
   const drag = state.pointerDrag;
-  if (!drag || drag.pointerId !== event.pointerId || state.dashboardPointerDrag) return;
+  if (!drag || drag.pointerId !== event.pointerId || state.dashboardPointerDrag || state.summaryMetricPointerDrag) return;
   const dx = event.clientX - drag.startX;
   const dy = event.clientY - drag.startY;
   if (!drag.active && Math.hypot(dx, dy) < 6) return;
@@ -2518,10 +2916,13 @@ function handleProviderKeyboardReorder(event) {
 }
 
 function handleDashboardSectionDragStart(event) {
-  if (!state.layoutEditMode || state.draggingProviderId) return;
+  if (!state.layoutEditMode || state.draggingProviderId || state.draggingSummaryMetricId) return;
   const handle = dashboardSectionHandleFromEvent(event);
   const panel = dashboardPanelFromEvent(event);
-  if (!handle || !panel) return;
+  if (!handle || !panel) {
+    if (panel) event.preventDefault();
+    return;
+  }
   state.draggingSectionId = panel.dataset.dashboardPanelId;
   panel.classList.add("is-dragging");
   try {
@@ -2533,7 +2934,7 @@ function handleDashboardSectionDragStart(event) {
 }
 
 function handleDashboardSectionDragOver(event) {
-  if (!state.layoutEditMode || !state.draggingSectionId || state.draggingProviderId) return;
+  if (!state.layoutEditMode || !state.draggingSectionId || state.draggingProviderId || state.draggingSummaryMetricId) return;
   const panel = dashboardPanelFromEvent(event);
   if (!panel || panel.dataset.dashboardPanelId === state.draggingSectionId) {
     clearDashboardSectionDropTarget();
@@ -2546,7 +2947,7 @@ function handleDashboardSectionDragOver(event) {
 }
 
 function handleDashboardSectionDrop(event) {
-  if (!state.layoutEditMode || state.draggingProviderId) return;
+  if (!state.layoutEditMode || state.draggingProviderId || state.draggingSummaryMetricId) return;
   const panel = dashboardPanelFromEvent(event);
   const draggedId = state.draggingSectionId || event.dataTransfer?.getData("text/plain");
   if (!panel || !draggedId || panel.dataset.dashboardPanelId === draggedId) {
@@ -2560,6 +2961,7 @@ function handleDashboardSectionDrop(event) {
   if (moved) {
     announceDashboardSectionMove(draggedId, "layout.dropped");
     focusDashboardSectionHandle(draggedId);
+    updateLayoutControls();
     refreshIcons();
   }
 }
@@ -2583,7 +2985,7 @@ function clearDashboardSectionDropTarget(exceptPanel = null) {
 }
 
 function handleDashboardSectionPointerDown(event) {
-  if (!state.layoutEditMode || state.pointerDrag) return;
+  if (!state.layoutEditMode || state.pointerDrag || state.summaryMetricPointerDrag) return;
   const handle = dashboardSectionHandleFromEvent(event);
   const panel = dashboardPanelFromEvent(event);
   if (!handle || !panel) return;
@@ -2607,7 +3009,7 @@ function handleDashboardSectionPointerDown(event) {
 
 function handleDashboardSectionPointerMove(event) {
   const drag = state.dashboardPointerDrag;
-  if (!drag || drag.pointerId !== event.pointerId || state.pointerDrag) return;
+  if (!drag || drag.pointerId !== event.pointerId || state.pointerDrag || state.summaryMetricPointerDrag) return;
   const dx = event.clientX - drag.startX;
   const dy = event.clientY - drag.startY;
   if (!drag.active && Math.hypot(dx, dy) < 6) return;
@@ -2639,6 +3041,7 @@ function handleDashboardSectionPointerUp(event) {
   if (moved) {
     announceDashboardSectionMove(drag.id, "layout.dropped");
     focusDashboardSectionHandle(drag.id);
+    updateLayoutControls();
     refreshIcons();
   }
 }
@@ -2709,6 +3112,7 @@ function handleDashboardSectionKeyboardReorder(event) {
     state.keyboardOriginalDashboardSectionOrder = null;
     announceLayoutChange(t("layout.cancelled"));
     updateDashboardLayoutMode();
+    updateLayoutControls();
     refreshIcons();
     focusDashboardSectionHandle(sectionId);
     return;
@@ -2731,6 +3135,7 @@ function handleDashboardSectionKeyboardReorder(event) {
   const moved = moveDashboardSectionByVisibleDelta(sectionId, direction);
   if (moved) {
     announceDashboardSectionMove(sectionId);
+    updateLayoutControls();
     refreshIcons();
     focusDashboardSectionHandle(sectionId);
   }
@@ -3024,8 +3429,11 @@ function renderLocked() {
   }
   els.tokensTotal.textContent = "--";
   if (els.tokensTotalTile) els.tokensTotalTile.hidden = false;
-  els.recordDay.textContent = "";
-  els.recordDay.hidden = true;
+  if (els.recordDayTokens) els.recordDayTokens.textContent = "--";
+  if (els.recordDayDate) {
+    els.recordDayDate.textContent = "";
+    els.recordDayDate.hidden = true;
+  }
   if (els.chartTitle) els.chartTitle.textContent = t("chart.heading");
   if (els.chartModeToggle) els.chartModeToggle.innerHTML = "";
   if (els.chartBreakdownToggle) els.chartBreakdownToggle.innerHTML = "";
@@ -3053,11 +3461,14 @@ function renderLocked() {
   els.pricingMeta.textContent = "--";
   state.overviewChartRendered = false;
   state.chartRendered = false;
-  state.layoutEditMode = false;
+  state.layoutEditMode = true;
   state.keyboardDragSectionId = null;
   state.keyboardOriginalDashboardSectionOrder = null;
-  els.providerGrid.classList.remove("layout-edit-mode");
+  state.keyboardDragSummaryMetricId = null;
+  state.keyboardOriginalSummaryMetricOrder = null;
+  els.providerGrid.classList.add("layout-edit-mode");
   updateDashboardLayoutMode();
+  updateSummaryMetricLayout();
   updateProviderViewNotice([], []);
   updateProviderFilterControl([], []);
   updateLayoutControls([], []);
@@ -3084,6 +3495,7 @@ function render() {
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
   renderSummary(visibleProviders, usage.local, filteredDaily);
+  updateSummaryMetricLayout();
   renderOverviewHistory(allDaily);
   if (els.chartTitle) {
     els.chartTitle.textContent = state.chartMode === "costs" ? t("chart.headingCosts") : t("chart.heading");
@@ -4207,16 +4619,34 @@ function updateProviderViewNotice(providers) {
   `;
 }
 
-function updateLayoutControls(providers, visibleProviders) {
-  if (!els.layoutEditBtn) return;
-  const label = state.layoutEditMode ? t("layout.done") : t("layout.edit");
+function ordersMatch(left, right) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function hasCustomDashboardSectionOrder() {
+  return !ordersMatch(normalizeDashboardSectionOrder(state.dashboardSectionOrder), normalizeDashboardSectionOrder(DEFAULT_DASHBOARD_SECTION_ORDER));
+}
+
+function hasCustomSummaryMetricOrder() {
+  return !ordersMatch(normalizeSummaryMetricOrder(state.summaryMetricOrder), normalizeSummaryMetricOrder(DEFAULT_SUMMARY_METRIC_ORDER));
+}
+
+function hasCustomProviderOrder(providers = []) {
+  const providerIds = providers.map((provider) => provider.id);
+  if (!providerIds.length) return false;
+  return !ordersMatch(normalizeProviderOrder(state.providerOrder, providerIds), providerIds);
+}
+
+function updateLayoutControls(providers = null, visibleProviders = null) {
+  const allProviders = providers || (state.usage ? buildProviders(state.usage) : []);
+  const shownProviders = visibleProviders || (state.usage ? currentVisibleProviderIds().map((id) => ({ id })) : []);
   const visibleSections = currentVisibleDashboardSectionIds();
-  els.layoutEditBtn.disabled = !providers.length && !visibleSections.length;
-  els.layoutEditBtn.setAttribute("aria-label", label);
-  els.layoutEditBtn.setAttribute("title", label);
-  els.layoutEditBtn.setAttribute("aria-pressed", String(state.layoutEditMode));
+  const visibleMetrics = currentVisibleSummaryMetricIds();
   if (els.layoutResetBtn) {
-    els.layoutResetBtn.hidden = !state.layoutEditMode || (!visibleProviders.length && !visibleSections.length);
+    const hasReorderableItems = Boolean(shownProviders.length || visibleSections.length || visibleMetrics.length);
+    const hasCustomOrder =
+      hasCustomDashboardSectionOrder() || hasCustomSummaryMetricOrder() || hasCustomProviderOrder(allProviders);
+    els.layoutResetBtn.hidden = !hasReorderableItems || !hasCustomOrder;
     els.layoutResetBtn.textContent = t("layout.reset");
   }
 }
@@ -4254,8 +4684,8 @@ function renderProvider(provider, index = 0, total = 1) {
       </div>`;
 
   return `
-    <article class="provider-card" data-provider-id="${escapeHtml(provider.id)}" role="listitem" draggable="${state.layoutEditMode ? "true" : "false"}" style="--provider-accent: ${escapeHtml(provider.accent)}">
-      ${state.layoutEditMode ? renderProviderDragHandle(provider, index, total) : ""}
+    <article class="provider-card" data-provider-id="${escapeHtml(provider.id)}" role="listitem" draggable="true" style="--provider-accent: ${escapeHtml(provider.accent)}">
+      ${renderProviderDragHandle(provider, index, total)}
       <div class="provider-head">
         <div class="provider-identity">
           ${renderProviderMark(provider.id, { label: provider.name, accent: provider.accent, size: "lg" })}
@@ -5068,18 +5498,19 @@ function chartRangeNote(filter = state.chartTimeFilter) {
 function renderRecordDay(daily) {
   const record = findRecordDay(daily);
   if (!record) {
-    if (els.recordDay) {
-      els.recordDay.textContent = "";
-      els.recordDay.hidden = true;
+    if (els.recordDayTokens) els.recordDayTokens.textContent = "--";
+    if (els.recordDayDate) {
+      els.recordDayDate.textContent = "";
+      els.recordDayDate.hidden = true;
     }
     return;
   }
-  if (els.recordDay) {
-    els.recordDay.textContent = t("summary.recordDay", {
-      date: formatFullDate(record.date),
-      tokens: formatTokens(record.totalTokens)
-    });
-    els.recordDay.hidden = false;
+  if (els.recordDayTokens) {
+    els.recordDayTokens.textContent = formatTokens(record.totalTokens);
+  }
+  if (els.recordDayDate) {
+    els.recordDayDate.textContent = formatFullDate(record.date);
+    els.recordDayDate.hidden = false;
   }
 }
 

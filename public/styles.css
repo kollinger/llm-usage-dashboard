@@ -236,9 +236,18 @@ a {
 
 .summary-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
+  direction: ltr;
+}
+
+.summary-strip > * {
+  direction: ltr;
+}
+
+:root[dir="rtl"] .summary-strip > * {
+  direction: rtl;
 }
 
 .provider-section {
@@ -485,8 +494,10 @@ a {
 }
 
 .metric-tile {
+  position: relative;
   min-height: 92px;
-  padding: 16px;
+  padding: 54px 16px 16px;
+  transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 120ms ease;
 }
 
 .metric-tile span {
@@ -516,6 +527,15 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
+  direction: ltr;
+}
+
+.provider-grid > * {
+  direction: ltr;
+}
+
+:root[dir="rtl"] .provider-grid > * {
+  direction: rtl;
 }
 
 .dashboard-layout {
@@ -551,47 +571,47 @@ a {
   transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 120ms ease;
 }
 
-.layout-edit-mode .provider-card {
-  border-style: dashed;
-  border-color: rgba(35, 116, 92, 0.34);
+.provider-card[data-provider-id] {
   padding-top: 54px;
 }
 
+.metric-tile.is-dragging,
 .provider-card.is-dragging,
 .dashboard-layout > [data-dashboard-panel-id].is-dragging {
   opacity: 0.52;
 }
 
+.metric-tile.is-drop-target,
 .provider-card.is-drop-target,
 .dashboard-layout > [data-dashboard-panel-id].is-drop-target {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(35, 116, 92, 0.14);
 }
 
+.metric-tile.is-drop-before,
 .provider-card.is-drop-before,
 .dashboard-layout > [data-dashboard-panel-id].is-drop-before {
   transform: translateY(-2px);
 }
 
+.metric-tile.is-drop-after,
 .provider-card.is-drop-after,
 .dashboard-layout > [data-dashboard-panel-id].is-drop-after {
   transform: translateY(2px);
 }
 
-.dashboard-layout.layout-edit-mode > [data-dashboard-panel-id] {
-  outline: 1px dashed rgba(35, 116, 92, 0.28);
-  outline-offset: 3px;
+.dashboard-layout > [data-dashboard-panel-id] {
   transition: box-shadow 120ms ease, opacity 120ms ease, outline-color 120ms ease, transform 120ms ease;
 }
 
-.dashboard-layout.layout-edit-mode > .summary-strip,
-.dashboard-layout.layout-edit-mode > .provider-section,
-.dashboard-layout.layout-edit-mode > .provider-grid,
-.dashboard-layout.layout-edit-mode > .usage-layout,
-.dashboard-layout.layout-edit-mode > .panel {
+.dashboard-layout > .summary-strip,
+.dashboard-layout > .provider-section,
+.dashboard-layout > .usage-layout,
+.dashboard-layout > .panel {
   padding-top: 58px;
 }
 
+.summary-metric-drag-handle,
 .provider-drag-handle,
 .dashboard-drag-handle {
   position: absolute;
@@ -611,6 +631,8 @@ a {
   touch-action: none;
 }
 
+.summary-metric-drag-handle:active,
+.summary-metric-drag-handle.is-active,
 .provider-drag-handle:active,
 .provider-drag-handle.is-active,
 .dashboard-drag-handle:active,
@@ -621,10 +643,18 @@ a {
   box-shadow: 0 0 0 3px rgba(35, 116, 92, 0.12);
 }
 
+.summary-metric-drag-handle svg,
 .provider-drag-handle svg,
 .dashboard-drag-handle svg {
   width: 18px;
   height: 18px;
+}
+
+.metric-tile .layout-position,
+.summary-metric-drag-handle span,
+.provider-drag-handle span,
+.dashboard-drag-handle span {
+  display: inline;
 }
 
 .provider-position,
@@ -634,6 +664,7 @@ a {
   font-weight: 800;
 }
 
+.summary-metric-drag-ghost,
 .provider-drag-ghost,
 .dashboard-drag-ghost {
   position: fixed;
@@ -3458,10 +3489,12 @@ select {
     min-height: 240px;
   }
 
-  .layout-edit-mode .provider-card {
+  .provider-card[data-provider-id],
+  .metric-tile {
     padding-top: 58px;
   }
 
+  .summary-metric-drag-handle,
   .provider-drag-handle {
     min-width: 44px;
     min-height: 44px;
@@ -3476,6 +3509,7 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .metric-tile,
   .provider-card,
   .dashboard-layout > [data-dashboard-panel-id],
   .diagnostic-state-card,
@@ -3485,6 +3519,8 @@ select {
     transition: none;
   }
 
+  .metric-tile.is-drop-before,
+  .metric-tile.is-drop-after,
   .provider-card.is-drop-before,
   .provider-card.is-drop-after,
   .dashboard-layout > [data-dashboard-panel-id].is-drop-before,
