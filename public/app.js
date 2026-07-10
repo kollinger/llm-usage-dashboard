@@ -24,6 +24,8 @@ const state = {
   summaryMetricPointerDrag: null,
   pointerDrag: null,
   overviewChartRendered: false,
+  overviewChartScrollToLatest: true,
+  overviewChartRenderVersion: 0,
   chartRendered: false,
   chartScrollToLatest: true,
   chartUserScrolledAwayFromLatest: false,
@@ -137,6 +139,8 @@ const els = {
   recordDayTokens: document.getElementById("recordDayTokens"),
   recordDayDate: document.getElementById("recordDayDate"),
   overviewHistoryPanel: document.getElementById("overviewHistoryPanel"),
+  overviewHistoryFilterBar: document.getElementById("overviewHistoryFilterBar"),
+  overviewHistoryModeToggle: document.getElementById("overviewHistoryModeToggle"),
   overviewHistoryChart: document.getElementById("overviewHistoryChart"),
   overviewHistoryLegend: document.getElementById("overviewHistoryLegend"),
   chartTitle: document.getElementById("chartTitle"),
@@ -237,10 +241,15 @@ const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const CHART_LATEST_SCROLL_TOLERANCE_PX = 24;
+const HISTORY_SLOT_MINUTES = 15;
+const HISTORY_SLOT_MS = HISTORY_SLOT_MINUTES * 60 * 1000;
+const HISTORY_SLOT_FILTERS = new Set(["h24", "today"]);
+const OVERVIEW_HISTORY_HEIGHT = 108;
 const DASHBOARD_SECTION_ORDER_STORAGE_KEY = "llmUsage.dashboardSectionOrder";
 const SUMMARY_METRIC_ORDER_STORAGE_KEY = "llmUsage.summaryMetricOrder";
 const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
 const DEFAULT_DASHBOARD_SECTION_ORDER = [
+  "overview-history",
   "overview",
   "providers",
   "live",
@@ -249,7 +258,8 @@ const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "pricing",
   "diagnostics"
 ];
-const DEFAULT_SUMMARY_METRIC_ORDER = ["five-hour", "weekly", "tokens-today", "tokens-total", "record-day"];
+const OLD_DEFAULT_SUMMARY_METRIC_ORDER = ["five-hour", "weekly", "tokens-today", "tokens-total", "record-day"];
+const DEFAULT_SUMMARY_METRIC_ORDER = ["five-hour", "weekly", "tokens-today", "record-day", "tokens-total"];
 const LANGUAGE_OPTIONS = [
   { code: "bg", flag: "🇧🇬", label: "Български", locale: "bg-BG" },
   { code: "cs", flag: "🇨🇿", label: "Čeština", locale: "cs-CZ" },
@@ -1779,6 +1789,7 @@ function bindEvents() {
     if (modeBtn) {
       state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
       requestChartLatestForViewChange();
+      requestOverviewHistoryLatestForViewChange();
       if (state.usage) preservePageScrollDuring(render);
       return;
     }
@@ -1944,7 +1955,10 @@ function loadProviderFilterPreference() {
 function loadDashboardSectionOrderPreference() {
   try {
     const saved = JSON.parse(localStorage.getItem(DASHBOARD_SECTION_ORDER_STORAGE_KEY) || "[]");
-    state.dashboardSectionOrder = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+    const order = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+    state.dashboardSectionOrder = order.length && !order.includes("overview-history")
+      ? ["overview-history", ...order]
+      : order;
   } catch {
     state.dashboardSectionOrder = [];
   }
@@ -1953,7 +1967,9 @@ function loadDashboardSectionOrderPreference() {
 function loadSummaryMetricOrderPreference() {
   try {
     const saved = JSON.parse(localStorage.getItem(SUMMARY_METRIC_ORDER_STORAGE_KEY) || "[]");
-    state.summaryMetricOrder = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+    const order = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+    state.summaryMetricOrder = ordersMatch(order, OLD_DEFAULT_SUMMARY_METRIC_ORDER) ? DEFAULT_SUMMARY_METRIC_ORDER.slice() : order;
+    if (order.length && state.summaryMetricOrder !== order) saveSummaryMetricOrder();
   } catch {
     state.summaryMetricOrder = [];
   }
@@ -2076,7 +2092,9 @@ function applyDashboardSectionOrder(nextOrder = state.dashboardSectionOrder, { p
   );
   for (const id of state.dashboardSectionOrder) {
     const panel = panelsById.get(id);
-    if (panel) els.dashboardLayout.appendChild(panel);
+    if (panel) {
+      els.dashboardLayout.appendChild(panel);
+    }
   }
   if (persist) saveDashboardSectionOrder();
   updateDashboardLayoutMode();
@@ -3438,6 +3456,8 @@ function renderLocked() {
   if (els.chartModeToggle) els.chartModeToggle.innerHTML = "";
   if (els.chartBreakdownToggle) els.chartBreakdownToggle.innerHTML = "";
   if (els.overviewHistoryPanel) els.overviewHistoryPanel.hidden = true;
+  if (els.overviewHistoryFilterBar) els.overviewHistoryFilterBar.innerHTML = "";
+  if (els.overviewHistoryModeToggle) els.overviewHistoryModeToggle.innerHTML = "";
   if (els.overviewHistoryChart) els.overviewHistoryChart.innerHTML = "";
   if (els.overviewHistoryLegend) els.overviewHistoryLegend.innerHTML = "";
   els.chart.innerHTML = "";
@@ -3494,9 +3514,12 @@ function render() {
   const allDaily = usage.local?.daily || [];
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
+  const chartRows = buildHistoryRowsForFilter(usage.local, filteredDaily, state.chartTimeFilter);
   renderSummary(visibleProviders, usage.local, filteredDaily);
   updateSummaryMetricLayout();
-  renderOverviewHistory(allDaily);
+  renderOverviewHistory(chartRows);
+  updateDashboardLayoutMode();
+  updateLayoutControls(providers, visibleProviders);
   if (els.chartTitle) {
     els.chartTitle.textContent = state.chartMode === "costs" ? t("chart.headingCosts") : t("chart.heading");
   }
@@ -3509,13 +3532,13 @@ function render() {
   }
   els.chartFilterBar.innerHTML = renderChartFilterBar(allDaily);
   if (state.chartMode === "costs") {
-    renderCostChart(filteredDaily, chartScrollState);
-    els.sourceTotals.innerHTML = renderCostSummary(filteredDaily, state.subscriptionHistory);
+    renderCostChart(chartRows, chartScrollState);
+    els.sourceTotals.innerHTML = renderCostSummary(chartRows, state.subscriptionHistory);
   } else {
-    renderChart(filteredDaily, chartScrollState);
-    els.sourceTotals.innerHTML = renderTokenBreakdownSummary(filteredDaily, state.chartBreakdownMode);
+    renderChart(chartRows, chartScrollState);
+    els.sourceTotals.innerHTML = renderTokenBreakdownSummary(chartRows, state.chartBreakdownMode);
   }
-  els.chartWindowInsights.innerHTML = renderChartWindowInsights(filteredDaily, state.chartMode, state.chartBreakdownMode);
+  els.chartWindowInsights.innerHTML = renderChartWindowInsights(chartRows, state.chartMode, state.chartBreakdownMode);
   renderTokenList(usage.local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
   renderPricing(usage.local, filteredDaily, providers);
@@ -3712,11 +3735,170 @@ function renderSourceSummaryRows(rows) {
     .join("");
 }
 
+function buildHistoryRowsForFilter(local, filteredDaily, filter) {
+  const daily = Array.isArray(filteredDaily) ? filteredDaily : [];
+  if (!HISTORY_SLOT_FILTERS.has(filter)) return daily;
+  const slotKey = filter === "h24" ? "last24h" : "today";
+  const slots = Array.isArray(local?.slots?.[slotKey]) ? local.slots[slotKey] : [];
+  const normalizedSlots = slots.map(normalizeHistorySlotRow).filter(Boolean);
+  return normalizedSlots.length ? normalizedSlots : buildFallbackHistorySlots(daily, filter);
+}
+
+function normalizeHistorySlotRow(row) {
+  if (!row?.slotStart) return null;
+  const slotStart = new Date(row.slotStart);
+  if (Number.isNaN(slotStart.getTime())) return null;
+  const slotEnd = row.slotEnd || new Date(slotStart.getTime() + HISTORY_SLOT_MS).toISOString();
+  return {
+    ...row,
+    date: row.date || slotStart.toISOString().slice(0, 10),
+    slotStart: slotStart.toISOString(),
+    slotEnd,
+    totalTokens: Number(row.totalTokens || 0),
+    sources: Array.isArray(row.sources) ? row.sources : []
+  };
+}
+
+function buildFallbackHistorySlots(daily, filter) {
+  const slots = buildEmptyHistorySlots(filter);
+  if (!slots.length) return daily;
+  const slotsByDate = new Map();
+  for (const slot of slots) {
+    if (!slotsByDate.has(slot.date)) slotsByDate.set(slot.date, []);
+    slotsByDate.get(slot.date).push(slot);
+  }
+
+  for (const row of daily) {
+    const dateSlots = slotsByDate.get(row.date) || [];
+    if (!dateSlots.length) continue;
+    const factor = 1 / dateSlots.length;
+    for (const slot of dateSlots) addScaledUsageRowToSlot(slot, row, factor);
+  }
+  return slots;
+}
+
+function buildEmptyHistorySlots(filter) {
+  const now = Date.now();
+  const endExclusive = Math.floor(now / HISTORY_SLOT_MS) * HISTORY_SLOT_MS + HISTORY_SLOT_MS;
+  let startMs = endExclusive - 24 * 60 * 60 * 1000;
+  if (filter === "today") {
+    const nowDate = new Date(now);
+    startMs = Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate());
+  }
+  const slots = [];
+  for (let cursor = startMs; cursor < endExclusive; cursor += HISTORY_SLOT_MS) {
+    slots.push({
+      date: new Date(cursor).toISOString().slice(0, 10),
+      slotStart: new Date(cursor).toISOString(),
+      slotEnd: new Date(cursor + HISTORY_SLOT_MS).toISOString(),
+      ...createUiUsageTotals(),
+      sources: []
+    });
+  }
+  return slots;
+}
+
+function addScaledUsageRowToSlot(slot, row, factor) {
+  addScaledUsageTotals(slot, row, factor);
+  const sources = Array.isArray(row.sources) ? row.sources : [];
+  for (const source of sources) {
+    const scaled = scaleUsageSource(source, factor);
+    if (Number(scaled.totalTokens || 0) > 0) slot.sources.push(scaled);
+  }
+}
+
+function addScaledUsageTotals(target, source, factor) {
+  target.inputTokens += Number(source.inputTokens || 0) * factor;
+  target.cacheCreationInputTokens += Number(source.cacheCreationInputTokens || 0) * factor;
+  target.cachedInputTokens += Number(source.cachedInputTokens || 0) * factor;
+  target.outputTokens += Number(source.outputTokens || 0) * factor;
+  target.reasoningOutputTokens += Number(source.reasoningOutputTokens || 0) * factor;
+  target.totalTokens += Number(source.totalTokens || 0) * factor;
+}
+
+function scaleUsageSource(source, factor) {
+  return {
+    id: source.id || "local",
+    ...scaleUsageTotals(source, factor),
+    models: (Array.isArray(source.models) ? source.models : [])
+      .map((model) => ({
+        model: model.model || t("chart.models.unknown"),
+        ...scaleUsageTotals(model, factor)
+      }))
+      .filter((model) => Number(model.totalTokens || 0) > 0)
+  };
+}
+
+function scaleUsageTotals(source, factor) {
+  return {
+    inputTokens: Number(source.inputTokens || 0) * factor,
+    cacheCreationInputTokens: Number(source.cacheCreationInputTokens || 0) * factor,
+    cachedInputTokens: Number(source.cachedInputTokens || 0) * factor,
+    outputTokens: Number(source.outputTokens || 0) * factor,
+    reasoningOutputTokens: Number(source.reasoningOutputTokens || 0) * factor,
+    totalTokens: Number(source.totalTokens || 0) * factor
+  };
+}
+
+function overviewHistoryScroller() {
+  return els.overviewHistoryChart?.querySelector(".overview-history-scroll") || null;
+}
+
+function overviewHistoryMaxScrollLeft(scroller = overviewHistoryScroller()) {
+  if (!scroller) return 0;
+  return Math.max(0, Number(scroller.scrollWidth || 0) - Number(scroller.clientWidth || 0));
+}
+
+function isOverviewHistoryScrolledToLatest(scroller = overviewHistoryScroller(), scrollLeft = null) {
+  if (!scroller) return true;
+  const currentScrollLeft = scrollLeft === null ? scroller.scrollLeft : scrollLeft;
+  return overviewHistoryMaxScrollLeft(scroller) - Math.max(0, Number(currentScrollLeft) || 0) <= CHART_LATEST_SCROLL_TOLERANCE_PX;
+}
+
+function setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft) {
+  if (!scroller) return;
+  const maxScrollLeft = overviewHistoryMaxScrollLeft(scroller);
+  scroller.scrollLeft = scrollToLatest
+    ? maxScrollLeft
+    : Math.min(maxScrollLeft, Math.max(0, Number(previousScrollLeft) || 0));
+}
+
+function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion) {
+  window.requestAnimationFrame(() => {
+    if (renderVersion !== state.overviewChartRenderVersion) return;
+    const scroller = overviewHistoryScroller();
+    if (!scroller) return;
+    setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft);
+    state.overviewChartRendered = true;
+    if (!scrollToLatest) {
+      state.overviewChartScrollToLatest = false;
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      if (renderVersion !== state.overviewChartRenderVersion) return;
+      const settledScroller = overviewHistoryScroller();
+      if (!settledScroller) return;
+      setOverviewHistoryScroll(settledScroller, true, previousScrollLeft);
+      state.overviewChartScrollToLatest = false;
+    });
+  });
+}
+
 function renderOverviewHistory(daily) {
-  if (!els.overviewHistoryPanel || !els.overviewHistoryChart || !els.overviewHistoryLegend) return;
-  const rows = (Array.isArray(daily) ? daily : []).filter((day) => Number(day.totalTokens || 0) > 0);
-  if (!rows.length) {
+  if (!els.overviewHistoryPanel || !els.overviewHistoryFilterBar || !els.overviewHistoryModeToggle || !els.overviewHistoryChart || !els.overviewHistoryLegend) return;
+  const renderVersion = state.overviewChartRenderVersion + 1;
+  state.overviewChartRenderVersion = renderVersion;
+  const inputRows = Array.isArray(daily) ? daily : [];
+  const isSlotSeries = inputRows.some((row) => row?.slotStart);
+  const mode = state.chartMode === "costs" ? "costs" : "tokens";
+  const costRows = mode === "costs" ? buildCostDaily(inputRows) : [];
+  const activeRows = mode === "costs"
+    ? costRows.filter((row) => Number(row.totalEur || 0) > 0)
+    : inputRows.filter((day) => Number(day.totalTokens || 0) > 0);
+  if (!activeRows.length) {
     els.overviewHistoryPanel.hidden = true;
+    els.overviewHistoryFilterBar.innerHTML = "";
+    els.overviewHistoryModeToggle.innerHTML = "";
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
@@ -3725,40 +3907,75 @@ function renderOverviewHistory(daily) {
 
   els.overviewHistoryPanel.hidden = false;
   const viewportWidth = Math.max(640, els.overviewHistoryChart.clientWidth || 640);
-  const height = 54;
-  const chartTop = 4;
-  const axisY = 48;
+  const height = OVERVIEW_HISTORY_HEIGHT;
+  const axisWidth = 58;
+  const chartTop = 8;
+  const axisY = 96;
   const chartHeight = axisY - chartTop;
-  const sourceIds = chartSourcesInUse(rows);
-  const segmentEntries = sourceIds.map((id) => ({
-    id,
-    type: "provider",
-    sourceId: id,
-    markId: id,
-    label: sourceLabel(id),
-    providerLabel: sourceLabel(id),
-    color: chartSourceColor(id)
-  }));
-  const max = Math.max(...rows.map((day) => Number(day.totalTokens || 0)), 1);
-  const visibleDays = Math.min(rows.length, viewportWidth >= 1000 ? 72 : 48);
-  const barGap = 3;
-  const barWidth = Math.max(
-    4,
-    (viewportWidth - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
-  );
-  const width = Math.max(viewportWidth, rows.length * barWidth + Math.max(0, rows.length - 1) * barGap);
-  const previousScroller = els.overviewHistoryChart.querySelector(".overview-history-scroll");
+  const plotViewportWidth = Math.max(360, viewportWidth - axisWidth);
+  const rows = isSlotSeries
+    ? (mode === "costs" ? costRows : inputRows)
+    : activeRows;
+  const segmentEntries = mode === "costs"
+    ? costSourcesInUse(activeRows)
+    : chartProviderSegmentsInUse(activeRows);
+  const rawMax = Math.max(...rows.map((row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0)), mode === "costs" ? 0.01 : 1);
+  const scale = mode === "costs" ? chartCostScale(rawMax) : chartTokenScale(rawMax);
+  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(state.usage?.local?.daily || []);
+  els.overviewHistoryModeToggle.innerHTML = renderChartModeToggle();
+  const visibleDays = Math.min(rows.length, isSlotSeries ? 96 : viewportWidth >= 1000 ? 72 : 48);
+  const barGap = isSlotSeries ? 2 : 3;
+  const rawBarWidth = (plotViewportWidth - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1);
+  const barWidth = isSlotSeries
+    ? Math.max(4, Math.min(14, rawBarWidth))
+    : Math.max(4, rawBarWidth);
+  const barStep = isSlotSeries
+    ? Math.max(barWidth + barGap, plotViewportWidth / Math.max(visibleDays, 1))
+    : barWidth + barGap;
+  const width = Math.max(plotViewportWidth, rows.length * barStep);
+  const barX = (index) => (isSlotSeries
+    ? index * barStep + Math.max(0, (barStep - barWidth) / 2)
+    : index * barStep);
+  const previousScroller = overviewHistoryScroller();
   const previousScrollLeft = previousScroller?.scrollLeft || 0;
-  const wasPinnedToEnd =
+  const shouldScrollToLatest =
+    state.overviewChartScrollToLatest ||
     !state.overviewChartRendered ||
     !previousScroller ||
-    previousScroller.scrollWidth - previousScroller.clientWidth - previousScrollLeft < 24;
+    isOverviewHistoryScrolledToLatest(previousScroller, previousScrollLeft);
+  const timeline = isSlotSeries
+    ? renderHistorySlotTimeline({
+      rows,
+      max: scale.max,
+      axisY,
+      chartHeight,
+      xForRow: (index) => barX(index) + barWidth / 2,
+      valueForRow: (row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0),
+      valueFormatter: (value) => mode === "costs" ? formatEuro(value) : formatTokens(value),
+      lineColor: typeof segmentEntries[0] === "string" ? chartSourceColor(segmentEntries[0]) : chartSegmentColor(segmentEntries[0]),
+      pointRadius: 2.3
+    })
+    : "";
 
   const bars = rows
-    .map((day, index) => {
-      const x = index * (barWidth + barGap);
-      const fullLabel = formatFullDate(day.date);
-      const visibleSegments = chartVisibleSegments(chartSegmentsForDay(day, segmentEntries), max, chartHeight);
+    .map((row, index) => {
+      if (isSlotSeries) return "";
+      const x = barX(index);
+      const fullLabel = formatHistoryRowFullLabel(row);
+      const rawSegments = mode === "costs"
+        ? segmentEntries
+          .map((id) => ({
+            id,
+            label: sourceLabel(id),
+            totalEur: Number(row.sourcesById?.get(id) || 0)
+          }))
+          .filter((segment) => segment.totalEur > 0)
+        : chartSegmentsForDay(row, segmentEntries);
+      const normalizedSegments = rawSegments.map((segment) => ({
+        ...segment,
+        totalTokens: mode === "costs" ? segment.totalEur : segment.totalTokens
+      }));
+      const visibleSegments = chartVisibleSegments(normalizedSegments, scale.max, chartHeight);
       let yCursor = axisY;
       return visibleSegments
         .map((segment, segmentIndex) => {
@@ -3781,33 +3998,47 @@ function renderOverviewHistory(daily) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${chartSegmentColor(segment)}">
-              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${formatTokens(segment.totalTokens)}`)}</title>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}">
+              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatTokens(segment.totalTokens)}`)}</title>
             </rect>
           `;
         })
         .join("");
     })
     .join("");
+  const tickFormatter = mode === "costs" ? formatChartEuro : formatTokens;
+  const axisLabels = scale.ticks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / scale.max;
+      return `<text x="${axisWidth - 7}" y="${Math.max(11, y - 3)}" text-anchor="end" class="axis-label">${escapeHtml(tickFormatter(tick))}</text>`;
+    })
+    .join("");
+  const gridLines = scale.ticks
+    .map((tick) => {
+      const y = axisY - (chartHeight * tick) / scale.max;
+      return `<line x1="0" y1="${svgNumber(y)}" x2="${width}" y2="${svgNumber(y)}" class="chart-grid-line"></line>`;
+    })
+    .join("");
 
   els.overviewHistoryChart.innerHTML = `
-    <div class="overview-history-scroll">
-      <div class="overview-history-canvas" style="width: ${width}px">
-        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.overviewAria"))}" style="width: ${width}px">
-          ${bars}
-        </svg>
+    <div class="overview-history-frame">
+      <svg class="overview-history-axis" viewBox="0 0 ${axisWidth} ${height}" aria-hidden="true">
+        ${axisLabels}
+      </svg>
+      <div class="overview-history-scroll">
+        <div class="overview-history-canvas" style="width: ${width}px">
+          <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.overviewAria"))}" style="width: ${width}px">
+            ${gridLines}
+            <line x1="0" y1="${axisY}" x2="${width}" y2="${axisY}" stroke="#dfe5dd"></line>
+            ${timeline}
+            ${bars}
+          </svg>
+        </div>
       </div>
     </div>
   `;
   els.overviewHistoryLegend.innerHTML = renderChartLegend(segmentEntries);
-  window.requestAnimationFrame(() => {
-    const scroller = els.overviewHistoryChart.querySelector(".overview-history-scroll");
-    if (!scroller) return;
-    scroller.scrollLeft = wasPinnedToEnd
-      ? scroller.scrollWidth - scroller.clientWidth
-      : previousScrollLeft;
-    state.overviewChartRendered = true;
-  });
+  finishOverviewHistoryRenderScroll(previousScrollLeft, shouldScrollToLatest, renderVersion);
 }
 
 function normalizeCodexProvider(codex) {
@@ -6554,7 +6785,7 @@ function estimateTokenBucket(tokens, rateUsdPerMillion) {
   return { usd: (count * rate) / MILLION, costed: true };
 }
 
-const CHART_FILTERS = ["h24", "today", "week", "month", "all"];
+const CHART_FILTERS = ["all", "month", "week", "today", "h24"];
 
 function isoDateDaysAgo(n) {
   const d = new Date();
@@ -6893,17 +7124,29 @@ function addUiUsageTotals(target, source) {
 }
 
 function summarizeTokenWindow(daily) {
-  return summarizeWindowValues((Array.isArray(daily) ? daily : []).map((day) => ({
-    date: day.date,
-    value: Number(day.totalTokens || 0)
-  })));
+  return summarizeWindowValues(collapseHistoryValueRows(daily, (day) => Number(day.totalTokens || 0)));
 }
 
 function summarizeCostWindowInsights(daily) {
-  return summarizeWindowValues(buildCostDaily(daily).map((day) => ({
-    date: day.date,
-    value: Number(day.totalEur || 0)
-  })));
+  return summarizeWindowValues(collapseHistoryValueRows(buildCostDaily(daily), (day) => Number(day.totalEur || 0)));
+}
+
+function collapseHistoryValueRows(rows, valueSelector) {
+  const values = (Array.isArray(rows) ? rows : []).map((row) => ({
+    date: row.date,
+    value: Number(valueSelector(row) || 0),
+    slotStart: row.slotStart || null
+  }));
+  if (!values.some((row) => row.slotStart)) return values;
+
+  const byDate = new Map();
+  for (const row of values) {
+    if (!row.date) continue;
+    byDate.set(row.date, Number(byDate.get(row.date) || 0) + row.value);
+  }
+  return Array.from(byDate.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, value]) => ({ date, value }));
 }
 
 function summarizeWindowValues(rows) {
@@ -6986,11 +7229,12 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
     return;
   }
 
+  const rows = costDaily.some((row) => row.slotStart) ? costDaily : rowsWithCost;
   const sourceIds = costSourcesInUse(rowsWithCost);
   const max = Math.max(...rowsWithCost.map((row) => row.totalEur), 0.01);
   const scale = chartCostScale(max);
   renderStackedHistoryChart({
-    rows: rowsWithCost,
+    rows,
     scale,
     ariaLabel: t("chart.costs.svgAria"),
     clipPrefix: "costBarClip",
@@ -7010,6 +7254,62 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
     segmentColor: (segment) => chartSourceColor(segment.id)
   });
   els.chartLegend.innerHTML = renderChartLegend(sourceIds);
+}
+
+function normalizedHistoryRowValue(row, segmentValue, segmentsForRow) {
+  return (segmentsForRow(row) || []).reduce((sum, segment) => sum + Number(segmentValue(segment) || 0), 0);
+}
+
+function svgNumber(value) {
+  return Number.isFinite(value) ? Number(value.toFixed(2)) : 0;
+}
+
+function historyTimelinePoints(rows, max, axisY, chartHeight, xForRow, valueForRow) {
+  const safeMax = Math.max(Number(max) || 0, 1);
+  return (Array.isArray(rows) ? rows : []).map((row, index) => {
+    const value = Math.max(0, Number(valueForRow(row) || 0));
+    const x = xForRow(index, row);
+    const y = axisY - (chartHeight * value) / safeMax;
+    return { row, value, x: svgNumber(x), y: svgNumber(y) };
+  });
+}
+
+function historyTimelineLinePath(points) {
+  if (!points.length) return "";
+  return [
+    `M ${points[0].x} ${points[0].y}`,
+    ...points.slice(1).map((point) => `L ${point.x} ${point.y}`)
+  ].join(" ");
+}
+
+function historyTimelineAreaPath(points, axisY) {
+  if (!points.length) return "";
+  return [
+    `M ${points[0].x} ${svgNumber(axisY)}`,
+    `L ${points[0].x} ${points[0].y}`,
+    ...points.slice(1).map((point) => `L ${point.x} ${point.y}`),
+    `L ${points.at(-1).x} ${svgNumber(axisY)}`,
+    "Z"
+  ].join(" ");
+}
+
+function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, valueForRow, valueFormatter, lineColor, pointRadius = 2.5 }) {
+  const points = historyTimelinePoints(rows, max, axisY, chartHeight, xForRow, valueForRow);
+  const linePath = historyTimelineLinePath(points);
+  const areaPath = historyTimelineAreaPath(points, axisY);
+  const safeLineColor = escapeHtml(lineColor || chartSourceColor("local"));
+  const dots = points
+    .map((point) => {
+      const title = `${formatHistoryRowFullLabel(point.row)} · ${valueFormatter(point.value)}`;
+      const radius = point.value > 0 ? pointRadius : Math.max(1.4, pointRadius * 0.58);
+      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}"><title>${escapeHtml(title)}</title></circle>`;
+    })
+    .join("");
+  return `
+    <path class="history-slot-area" d="${areaPath}" fill="${safeLineColor}"></path>
+    <path class="history-slot-line" d="${linePath}" stroke="${safeLineColor}"></path>
+    ${dots}
+  `;
 }
 
 function renderStackedHistoryChart({
@@ -7034,22 +7334,53 @@ function renderStackedHistoryChart({
   const dateLabelY = height - 42;
   const chartHeight = axisY - chartTop;
   const plotViewportWidth = Math.max(360, viewportWidth - axisWidth);
-  const visibleDays = Math.min(rows.length, viewportWidth >= 1200 ? 21 : 16);
-  const barGap = 8;
-  const barWidth = Math.max(
-    24,
-    (plotViewportWidth - plotPad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1)
-  );
-  const plotWidth = Math.max(
-    plotViewportWidth,
-    plotPad * 2 + rows.length * barWidth + Math.max(0, rows.length - 1) * barGap
-  );
+  const isSlotSeries = rows.some((row) => row?.slotStart);
+  const visibleDays = Math.min(rows.length, isSlotSeries ? viewportWidth >= 1200 ? 96 : 72 : viewportWidth >= 1200 ? 21 : 16);
+  const barGap = isSlotSeries ? 2 : 8;
+  const rawBarWidth = (plotViewportWidth - plotPad * 2 - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1);
+  const barWidth = isSlotSeries
+    ? Math.max(5, Math.min(14, rawBarWidth))
+    : Math.max(24, rawBarWidth);
+  const barStep = isSlotSeries
+    ? Math.max(barWidth + barGap, (plotViewportWidth - plotPad * 2) / Math.max(visibleDays, 1))
+    : barWidth + barGap;
+  const plotWidth = Math.max(plotViewportWidth, plotPad * 2 + rows.length * barStep);
+  const barX = (index) => (isSlotSeries
+    ? plotPad + index * barStep + Math.max(0, (barStep - barWidth) / 2)
+    : plotPad + index * barStep);
+  const rowCenterX = (index) => barX(index) + barWidth / 2;
+  const timelineSegment = isSlotSeries
+    ? rows.flatMap((row) => segmentsForRow(row)).find((segment) => Number(segmentValue(segment) || 0) > 0)
+    : null;
+  const timeline = isSlotSeries
+    ? renderHistorySlotTimeline({
+      rows,
+      max: scale.max,
+      axisY,
+      chartHeight,
+      xForRow: rowCenterX,
+      valueForRow: (row) => normalizedHistoryRowValue(row, segmentValue, segmentsForRow),
+      valueFormatter: (value) => segmentTitleValue({ totalTokens: value, totalEur: value }),
+      lineColor: timelineSegment ? segmentColor(timelineSegment) : chartSourceColor("local"),
+      pointRadius: 3
+    })
+    : "";
+  const timelineLabelStep = isSlotSeries ? Math.max(1, Math.ceil(rows.length / 8)) : 1;
+  const timelineLabels = isSlotSeries
+    ? rows
+      .map((row, index) => {
+        if (index !== rows.length - 1 && index % timelineLabelStep !== 0) return "";
+        return `<text x="${rowCenterX(index)}" y="${dateLabelY}" text-anchor="middle" class="axis-label">${escapeHtml(formatHistoryRowTick(row))}</text>`;
+      })
+      .join("")
+    : "";
 
   const bars = rows
     .map((row, index) => {
-      const x = plotPad + index * (barWidth + barGap);
-      const label = formatChartDate(row.date);
-      const fullLabel = formatFullDate(row.date);
+      if (isSlotSeries) return "";
+      const x = barX(index);
+      const label = formatHistoryRowTick(row);
+      const fullLabel = formatHistoryRowFullLabel(row);
       const rawSegments = segmentsForRow(row);
       const normalizedSegments = rawSegments.map((segment) => ({
         ...segment,
@@ -7114,6 +7445,8 @@ function renderStackedHistoryChart({
           <svg viewBox="0 0 ${plotWidth} ${height}" role="img" aria-label="${escapeHtml(ariaLabel)}" style="width: ${plotWidth}px">
             ${gridLines}
             <line x1="0" y1="${axisY}" x2="${plotWidth}" y2="${axisY}" stroke="#dfe5dd"></line>
+            ${timeline}
+            ${timelineLabels}
             ${bars}
           </svg>
         </div>
@@ -7159,6 +7492,15 @@ function requestChartLatestForViewChange() {
 function requestChartLatestForRangeChange() {
   state.chartUserScrolledAwayFromLatest = false;
   state.chartScrollToLatest = true;
+  state.overviewChartScrollToLatest = true;
+}
+
+function requestOverviewHistoryLatestForViewChange() {
+  const scroller = overviewHistoryScroller();
+  state.overviewChartScrollToLatest =
+    !state.overviewChartRendered ||
+    !scroller ||
+    isOverviewHistoryScrolledToLatest(scroller);
 }
 
 function handleChartScroll() {
@@ -7200,6 +7542,8 @@ function buildCostDaily(daily) {
     }
     return {
       date: day.date,
+      slotStart: day.slotStart || null,
+      slotEnd: day.slotEnd || null,
       totalEur: Array.from(sourcesById.values()).reduce((sum, value) => sum + value, 0),
       sourcesById,
       estimatedSources: Array.from(estimatedSources),
@@ -7846,6 +8190,28 @@ function formatChartDate(value) {
     day: "2-digit",
     month: "2-digit"
   }).format(date);
+}
+
+function formatHistoryRowTick(row) {
+  if (row?.slotStart) return formatHourMinute(row.slotStart);
+  return formatChartDate(row?.date);
+}
+
+function formatHistoryRowFullLabel(row) {
+  if (row?.slotStart) return formatSlotRange(row.slotStart, row.slotEnd);
+  return formatFullDate(row?.date);
+}
+
+function formatSlotRange(slotStart, slotEnd) {
+  const start = new Date(slotStart);
+  const end = new Date(slotEnd || start.getTime() + HISTORY_SLOT_MS);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return slotStart || "--";
+  const date = new Intl.DateTimeFormat(currentLocale(), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(start);
+  return `${date} ${formatHourMinute(start.toISOString())}-${formatHourMinute(end.toISOString())}`;
 }
 
 function formatFullDate(value) {

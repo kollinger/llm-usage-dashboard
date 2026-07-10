@@ -11,10 +11,6 @@
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow" data-i18n="app.eyebrow">LLM Usage</p>
-          <h1 data-i18n="app.heading">Limits & Tokens</h1>
-        </div>
         <div class="top-actions">
           <button class="icon-button" id="refreshBtn" aria-label="Aktualisieren" title="Aktualisieren" data-i18n-aria-label="actions.refresh" data-i18n-title="actions.refresh">
             <i data-lucide="refresh-cw"></i>
@@ -31,6 +27,15 @@
       </header>
 
       <div class="dashboard-layout" id="dashboardLayout">
+      <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf nach Anbieter" data-i18n-aria-label="chart.overviewAria" data-dashboard-panel-id="overview-history" data-dashboard-panel-label-key="chart.overviewAria" hidden>
+        <div class="overview-history-toolbar">
+          <nav id="overviewHistoryFilterBar" class="chart-filter-bar overview-history-filter-bar" aria-label="Zeitraum" data-i18n-aria-label="chart.filterBarAria"></nav>
+          <nav id="overviewHistoryModeToggle" class="chart-mode-toggle overview-history-mode-toggle" aria-label="Ansichtsmodus" data-i18n-aria-label="chart.modeToggleAria"></nav>
+        </div>
+        <div id="overviewHistoryChart" class="overview-history-chart"></div>
+        <div id="overviewHistoryLegend" class="chart-legend overview-history-legend" aria-label="Legende" data-i18n-aria-label="chart.legendAria"></div>
+      </section>
+
       <section class="summary-strip" id="summaryStrip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel" data-dashboard-panel-id="overview" data-dashboard-panel-label-key="summary.ariaLabel">
         <div class="metric-tile" data-summary-metric-id="five-hour" data-summary-metric-label-key="summary.fiveHourOpen">
           <span data-i18n="summary.fiveHourOpen">5h frei</span>
@@ -56,11 +61,6 @@
           <strong id="recordDayTokens">--</strong>
           <span class="metric-note" id="recordDayDate" hidden></span>
         </div>
-      </section>
-
-      <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf nach Anbieter" data-i18n-aria-label="chart.overviewAria" hidden>
-        <div id="overviewHistoryChart" class="overview-history-chart"></div>
-        <div id="overviewHistoryLegend" class="chart-legend overview-history-legend" aria-label="Legende" data-i18n-aria-label="chart.legendAria"></div>
       </section>
 
       <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel" data-dashboard-panel-id="diagnostics" data-dashboard-panel-label-key="diagnostics.heading">

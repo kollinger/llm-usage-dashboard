@@ -326,6 +326,12 @@ async function assertGlmUsageImport() {
     const aggregate = aggregateUsageEvents(result._usageEvents, { now: Date.parse("2026-07-08T14:00:00.000Z") });
     const glmSource = aggregate.sources.find((source) => source.id === "glm");
     assert.equal(glmSource?.totalTokens, 1480);
+    assert.equal(aggregate.slots.slotMinutes, 15);
+    assert.equal(aggregate.slots.last24h.length, 96);
+    assert.equal(aggregate.slots.today.length, 57);
+    const noonSlot = aggregate.slots.today.find((slot) => slot.slotStart === "2026-07-08T12:00:00.000Z");
+    assert.equal(noonSlot?.totalTokens, 1350);
+    assert.equal(noonSlot?.sources[0]?.models[0]?.model, "glm-5.2");
     const day = aggregate.daily.find((row) => row.date === "2026-07-08");
     const source = day?.sources.find((entry) => entry.id === "glm");
     assert.equal(source?.models.length, 2);
@@ -429,9 +435,28 @@ async function assertFrontendUsageIntelligence() {
   assert.equal(appSource.includes("function renderRings"), false, "legacy quota ring renderer must stay removed");
   assert.equal(appSource.includes("function renderRing("), false, "legacy quota ring renderer must stay removed");
   const stylesSource = await readFile(path.join(rootDir, "public", "styles.css"), "utf8");
+  const indexSource = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
   assert.match(stylesSource, /\.limit-bars\s*\{[^}]*width:\s*100%/su, "Current Usage grid must stretch to provider card width");
   assert.match(stylesSource, /\.limit-bars-grid\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/su, "5h/week grid must use full-width equal columns");
   assert.match(stylesSource, /\.limit-tachometer-svg\s*\{[^}]*max-width:\s*none/su, "tachometer SVG must not keep a narrow fixed max-width");
+  assert.match(stylesSource, /\.overview-history-chart svg\s*\{[^}]*height:\s*108px/su, "compact history chart must be exactly twice the previous 54px height");
+  assert.match(stylesSource, /\.overview-history-frame\s*\{[^}]*grid-template-columns:\s*58px minmax\(0,\s*1fr\)/su, "compact history must keep value labels fixed beside the scrollable chart");
+  assert.match(stylesSource, /\.history-slot-line\s*\{/u, "today and last-24h history must render as a timeline line");
+  assert.doesNotMatch(stylesSource, /\.history-slot-backdrop\s*\{/u, "today and last-24h history must not render slot backdrops as bars");
+  assert.match(indexSource, /id="overviewHistoryFilterBar"/u, "compact history must expose time filters above the chart");
+  assert.match(indexSource, /id="overviewHistoryModeToggle"/u, "compact history must expose a local tokens/costs toggle beside its filters");
+  assert.match(indexSource, /id="overviewHistoryPanel"[^>]*data-dashboard-panel-id="overview-history"/u, "compact history must be a movable dashboard section");
+  assert.equal(indexSource.indexOf('id="overviewHistoryPanel"') < indexSource.indexOf('id="summaryStrip"'), true, "compact history must default before summary tiles");
+  assert.doesNotMatch(indexSource, /data-i18n="app\.heading"/u, "dashboard must not render the oversized title header before usage content");
+  assert.doesNotMatch(indexSource, /overviewHistorySummary/u, "compact history summary header must stay removed");
+  assert.match(appSource, /overviewHistoryModeToggle\.innerHTML = renderChartModeToggle\(\)/u, "compact history mode toggle must reuse the chart tokens/costs mode");
+  assert.match(appSource, /overviewChartScrollToLatest:\s*true/u, "compact history must default to the latest/current time window");
+  assert.match(appSource, /function requestChartLatestForRangeChange\(\) \{[\s\S]*?state\.overviewChartScrollToLatest = true/u, "compact history must scroll to the latest slot after range changes");
+  assert.match(appSource, /requestOverviewHistoryLatestForViewChange\(\)/u, "compact history must preserve latest-scroll intent when toggling tokens/costs");
+  assert.match(appSource, /function isOverviewHistoryScrolledToLatest\([\s\S]*?CHART_LATEST_SCROLL_TOLERANCE_PX/u, "compact history must use the latest-scroll tolerance when preserving scroll intent");
+  assert.match(appSource, /function finishOverviewHistoryRenderScroll\([\s\S]*?window\.requestAnimationFrame\([\s\S]*?window\.requestAnimationFrame\([\s\S]*?setOverviewHistoryScroll\(settledScroller,\s*true/u, "compact history must re-apply latest-scroll after layout settles");
+  assert.match(appSource, /finishOverviewHistoryRenderScroll\(previousScrollLeft,\s*shouldScrollToLatest,\s*renderVersion\)/u, "compact history render must use the settled latest-scroll helper");
+  assert.match(appSource, /renderOverviewHistory\(chartRows\);\s*updateDashboardLayoutMode\(\);/u, "compact history must refresh dashboard handles after becoming visible");
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -489,6 +514,41 @@ const renderedTokensTotal = document.getElementById("tokensTotal").textContent;
 const renderedRecordDayTokens = document.getElementById("recordDayTokens").textContent;
 const renderedRecordDayDate = document.getElementById("recordDayDate").textContent;
 const models = summarizeModelUsageForDaily(daily);
+const providedSlotRows = buildHistoryRowsForFilter({
+  slots: {
+    today: [
+      {
+        date: "${today}",
+        slotStart: "${today}T10:00:00.000Z",
+        slotEnd: "${today}T10:15:00.000Z",
+        totalTokens: 100,
+        sources: [
+          { id: "codex", totalTokens: 100, models: [{ model: "gpt-5.5", inputTokens: 40, outputTokens: 60, totalTokens: 100 }] }
+        ]
+      },
+      {
+        date: "${today}",
+        slotStart: "${today}T10:15:00.000Z",
+        slotEnd: "${today}T10:30:00.000Z",
+        totalTokens: 0,
+        sources: []
+      }
+    ]
+  }
+}, daily, "today");
+const fallbackSlotRows = buildHistoryRowsForFilter({}, multiProviderDaily, "today");
+const fallbackSlotTotal = Math.round(fallbackSlotRows.reduce((sum, row) => sum + Number(row.totalTokens || 0), 0));
+const providedSlotCostRows = buildCostDaily(providedSlotRows);
+state.chartBreakdownMode = "provider";
+renderChart(providedSlotRows);
+const slotChartHtml = els.chart.innerHTML;
+renderOverviewHistory(providedSlotRows);
+const overviewSlotHtml = els.overviewHistoryChart.innerHTML;
+const overviewModeToggleHtml = els.overviewHistoryModeToggle.innerHTML;
+state.chartMode = "costs";
+renderOverviewHistory(providedSlotRows);
+const overviewCostSlotHtml = els.overviewHistoryChart.innerHTML;
+state.chartMode = "tokens";
 const manualSubscription = normalizeSubscription({ planType: "Pro", monthlyCost: 20, currency: "EUR", source: "local_settings" }, {}, "codex");
 const detectedSubscription = normalizeSubscription(null, { planType: "Pro", source: "codex_app_server" }, "codex");
 const missingCatalogSubscription = normalizeSubscription(null, { planType: "Enterprise", source: "codex_app_server" }, "codex");
@@ -960,6 +1020,21 @@ const relativeFreshnessText = providerFreshnessRows({
 }).map((row) => row.label).join(" ");
 JSON.stringify({
   filters: CHART_FILTERS,
+  defaultDashboardOrder: DEFAULT_DASHBOARD_SECTION_ORDER,
+  defaultSummaryOrder: DEFAULT_SUMMARY_METRIC_ORDER,
+  oldDefaultSummaryOrder: OLD_DEFAULT_SUMMARY_METRIC_ORDER,
+  filterHtml: renderChartFilterBar(daily),
+  overviewHeight: OVERVIEW_HISTORY_HEIGHT,
+  providedSlotCount: providedSlotRows.length,
+  providedSlotLabels: providedSlotRows.map(formatHistoryRowTick),
+  providedSlotCostRowCount: providedSlotCostRows.length,
+  slotChartHtml,
+  overviewSlotHtml,
+  overviewModeToggleHtml,
+  overviewCostSlotHtml,
+  fallbackSlotCount: fallbackSlotRows.length,
+  fallbackSlotTotal,
+  fallbackSlotHasProviderSources: fallbackSlotRows.some((row) => row.sources.some((source) => source.id === "codex" || source.id === "claudeCode")),
   h24Total,
   todayTotal,
   todaySummaryTotal,
@@ -1243,7 +1318,31 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
     { filename: appPath }
   ));
 
-  assert.deepEqual(result.filters, ["h24", "today", "week", "month", "all"]);
+  assert.deepEqual(result.filters, ["all", "month", "week", "today", "h24"]);
+  assert.equal(result.defaultDashboardOrder[0], "overview-history");
+  assert.equal(result.defaultDashboardOrder[1], "overview");
+  assert.deepEqual(result.defaultSummaryOrder, ["five-hour", "weekly", "tokens-today", "record-day", "tokens-total"]);
+  assert.deepEqual(result.oldDefaultSummaryOrder, ["five-hour", "weekly", "tokens-today", "tokens-total", "record-day"]);
+  assert.equal(result.filterHtml.indexOf('data-chart-filter="all"') < result.filterHtml.indexOf('data-chart-filter="h24"'), true);
+  assert.match(result.filterHtml, />All Time</u);
+  assert.equal(result.overviewHeight, 108);
+  assert.equal(result.providedSlotCount, 2);
+  assert.equal(result.providedSlotCostRowCount, 2);
+  assert.match(result.slotChartHtml, /history-slot-line/u);
+  assert.match(result.slotChartHtml, /history-slot-area/u);
+  assert.doesNotMatch(result.slotChartHtml, /history-slot-backdrop/u);
+  assert.match(result.overviewSlotHtml, /history-slot-line/u);
+  assert.match(result.overviewSlotHtml, /overview-history-frame/u);
+  assert.match(result.overviewSlotHtml, /chart-grid-line/u);
+  assert.match(result.overviewModeToggleHtml, /data-chart-mode="tokens"/u);
+  assert.match(result.overviewModeToggleHtml, /data-chart-mode="costs"/u);
+  assert.match(result.overviewCostSlotHtml, /history-slot-line/u);
+  assert.match(result.overviewCostSlotHtml, /chart-grid-line/u);
+  assert.doesNotMatch(result.overviewSlotHtml, /history-slot-backdrop/u);
+  assert.equal(result.providedSlotLabels.every(Boolean), true);
+  assert.equal(result.fallbackSlotCount > 0, true);
+  assert.equal(result.fallbackSlotTotal, 750);
+  assert.equal(result.fallbackSlotHasProviderSources, true);
   assert.equal(result.h24Total, 1234);
   assert.equal(result.todayTotal, 222);
   assert.equal(result.todaySummaryTotal, 222);

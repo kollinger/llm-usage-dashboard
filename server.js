@@ -4772,6 +4772,7 @@ function buildLocalAggregate(providers) {
       updatedAt: new Date().toISOString(),
       totals: aggregate.totals,
       daily: aggregate.daily,
+      slots: aggregate.slots,
       sources: aggregate.sources,
       eventStats: aggregate.stats
     };

@@ -4,6 +4,8 @@ data/
 .cache/
 .agent_context/
 .multica/
+.claude/
+CLAUDE.md
 
 .env
 .env.*

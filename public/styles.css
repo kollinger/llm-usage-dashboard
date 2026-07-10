@@ -124,9 +124,9 @@ a {
 }
 
 .topbar {
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 22px;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .topbar h1,
@@ -1888,15 +1888,43 @@ button.subscription-connection-action {
   display: none;
 }
 
+.overview-history-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.overview-history-filter-bar {
+  justify-content: flex-start;
+  margin-bottom: 2px;
+}
+
+.overview-history-mode-toggle {
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
 .overview-history-chart {
   min-width: 0;
+}
+
+.overview-history-frame {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  min-height: 108px;
+}
+
+.overview-history-axis {
+  width: 58px;
+  height: 108px;
 }
 
 .overview-history-scroll {
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 2px;
+  padding-bottom: 6px;
   scrollbar-color: var(--scrollbar-chart-thumb) var(--scrollbar-chart-track);
 }
 
@@ -1906,7 +1934,7 @@ button.subscription-connection-action {
 
 .overview-history-chart svg {
   display: block;
-  height: 54px;
+  height: 108px;
 }
 
 .overview-history-legend {
@@ -1933,20 +1961,21 @@ button.subscription-connection-action {
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 2px;
+  padding-bottom: 6px;
   scrollbar-color: var(--scrollbar-chart-thumb) var(--scrollbar-chart-track);
 }
 
 .overview-history-scroll,
 .chart-scroll,
 .live-history-chart {
+  overscroll-behavior-x: contain;
   scrollbar-width: auto;
 }
 
 .overview-history-scroll::-webkit-scrollbar,
 .chart-scroll::-webkit-scrollbar,
 .live-history-chart::-webkit-scrollbar {
-  height: 14px;
+  height: 13px;
 }
 
 .overview-history-scroll::-webkit-scrollbar-track,
@@ -2012,6 +2041,30 @@ button.subscription-connection-action {
   stroke-width: 1;
   opacity: 0.86;
   shape-rendering: crispEdges;
+}
+
+.history-slot-area {
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.history-slot-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 6px 10px rgba(35, 116, 92, 0.12));
+  pointer-events: none;
+}
+
+.history-slot-dot {
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
+.history-slot-dot.is-empty {
+  opacity: 0.22;
+  stroke-width: 0;
 }
 
 .chart-legend {
@@ -3382,7 +3435,7 @@ select {
 
   .topbar {
     align-items: flex-start;
-    flex-direction: column;
+    justify-content: flex-start;
   }
 
   .topbar h1 {
@@ -3446,6 +3499,15 @@ select {
 
   .chart-mode-toggle {
     width: 100%;
+  }
+
+  .overview-history-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .overview-history-mode-toggle {
+    justify-content: flex-start;
   }
 
   .chart-breakdown-toggle {
