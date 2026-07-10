@@ -1056,8 +1056,9 @@ function buildSwapMetricFromMb(usedMb, totalMb, freeMb) {
 
 function buildLiveProcessMetrics(options = {}) {
   const fallback = unavailableProcessMetrics();
-  if (process.platform === "win32") return fallback;
-  const output = "psOutput" in options ? options.psOutput : readProcessSnapshot();
+  const hasInjectedOutput = Object.prototype.hasOwnProperty.call(options, "psOutput");
+  if (process.platform === "win32" && !hasInjectedOutput) return fallback;
+  const output = hasInjectedOutput ? options.psOutput : readProcessSnapshot();
   if (output === null || output === undefined) return fallback;
   const rows = parseProcessRows(output);
   const groups = aggregateAiProcessMetrics(rows);
