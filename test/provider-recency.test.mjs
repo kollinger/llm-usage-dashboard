@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile, readFile, readdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -233,6 +234,16 @@ JSON.stringify({
     limitRows: [],
     creditRows: []
   }),
+  configuredGlmZero: providerHasUsage({
+    id: "glm",
+    status: "empty",
+    todayTokens: 0,
+    apiTokens: 0,
+    cost: 0,
+    configuredSource: true,
+    limitRows: [],
+    creditRows: []
+  }),
   activeIds,
   allIds,
   showAllNoticeVisible,
@@ -250,6 +261,7 @@ JSON.stringify({
   assert.equal(result.recentFullCopilot, true);
   assert.equal(result.neutralSpark, false);
   assert.equal(result.activeCodexLimit, true);
+  assert.equal(result.configuredGlmZero, true);
   assert(result.activeIds.includes("codex"));
   assert(!result.activeIds.includes("copilot"));
   assert(!result.activeIds.includes("codexSpark"));
@@ -337,6 +349,75 @@ async function assertGlmUsageImport() {
     assert.equal(source?.models.length, 2);
     assert(source.models.some((row) => row.model === "glm-5.2" && row.totalTokens === 1350));
     assert(source.models.some((row) => row.model === "glm-4.7-flashx" && row.totalTokens === 130));
+
+    const sqlite3 = spawnSync("which", ["sqlite3"], { encoding: "utf8" }).stdout.trim();
+    if (sqlite3) {
+      const db = path.join(root, "opencode.db");
+      const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
+      const stepStarted = JSON.stringify({
+        sessionID: "session-glm",
+        assistantMessageID: "assistant-glm",
+        timestamp: "2026-07-08T15:00:00.000Z",
+        model: { providerID: "openrouter", modelID: "z-ai/glm-4.5" }
+      });
+      const stepEnded = JSON.stringify({
+        sessionID: "session-glm",
+        assistantMessageID: "assistant-glm",
+        timestamp: "2026-07-08T15:01:00.000Z",
+        finish: "stop",
+        tokens: {
+          input: 1000,
+          output: 100,
+          reasoning: 20,
+          cache: { read: 50, write: 60 }
+        }
+      });
+      const otherStarted = JSON.stringify({
+        sessionID: "session-openai",
+        assistantMessageID: "assistant-openai",
+        timestamp: "2026-07-08T16:00:00.000Z",
+        model: { providerID: "openai", modelID: "gpt-5.5" }
+      });
+      const otherEnded = JSON.stringify({
+        sessionID: "session-openai",
+        assistantMessageID: "assistant-openai",
+        timestamp: "2026-07-08T16:01:00.000Z",
+        tokens: { input: 10, output: 5, cache: { read: 0, write: 0 } }
+      });
+      const setup = spawnSync(
+        sqlite3,
+        [db],
+        {
+          encoding: "utf8",
+          input: [
+            "CREATE TABLE event (id text PRIMARY KEY, aggregate_id text NOT NULL, seq integer NOT NULL, type text NOT NULL, data text NOT NULL);",
+            `INSERT INTO event VALUES ('e1','session-glm',1,'session.next.step.started',${quote(stepStarted)});`,
+            `INSERT INTO event VALUES ('e2','session-glm',2,'session.next.step.ended',${quote(stepEnded)});`,
+            `INSERT INTO event VALUES ('e3','session-openai',1,'session.next.step.started',${quote(otherStarted)});`,
+            `INSERT INTO event VALUES ('e4','session-openai',2,'session.next.step.ended',${quote(otherEnded)});`
+          ].join("\n")
+        }
+      );
+      assert.equal(setup.status, 0, setup.stderr);
+
+      const openCode = await _test.readGlmUsage({
+        sources: [
+          {
+            id: "test-opencode",
+            providerId: "glm",
+            paths: [{ role: "opencode_database", path: db }]
+          }
+        ]
+      });
+
+      assert.equal(openCode.status, "live");
+      assert.equal(openCode.source.openCodeDatabasesScanned, 1);
+      assert.equal(openCode.source.openCodeDatabasesWithEvents, 1);
+      assert.equal(openCode.source.manualImportFilesScanned, 0);
+      assert.equal(openCode.totals.allTime.totalTokens, 1230);
+      assert.equal(openCode.byModel[0].model, "z-ai/glm-4.5");
+      assert(openCode._usageEvents.every((event) => event.metadata.sourceType === "opencode_step"));
+    }
   } finally {
     await rm(root, { recursive: true, force: true });
   }
