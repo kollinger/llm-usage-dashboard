@@ -7,7 +7,10 @@ const os = require("node:os");
 const readline = require("node:readline");
 const crypto = require("node:crypto");
 const https = require("node:https");
-const { spawn, spawnSync } = require("node:child_process");
+const { spawn, spawnSync, execFile } = require("node:child_process");
+const { promisify } = require("node:util");
+const { EventEmitter } = require("node:events");
+const execFileAsync = promisify(execFile);
 const express = require("express");
 const session = require("express-session");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
@@ -66,17 +69,27 @@ const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toSt
 const PASSWORD = process.env.DASHBOARD_PASSWORD || "";
 const DAILY_HISTORY_DAYS = Number(process.env.DAILY_HISTORY_DAYS || 180);
 const USAGE_CACHE_MS = envMs("USAGE_CACHE_SECONDS", 120);
+// Background notification checks tolerate a somewhat older usage snapshot so
+// they never keep the full log rescan permanently warm on their own.
+const NOTIFICATION_USAGE_MAX_AGE_MS = envMs("NOTIFICATION_USAGE_MAX_AGE_SECONDS", 10 * 60);
+// A dashboard client counts as "interactive" for this long after its last /api/usage request.
+const INTERACTIVE_USAGE_WINDOW_MS = envMs("INTERACTIVE_USAGE_WINDOW_SECONDS", 5 * 60);
 const EXTERNAL_FETCH_TIMEOUT_MS = envMs("EXTERNAL_FETCH_TIMEOUT_SECONDS", 8);
 const ANTHROPIC_API_CACHE_MS = envMs("ANTHROPIC_API_CACHE_SECONDS", 60);
+const OPENAI_API_CACHE_MS = envMs("OPENAI_API_CACHE_SECONDS", 5 * 60);
 const CODEX_LIVE_RATE_LIMITS_ENABLED = parseBoolean(process.env.CODEX_LIVE_RATE_LIMITS ?? "true");
 const CODEX_LIVE_RATE_LIMITS_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS", 15);
+const CODEX_LIVE_RATE_LIMITS_IDLE_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_IDLE_CACHE_SECONDS", 10 * 60);
 const CODEX_APP_SERVER_TIMEOUT_MS = envMs("CODEX_APP_SERVER_TIMEOUT_SECONDS", 5);
+const CODEX_APP_SERVER_IDLE_SHUTDOWN_MS = envMs("CODEX_APP_SERVER_IDLE_SHUTDOWN_SECONDS", 30 * 60);
 const COPILOT_LIVE_QUOTA_ENABLED = parseBoolean(process.env.COPILOT_LIVE_QUOTA_ENABLED ?? "true");
 const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30);
+const COPILOT_LIVE_QUOTA_IDLE_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_IDLE_CACHE_SECONDS", 15 * 60);
 const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS", 12);
 const SOURCE_DIAGNOSTICS_CACHE_MS = envMs("SOURCE_DIAGNOSTICS_CACHE_SECONDS", 30);
 const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("scripts", "copilot-quota-probe.mjs"));
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
+const CLAUDE_AUTH_STATUS_CACHE_MS = envMs("CLAUDE_AUTH_STATUS_CACHE_SECONDS", 15 * 60);
 const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
 const CLAUDE_API_USAGE_STALE_MS = envMs("CLAUDE_API_USAGE_STALE_SECONDS", 600);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
@@ -373,20 +386,58 @@ const LIVE_METRICS_PROCESS_GROUPS = [
 const app = express();
 let currentDashboardUrl = null;
 const anthropicCache = createTimedCache();
+const openaiUsageCache = createTimedCache();
 const codexLiveRateLimitsCache = createTimedCache();
 const copilotLiveQuotaCache = createTimedCache();
 const claudeApiUsageCache = createTimedCache();
+const claudeAuthStatusCache = createTimedCache();
 const usageCache = createTimedCache();
 const sourceDiagnosticsCache = createTimedCache();
 const officialSubscriptionPricingCache = createTimedCache();
 let codexAppServer = null;
+let codexAppServerLastUseAt = 0;
 let pendingTestNotification = false;
 let pendingOpenNotificationSettings = false;
 let pendingUpdateCheck = false;
+const pendingElectronActionEmitter = new EventEmitter();
+pendingElectronActionEmitter.setMaxListeners(0);
+let lastInteractiveUsageRequestAt = 0;
+let lastLiveMetricsRequestAt = 0;
 let livePreviousCpuSample = sampleCpuTimes();
 let liveLastCpuPercent = null;
 const liveMetricsTokenHistory = [];
 const liveTimeSeries = [];
+let liveSwapMetricCache = { atMs: 0, value: null };
+let liveProcessSnapshotCache = { atMs: 0, output: null };
+let liveMetricsResponseCache = { atMs: 0, value: null, pending: null };
+// Per-file scan caches keyed by realpath -> { size, mtimeMs, events }.
+// A file is only re-parsed when its size or mtime changes, so the recurring
+// usage refresh stops re-reading gigabytes of unchanged session logs.
+const usageFileScanCaches = {
+  codex: new Map(),
+  claudeCode: new Map(),
+  gemini: new Map()
+};
+let quotaEventsLatestByKeyPromise = null;
+
+function markInteractiveUsageRequest() {
+  const wasIdle = !isInteractiveUsageRecent();
+  lastInteractiveUsageRequestAt = Date.now();
+  if (wasIdle) {
+    // Values stamped under the long idle TTLs must not stay "fresh" once a
+    // dashboard client returns; expire them so the next rebuild refreshes.
+    copilotLiveQuotaCache.expiresAt = 0;
+    codexLiveRateLimitsCache.expiresAt = 0;
+  }
+}
+
+function isInteractiveUsageRecent() {
+  return Date.now() - lastInteractiveUsageRequestAt < INTERACTIVE_USAGE_WINDOW_MS;
+}
+
+function signalPendingElectronAction() {
+  pendingElectronActionEmitter.emit("pending");
+}
 
 const liveMetricsTimer = setInterval(refreshCpuSample, LIVE_METRICS_SAMPLE_MS);
 if (typeof liveMetricsTimer.unref === "function") liveMetricsTimer.unref();
@@ -568,6 +619,7 @@ app.get("/auth/oidc/callback", async (req, res) => {
 
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
+    markInteractiveUsageRequest();
     const usage = await readUsageDashboard({ force: parseBoolean(req.query.force) });
     res.json(localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)));
   } catch (error) {
@@ -578,8 +630,8 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
 app.get("/api/system/live", authMiddleware, async (_req, res) => {
   try {
     // This endpoint is polled every few seconds; never trigger full log aggregation here.
-    const localUsage = usageCache.value?.local || null;
-    res.json(buildSystemLiveMetrics(localUsage));
+    lastLiveMetricsRequestAt = Date.now();
+    res.json(await readSystemLiveMetricsSnapshot());
   } catch (error) {
     sendApiError(res, error, "system_live_failed");
   }
@@ -656,7 +708,7 @@ app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
   }
 });
 
-async function readUsageDashboard({ force = false } = {}) {
+async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
   return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
@@ -729,7 +781,87 @@ async function readUsageDashboard({ force = false } = {}) {
       openai,
       anthropic
     };
-  }, { force });
+  }, { force, maxAgeMs });
+}
+
+const LIVE_METRICS_RESPONSE_CACHE_MS = 4000;
+const LIVE_SWAP_SAMPLE_MS = 30_000;
+const LIVE_METRICS_DEMAND_WINDOW_MS = 60_000;
+
+// Serves /api/system/live: at most one metrics build (and one ps/sysctl
+// sample) per LIVE_METRICS_RESPONSE_CACHE_MS window, shared across clients.
+async function readSystemLiveMetricsSnapshot() {
+  const now = Date.now();
+  if (liveMetricsResponseCache.value && now - liveMetricsResponseCache.atMs < LIVE_METRICS_RESPONSE_CACHE_MS) {
+    return liveMetricsResponseCache.value;
+  }
+  if (liveMetricsResponseCache.pending) return liveMetricsResponseCache.pending;
+  liveMetricsResponseCache.pending = (async () => {
+    await refreshLiveSnapshotInputs();
+    const localUsage = usageCache.value?.local || null;
+    const value = buildSystemLiveMetrics(localUsage);
+    liveMetricsResponseCache = { atMs: Date.now(), value, pending: null };
+    return value;
+  })().finally(() => {
+    if (liveMetricsResponseCache.pending) liveMetricsResponseCache.pending = null;
+  });
+  return liveMetricsResponseCache.pending;
+}
+
+async function refreshLiveSnapshotInputs() {
+  const now = Date.now();
+  const tasks = [];
+  if (now - liveSwapMetricCache.atMs >= LIVE_SWAP_SAMPLE_MS) {
+    tasks.push(
+      readLiveSwapMetricAsync().then((value) => {
+        liveSwapMetricCache = { atMs: Date.now(), value };
+      })
+    );
+  }
+  if (process.platform !== "win32") {
+    tasks.push(
+      readProcessSnapshotAsync().then((output) => {
+        liveProcessSnapshotCache = { atMs: Date.now(), output };
+      })
+    );
+  }
+  await Promise.all(tasks);
+}
+
+async function readLiveSwapMetricAsync() {
+  if (process.platform === "darwin") {
+    try {
+      const { stdout } = await execFileAsync("sysctl", ["-n", "vm.swapusage"], {
+        encoding: "utf8",
+        timeout: 1000,
+        maxBuffer: 32 * 1024
+      });
+      return parseDarwinSwapUsage(stdout);
+    } catch {
+      return unavailableSwapMetric();
+    }
+  }
+  if (process.platform === "linux") {
+    try {
+      return parseLinuxMeminfoSwap(await fsp.readFile("/proc/meminfo", "utf8"));
+    } catch {
+      return unavailableSwapMetric();
+    }
+  }
+  return unavailableSwapMetric();
+}
+
+async function readProcessSnapshotAsync() {
+  try {
+    const { stdout } = await execFileAsync("ps", ["-axo", "pid=,ppid=,pcpu=,rss=,comm="], {
+      encoding: "utf8",
+      timeout: 1000,
+      maxBuffer: 512 * 1024
+    });
+    return stdout;
+  } catch {
+    return null;
+  }
 }
 
 function buildSystemLiveMetrics(localUsage) {
@@ -737,8 +869,8 @@ function buildSystemLiveMetrics(localUsage) {
   const timestamp = new Date(timestampMs).toISOString();
   const cpu = buildLiveCpuMetric();
   const ram = buildLiveRamMetric();
-  const swap = buildLiveSwapMetric();
-  const processes = buildLiveProcessMetrics();
+  const swap = liveSwapMetricCache.value || buildLiveSwapMetric();
+  const processes = buildLiveProcessMetrics({ psOutput: liveProcessSnapshotCache.output });
   const tokenRates = computeTokensPerMinute(recordLiveMetricsTokenSnapshot(localUsage?.totals?.allTime, timestampMs));
   const tokensPerMinute = buildTokensPerMinuteMetric(tokenRates);
   const aiLoadScore = buildAiLoadScore(cpu, ram, tokensPerMinute.value, { processes, swap });
@@ -790,6 +922,13 @@ function buildLiveCpuMetric() {
 }
 
 function refreshCpuSample() {
+  // Park the sampler while nobody is polling live metrics; the first sample
+  // after resuming re-primes the delta so CPU% is measured again within 5s.
+  if (Date.now() - lastLiveMetricsRequestAt > LIVE_METRICS_DEMAND_WINDOW_MS) {
+    livePreviousCpuSample = null;
+    liveLastCpuPercent = null;
+    return;
+  }
   const next = sampleCpuTimes();
   if (!next) {
     livePreviousCpuSample = null;
@@ -918,8 +1057,8 @@ function buildSwapMetricFromMb(usedMb, totalMb, freeMb) {
 function buildLiveProcessMetrics(options = {}) {
   const fallback = unavailableProcessMetrics();
   if (process.platform === "win32") return fallback;
-  const output = options.psOutput ?? readProcessSnapshot();
-  if (output === null) return fallback;
+  const output = "psOutput" in options ? options.psOutput : readProcessSnapshot();
+  if (output === null || output === undefined) return fallback;
   const rows = parseProcessRows(output);
   const groups = aggregateAiProcessMetrics(rows);
   const totalRssMb = groups.reduce((sum, group) => sum + metricNumber(group.rssMb), 0);
@@ -1202,6 +1341,7 @@ app.get("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
 
 app.post("/api/claude/statusline-setup", authMiddleware, async (_req, res) => {
   try {
+    invalidateTimedCache(claudeAuthStatusCache);
     res.json(await configureClaudeStatusline());
   } catch (error) {
     sendApiError(res, error, "claude_statusline_setup_failed");
@@ -1330,6 +1470,7 @@ app.get("/api/updates/status", authMiddleware, async (_req, res) => {
 app.post("/api/updates/check", authMiddleware, (_req, res) => {
   if (!ELECTRON_SYNC_TOKEN) return res.status(503).json({ error: "not_electron" });
   pendingUpdateCheck = true;
+  signalPendingElectronAction();
   return res.json({ queued: true });
 });
 
@@ -1369,14 +1510,19 @@ app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
 
 app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) => {
   try {
-    const [settings, usage] = await Promise.all([
-      readNotificationSettings(),
-      readUsageDashboard().catch(() => null)
-    ]);
+    const settings = await readNotificationSettings();
+    if (!settings.enabled) {
+      // Never trigger a usage rebuild when notifications are switched off.
+      res.json({ alerts: [] });
+      return;
+    }
+    // Background checks accept a somewhat stale usage snapshot; only an open
+    // dashboard keeps the short USAGE_CACHE_MS freshness.
+    const usage = await readUsageDashboard({ maxAgeMs: NOTIFICATION_USAGE_MAX_AGE_MS }).catch(() => null);
     const codex = usage?.codex || null;
     const claudeCode = usage?.claudeCode || null;
     const copilot = usage?.copilot || null;
-    const alerts = settings.enabled ? buildNotificationAlerts(settings, { codex, claudeCode, copilot }) : [];
+    const alerts = buildNotificationAlerts(settings, { codex, claudeCode, copilot });
     res.json({ alerts });
   } catch (error) {
     sendApiError(res, error, "notification_check_failed");
@@ -1395,6 +1541,7 @@ app.get("/api/notifications/status", authMiddleware, async (_req, res) => {
 app.post("/api/notifications/test", authMiddleware, (_req, res) => {
   if (!ELECTRON_SYNC_TOKEN) return res.status(503).json({ error: "not_electron" });
   pendingTestNotification = true;
+  signalPendingElectronAction();
   return res.json({ queued: true });
 });
 
@@ -1407,6 +1554,7 @@ app.get("/api/notifications/test-pending", electronSyncMiddleware, (_req, res) =
 app.post("/api/notifications/open-settings", authMiddleware, (_req, res) => {
   if (!ELECTRON_SYNC_TOKEN) return res.status(503).json({ error: "not_electron" });
   pendingOpenNotificationSettings = true;
+  signalPendingElectronAction();
   return res.json({ queued: true });
 });
 
@@ -1414,6 +1562,48 @@ app.get("/api/notifications/open-settings-pending", electronSyncMiddleware, (_re
   const pending = pendingOpenNotificationSettings;
   pendingOpenNotificationSettings = false;
   res.json({ pending });
+});
+
+// Combined long-poll for Electron pending actions. Replaces three separate
+// 5-second polls: the request is held open until a flag flips (instant
+// reaction) or waitMs elapses, so an idle app makes ~2 requests per minute.
+app.get("/api/electron/pending-actions", electronSyncMiddleware, async (req, res) => {
+  const waitMs = Math.min(Math.max(Number(req.query.waitMs) || 0, 0), 25_000);
+  const consumePendingActions = () => {
+    if (!pendingTestNotification && !pendingOpenNotificationSettings && !pendingUpdateCheck) return null;
+    const actions = {
+      testNotification: pendingTestNotification,
+      openNotificationSettings: pendingOpenNotificationSettings,
+      updateCheck: pendingUpdateCheck
+    };
+    pendingTestNotification = false;
+    pendingOpenNotificationSettings = false;
+    pendingUpdateCheck = false;
+    return actions;
+  };
+  const emptyActions = { testNotification: false, openNotificationSettings: false, updateCheck: false };
+  const immediate = consumePendingActions();
+  if (immediate || !waitMs) {
+    res.json(immediate || emptyActions);
+    return;
+  }
+  await new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      pendingElectronActionEmitter.off("pending", finish);
+      res.off("close", finish);
+      resolve();
+    };
+    const timer = setTimeout(finish, waitMs);
+    if (typeof timer.unref === "function") timer.unref();
+    pendingElectronActionEmitter.on("pending", finish);
+    res.on("close", finish);
+  });
+  if (res.writableEnded || res.destroyed) return;
+  res.json(consumePendingActions() || emptyActions);
 });
 
 app.get("*", (_req, res) => {
@@ -1733,9 +1923,12 @@ function createTimedCache() {
   };
 }
 
-async function readThroughCache(cache, ttlMs, loader, { force = false } = {}) {
+async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs = 0 } = {}) {
   const now = Date.now();
   if (!force && cache.value && now < cache.expiresAt) return cache.value;
+  // Callers that tolerate staleness (e.g. background notification checks)
+  // accept an expired value up to maxAgeMs old instead of triggering a rebuild.
+  if (!force && maxAgeMs > 0 && cache.value && now - (cache.updatedAtMs || 0) < maxAgeMs) return cache.value;
   if (cache.pending) return cache.pending;
 
   const generation = cache.generation || 0;
@@ -1745,6 +1938,7 @@ async function readThroughCache(cache, ttlMs, loader, { force = false } = {}) {
       if (cache.pending === pending && cache.generation === generation) {
         cache.value = value;
         cache.expiresAt = Date.now() + ttlMs;
+        cache.updatedAtMs = Date.now();
       }
       return value;
     })
@@ -1777,6 +1971,7 @@ function invalidateTimedCache(cache) {
   if (!cache || typeof cache !== "object") return;
   cache.value = null;
   cache.expiresAt = 0;
+  cache.updatedAtMs = 0;
   cache.pending = null;
   cache.generation = (cache.generation || 0) + 1;
 }
@@ -3161,31 +3356,21 @@ async function readCodexUsage(options = {}) {
   const rateLimitEvents = [];
   const usageEvents = [];
 
+  pruneUsageFileScanCache(usageFileScanCaches.codex, files);
   for (const fileRecord of files) {
     const file = fileRecord.file;
+    const realpathHash = hashEvidencePath(fileRecord.realPath);
+    const entries = await readCachedFileEvents(usageFileScanCaches.codex, fileRecord, parseCodexSessionFileEvents);
     let fileEvents = 0;
-    let currentModel = null;
-    await readJsonl(file, (event, meta) => {
-      if (event?.type === "turn_context" && event.payload?.model) {
-        currentModel = event.payload.model;
-      }
-      if (event?.type === "session_meta" && event.payload?.model) {
-        currentModel = event.payload.model;
-      }
-      if (event?.type !== "event_msg" || event?.payload?.type !== "token_count") return;
-      const timestampMs = Date.parse(event.timestamp);
-      if (Number.isNaN(timestampMs)) return;
-      const usage = event.payload.info?.last_token_usage || {};
-      const rateLimits = event.payload.rate_limits || null;
-      const isSparkRateLimit = isCodexSparkRateLimit(rateLimits);
-      const isSparkUsage = isCodexSparkUsageEvent(currentModel, rateLimits);
-      if (event.payload.rate_limits) {
+    for (const entry of entries) {
+      const { timestamp, timestampMs, model: currentModel, usage, info, rateLimits } = entry;
+      if (rateLimits) {
         const rateLimitEvent = {
-          timestamp: event.timestamp,
+          timestamp,
           rateLimits,
           file
         };
-        if (isSparkRateLimit) {
+        if (entry.isSparkRateLimit) {
           sparkRateLimitEvents.push(rateLimitEvent);
         } else {
           rateLimitEvents.push(rateLimitEvent);
@@ -3194,39 +3379,39 @@ async function readCodexUsage(options = {}) {
       usageEvents.push({
         providerId: "codex",
         sourceId: fileRecord.sourceId,
-        eventId: event.id || event.payload?.id || null,
+        eventId: entry.eventId,
         timestampMs,
-        model: currentModel || event.payload.rate_limits?.limit_name || null,
+        model: currentModel || entry.limitName || null,
         usage,
         evidence: {
           realpath: fileRecord.realPath,
-          realpathHash: hashEvidencePath(fileRecord.realPath),
-          line: meta?.line,
+          realpathHash,
+          line: entry.line,
           sessionId: fileRecord.sessionId,
           rolloutSessionId: fileRecord.sessionId
         },
         metadata: {
-          sourceGroupId: isSparkUsage ? "codexSpark" : "codex"
+          sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex"
         }
       });
       addUsage(aggregates, usage);
       if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
       if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(last24h, usage);
       if (now - timestampMs <= 7 * 24 * 60 * 60 * 1000) addUsage(last7d, usage);
-      if (isSparkUsage) {
+      if (entry.isSparkUsage) {
         addUsageEvent(sparkUsage, timestampMs, usage);
         if (!sparkFirstEvent || timestampMs < Date.parse(sparkFirstEvent.timestamp)) {
           sparkFirstEvent = {
-            timestamp: event.timestamp,
-            model: currentModel || rateLimits?.limit_name || "gpt-5.3-codex-spark",
+            timestamp,
+            model: currentModel || entry.limitName || "gpt-5.3-codex-spark",
             file
           };
         }
         if (!sparkLatestEvent || timestampMs > Date.parse(sparkLatestEvent.timestamp)) {
           sparkLatestEvent = {
-            timestamp: event.timestamp,
-            model: currentModel || rateLimits?.limit_name || "gpt-5.3-codex-spark",
-            info: event.payload.info || {},
+            timestamp,
+            model: currentModel || entry.limitName || "gpt-5.3-codex-spark",
+            info,
             rateLimits,
             file
           };
@@ -3241,19 +3426,19 @@ async function readCodexUsage(options = {}) {
       fileEvents += 1;
       if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) {
         firstEvent = {
-          timestamp: event.timestamp,
+          timestamp,
           file
         };
       }
       if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) {
         latestEvent = {
-          timestamp: event.timestamp,
-          info: event.payload.info || {},
-          rateLimits: event.payload.rate_limits || null,
+          timestamp,
+          info,
+          rateLimits,
           file
         };
       }
-    });
+    }
     if (fileEvents) sessionsWithEvents += 1;
   }
 
@@ -3317,6 +3502,72 @@ async function readCodexUsage(options = {}) {
     daily,
     _usageEvents: usageEvents
   };
+}
+
+async function parseCodexSessionFileEvents(fileRecord) {
+  const events = [];
+  let currentModel = null;
+  await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type === "turn_context" && event.payload?.model) {
+      currentModel = event.payload.model;
+    }
+    if (event?.type === "session_meta" && event.payload?.model) {
+      currentModel = event.payload.model;
+    }
+    if (event?.type !== "event_msg" || event?.payload?.type !== "token_count") return;
+    const timestampMs = Date.parse(event.timestamp);
+    if (Number.isNaN(timestampMs)) return;
+    const rateLimits = event.payload.rate_limits || null;
+    events.push({
+      timestamp: event.timestamp,
+      timestampMs,
+      model: currentModel,
+      // Kept separately so model attribution survives rate-limit compaction.
+      limitName: rateLimits?.limit_name || null,
+      usage: event.payload.info?.last_token_usage || {},
+      info: event.payload.info || {},
+      rateLimits,
+      eventId: event.id || event.payload?.id || null,
+      line: meta?.line,
+      isSparkRateLimit: isCodexSparkRateLimit(rateLimits),
+      isSparkUsage: isCodexSparkUsageEvent(currentModel, rateLimits)
+    });
+  });
+  return compactCodexFileEvents(events);
+}
+
+// Drops per-event info/rate-limit payloads that can no longer influence the
+// output: old windows are filtered as expired downstream, and only the newest
+// event per category is ever read for `latest`/window state. Keeps the cache
+// memory bounded while producing identical aggregation results.
+function compactCodexFileEvents(events) {
+  const cutoffMs = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  let lastEvent = null;
+  let lastSparkEvent = null;
+  let lastRateLimitEvent = null;
+  let lastSparkRateLimitEvent = null;
+  for (const event of events) {
+    if (!lastEvent || event.timestampMs > lastEvent.timestampMs) lastEvent = event;
+    if (event.isSparkUsage && (!lastSparkEvent || event.timestampMs > lastSparkEvent.timestampMs)) {
+      lastSparkEvent = event;
+    }
+    if (event.rateLimits && event.isSparkRateLimit) {
+      if (!lastSparkRateLimitEvent || event.timestampMs > lastSparkRateLimitEvent.timestampMs) {
+        lastSparkRateLimitEvent = event;
+      }
+    } else if (event.rateLimits) {
+      if (!lastRateLimitEvent || event.timestampMs > lastRateLimitEvent.timestampMs) {
+        lastRateLimitEvent = event;
+      }
+    }
+  }
+  const keep = new Set([lastEvent, lastSparkEvent, lastRateLimitEvent, lastSparkRateLimitEvent]);
+  for (const event of events) {
+    if (event.timestampMs >= cutoffMs || keep.has(event)) continue;
+    event.info = {};
+    event.rateLimits = null;
+  }
+  return events;
 }
 
 async function readCopilotUsage(options = {}) {
@@ -3473,7 +3724,10 @@ async function readCopilotLiveQuota() {
   }
 
   try {
-    return await readThroughCache(copilotLiveQuotaCache, COPILOT_LIVE_QUOTA_CACHE_MS, async () => {
+    // While no dashboard client is active, stretch the probe cadence so idle
+    // background rebuilds stop spawning a fresh probe process every cycle.
+    const cacheTtlMs = isInteractiveUsageRecent() ? COPILOT_LIVE_QUOTA_CACHE_MS : COPILOT_LIVE_QUOTA_IDLE_CACHE_MS;
+    return await readThroughCache(copilotLiveQuotaCache, cacheTtlMs, async () => {
       if (!fs.existsSync(COPILOT_QUOTA_PROBE_SCRIPT)) {
         return {
           status: "not_configured",
@@ -3592,6 +3846,8 @@ function trimmedErrorMessage(text) {
     .join(" ");
 }
 
+let copilotBinaryMemo = { atMs: 0, value: null };
+
 function resolveCopilotBinary() {
   const candidates = [
     process.env.COPILOT_BIN,
@@ -3604,9 +3860,13 @@ function resolveCopilotBinary() {
     if (candidate && fs.existsSync(candidate)) return candidate;
   }
 
+  // Memoize the PATH lookup (including misses) so hosts without the Copilot
+  // CLI do not spawn `which` on every quota refresh.
+  if (Date.now() - copilotBinaryMemo.atMs < 30 * 60 * 1000) return copilotBinaryMemo.value;
   const which = spawnSync("which", ["copilot"], { encoding: "utf8" });
-  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
-  return null;
+  const value = which.status === 0 && which.stdout.trim() ? which.stdout.trim() : null;
+  copilotBinaryMemo = { atMs: Date.now(), value };
+  return value;
 }
 
 function copilotLimitsFromQuota(quota) {
@@ -3744,8 +4004,40 @@ function buildCodexSparkUsage(latestEvent, firstEvent, usage, rateLimitEvents, l
   };
 }
 
+let claudeAppCookiesMemo = { mtimeMs: 0, size: 0, value: null };
+let claudeCookieKeyMemo = { password: null, key: null };
+
 function readClaudeAppCookies() {
   if (!fs.existsSync(CLAUDE_APP_COOKIES)) return null;
+  // The decrypted cookies only change when Claude rewrites its cookie store;
+  // skip the security/sqlite3 spawns and pbkdf2 while the file is unchanged.
+  let stat = null;
+  try {
+    stat = fs.statSync(CLAUDE_APP_COOKIES);
+    if (claudeAppCookiesMemo.mtimeMs === stat.mtimeMs && claudeAppCookiesMemo.size === stat.size) {
+      return claudeAppCookiesMemo.value;
+    }
+  } catch {
+    stat = null;
+  }
+  const value = decryptClaudeAppCookies();
+  // Only memoize successful decrypts; transient keychain/sqlite failures must
+  // retry on the next call instead of being pinned until the file changes.
+  if (stat && value) claudeAppCookiesMemo = { mtimeMs: stat.mtimeMs, size: stat.size, value };
+  return value;
+}
+
+function claudeCookieDerivedKey(keychainPw) {
+  if (claudeCookieKeyMemo.password !== keychainPw) {
+    claudeCookieKeyMemo = {
+      password: keychainPw,
+      key: crypto.pbkdf2Sync(keychainPw, "saltysalt", 1003, 16, "sha1")
+    };
+  }
+  return claudeCookieKeyMemo.key;
+}
+
+function decryptClaudeAppCookies() {
   const keyResult = spawnSync(
     "security",
     ["find-generic-password", "-s", "Claude Safe Storage", "-a", "Claude", "-w"],
@@ -3774,7 +4066,7 @@ function readClaudeAppCookies() {
     try {
       const encBuf = Buffer.from(hex, "hex");
       if (encBuf.slice(0, 3).toString() !== "v10") continue;
-      const key = crypto.pbkdf2Sync(keychainPw, "saltysalt", 1003, 16, "sha1");
+      const key = claudeCookieDerivedKey(keychainPw);
       const iv = Buffer.alloc(16, 0x20);
       const decipher = crypto.createDecipheriv("aes-128-cbc", key, iv);
       const decrypted = Buffer.concat([decipher.update(encBuf.slice(3)), decipher.final()]);
@@ -3922,32 +4214,32 @@ async function readClaudeCodeUsage(options = {}) {
   let sessionsWithEvents = 0;
   const usageEvents = [];
 
+  pruneUsageFileScanCache(usageFileScanCaches.claudeCode, files);
   for (const fileRecord of files) {
     const file = fileRecord.file;
+    const realpathHash = hashEvidencePath(fileRecord.realPath);
+    const entries = await readCachedFileEvents(usageFileScanCaches.claudeCode, fileRecord, parseClaudeTranscriptFileEvents);
     let fileEvents = 0;
-    await readJsonl(file, (event, meta) => {
-      if (event?.type !== "assistant" || !event?.message?.usage) return;
-      const timestampMs = Date.parse(event.timestamp);
-      if (Number.isNaN(timestampMs)) return;
-      const usageKey = event.requestId || event.message?.id || `${file}:${event.uuid || event.timestamp}`;
-      if (seen.has(usageKey)) return;
+    for (const entry of entries) {
+      const { timestamp, timestampMs, model, usage: normalized } = entry;
+      const usageKey = entry.requestId || entry.messageId || `${file}:${entry.uuid || timestamp}`;
+      if (seen.has(usageKey)) continue;
       seen.add(usageKey);
 
-      const normalized = normalizeClaudeUsage(event.message.usage);
       usageEvents.push({
         providerId: "claudeCode",
         sourceId: fileRecord.sourceId,
-        eventId: event.requestId || event.message?.id || event.uuid || null,
+        eventId: entry.requestId || entry.messageId || entry.uuid || null,
         timestampMs,
-        model: event.message.model || "unknown",
+        model,
         usage: normalized,
         evidence: {
           realpath: fileRecord.realPath,
-          realpathHash: hashEvidencePath(fileRecord.realPath),
-          line: meta?.line,
-          requestId: event.requestId || null,
-          messageId: event.message?.id || null,
-          uuid: event.uuid || null
+          realpathHash,
+          line: entry.line,
+          requestId: entry.requestId,
+          messageId: entry.messageId,
+          uuid: entry.uuid
         },
         metadata: {
           sourceGroupId: "claudeCode"
@@ -3955,7 +4247,6 @@ async function readClaudeCodeUsage(options = {}) {
       });
       addUsageEvent(usage, timestampMs, normalized);
 
-      const model = event.message.model || "unknown";
       if (!modelMap.has(model)) modelMap.set(model, createUsageTotals());
       addUsage(modelMap.get(model), normalized);
 
@@ -3963,20 +4254,20 @@ async function readClaudeCodeUsage(options = {}) {
       fileEvents += 1;
       if (!firstEvent || timestampMs < Date.parse(firstEvent.timestamp)) {
         firstEvent = {
-          timestamp: event.timestamp,
+          timestamp,
           model,
           file
         };
       }
       if (!latestEvent || timestampMs > Date.parse(latestEvent.timestamp)) {
         latestEvent = {
-          timestamp: event.timestamp,
+          timestamp,
           model,
           usage: normalized,
           file
         };
       }
-    });
+    }
     if (fileEvents) sessionsWithEvents += 1;
   }
 
@@ -4126,6 +4417,26 @@ async function readClaudeCodeUsage(options = {}) {
   };
 }
 
+async function parseClaudeTranscriptFileEvents(fileRecord) {
+  const events = [];
+  await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type !== "assistant" || !event?.message?.usage) return;
+    const timestampMs = Date.parse(event.timestamp);
+    if (Number.isNaN(timestampMs)) return;
+    events.push({
+      timestamp: event.timestamp,
+      timestampMs,
+      model: event.message.model || "unknown",
+      usage: normalizeClaudeUsage(event.message.usage),
+      requestId: event.requestId || null,
+      messageId: event.message?.id || null,
+      uuid: event.uuid || null,
+      line: meta?.line
+    });
+  });
+  return events;
+}
+
 function resolveClaudePlanSignals({ browserSubscription = null, browserCredits = null, statusline = null, authStatus = null } = {}) {
   const signals = [
     claudePlanSignal("claude_browser_sync", browserSubscription?.planType, browserSubscription?.updatedAt || browserCredits?.updatedAt, {
@@ -4240,27 +4551,26 @@ async function readGeminiUsage(options = {}) {
   let filesWithEvents = 0;
   const usageEvents = [];
 
+  pruneUsageFileScanCache(usageFileScanCaches.gemini, candidates);
   for (const fileRecord of candidates) {
     const file = fileRecord.file;
+    const realpathHash = hashEvidencePath(fileRecord.realPath);
+    const entries = await readCachedFileEvents(usageFileScanCaches.gemini, fileRecord, parseGeminiUsageFileEvents);
     let fileEvents = 0;
-    await readUsageObjects(file, (event, meta) => {
-      const usageMetadata = findGeminiUsageMetadata(event);
-      if (!usageMetadata) return;
-      const timestampMs = findTimestampMs(event) || (safeStatMtime(file) ?? Date.now());
-      const normalized = normalizeGeminiUsage(usageMetadata);
-      if (!normalized.total_tokens) return;
+    for (const entry of entries) {
+      const { timestampMs, model, usage: normalized } = entry;
       usageEvents.push({
         providerId: "gemini",
         sourceId: fileRecord.sourceId,
-        eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
+        eventId: entry.eventId,
         timestampMs,
-        model: findModelName(event) || "gemini",
+        model,
         usage: normalized,
         evidence: {
           realpath: fileRecord.realPath,
-          realpathHash: hashEvidencePath(fileRecord.realPath),
-          line: meta?.line,
-          index: meta?.index
+          realpathHash,
+          line: entry.line,
+          index: entry.index
         },
         metadata: {
           sourceGroupId: "gemini"
@@ -4268,7 +4578,6 @@ async function readGeminiUsage(options = {}) {
       });
       addUsageEvent(usage, timestampMs, normalized);
 
-      const model = findModelName(event) || "gemini";
       if (!modelMap.has(model)) modelMap.set(model, createUsageTotals());
       addUsage(modelMap.get(model), normalized);
 
@@ -4289,7 +4598,7 @@ async function readGeminiUsage(options = {}) {
           file
         };
       }
-    });
+    }
     if (fileEvents) filesWithEvents += 1;
   }
 
@@ -4337,6 +4646,27 @@ async function readGeminiUsage(options = {}) {
     daily: buildDaily(usage.dailyMap),
     _usageEvents: usageEvents
   };
+}
+
+async function parseGeminiUsageFileEvents(fileRecord) {
+  const file = fileRecord.file;
+  const events = [];
+  await readUsageObjects(file, (event, meta) => {
+    const usageMetadata = findGeminiUsageMetadata(event);
+    if (!usageMetadata) return;
+    const timestampMs = findTimestampMs(event) || (safeStatMtime(file) ?? Date.now());
+    const normalized = normalizeGeminiUsage(usageMetadata);
+    if (!normalized.total_tokens) return;
+    events.push({
+      timestampMs,
+      model: findModelName(event) || "gemini",
+      usage: normalized,
+      eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
+      line: meta?.line,
+      index: meta?.index
+    });
+  });
+  return events;
 }
 
 const GLM_USAGE_IMPORT_ROLES = [
@@ -5007,6 +5337,33 @@ async function ollamaUsageFileRecords(sources) {
   return records;
 }
 
+// Returns the cached per-file extraction when size+mtime are unchanged,
+// otherwise re-parses the file via parseFile(fileRecord) and caches the result.
+async function readCachedFileEvents(cacheMap, fileRecord, parseFile) {
+  let stat;
+  try {
+    stat = await fsp.stat(fileRecord.file);
+  } catch {
+    cacheMap.delete(fileRecord.realPath);
+    return [];
+  }
+  const cached = cacheMap.get(fileRecord.realPath);
+  if (cached && cached.size === stat.size && cached.mtimeMs === stat.mtimeMs) {
+    return cached.events;
+  }
+  const events = await parseFile(fileRecord);
+  cacheMap.set(fileRecord.realPath, { size: stat.size, mtimeMs: stat.mtimeMs, events });
+  return events;
+}
+
+function pruneUsageFileScanCache(cacheMap, fileRecords) {
+  if (cacheMap.size <= fileRecords.length) return;
+  const seen = new Set(fileRecords.map((record) => record.realPath));
+  for (const key of cacheMap.keys()) {
+    if (!seen.has(key)) cacheMap.delete(key);
+  }
+}
+
 async function readJsonl(file, onObject) {
   const stream = fs.createReadStream(file, { encoding: "utf8" });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
@@ -5378,27 +5735,56 @@ function shellQuote(value) {
 }
 
 async function readClaudeAuthStatus() {
+  // Login state and plan type change rarely; caching avoids launching the
+  // Claude CLI (a full Node app) on every usage rebuild. The statusline-setup
+  // endpoint invalidates this cache explicitly. Transient probe failures are
+  // retried after a short delay and never overwrite a known-good result.
+  const cache = claudeAuthStatusCache;
+  const now = Date.now();
+  if (cache.value && now < cache.expiresAt) return cache.value;
+  if (cache.pending) return cache.pending;
+  const pending = probeClaudeAuthStatus()
+    .then((result) => {
+      if (cache.pending !== pending) return result;
+      const transient = result.available && ["timeout", "error", "unavailable", "invalid_json"].includes(result.status);
+      if (transient && cache.value?.status === "ok") {
+        cache.expiresAt = Date.now() + 60_000;
+        return cache.value;
+      }
+      cache.value = result;
+      cache.expiresAt = Date.now() + (transient ? 60_000 : CLAUDE_AUTH_STATUS_CACHE_MS);
+      return result;
+    })
+    .finally(() => {
+      if (cache.pending === pending) cache.pending = null;
+    });
+  cache.pending = pending;
+  return pending;
+}
+
+async function probeClaudeAuthStatus() {
   const claudeBinary = resolveClaudeBinary();
   if (!claudeBinary) return { available: false, status: "missing", planType: null };
 
-  const result = spawnSync(claudeBinary, ["auth", "status", "--json"], {
-    encoding: "utf8",
-    timeout: CLAUDE_AUTH_STATUS_TIMEOUT_MS,
-    maxBuffer: 256 * 1024
-  });
-  if (result.error) {
-    return {
-      available: true,
-      status: result.error.code === "ETIMEDOUT" ? "timeout" : "error",
-      planType: null
-    };
-  }
-  if (result.status !== 0) {
-    return { available: true, status: "unavailable", planType: null };
+  let stdout;
+  try {
+    ({ stdout } = await execFileAsync(claudeBinary, ["auth", "status", "--json"], {
+      encoding: "utf8",
+      timeout: CLAUDE_AUTH_STATUS_TIMEOUT_MS,
+      maxBuffer: 256 * 1024
+    }));
+  } catch (error) {
+    if (error?.killed || error?.signal) {
+      return { available: true, status: "timeout", planType: null };
+    }
+    if (typeof error?.code === "number") {
+      return { available: true, status: "unavailable", planType: null };
+    }
+    return { available: true, status: "error", planType: null };
   }
 
   try {
-    const raw = JSON.parse(result.stdout || "{}");
+    const raw = JSON.parse(stdout || "{}");
     return {
       available: true,
       status: "ok",
@@ -5778,7 +6164,20 @@ function safeStatMtime(file) {
 
 async function readCodexLiveRateLimits() {
   if (!CODEX_LIVE_RATE_LIMITS_ENABLED) return null;
-  return readThroughCache(codexLiveRateLimitsCache, CODEX_LIVE_RATE_LIMITS_CACHE_MS, async () => {
+  const interactive = isInteractiveUsageRecent();
+  // Without an active dashboard client, do not respawn the codex app-server
+  // just for a background refresh: serve recent cached limits, and once they
+  // age out return null so callers fall back to the freshly parsed
+  // session-log rate limits instead of a frozen snapshot.
+  if (!interactive && !codexAppServer) {
+    const ageMs = Date.now() - (codexLiveRateLimitsCache.updatedAtMs || 0);
+    if (codexLiveRateLimitsCache.value && ageMs < CODEX_LIVE_RATE_LIMITS_IDLE_CACHE_MS) {
+      return codexLiveRateLimitsCache.value;
+    }
+    return null;
+  }
+  const cacheTtlMs = interactive ? CODEX_LIVE_RATE_LIMITS_CACHE_MS : CODEX_LIVE_RATE_LIMITS_IDLE_CACHE_MS;
+  return readThroughCache(codexLiveRateLimitsCache, cacheTtlMs, async () => {
     try {
       const client = await getCodexAppServer();
       const response = await client.request("account/rateLimits/read", undefined);
@@ -5950,6 +6349,7 @@ function codexWindowFromLive(window, label) {
 }
 
 async function getCodexAppServer() {
+  codexAppServerLastUseAt = Date.now();
   if (codexAppServer) return codexAppServer;
 
   const codexBinary = resolveCodexBinary();
@@ -5964,12 +6364,27 @@ async function getCodexAppServer() {
   let buffer = "";
   let closing = false;
 
+  // Shut the resident app-server down after a long idle stretch; the next
+  // live rate-limit read lazily respawns it.
+  const idleShutdownTimer = setInterval(() => {
+    if (codexAppServer !== client) {
+      clearInterval(idleShutdownTimer);
+      return;
+    }
+    if (Date.now() - codexAppServerLastUseAt < CODEX_APP_SERVER_IDLE_SHUTDOWN_MS) return;
+    clearInterval(idleShutdownTimer);
+    codexAppServer = null;
+    client.close();
+  }, 60 * 1000);
+  if (typeof idleShutdownTimer.unref === "function") idleShutdownTimer.unref();
+
   const send = (message) => {
     proc.stdin.write(`${JSON.stringify(message)}\n`);
   };
 
   const client = {
     request(method, params) {
+      codexAppServerLastUseAt = Date.now();
       return new Promise((resolve, reject) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
         const timeout = setTimeout(() => {
@@ -6175,7 +6590,12 @@ async function readOpenAiUsage() {
       message: "Set OPENAI_ADMIN_KEY for organization usage and costs."
     };
   }
+  // Daily-bucketed 7-day org reports change slowly; cache them instead of
+  // hitting the OpenAI org API on every usage rebuild.
+  return readThroughCache(openaiUsageCache, OPENAI_API_CACHE_MS, () => fetchOpenAiUsage(key));
+}
 
+async function fetchOpenAiUsage(key) {
   const end = Math.floor(Date.now() / 1000);
   const start = end - 7 * 24 * 60 * 60;
   const headers = { Authorization: `Bearer ${key}` };
@@ -7087,11 +7507,17 @@ function finalizeQuotaEvent(event) {
 async function appendChangedQuotaEvents(events) {
   const cleanEvents = events.filter(Boolean);
   if (!cleanEvents.length) return [];
-  const latestByKey = await readLatestQuotaEventsByKey();
+  // The history file is only written by this process, so keep the
+  // latest-by-key map in memory instead of re-reading the whole file per append.
+  if (!quotaEventsLatestByKeyPromise) quotaEventsLatestByKeyPromise = readLatestQuotaEventsByKey();
+  const latestByKey = await quotaEventsLatestByKeyPromise;
   const changed = cleanEvents.filter((event) => latestByKey.get(event.eventKey)?.fingerprint !== event.fingerprint);
   if (!changed.length) return [];
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.appendFile(QUOTA_EVENTS_FILE, changed.map((event) => JSON.stringify(event)).join("\n") + "\n", { mode: 0o600 });
+  for (const event of changed) {
+    latestByKey.set(event.eventKey, event);
+  }
   return changed;
 }
 

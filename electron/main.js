@@ -8,7 +8,7 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
-const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain } = require("electron");
+const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain, powerMonitor } = require("electron");
 const { detectOpenAiPlanType, detectClaudePlanType } = require("../lib/subscription-plan-detection");
 
 let dashboardServer = null;
@@ -24,21 +24,41 @@ let notificationCheckPending = null;
 let updateCheckPending = null;
 let autoUpdaterRef = null;
 let autoUpdaterReady = false;
+let autoUpdaterUnsupportedReason = null;
+let systemSuspended = false;
+let lastBadgeCount = null;
+let lastNotificationStatusWriteAt = 0;
+let lastNotificationStatusSignature = null;
+// Plan-probe backoff state per domain: { until, failures, planType, successAt }
+const planProbeBackoff = new Map();
+// Chrome cookie rows cached per domain, keyed by the cookie DB size+mtime.
+const chromeCookieRowsCache = new Map();
+// Claude app cache scan memo: per file name -> { size, mtimeMs, endpoint, payload }
+const claudeAppCacheFileMemo = new Map();
+
+function hasVisibleWindow() {
+  return BrowserWindow.getAllWindows().some((win) => !win.isDestroyed() && win.isVisible());
+}
 
 // Cooldown tracking: key = windowLabel+type, value = timestamp last notified
 const notificationCooldowns = new Map();
 const activeNotifications = new Set();
 const NOTIFICATION_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
-const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute
-const NOTIFICATION_TEST_POLL_INTERVAL_MS = 5 * 1000; // 5 seconds for test-pending checks
+const NOTIFICATION_POLL_INTERVAL_MS = 60 * 1000; // 1 minute while a window is visible
+const NOTIFICATION_POLL_BACKGROUND_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes with no visible window
 const NOTIFICATION_REQUEST_TIMEOUT_MS = 90 * 1000; // Local usage scans can take 25-30s on real data.
+const PENDING_ACTIONS_LONG_POLL_WAIT_MS = 25 * 1000; // server holds the request until a flag flips
+const PENDING_ACTIONS_RETRY_DELAY_MS = 15 * 1000;
 const NOTIFICATION_LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const NOTIFICATION_FALLBACK_LANGUAGE = "de";
 const NOTIFICATION_I18N_DIR = path.join(__dirname, "..", "public", "i18n");
 const UPDATE_POLL_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-const UPDATE_REQUEST_POLL_INTERVAL_MS = 5 * 1000;
 const SQLITE_BINARY = "/usr/bin/sqlite3";
-const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000;
+const CLAUDE_SYNC_INTERVAL_MS = 60 * 1000; // while a window is visible
+const CLAUDE_SYNC_BACKGROUND_INTERVAL_MS = 15 * 60 * 1000; // with no visible window
+const PLAN_PROBE_SUCCESS_TTL_MS = 6 * 60 * 60 * 1000; // hidden-window plan probes: reuse successes
+const PLAN_PROBE_FAILURE_BACKOFF_MIN_MS = 10 * 60 * 1000;
+const PLAN_PROBE_FAILURE_BACKOFF_MAX_MS = 6 * 60 * 60 * 1000;
 const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
 const ACCOUNT_BILLING_SYNC_ENDPOINT = "/api/account-billing/snapshots";
 const CLAUDE_SYNC_TOKEN_HEADER = "x-llm-usage-sync-token";
@@ -191,9 +211,13 @@ function showDashboardWindow(port) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.show();
     mainWindow.focus();
-    return;
+  } else {
+    createWindow(port);
   }
-  createWindow(port);
+  // Catch up on billing/plan data when returning from the slow background cadence.
+  if (dashboardPort && Date.now() - lastBillingSyncStartedAt > CLAUDE_SYNC_INTERVAL_MS) {
+    runBillingSyncs(dashboardPort);
+  }
 }
 
 async function configureBackgroundLoginItem() {
@@ -408,11 +432,18 @@ function getNotificationStatusFile() {
 async function writeNotificationStatus(updates) {
   const filePath = getNotificationStatusFile();
   try {
+    // Routine polls only change lastCheckAt/lastCheckDurationMs; skip those
+    // disk writes unless a material field changed or the heartbeat is due.
+    const signature = JSON.stringify({ ...updates, lastCheckAt: null, lastCheckDurationMs: null });
+    const heartbeatDue = Date.now() - lastNotificationStatusWriteAt > 15 * 60 * 1000;
+    if (signature === lastNotificationStatusSignature && !heartbeatDue) return;
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     let current = {};
     try { current = JSON.parse(await fs.readFile(filePath, "utf8")); } catch { /* file may not exist yet */ }
     const macNotificationDiagnostics = await getMacNotificationDiagnostics();
     await fs.writeFile(filePath, `${JSON.stringify({ ...current, ...updates, macNotificationDiagnostics }, null, 2)}\n`, { mode: 0o600 });
+    lastNotificationStatusWriteAt = Date.now();
+    lastNotificationStatusSignature = signature;
   } catch { /* best-effort; never block polling */ }
 }
 
@@ -543,7 +574,7 @@ function showNativeNotification(options, onClick) {
   });
 }
 
-async function fetchLocalJson(port, urlPath) {
+async function fetchLocalJson(port, urlPath, timeoutMs = NOTIFICATION_REQUEST_TIMEOUT_MS) {
   const http = require("node:http");
   const token = process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN;
   if (!token) return null;
@@ -557,7 +588,7 @@ async function fetchLocalJson(port, urlPath) {
       }
     );
     req.on("error", reject);
-    req.setTimeout(NOTIFICATION_REQUEST_TIMEOUT_MS, () => { req.destroy(); reject(new Error("timeout")); });
+    req.setTimeout(timeoutMs, () => { req.destroy(); reject(new Error("timeout")); });
   });
 }
 
@@ -593,18 +624,19 @@ async function writeUpdateStatus(updates) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     let current = {};
     try { current = JSON.parse(await fs.readFile(filePath, "utf8")); } catch { /* file may not exist yet */ }
-    await fs.writeFile(
-      filePath,
-      `${JSON.stringify({
-        ...current,
-        ...updates,
-        isElectron: true,
-        platform: process.platform,
-        appVersion: app.getVersion(),
-        updatedAt: new Date().toISOString()
-      }, null, 2)}\n`,
-      { mode: 0o600 }
-    );
+    const next = {
+      ...current,
+      ...updates,
+      isElectron: true,
+      platform: process.platform,
+      appVersion: app.getVersion(),
+      updatedAt: new Date().toISOString()
+    };
+    // Skip the disk write when nothing except the timestamp changed.
+    const currentSignature = JSON.stringify({ ...current, updatedAt: null });
+    const nextSignature = JSON.stringify({ ...next, updatedAt: null });
+    if (currentSignature === nextSignature) return;
+    await fs.writeFile(filePath, `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
   } catch {
     // Best-effort diagnostics; updater behavior should not depend on status writes.
   }
@@ -683,8 +715,12 @@ function registerAutoUpdaterEvents(autoUpdater) {
 }
 
 async function ensureAutoUpdater() {
+  // Support status cannot change within a running process (packaging and
+  // code signature are fixed), so remember an unsupported verdict.
+  if (autoUpdaterUnsupportedReason) return { ok: false, reason: autoUpdaterUnsupportedReason };
   const settings = await readUpdateSettings();
   const support = await getAutoUpdateSupport();
+  if (!support.supported) autoUpdaterUnsupportedReason = support.supportStatus;
   const setupStatus = {
     enabled: settings.enabled,
     allowPrerelease: settings.allowPrerelease,
@@ -761,22 +797,44 @@ async function showUpdateReadyDialog(info) {
   }
 }
 
-async function startAutoUpdatePolling(port) {
+async function startAutoUpdatePolling() {
   await ensureAutoUpdater();
   setTimeout(() => checkForUpdates("startup").catch(() => {}), 10000);
   setInterval(() => checkForUpdates("scheduled").catch(() => {}), UPDATE_POLL_INTERVAL_MS);
-  setInterval(() => checkUpdateCheckPending(port), UPDATE_REQUEST_POLL_INTERVAL_MS);
 }
 
-async function checkUpdateCheckPending(port) {
-  try {
-    const data = await fetchLocalJson(port, "/api/updates/check-pending");
-    if (data?.pending) {
-      await checkForUpdates("manual");
-    } else if (!autoUpdaterReady) {
-      await ensureAutoUpdater();
+// One long-poll loop replaces the previous three 5-second pending polls
+// (test notification, open notification settings, manual update check).
+// The server holds each request open until a flag flips, so reactions stay
+// instant while an idle app makes only ~2 localhost requests per minute.
+async function runPendingActionsLoop(port) {
+  for (;;) {
+    if (systemSuspended) {
+      await delay(PENDING_ACTIONS_RETRY_DELAY_MS);
+      continue;
     }
-  } catch { /* ignore; server may not be ready yet */ }
+    const startedAt = Date.now();
+    try {
+      const data = await fetchLocalJson(
+        port,
+        `/api/electron/pending-actions?waitMs=${PENDING_ACTIONS_LONG_POLL_WAIT_MS}`,
+        PENDING_ACTIONS_LONG_POLL_WAIT_MS + 10_000
+      );
+      if (data?.testNotification) await fireTestNotification().catch(() => {});
+      if (data?.openNotificationSettings) await openSystemNotificationSettings().catch(() => {});
+      if (data?.updateCheck) await checkForUpdates("manual").catch(() => {});
+    } catch {
+      // Server not ready or restarting; retry after a short pause.
+      await delay(PENDING_ACTIONS_RETRY_DELAY_MS);
+    }
+    // Guard against a degenerate fast loop if the server answers immediately
+    // (e.g. unexpected response body); a real long poll takes ~waitMs anyway.
+    if (Date.now() - startedAt < 2000) await delay(5000);
+  }
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function checkNotifications(port) {
@@ -792,7 +850,7 @@ async function checkNotifications(port) {
     const data = await fetchLocalJson(port, "/api/notifications/check");
     const durationMs = Date.now() - startAt;
     if (!data?.alerts?.length) {
-      app.setBadgeCount?.(0);
+      setAppBadgeCount(0);
       await writeNotificationStatus({
         lastCheckAt: new Date(startAt).toISOString(),
         lastCheckDurationMs: durationMs,
@@ -835,7 +893,7 @@ async function checkNotifications(port) {
         lastSkippedReason = "notification_not_supported";
       }
     }
-    app.setBadgeCount?.(data.alerts.length);
+    setAppBadgeCount(data.alerts.length);
     await writeNotificationStatus({
       lastCheckAt: new Date(startAt).toISOString(),
       lastCheckDurationMs: durationMs,
@@ -858,12 +916,31 @@ async function checkNotifications(port) {
   }
 }
 
+function setAppBadgeCount(count) {
+  if (lastBadgeCount === count) return;
+  lastBadgeCount = count;
+  app.setBadgeCount?.(count);
+}
+
 function pollNotifications(port) {
   if (notificationCheckPending) return notificationCheckPending;
   notificationCheckPending = checkNotifications(port).finally(() => {
     notificationCheckPending = null;
   });
   return notificationCheckPending;
+}
+
+// Adaptive notification polling: every minute while a window is visible,
+// every few minutes in the background, paused entirely while suspended.
+function scheduleNotificationPolling(port) {
+  const tick = () => {
+    const intervalMs = hasVisibleWindow() ? NOTIFICATION_POLL_INTERVAL_MS : NOTIFICATION_POLL_BACKGROUND_INTERVAL_MS;
+    const run = systemSuspended ? Promise.resolve() : pollNotifications(port).catch(() => {});
+    Promise.resolve(run).finally(() => {
+      setTimeout(tick, intervalMs);
+    });
+  };
+  tick();
 }
 
 async function fireTestNotification() {
@@ -892,15 +969,6 @@ async function fireTestNotification() {
   } catch (err) {
     await writeNotificationStatus({ lastTestAt, lastTestResult: "error", lastTestError: err.message });
   }
-}
-
-async function checkTestNotificationPending(port) {
-  try {
-    const data = await fetchLocalJson(port, "/api/notifications/test-pending");
-    if (data?.pending) {
-      await fireTestNotification();
-    }
-  } catch { /* ignore; server may not be ready yet */ }
 }
 
 async function openSystemNotificationSettings() {
@@ -954,16 +1022,26 @@ function findExecutable(command) {
   return null;
 }
 
-async function checkOpenNotificationSettingsPending(port) {
-  try {
-    const data = await fetchLocalJson(port, "/api/notifications/open-settings-pending");
-    if (data?.pending) {
-      await openSystemNotificationSettings();
-    }
-  } catch { /* ignore; server may not be ready yet */ }
+let lastBillingSyncStartedAt = 0;
+
+function runBillingSyncs(port, options = {}) {
+  lastBillingSyncStartedAt = Date.now();
+  syncClaudeBrowserCredits(port, options).catch(() => {});
+  syncAccountBillingSnapshots(port, options).catch(() => {});
 }
 
-async function syncClaudeBrowserCredits(port) {
+// Adaptive billing/plan sync: every minute while a window is visible, every
+// few minutes in the background. Reopening the window triggers a catch-up run.
+function scheduleBillingSyncPolling(port) {
+  const tick = () => {
+    const intervalMs = hasVisibleWindow() ? CLAUDE_SYNC_INTERVAL_MS : CLAUDE_SYNC_BACKGROUND_INTERVAL_MS;
+    if (!systemSuspended) runBillingSyncs(port);
+    setTimeout(tick, intervalMs);
+  };
+  setTimeout(tick, CLAUDE_SYNC_INTERVAL_MS);
+}
+
+async function syncClaudeBrowserCredits(port, { force = false } = {}) {
   if (claudeBrowserSyncPending) return claudeBrowserSyncPending;
   claudeBrowserSyncPending = (async () => {
     try {
@@ -978,7 +1056,10 @@ async function syncClaudeBrowserCredits(port) {
       if (session.cookieHeader) {
         const billing = await fetchClaudeBillingSnapshot(session.cookieHeader, session.orgId || null);
         if (!billing.subscription) {
-          const browserPlan = await fetchClaudePlanFromBrowserSession(session.cookieHeader);
+          const browserPlan = await fetchClaudePlanFromBrowserSession(session.cookieHeader, {
+            force,
+            sessionSource: session.source || ""
+          });
           if (browserPlan) {
             billing.subscription = {
               planType: browserPlan,
@@ -1043,10 +1124,10 @@ async function postClaudeBrowserCredits(port, payload) {
   });
 }
 
-async function syncAccountBillingSnapshots(port) {
+async function syncAccountBillingSnapshots(port, { force = false } = {}) {
   if (accountBillingSyncPending) return accountBillingSyncPending;
   accountBillingSyncPending = (async () => {
-    const snapshot = await buildOpenAiAccountBillingSnapshot();
+    const snapshot = await buildOpenAiAccountBillingSnapshot({ force });
     await postAccountBillingSnapshots(port, snapshot);
   })().finally(() => {
     accountBillingSyncPending = null;
@@ -1061,13 +1142,16 @@ async function refreshSubscriptionSources(provider) {
   const normalizedProvider = String(provider || "").toLowerCase();
   const tasks = [];
   if (!normalizedProvider || ["chatgpt", "codex", "codexspark", "openai"].includes(normalizedProvider)) {
-    tasks.push(syncAccountBillingSnapshots(dashboardPort));
+    tasks.push(syncAccountBillingSnapshots(dashboardPort, { force: true }));
   }
   if (!normalizedProvider || ["anthropic", "claude", "claudecode"].includes(normalizedProvider)) {
-    tasks.push(syncClaudeBrowserCredits(dashboardPort));
+    tasks.push(syncClaudeBrowserCredits(dashboardPort, { force: true }));
   }
   if (!tasks.length) {
-    tasks.push(syncAccountBillingSnapshots(dashboardPort), syncClaudeBrowserCredits(dashboardPort));
+    tasks.push(
+      syncAccountBillingSnapshots(dashboardPort, { force: true }),
+      syncClaudeBrowserCredits(dashboardPort, { force: true })
+    );
   }
   const results = await Promise.allSettled(tasks);
   const failed = results.filter((result) => result.status === "rejected").length;
@@ -1092,7 +1176,7 @@ async function postAccountBillingSnapshots(port, payload) {
   });
 }
 
-async function buildOpenAiAccountBillingSnapshot() {
+async function buildOpenAiAccountBillingSnapshot({ force = false } = {}) {
   const fetchedAt = new Date().toISOString();
   const sessions = await readOpenAiBrowserSessions();
   const usableSessions = sessions.filter((session) => session.cookieHeader);
@@ -1118,7 +1202,7 @@ async function buildOpenAiAccountBillingSnapshot() {
     const dashboard = await fetchOpenAiDashboardSnapshot(session.cookieHeader);
     const candidatePlan =
       normalizeOpenAiPlanType(findOpenAiPlanValue(dashboard)) ||
-      (await fetchOpenAiPlanFromBrowserSession(session.cookieHeader));
+      (await fetchOpenAiPlanFromBrowserSession(session.cookieHeader, { force, sessionSource: session.source || "" }));
     lastDashboard = dashboard;
     lastSession = session;
     if (candidatePlan) {
@@ -1295,33 +1379,66 @@ function normalizeOpenAiPlanType(value) {
   return planType || (String(value || "").trim() ? String(value).trim().slice(0, 80) : null);
 }
 
-async function fetchOpenAiPlanFromBrowserSession(cookieHeader) {
-  for (const url of [OPENAI_CHATGPT_BILLING_URL, OPENAI_DASHBOARD_USAGE_URL]) {
-    const planType = await detectPlanWithBrowserSession({
-      cookieHeader,
-      domain: "chatgpt.com",
-      url,
-      detector: (text) => detectOpenAiPlanType(text, { explicit: true, allowGeneric: false })
-    });
-    if (planType) return planType;
-  }
-  return null;
+async function fetchOpenAiPlanFromBrowserSession(cookieHeader, { force = false, sessionSource = "" } = {}) {
+  return probePlanWithBackoff(`chatgpt.com:${sessionSource}`, force, async () => {
+    for (const url of [OPENAI_CHATGPT_BILLING_URL, OPENAI_DASHBOARD_USAGE_URL]) {
+      const planType = await detectPlanWithBrowserSession({
+        cookieHeader,
+        domain: "chatgpt.com",
+        url,
+        detector: (text) => detectOpenAiPlanType(text, { explicit: true, allowGeneric: false })
+      });
+      if (planType) return planType;
+    }
+    return null;
+  });
 }
 
-async function fetchClaudePlanFromBrowserSession(cookieHeader) {
-  const urls = [
-    "https://claude.ai/settings/plan",
-    "https://claude.ai/settings/billing"
-  ];
-  for (const url of urls) {
-    const planType = await detectPlanWithBrowserSession({
-      cookieHeader,
-      domain: "claude.ai",
-      url,
-      detector: (text) => detectClaudePlanType(text, { explicit: true, allowGeneric: false })
-    });
-    if (planType) return planType;
+async function fetchClaudePlanFromBrowserSession(cookieHeader, { force = false, sessionSource = "" } = {}) {
+  return probePlanWithBackoff(`claude.ai:${sessionSource}`, force, async () => {
+    const urls = [
+      "https://claude.ai/settings/plan",
+      "https://claude.ai/settings/billing"
+    ];
+    for (const url of urls) {
+      const planType = await detectPlanWithBrowserSession({
+        cookieHeader,
+        domain: "claude.ai",
+        url,
+        detector: (text) => detectClaudePlanType(text, { explicit: true, allowGeneric: false })
+      });
+      if (planType) return planType;
+    }
+    return null;
+  });
+}
+
+// Hidden-window plan probes are expensive (BrowserWindow + full page load), so
+// successes are reused for hours and failures back off exponentially. A manual
+// subscription refresh bypasses the backoff via force.
+async function probePlanWithBackoff(domain, force, probe) {
+  const now = Date.now();
+  const state = planProbeBackoff.get(domain);
+  if (!force && state) {
+    if (state.planType && now - state.successAt < PLAN_PROBE_SUCCESS_TTL_MS) return state.planType;
+    if (now < state.backoffUntil) return state.planType || null;
   }
+  const planType = await probe();
+  if (planType) {
+    planProbeBackoff.set(domain, { planType, successAt: now, failures: 0, backoffUntil: 0 });
+    return planType;
+  }
+  const failures = (state?.failures || 0) + 1;
+  const backoffMs = Math.min(
+    PLAN_PROBE_FAILURE_BACKOFF_MIN_MS * 2 ** (failures - 1),
+    PLAN_PROBE_FAILURE_BACKOFF_MAX_MS
+  );
+  planProbeBackoff.set(domain, {
+    planType: state?.planType || null,
+    successAt: state?.successAt || 0,
+    failures,
+    backoffUntil: now + backoffMs
+  });
   return null;
 }
 
@@ -1461,6 +1578,26 @@ async function readChromeCookieSessionForDomain(domain, source) {
 }
 
 async function readChromeCookieRowsForDomain(domain) {
+  // Copying the Chrome cookie DB and spawning sqlite3 is only necessary when
+  // the store actually changed; otherwise serve the cached rows per domain.
+  let stat = null;
+  try {
+    stat = await fs.stat(CLAUDE_CHROME_COOKIE_DB);
+    const cached = chromeCookieRowsCache.get(domain);
+    if (cached && cached.size === stat.size && cached.mtimeMs === stat.mtimeMs) {
+      return cached.rows;
+    }
+  } catch {
+    stat = null;
+  }
+  const rows = await queryChromeCookieRowsForDomain(domain);
+  // rows === null signals a transient copy/sqlite failure; do not cache it so
+  // the next sync retries instead of reporting "no cookies" until the DB changes.
+  if (stat && rows) chromeCookieRowsCache.set(domain, { size: stat.size, mtimeMs: stat.mtimeMs, rows });
+  return rows || [];
+}
+
+async function queryChromeCookieRowsForDomain(domain) {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "llm-usage-chrome-cookies-"));
   const tmpDb = path.join(tmpDir, "Cookies.sqlite");
   try {
@@ -1487,7 +1624,7 @@ async function readChromeCookieRowsForDomain(domain) {
         };
       });
   } catch {
-    return [];
+    return null;
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
@@ -1733,15 +1870,26 @@ async function readClaudeAppCacheBillingSnapshot() {
     usage: null,
     subscription: null
   };
+  const seenNames = new Set();
   for (const entry of entries) {
     if (!entry.isFile()) continue;
+    seenNames.add(entry.name);
     const filePath = path.join(CLAUDE_APP_CACHE_DIR, entry.name);
     try {
-      const [stats, buffer] = await Promise.all([fs.stat(filePath), fs.readFile(filePath)]);
-      const endpoint = detectClaudeCacheEndpoint(buffer);
-      if (!endpoint) continue;
-      const payload = decodeClaudeCacheJsonPayload(buffer);
-      if (!payload) continue;
+      // Only read files that are new or changed since the previous scan; the
+      // memo remembers both matches and non-matches per (name, size, mtime).
+      const stats = await fs.stat(filePath);
+      let memo = claudeAppCacheFileMemo.get(entry.name);
+      if (!memo || memo.size !== stats.size || memo.mtimeMs !== stats.mtimeMs) {
+        const buffer = await fs.readFile(filePath);
+        const endpoint = detectClaudeCacheEndpoint(buffer);
+        const payload = endpoint ? decodeClaudeCacheJsonPayload(buffer) : null;
+        memo = { size: stats.size, mtimeMs: stats.mtimeMs, endpoint, payload };
+        claudeAppCacheFileMemo.set(entry.name, memo);
+      }
+      const endpoint = memo.endpoint;
+      const payload = memo.payload;
+      if (!endpoint || !payload) continue;
       const cacheEntry = { payload, mtimeMs: stats.mtimeMs };
       const subscription = findClaudeSubscriptionCandidate(payload);
       if (subscription && (!cacheParts.subscription || stats.mtimeMs >= cacheParts.subscription.mtimeMs)) {
@@ -1762,6 +1910,9 @@ async function readClaudeAppCacheBillingSnapshot() {
     } catch {
       // Cache entries are best-effort; skip corrupt or locked files.
     }
+  }
+  for (const name of claudeAppCacheFileMemo.keys()) {
+    if (!seenNames.has(name)) claudeAppCacheFileMemo.delete(name);
   }
 
   const credits = buildClaudeCreditsFromCacheParts(cacheParts);
@@ -2203,21 +2354,24 @@ app.whenReady().then(async () => {
   await configureBackgroundLoginItem();
   if (shouldOpenInitialWindow() || openWindowWhenReady) showDashboardWindow(port);
 
-  startAutoUpdatePolling(port).catch(() => {});
-  syncClaudeBrowserCredits(port).catch(() => {});
-  syncAccountBillingSnapshots(port).catch(() => {});
+  startAutoUpdatePolling().catch(() => {});
+  runBillingSyncs(port);
 
-  // Start notification polling after a short initial delay
+  powerMonitor.on("suspend", () => {
+    systemSuspended = true;
+  });
+  powerMonitor.on("resume", () => {
+    systemSuspended = false;
+    pollNotifications(port).catch(() => {});
+  });
+
+  // Start notification polling after a short initial delay; the scheduler
+  // adapts its cadence to window visibility and pauses while suspended.
   setTimeout(() => {
-    pollNotifications(port);
-    setInterval(() => pollNotifications(port), NOTIFICATION_POLL_INTERVAL_MS);
-    setInterval(() => checkTestNotificationPending(port), NOTIFICATION_TEST_POLL_INTERVAL_MS);
-    setInterval(() => checkOpenNotificationSettingsPending(port), NOTIFICATION_TEST_POLL_INTERVAL_MS);
+    scheduleNotificationPolling(port);
   }, 10000);
-  setInterval(() => {
-    syncClaudeBrowserCredits(port).catch(() => {});
-    syncAccountBillingSnapshots(port).catch(() => {});
-  }, CLAUDE_SYNC_INTERVAL_MS);
+  runPendingActionsLoop(port).catch(() => {});
+  scheduleBillingSyncPolling(port);
 
   app.on("activate", () => {
     showDashboardWindow(port);

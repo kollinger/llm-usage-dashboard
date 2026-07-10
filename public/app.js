@@ -302,6 +302,10 @@ const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
 const LIMIT_GAUGE_TARGET_PERCENT = 100;
 const LIVE_TOKEN_DISPLAY_TICK_MS = 1000;
+const SYSTEM_LIVE_IDLE_POLL_INTERVAL_MS = 15_000;
+const SYSTEM_LIVE_IDLE_BACKOFF_AFTER_MS = 3 * 60_000;
+const SUBSCRIPTION_HISTORY_REFRESH_MS = 10 * 60_000;
+const USAGE_RENDER_MAX_SKIPS = 4;
 const LIVE_TOKEN_RATE_WINDOW_MS = 60_000;
 const LIVE_TOKEN_RATE_EMA_ALPHA = 0.42;
 const USAGE_POLL_INTERVAL_MS = 60_000;
@@ -1685,7 +1689,7 @@ async function init() {
   await loadAuth();
   await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics(), loadSystemMetrics()]);
   setInterval(pollUsage, USAGE_POLL_INTERVAL_MS);
-  setInterval(pollSystemMetrics, SYSTEM_LIVE_POLL_INTERVAL_MS);
+  scheduleSystemMetricsPolling();
   setInterval(renderLiveTokenRateTick, LIVE_TOKEN_DISPLAY_TICK_MS);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
@@ -3329,6 +3333,38 @@ async function pollSystemMetrics() {
   await loadSystemMetrics();
 }
 
+// Self-scheduling live-metrics poll: 5s while there is AI activity, backing
+// off to a slower cadence after a few quiet minutes. Any activity in a fresh
+// sample (or the visibilitychange handler) snaps it back to the fast cadence.
+function scheduleSystemMetricsPolling() {
+  const tick = async () => {
+    try {
+      await pollSystemMetrics();
+    } catch {
+      // A failed poll (e.g. auth re-check during a server restart) must never
+      // kill the loop; the next tick retries.
+    } finally {
+      setTimeout(tick, systemMetricsPollDelayMs());
+    }
+  };
+  setTimeout(tick, SYSTEM_LIVE_POLL_INTERVAL_MS);
+}
+
+function systemMetricsPollDelayMs() {
+  const metrics = state.systemMetrics;
+  const tokensPerMinute = Number(metrics?.tokensPerMinute?.value) || 0;
+  const aiProcessCount = Number(metrics?.processes?.ai?.processCount) || 0;
+  const active = tokensPerMinute > 0 || aiProcessCount > 0;
+  if (active || !metrics) {
+    state.systemMetricsIdleSince = 0;
+    return SYSTEM_LIVE_POLL_INTERVAL_MS;
+  }
+  if (!state.systemMetricsIdleSince) state.systemMetricsIdleSince = Date.now();
+  return Date.now() - state.systemMetricsIdleSince >= SYSTEM_LIVE_IDLE_BACKOFF_AFTER_MS
+    ? SYSTEM_LIVE_IDLE_POLL_INTERVAL_MS
+    : SYSTEM_LIVE_POLL_INTERVAL_MS;
+}
+
 async function loadUsage({ showIndicator = false, force = false } = {}) {
   if (state.loadingUsage) {
     if (force) {
@@ -3350,16 +3386,26 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     const params = new URLSearchParams({ ts: String(Date.now()) });
     params.set("lang", state.language || DEFAULT_LANGUAGE);
     if (force) params.set("force", "1");
+    // Subscription history changes rarely; refresh it on force and on a slow
+    // cadence instead of alongside every usage poll.
+    const refreshSubscriptionHistory =
+      force ||
+      !state.subscriptionHistory ||
+      Date.now() - (state.subscriptionHistoryFetchedAt || 0) >= SUBSCRIPTION_HISTORY_REFRESH_MS;
     const [usage, subscriptionHistory] = await Promise.all([
       fetchJson(`/api/usage?${params.toString()}`),
-      fetchJson("/api/subscription-history").catch((error) => {
-        if (error.status === 401) throw error;
-        return { version: 1, entries: [] };
-      })
+      refreshSubscriptionHistory
+        ? fetchJson("/api/subscription-history").catch((error) => {
+            if (error.status === 401) throw error;
+            // Keep the previous data on transient failures and retry next poll.
+            return null;
+          })
+        : Promise.resolve(state.subscriptionHistory)
     ]);
+    if (refreshSubscriptionHistory && subscriptionHistory) state.subscriptionHistoryFetchedAt = Date.now();
     state.usage = usage;
-    state.subscriptionHistory = subscriptionHistory;
-    render();
+    state.subscriptionHistory = subscriptionHistory || state.subscriptionHistory || { version: 1, entries: [] };
+    renderUsageIfChanged({ force });
   } catch (error) {
     if (error.status === 401) {
       await loadAuth();
@@ -3367,6 +3413,9 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
       return;
     }
     els.providerGrid.innerHTML = `<article class="provider-card"><h2>${escapeHtml(t("errors.loadUsage"))}</h2><p>${escapeHtml(error.message)}</p></article>`;
+    // The error card replaced dashboard markup; the next successful poll must
+    // render even when its payload matches the last rendered signature.
+    state.lastUsageRenderSignature = null;
   } finally {
     setUsageLoading(false);
     if (state.queuedUsageForce) {
@@ -3436,6 +3485,9 @@ function renderSkeletonProviderGrid() {
 function renderLocked() {
   state.sourceDiagnostics = null;
   state.sourceDiagnosticsError = "";
+  // The locked view replaces dashboard markup, so the next usage load must
+  // render unconditionally even when the payload is unchanged.
+  state.lastUsageRenderSignature = null;
   els.providerGrid.innerHTML = "";
   els.fiveHourOpen.textContent = "--";
   els.weeklyOpen.textContent = "--";
@@ -3494,6 +3546,24 @@ function renderLocked() {
   updateLayoutControls([], []);
   renderSourceDiagnostics();
   renderSourceSettings();
+}
+
+// Skips the full dashboard DOM rebuild when the payload is unchanged apart
+// from server-side timestamps. A forced refresh, a language switch, and every
+// few polls (so relative-time labels stay honest) still render normally.
+function renderUsageIfChanged({ force = false } = {}) {
+  const volatileKeys = new Set(["generatedAt", "updatedAt"]);
+  const signature = `${state.language}|${JSON.stringify(state.usage, (key, value) =>
+    volatileKeys.has(key) ? undefined : value
+  )}|${JSON.stringify(state.subscriptionHistory)}`;
+  const unchanged = signature === state.lastUsageRenderSignature;
+  if (!force && unchanged && (state.usageRenderSkips || 0) < USAGE_RENDER_MAX_SKIPS) {
+    state.usageRenderSkips = (state.usageRenderSkips || 0) + 1;
+    return;
+  }
+  state.lastUsageRenderSignature = signature;
+  state.usageRenderSkips = 0;
+  render();
 }
 
 function render() {
@@ -5766,6 +5836,16 @@ function renderTokenList(totals) {
     .join("");
 }
 
+// Writes innerHTML only when the markup actually changed; returns whether a
+// write happened so callers can skip icon regeneration and layout work.
+function setHtmlIfChanged(el, html) {
+  if (!el) return false;
+  if (el.__lastRenderedHtml === html) return false;
+  el.__lastRenderedHtml = html;
+  el.innerHTML = html;
+  return true;
+}
+
 function renderLiveGauges(metrics) {
   if (!els.liveGaugeGrid) return;
   const live = metrics ? liveMetricsWithDisplayedTokenRate(metrics) : unavailableLiveMetrics();
@@ -5774,13 +5854,14 @@ function renderLiveGauges(metrics) {
     : state.systemMetricsError
       ? t("liveMetrics.error")
       : t("liveMetrics.notAvailable");
-  els.liveGaugeGrid.innerHTML = liveGaugeDefinitions(live).map(renderLiveGaugeCard).join("");
-  renderLiveProcessBreakdown(metrics);
-  renderLiveHistory(metrics);
-  refreshIcons();
+  let changed = setHtmlIfChanged(els.liveGaugeGrid, liveGaugeDefinitions(live).map(renderLiveGaugeCard).join(""));
+  changed = renderLiveProcessBreakdown(metrics) || changed;
+  changed = renderLiveHistory(metrics) || changed;
+  if (changed) refreshIcons();
 }
 
 function renderLiveTokenRateTick(nowMs = Date.now()) {
+  if (document.hidden) return;
   if (!state.systemMetrics || !els.liveGaugeGrid) return;
   const card = els.liveGaugeGrid.querySelector?.('[data-live-gauge-id="tokensPerMin"]');
   if (!card) return;
@@ -5792,14 +5873,20 @@ function renderLiveTokenRateTick(nowMs = Date.now()) {
   const sub = card.querySelector?.(".live-gauge-sub");
   const quality = card.querySelector?.(".live-quality-badge");
   if (ring) {
-    ring.style.setProperty("--percent", String(clampUiPercent(gauge.percent || 0)));
-    ring.dataset.valueLen = String(String(gauge.value || "").length);
+    const percent = String(clampUiPercent(gauge.percent || 0));
+    if (ring.style.getPropertyValue("--percent") !== percent) ring.style.setProperty("--percent", percent);
+    const valueLen = String(String(gauge.value || "").length);
+    if (ring.dataset.valueLen !== valueLen) ring.dataset.valueLen = valueLen;
   }
-  if (value) value.textContent = gauge.value;
-  if (sub) sub.textContent = gauge.sub || "";
+  const valueText = String(gauge.value ?? "");
+  if (value && value.textContent !== valueText) value.textContent = valueText;
+  const subText = gauge.sub || "";
+  if (sub && sub.textContent !== subText) sub.textContent = subText;
   if (quality) {
-    quality.className = `live-quality-badge live-quality-${gauge.quality || "unavailable"}`;
-    quality.textContent = liveQualityLabel(gauge.quality);
+    const qualityClass = `live-quality-badge live-quality-${gauge.quality || "unavailable"}`;
+    if (quality.className !== qualityClass) quality.className = qualityClass;
+    const qualityText = liveQualityLabel(gauge.quality);
+    if (quality.textContent !== qualityText) quality.textContent = qualityText;
   }
 }
 
@@ -5849,14 +5936,31 @@ function smoothLiveTokenRateField(metrics, field, nowMs, fallbackValue) {
   return { value, quality: "calculated" };
 }
 
+// Timestamp parsing per metrics payload is memoized: the 1-second display
+// tick otherwise re-runs Date.parse over the whole timeSeries four times per tick.
+const liveTokenRateParsedPoints = new WeakMap();
+
+function parsedLiveTokenRatePoints(metrics) {
+  let parsed = liveTokenRateParsedPoints.get(metrics);
+  if (!parsed) {
+    const points = Array.isArray(metrics?.timeSeries) ? metrics.timeSeries : [];
+    parsed = points
+      .map((point) => {
+        const ts = Date.parse(point?.timestamp);
+        return Number.isFinite(ts) ? { ts, tokensPerMinute: point?.tokensPerMinute } : null;
+      })
+      .filter(Boolean);
+    liveTokenRateParsedPoints.set(metrics, parsed);
+  }
+  return parsed;
+}
+
 function liveTokenRateSamples(metrics, field, nowMs) {
   const tokenKey = field === "total" ? "total" : field;
-  const points = Array.isArray(metrics?.timeSeries) ? metrics.timeSeries : [];
-  const samples = points
+  const samples = parsedLiveTokenRatePoints(metrics)
     .map((point) => {
-      const ts = Date.parse(point?.timestamp);
-      const value = Number(point?.tokensPerMinute?.[tokenKey]);
-      return Number.isFinite(ts) && Number.isFinite(value) && value >= 0 ? { ts, value } : null;
+      const value = Number(point.tokensPerMinute?.[tokenKey]);
+      return Number.isFinite(value) && value >= 0 ? { ts: point.ts, value } : null;
     })
     .filter(Boolean)
     .filter((sample) => nowMs - sample.ts <= LIVE_TOKEN_RATE_WINDOW_MS);
@@ -6009,11 +6113,11 @@ function liveGaugeSegmentPercent(segmentValue, totalValue) {
 }
 
 function renderLiveProcessBreakdown(metrics) {
-  if (!els.liveProcessBreakdown) return;
+  if (!els.liveProcessBreakdown) return false;
   const processes = metrics?.processes;
   const groups = Array.isArray(processes?.groups) ? processes.groups : [];
   if (!metrics || processes?.quality === "unavailable") {
-    els.liveProcessBreakdown.innerHTML = `
+    return setHtmlIfChanged(els.liveProcessBreakdown, `
       <section class="live-process-breakdown-card">
         <div class="live-process-breakdown-head">
           <h3>${escapeHtml(t("liveMetrics.processBreakdownHeading"))}</h3>
@@ -6021,11 +6125,10 @@ function renderLiveProcessBreakdown(metrics) {
         </div>
         <p>${escapeHtml(t("liveMetrics.processBreakdownUnavailable"))}</p>
       </section>
-    `;
-    return;
+    `);
   }
   if (!groups.length) {
-    els.liveProcessBreakdown.innerHTML = `
+    return setHtmlIfChanged(els.liveProcessBreakdown, `
       <section class="live-process-breakdown-card">
         <div class="live-process-breakdown-head">
           <h3>${escapeHtml(t("liveMetrics.processBreakdownHeading"))}</h3>
@@ -6033,8 +6136,7 @@ function renderLiveProcessBreakdown(metrics) {
         </div>
         <p>${escapeHtml(t("liveMetrics.processBreakdownEmpty"))}</p>
       </section>
-    `;
-    return;
+    `);
   }
   const aiTotals = processes?.ai || {};
   const summary = t("liveMetrics.processTotal", {
@@ -6052,7 +6154,7 @@ function renderLiveProcessBreakdown(metrics) {
       <td>${escapeHtml(formatNumber(group.processCount || 0))}</td>
     </tr>
   `).join("");
-  els.liveProcessBreakdown.innerHTML = `
+  return setHtmlIfChanged(els.liveProcessBreakdown, `
     <section class="live-process-breakdown-card">
       <div class="live-process-breakdown-head">
         <h3>${escapeHtml(t("liveMetrics.processBreakdownHeading"))}</h3>
@@ -6075,31 +6177,28 @@ function renderLiveProcessBreakdown(metrics) {
         </table>
       </div>
     </section>
-  `;
+  `);
 }
 
 function renderLiveHistory(metrics) {
-  if (!els.liveHistoryChart || !els.liveHistoryLegend) return;
+  if (!els.liveHistoryChart || !els.liveHistoryLegend) return false;
   const points = Array.isArray(metrics?.timeSeries) ? metrics.timeSeries : [];
   const availableSeries = liveHistorySeries.filter((series) => points.some((point) => liveSeriesHasValue(series, point)));
   for (const series of availableSeries) {
     if (state.liveSeriesVisibility[series.id] === undefined) state.liveSeriesVisibility[series.id] = true;
   }
-  els.liveHistoryLegend.innerHTML = renderLiveHistoryLegend(availableSeries);
+  let changed = setHtmlIfChanged(els.liveHistoryLegend, renderLiveHistoryLegend(availableSeries));
 
   if (!metrics) {
-    els.liveHistoryChart.innerHTML = `<div class="chart-empty">${escapeHtml(state.systemMetricsError || t("liveMetrics.notAvailable"))}</div>`;
-    return;
+    return setHtmlIfChanged(els.liveHistoryChart, `<div class="chart-empty">${escapeHtml(state.systemMetricsError || t("liveMetrics.notAvailable"))}</div>`) || changed;
   }
   if (points.length < 2 || !availableSeries.length) {
-    els.liveHistoryChart.innerHTML = `<div class="chart-empty">${escapeHtml(t("liveMetrics.historyLoading"))}</div>`;
-    return;
+    return setHtmlIfChanged(els.liveHistoryChart, `<div class="chart-empty">${escapeHtml(t("liveMetrics.historyLoading"))}</div>`) || changed;
   }
 
   const activeSeries = availableSeries.filter((series) => state.liveSeriesVisibility[series.id] !== false);
   if (!activeSeries.length) {
-    els.liveHistoryChart.innerHTML = `<div class="chart-empty">${escapeHtml(t("liveMetrics.historyNoSeries"))}</div>`;
-    return;
+    return setHtmlIfChanged(els.liveHistoryChart, `<div class="chart-empty">${escapeHtml(t("liveMetrics.historyNoSeries"))}</div>`) || changed;
   }
 
   const viewportWidth = Math.max(620, els.liveHistoryChart.clientWidth || 760);
@@ -6145,7 +6244,7 @@ function renderLiveHistory(metrics) {
   const first = points[0]?.timestamp;
   const last = points[points.length - 1]?.timestamp;
 
-  els.liveHistoryChart.innerHTML = `
+  return setHtmlIfChanged(els.liveHistoryChart, `
     <div class="live-history-canvas" style="width: ${width}px">
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("liveMetrics.historyAria"))}" style="width: ${width}px">
         ${gridLines}
@@ -6156,7 +6255,7 @@ function renderLiveHistory(metrics) {
         <text x="${width - padRight}" y="${dateLabelY}" text-anchor="end" class="axis-label">${escapeHtml(formatTime(last))}</text>
       </svg>
     </div>
-  `;
+  `) || changed;
 }
 
 function renderLiveHistoryLegend(seriesList) {
@@ -8927,6 +9026,9 @@ function renderOtherDashboardInstances(instances) {
 
 function renderSourceSettings() {
   if (!els.settingsConnectedSources || !els.settingsCandidateSources || !els.settingsSourceSummary) return;
+  // The source lists live inside the settings dialog; openSettings() renders
+  // them on open, so skip the rebuild (and icon pass) while it is closed.
+  if (els.settingsDialog && !els.settingsDialog.open) return;
   const diagnostics = state.sourceDiagnostics;
   const connected = Array.isArray(diagnostics?.connected) ? diagnostics.connected : [];
   const candidates = Array.isArray(diagnostics?.candidates) ? diagnostics.candidates : [];

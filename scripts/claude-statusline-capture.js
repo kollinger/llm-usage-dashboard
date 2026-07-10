@@ -17,13 +17,30 @@ process.stdin.on("end", () => {
     const captured = sanitizeStatuslinePayload(payload);
     const claudeHome = process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude");
     const target = path.join(claudeHome, "usage-dashboard-statusline.json");
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, `${JSON.stringify(captured, null, 2)}\n`, { mode: 0o600 });
+    if (shouldWriteStatusline(target, captured)) {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, `${JSON.stringify(captured, null, 2)}\n`, { mode: 0o600 });
+    }
     process.stdout.write(formatStatusLine(captured));
   } catch {
     process.stdout.write("Claude usage: status unavailable");
   }
 });
+
+// Claude refreshes the statusline very frequently during active sessions.
+// Skip the disk write when only captured_at changed and the file is still a
+// fresh heartbeat, so steady usage does not rewrite the file every refresh.
+function shouldWriteStatusline(target, captured) {
+  try {
+    const stat = fs.statSync(target);
+    if (Date.now() - stat.mtimeMs > 60_000) return true;
+    const existing = JSON.parse(fs.readFileSync(target, "utf8"));
+    const normalize = (value) => JSON.stringify({ ...value, captured_at: null });
+    return normalize(existing) !== normalize(captured);
+  } catch {
+    return true;
+  }
+}
 
 function sanitizeStatuslinePayload(payload) {
   const limits = payload.rate_limits || payload.rateLimits || {};
