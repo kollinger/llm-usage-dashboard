@@ -160,12 +160,15 @@ handoff so review never comes from an older local Git state or stale artifact.
   ticket draft in the same WhatsApp group. After approval, implementation
   should run through Multica on Manjaro with the usual GPT+Opus owner/reviewer
   pattern and a durable heartbeat/lifecycle watch until the ticket is truthfully
-  done, blocked, cancelled, pushed, or ready for an explicit release gate.
-- When approved work is shipped and pushed, the gateway or delivery heartbeat
-  should prepare a WhatsApp message with the new version, download/update
-  status, and short changelog. Sending that outbound message to Reinhard still
-  requires Gerhard approval of the exact text unless Gerhard has explicitly
-  delegated that send for the specific release.
+  done, blocked, cancelled, pushed, released, and announced back to the
+  WhatsApp group.
+- For approved WhatsApp Review Gateway tickets, release is fully delegated:
+  after the ticket reaches truthful `done`, the gateway/heartbeat should
+  automatically bump the preview version, update the changelog, commit, tag,
+  push, wait for the GitHub desktop-build release, verify release assets and
+  updater metadata, then send the WhatsApp update message with version,
+  download/update status, GitHub release link, and short changelog. Gerhard is
+  not an additional release/send gate for this reviewed route.
 - Prefer resolving Reinhard and the review group through the Manjaro WhatsApp
   bridge contacts/chats by name. A newly created group may need to sync into
   the bridge first, but agents should not require Reinhard to send a dummy
@@ -185,8 +188,11 @@ handoff so review never comes from an older local Git state or stale artifact.
 - Integration on Gerhard's Mac and local Mac-app test builds are allowed without
   a separate gate when they are useful review builds. Batch them for meaningful
   updates so the M1 is not kept busy for every tiny change.
-- Still stop for Gerhard before production deploys, releases, tags, main merges,
-  destructive actions, account/signing/permission changes, public tunnels, live
-  database writes, or unresolved product decisions.
+- Still stop for Gerhard before destructive actions, account/signing/permission
+  changes, public tunnels, live database writes, or unresolved product
+  decisions. For approved WhatsApp Review Gateway tickets in this product,
+  main integration, preview release tags, GitHub release publication, and the
+  matching WhatsApp release announcement are delegated to the automated
+  gateway/heartbeat workflow above.
 - Confirm that `git status --ignored` shows `data/`, `dist/`, `node_modules/`, and `.env` files as ignored.
 - Keep commits focused: code, documentation, packaging, and generated release artifacts should not be mixed unless explicitly requested.
