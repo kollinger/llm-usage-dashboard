@@ -21,6 +21,7 @@ services:
       COPILOT_HOME: /host/copilot
       CLAUDE_HOME: /host/claude
       GEMINI_HOME: /host/gemini
+      OPENCODE_DATA_DIR: /host/opencode
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
       OLLAMA_PROXY_PORT: 11435
     extra_hosts:
@@ -31,6 +32,7 @@ services:
       - ${HOME}/.copilot:/host/copilot:ro
       - ${HOME}/.claude:/host/claude:ro
       - ${HOME}/.gemini:/host/gemini:ro
+      - ${XDG_DATA_HOME:-${HOME}/.local/share}/opencode:/host/opencode:ro
 
 # In containerized runtime, local process/user discovery is partially unavailable.
 # Keep source discovery reliable by mounting source folders from the host.

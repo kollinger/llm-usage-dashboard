@@ -4447,6 +4447,8 @@ function normalizeLocalProvider(id, provider) {
     updatedAt
   }, id);
   const planType = providerDisplayPlanType(id, rawPlanType, subscription);
+  const usageQuality = provider?.usageQuality || null;
+  const configuredSource = Boolean(provider?.configuredSource || provider?.source?.hasConfiguredSource);
   const foot = buildQuotaFoot({
     providerId: id,
     todayTokens: provider?.totals?.last24h?.totalTokens,
@@ -4456,6 +4458,13 @@ function normalizeLocalProvider(id, provider) {
     updated: updatedAt
   });
   insertSubscriptionFoot(foot, subscription);
+  if (usageQuality) {
+    foot.splice(
+      Math.max(foot.length - 1, 0),
+      0,
+      footRow(t("chart.costSummary.quality"), t(`liveMetrics.quality.${usageQuality}`, {}, usageQuality), { wide: true })
+    );
+  }
   const limitUsageFootRows = id === "copilot" ? copilotLimitUsageFootRows(provider, limitRows) : [];
   if (limitUsageFootRows.length) foot.splice(Math.max(foot.length - 1, 0), 0, ...limitUsageFootRows);
   const limitAlert = buildLimitFullAlert({
@@ -4481,6 +4490,8 @@ function normalizeLocalProvider(id, provider) {
     todayTokens: provider?.totals?.last24h?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
+    configuredSource,
+    usageQuality,
     usageUpdatedAt: provider?.latest?.timestamp || null,
     limitsUpdatedAt: updatedAt || null,
     priceUpdatedAt: subscription?.updatedAt || null,
@@ -4848,7 +4859,7 @@ function providerHasUsage(provider) {
   const hasMeaningfulLimitTelemetry = allowLimitTelemetry && providerHasMeaningfulLimitTelemetry(provider);
   const needsAttention = provider.status === "error" || (allowLimitTelemetry && Boolean(provider.limitAlert));
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
-  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi;
+  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi || Boolean(provider.configuredSource);
 }
 
 function providerHasRecentUsage(provider, windowMs) {

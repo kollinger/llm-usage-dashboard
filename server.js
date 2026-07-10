@@ -40,6 +40,14 @@ const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snap
 const LEGACY_MANUAL_LIMITS_FILE = path.join(DATA_DIR, "manual-limits.json");
 const GLM_USAGE_EVENTS_FILE = path.join(DATA_DIR, "glm-usage-events.jsonl");
 const GLM_USAGE_EVENTS_CSV_FILE = path.join(DATA_DIR, "glm-usage-events.csv");
+const OPENCODE_DATA_DIRS = uniquePaths([
+  ...defaultOpenCodeDataDirs(),
+  ...parsePathList(process.env.LLM_USAGE_OPENCODE_DATA_DIRS)
+]);
+const OPENCODE_DB_FILES = uniquePaths([
+  ...defaultOpenCodeDbFilesFromEnv(process.env.OPENCODE_DB),
+  ...parsePathList(process.env.LLM_USAGE_OPENCODE_DB_FILES)
+]);
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -492,6 +500,30 @@ function uniquePaths(paths) {
       seen.add(item);
       return true;
     });
+}
+
+function defaultOpenCodeDataDirs() {
+  const candidates = [];
+  if (process.env.XDG_DATA_HOME) candidates.push(path.join(expandHome(process.env.XDG_DATA_HOME), "opencode"));
+  candidates.push(path.join(os.homedir(), ".local", "share", "opencode"));
+  if (process.platform === "darwin") {
+    candidates.push(path.join(os.homedir(), "Library", "Application Support", "opencode"));
+  }
+  if (process.platform === "win32") {
+    const appData = process.env.LOCALAPPDATA || process.env.APPDATA;
+    if (appData) candidates.push(path.join(appData, "opencode"));
+    candidates.push(path.join(os.homedir(), "AppData", "Roaming", "opencode"));
+  }
+  if (process.env.OPENCODE_DATA_DIR) candidates.push(expandHome(process.env.OPENCODE_DATA_DIR));
+  return candidates;
+}
+
+function defaultOpenCodeDbFilesFromEnv(value) {
+  const db = String(value || "").trim();
+  if (!db || db === ":memory:") return [];
+  const expanded = expandHome(db);
+  if (path.isAbsolute(expanded)) return [expanded];
+  return OPENCODE_DATA_DIRS.map((dir) => path.join(dir, expanded));
 }
 
 function resolvePackagedResourcePath(relativePath) {
@@ -1789,12 +1821,48 @@ function defaultCodexSources() {
 }
 
 function defaultGlmSources() {
-  return [
+  const sources = [
     defaultManualImportSource("glm", "GLM/Z.AI", [
       { role: "usage_events_jsonl", path: GLM_USAGE_EVENTS_FILE, kind: "file" },
       { role: "usage_events_csv", path: GLM_USAGE_EVENTS_CSV_FILE, kind: "file" }
     ])
   ];
+  const openCodeSource = defaultOpenCodeGlmSource();
+  if (openCodeSource) sources.push(openCodeSource);
+  return sources;
+}
+
+function defaultOpenCodeGlmSource() {
+  const paths = [
+    ...OPENCODE_DB_FILES.map((file) => ({ role: "opencode_database", path: file, kind: "file" })),
+    ...OPENCODE_DATA_DIRS.map((dir) => ({ role: "opencode_data_dir", path: dir, kind: "directory" }))
+  ];
+  if (!paths.length) return null;
+  const owner = currentOwner(os.homedir());
+  return {
+    id: sourceId("glm", owner.uid ?? "current", paths.map((entry) => entry.path)),
+    providerId: "glm",
+    kind: "opencode_database",
+    label: "GLM/Z.AI via OpenCode - current user",
+    owner,
+    paths: paths.map((entry) => ({
+      ...entry,
+      exists: false,
+      readable: true,
+      permission: "configured"
+    })),
+    accessStatus: "readable",
+    discovery: {
+      method: "configured-opencode-data",
+      confidence: "medium",
+      checkedAt: new Date().toISOString(),
+      evidence: []
+    },
+    privacy: {
+      scope: "metadata_only",
+      forbidden: ["credentials", "raw_transcripts", "provider_payloads"]
+    }
+  };
 }
 
 function defaultHomeSource(providerId, label, home, paths) {
@@ -4679,66 +4747,96 @@ const GLM_USAGE_IMPORT_ROLES = [
   "usage_dir"
 ];
 const GLM_USAGE_IMPORT_EXTENSIONS = new Set([".json", ".jsonl", ".ndjson", ".log", ".csv"]);
+const OPENCODE_DB_ROLES = ["opencode_database", "opencode_data_dir"];
+const OPENCODE_DB_FILE_PATTERN = /^opencode(?:-[a-z0-9._-]+)?\.db$/i;
 const GLM_NO_EVENTS_MESSAGE = "No local GLM/Z.AI usage events found.";
-const GLM_EVENTS_MESSAGE = "GLM/Z.AI tokens from local imports.";
 
 async function readGlmUsage(options = {}) {
-  const files = await glmUsageFileRecords(options.sources || buildReaderSources().glm);
+  const sources = options.sources || buildReaderSources().glm;
+  const files = await glmUsageFileRecords(sources);
+  const openCodeDbs = await opencodeDbFileRecords(sources);
   const usage = createUsageAccumulator();
   const modelMap = new Map();
   let firstEvent = null;
   let latestEvent = null;
   let eventCount = 0;
   let filesWithEvents = 0;
+  let openCodeDbsWithEvents = 0;
+  let openCodeReadErrors = 0;
   const usageEvents = [];
+
+  const addNormalizedEvent = (normalizedEvent, fileRecord) => {
+    usageEvents.push(normalizedEvent);
+    addUsageEvent(usage, normalizedEvent.timestampMs, normalizedEvent.usage);
+
+    if (!modelMap.has(normalizedEvent.model)) modelMap.set(normalizedEvent.model, createUsageTotals());
+    addUsage(modelMap.get(normalizedEvent.model), normalizedEvent.usage);
+
+    eventCount += 1;
+    const timestamp = new Date(normalizedEvent.timestampMs).toISOString();
+    if (!firstEvent || normalizedEvent.timestampMs < Date.parse(firstEvent.timestamp)) {
+      firstEvent = {
+        timestamp,
+        model: normalizedEvent.model,
+        file: fileRecord.file
+      };
+    }
+    if (!latestEvent || normalizedEvent.timestampMs > Date.parse(latestEvent.timestamp)) {
+      latestEvent = {
+        timestamp,
+        model: normalizedEvent.model,
+        usage: normalizeUsage(normalizedEvent.usage),
+        file: fileRecord.file
+      };
+    }
+  };
 
   for (const fileRecord of files) {
     let fileEvents = 0;
     const onObject = (event, meta) => {
       const normalizedEvent = normalizeGlmUsageImportEvent(event, fileRecord, meta);
       if (!normalizedEvent) return;
-      usageEvents.push(normalizedEvent);
-      addUsageEvent(usage, normalizedEvent.timestampMs, normalizedEvent.usage);
-
-      if (!modelMap.has(normalizedEvent.model)) modelMap.set(normalizedEvent.model, createUsageTotals());
-      addUsage(modelMap.get(normalizedEvent.model), normalizedEvent.usage);
-
-      eventCount += 1;
+      addNormalizedEvent(normalizedEvent, fileRecord);
       fileEvents += 1;
-      const timestamp = new Date(normalizedEvent.timestampMs).toISOString();
-      if (!firstEvent || normalizedEvent.timestampMs < Date.parse(firstEvent.timestamp)) {
-        firstEvent = {
-          timestamp,
-          model: normalizedEvent.model,
-          file: fileRecord.file
-        };
-      }
-      if (!latestEvent || normalizedEvent.timestampMs > Date.parse(latestEvent.timestamp)) {
-        latestEvent = {
-          timestamp,
-          model: normalizedEvent.model,
-          usage: normalizeUsage(normalizedEvent.usage),
-          file: fileRecord.file
-        };
-      }
     };
     if (path.extname(fileRecord.file).toLowerCase() === ".csv") await readCsvUsageObjects(fileRecord.file, onObject);
     else await readUsageObjects(fileRecord.file, onObject);
     if (fileEvents) filesWithEvents += 1;
   }
 
+  for (const fileRecord of openCodeDbs) {
+    const result = readOpenCodeGlmUsageEvents(fileRecord);
+    if (result.error) openCodeReadErrors += 1;
+    if (!result.events.length) continue;
+    openCodeDbsWithEvents += 1;
+    for (const event of result.events) addNormalizedEvent(event, fileRecord);
+  }
+
+  const hasConfiguredSource = Boolean(files.length || openCodeDbs.length);
+  const usageQuality = hasConfiguredSource
+    ? openCodeReadErrors && !latestEvent
+      ? "unavailable"
+      : "measured"
+    : null;
+
   return {
     id: "glm",
     status: latestEvent ? "live" : "empty",
     updatedAt: new Date().toISOString(),
-    message: latestEvent ? GLM_EVENTS_MESSAGE : GLM_NO_EVENTS_MESSAGE,
+    message: latestEvent ? null : GLM_NO_EVENTS_MESSAGE,
+    usageQuality,
     source: {
       usageFiles: [GLM_USAGE_EVENTS_FILE, GLM_USAGE_EVENTS_CSV_FILE],
-      filesScanned: files.length,
+      filesScanned: files.length + openCodeDbs.length,
+      manualImportFilesScanned: files.length,
+      openCodeDatabasesScanned: openCodeDbs.length,
       filesWithEvents,
+      openCodeDatabasesWithEvents: openCodeDbsWithEvents,
+      openCodeReadErrors,
+      hasConfiguredSource,
       eventCount,
       latestUsageAt: latestEvent?.timestamp || null,
-      protocol: "openai_compatible"
+      protocol: openCodeDbs.length ? "opencode_sqlite_or_openai_compatible" : "openai_compatible"
     },
     latest: latestEvent
       ? {
@@ -4782,6 +4880,224 @@ async function glmUsageFileRecords(sources) {
     }
   }
   return records;
+}
+
+async function opencodeDbFileRecords(sources) {
+  const records = [];
+  const seen = new Set();
+  for (const entry of sourcePathEntries(sources, OPENCODE_DB_ROLES)) {
+    const files = entry.role === "opencode_data_dir"
+      ? await listOpenCodeDbFiles(entry.path)
+      : await openCodeDbFileForPath(entry.path);
+    for (const file of files) {
+      const realPath = await safeRealpath(file);
+      if (seen.has(realPath)) continue;
+      seen.add(realPath);
+      records.push({
+        file,
+        realPath,
+        sourceId: entry.source.id,
+        source: entry.source
+      });
+    }
+  }
+  return records;
+}
+
+async function openCodeDbFileForPath(file) {
+  let stat;
+  try {
+    stat = await fsp.stat(file);
+  } catch {
+    return [];
+  }
+  if (!stat.isFile() || !/\.(?:db|sqlite|sqlite3)$/i.test(path.basename(file))) return [];
+  return [file];
+}
+
+async function listOpenCodeDbFiles(dir) {
+  let entries;
+  try {
+    entries = await fsp.readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries
+    .filter((entry) => entry.isFile() && OPENCODE_DB_FILE_PATTERN.test(entry.name))
+    .map((entry) => path.join(dir, entry.name));
+}
+
+function readOpenCodeGlmUsageEvents(fileRecord) {
+  const stepResult = sqliteJsonQuery(fileRecord.file, `
+    SELECT aggregate_id, seq, type, data
+    FROM event
+    WHERE type IN ('session.next.step.started', 'session.next.step.ended')
+    ORDER BY aggregate_id, seq
+  `);
+  if (stepResult.error) {
+    const sessionResult = sqliteJsonQuery(fileRecord.file, `
+      SELECT id, model, tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write, time_created, time_updated
+      FROM session
+      WHERE (coalesce(tokens_input, 0) + coalesce(tokens_output, 0) + coalesce(tokens_reasoning, 0) + coalesce(tokens_cache_read, 0) + coalesce(tokens_cache_write, 0)) > 0
+      ORDER BY time_updated
+    `);
+    return {
+      events: sessionResult.rows.flatMap((row, index) => normalizeOpenCodeSessionUsageRow(row, fileRecord, index)),
+      error: sessionResult.error
+    };
+  }
+
+  const stepEvents = normalizeOpenCodeStepUsageRows(stepResult.rows, fileRecord);
+  if (stepEvents.length) return { events: stepEvents, error: null };
+
+  const sessionResult = sqliteJsonQuery(fileRecord.file, `
+    SELECT id, model, tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write, time_created, time_updated
+    FROM session
+    WHERE (coalesce(tokens_input, 0) + coalesce(tokens_output, 0) + coalesce(tokens_reasoning, 0) + coalesce(tokens_cache_read, 0) + coalesce(tokens_cache_write, 0)) > 0
+    ORDER BY time_updated
+  `);
+  return {
+    events: sessionResult.rows.flatMap((row, index) => normalizeOpenCodeSessionUsageRow(row, fileRecord, index)),
+    error: sessionResult.error
+  };
+}
+
+function sqliteJsonQuery(file, query) {
+  const result = spawnSync("sqlite3", ["-readonly", "-json", file, query], {
+    encoding: "utf8",
+    timeout: 5000,
+    maxBuffer: 10 * 1024 * 1024
+  });
+  if (result.error) return { rows: [], error: result.error.message || "sqlite3_unavailable" };
+  if (result.status !== 0) return { rows: [], error: String(result.stderr || "sqlite_query_failed").trim() };
+  const text = String(result.stdout || "").trim();
+  if (!text) return { rows: [], error: null };
+  try {
+    const rows = JSON.parse(text);
+    return { rows: Array.isArray(rows) ? rows : [], error: null };
+  } catch {
+    return { rows: [], error: "sqlite_json_parse_failed" };
+  }
+}
+
+function normalizeOpenCodeStepUsageRows(rows, fileRecord) {
+  const starts = new Map();
+  const events = [];
+  for (const row of rows || []) {
+    const data = parseJsonObject(row.data);
+    if (!data) continue;
+    const key = `${row.aggregate_id || data.sessionID || ""}:${data.assistantMessageID || ""}`;
+    if (row.type === "session.next.step.started") {
+      starts.set(key, {
+        model: normalizeOpenCodeModelRef(data.model),
+        timestampMs: findTimestampMs(data)
+      });
+      continue;
+    }
+    if (row.type !== "session.next.step.ended") continue;
+    const started = starts.get(key) || {};
+    const model = started.model || normalizeOpenCodeModelRef(data.model);
+    const normalizedEvent = normalizeOpenCodeUsageEvent({
+      fileRecord,
+      eventId: `${row.aggregate_id || data.sessionID || "opencode"}:${data.assistantMessageID || row.seq || events.length}`,
+      timestampMs: findTimestampMs(data) || started.timestampMs || safeStatMtime(fileRecord.file),
+      model,
+      tokens: data.tokens,
+      meta: { seq: row.seq, aggregateId: row.aggregate_id, sourceType: "opencode_step" }
+    });
+    if (normalizedEvent) events.push(normalizedEvent);
+  }
+  return events;
+}
+
+function normalizeOpenCodeSessionUsageRow(row, fileRecord, index) {
+  const model = normalizeOpenCodeModelRef(row.model);
+  const normalizedEvent = normalizeOpenCodeUsageEvent({
+    fileRecord,
+    eventId: row.id || `opencode-session-${index}`,
+    timestampMs: normalizeOpenCodeTimestampMs(row.time_updated) || normalizeOpenCodeTimestampMs(row.time_created) || safeStatMtime(fileRecord.file),
+    model,
+    tokens: {
+      input: row.tokens_input,
+      output: row.tokens_output,
+      reasoning: row.tokens_reasoning,
+      cache: {
+        read: row.tokens_cache_read,
+        write: row.tokens_cache_write
+      }
+    },
+    meta: { sourceType: "opencode_session" }
+  });
+  return normalizedEvent ? [normalizedEvent] : [];
+}
+
+function normalizeOpenCodeUsageEvent({ fileRecord, eventId, timestampMs, model, tokens, meta }) {
+  const providerId = model?.providerID || model?.providerId || model?.provider || null;
+  const modelId = model?.modelID || model?.modelId || model?.id || model?.model || null;
+  if (!isGlmProviderMarker(providerId) && !isGlmModelName(modelId)) return null;
+  const usage = normalizeOpenCodeTokens(tokens);
+  if (!usage.total_tokens || !Number.isFinite(timestampMs)) return null;
+  return {
+    providerId: "glm",
+    sourceId: fileRecord.sourceId,
+    eventId,
+    timestampMs,
+    model: String(modelId || providerId || "glm").slice(0, 160),
+    usage,
+    evidence: {
+      realpath: fileRecord.realPath,
+      realpathHash: hashEvidencePath(fileRecord.realPath),
+      seq: meta?.seq
+    },
+    metadata: {
+      sourceGroupId: "glm",
+      sourceType: meta?.sourceType || "opencode",
+      openCodeProviderId: providerId || null,
+      aggregateId: meta?.aggregateId || null
+    }
+  };
+}
+
+function normalizeOpenCodeTokens(tokens) {
+  const value = tokens && typeof tokens === "object" ? tokens : {};
+  const cache = value.cache && typeof value.cache === "object" ? value.cache : {};
+  const input = firstFiniteNumber(value.input, value.input_tokens, value.nonCachedInputTokens);
+  const cached = firstFiniteNumber(cache.read, value.cache_read, value.cacheReadInputTokens, value.cached_input_tokens);
+  const cacheWrite = firstFiniteNumber(cache.write, value.cache_write, value.cacheWriteInputTokens, value.cache_creation_input_tokens);
+  const output = firstFiniteNumber(value.output, value.output_tokens, value.visibleOutputTokens);
+  const reasoning = firstFiniteNumber(value.reasoning, value.reasoning_tokens, value.reasoningTokens);
+  const total = firstFiniteNumber(value.total, value.total_tokens, value.totalTokens);
+  return {
+    input_tokens: input,
+    cache_creation_input_tokens: cacheWrite,
+    cached_input_tokens: cached,
+    output_tokens: output,
+    reasoning_output_tokens: reasoning,
+    total_tokens: total > 0 ? total : input + cacheWrite + cached + output + reasoning
+  };
+}
+
+function normalizeOpenCodeModelRef(value) {
+  const model = typeof value === "string" ? parseJsonObject(value) || { id: value } : value;
+  if (!model || typeof model !== "object") return null;
+  return model;
+}
+
+function normalizeOpenCodeTimestampMs(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function parseJsonObject(value) {
+  if (!value) return null;
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 async function usageImportFilesForPath(filePath, predicate) {
@@ -4844,7 +5160,7 @@ function isGlmProviderMarker(value) {
 }
 
 function isGlmModelName(value) {
-  return /^glm(?:[-_.]|$)/i.test(String(value || "").trim());
+  return /(^|[/_.:-])(?:glm(?:[-_.:]|$)|chatglm)/i.test(String(value || "").trim());
 }
 
 function normalizeGlmImportUsage(event) {
