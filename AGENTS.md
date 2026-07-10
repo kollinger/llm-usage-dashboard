@@ -123,6 +123,53 @@ handoff so review never comes from an older local Git state or stale artifact.
 - If the product is still considered not yet stable, prefer `0.x.y` releases and treat any substantial new feature or behavior change as at least a `MINOR` bump.
 - Use Conventional Commits where practical so release intent is obvious: `fix:` maps to `PATCH`, `feat:` maps to `MINOR`, and `!` or `BREAKING CHANGE:` maps to `MAJOR`.
 - Treat GitHub prerelease status as separate from the version number. `prerelease` means the asset is not final; it does not replace SemVer patch/minor/major increments.
+- Every GitHub release or review build that is announced outside the repo must
+  have a clear version and a short changelog or release-notes summary. Do not
+  announce "new build" without stating the version/tag or commit.
+- Before creating a release tag, update the app version in `package.json` and
+  `package-lock.json`, then prepare release notes or a changelog section for
+  that exact version. Summarize noisy UI batches into user-facing groups such
+  as "general UI improvements" instead of listing every tiny visual tweak.
+- When a WhatsApp release/update message is needed, include a compact
+  changelog summary plus a GitHub release link when available. If the changelog
+  is long, mention only the most important user-visible changes and link the
+  full release notes.
+- Do not claim auto-update delivery unless the released GitHub assets include
+  the updater metadata expected by Electron Updater, such as `latest*.yml`
+  files, and the packaged app has been verified to detect the release. If that
+  is not verified, send a normal download/update-available message instead.
+
+## WhatsApp Review Gateway
+
+- The intended WhatsApp review group name is `LLM Usage Dashboard Review`
+  unless Gerhard explicitly chooses another name.
+- The review bot is addressed with `@Opus`. Every WhatsApp reply from that bot
+  must start with the visible identity prefix `🤖 [Opus]`.
+- The route should accept messages from Gerhard Kollinger and Reinhard
+  Schneidewind only, and should support voice notes through the reviewed
+  WhatsApp Agent Gateway audio transcription path.
+- The bot may have project-admin authority for the LLM Usage Dashboard on the
+  Manjaro runner: inspect and change this repository, create branches, commit,
+  push, run checks, run Linux builds, inspect GitHub Actions and releases, and
+  coordinate Multica implementation tickets and lifecycle watches. This does
+  not grant unrelated machine administration, unrelated project access,
+  destructive system changes, secret disclosure, or external sends beyond the
+  reviewed route contract.
+- Reinhard may discuss changes with `@Opus`, but a Multica issue for this
+  product may be created only after Gerhard explicitly approves the concrete
+  ticket draft in the same WhatsApp group. After approval, implementation
+  should run through Multica on Manjaro with the usual GPT+Opus owner/reviewer
+  pattern and a durable heartbeat/lifecycle watch until the ticket is truthfully
+  done, blocked, cancelled, pushed, or ready for an explicit release gate.
+- When approved work is shipped and pushed, the gateway or delivery heartbeat
+  should prepare a WhatsApp message with the new version, download/update
+  status, and short changelog. Sending that outbound message to Reinhard still
+  requires Gerhard approval of the exact text unless Gerhard has explicitly
+  delegated that send for the specific release.
+- Prefer resolving Reinhard and the review group through the Manjaro WhatsApp
+  bridge contacts/chats by name. A newly created group may need to sync into
+  the bridge first, but agents should not require Reinhard to send a dummy
+  message merely to identify him or the group.
 
 ## Commit Hygiene
 
