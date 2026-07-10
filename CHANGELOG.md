@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0-preview.2 - 2026-07-10
+
+### Improved
+
+- Delegate WhatsApp review releases
+
+### Fixed
+
+- Capture GLM usage from OpenCode
+
 ## 1.1.0-preview.1 - 2026-07-10
 
 ### Added
