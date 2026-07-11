@@ -44,6 +44,8 @@ const state = {
   systemMetricsError: "",
   sourceDiagnosticsError: "",
   sourceRecheckResult: null,
+  supportReport: null,
+  supportReportPending: false,
   loadingSourceDiagnostics: false,
   loadingSystemMetrics: false,
   sourceMessage: { text: "", status: "" },
@@ -88,6 +90,10 @@ const els = {
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
   settingsConnectedSources: document.getElementById("settingsConnectedSources"),
   settingsCandidateSources: document.getElementById("settingsCandidateSources"),
+  supportReportDownloadBtn: document.getElementById("supportReportDownloadBtn"),
+  supportReportCopyBtn: document.getElementById("supportReportCopyBtn"),
+  supportReportStatus: document.getElementById("supportReportStatus"),
+  supportReportSummary: document.getElementById("supportReportSummary"),
   settingsToast: document.getElementById("settingsToast"),
   subscriptionFields: Array.from(document.querySelectorAll("[data-subscription-field]")),
   updateSettingsSection: document.getElementById("updateSettingsSection"),
@@ -1712,6 +1718,8 @@ function bindEvents() {
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
+  els.supportReportDownloadBtn?.addEventListener("click", downloadSupportReport);
+  els.supportReportCopyBtn?.addEventListener("click", copySupportReportSummary);
   els.loginDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
   els.settingsDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
   els.loginDialog.addEventListener("click", closeDialogOnBackdrop);
@@ -8398,6 +8406,7 @@ async function openSettings() {
   if (!state.auth?.authenticated) return openModalDialog(els.loginDialog);
   openModalDialog(els.settingsDialog);
   renderSourceSettings();
+  renderSupportReport();
   await Promise.all([
     loadSubscriptionSettings(),
     loadUpdateSettingsAndStatus(),
@@ -8405,6 +8414,98 @@ async function openSettings() {
     loadNotificationStatus(),
     loadSourceDiagnostics()
   ]);
+}
+
+async function loadSupportReport() {
+  if (state.supportReportPending) return state.supportReport;
+  state.supportReportPending = true;
+  setSupportReportStatus(t("settings.supportReport.preparing"), "loading");
+  renderSupportReport();
+  try {
+    const report = await fetchJson(`/api/support/report?ts=${Date.now()}`);
+    state.supportReport = report;
+    setSupportReportStatus("", "");
+    renderSupportReport();
+    return report;
+  } catch (error) {
+    setSupportReportStatus(
+      t("settings.supportReport.generateError", { message: error.message || "" }),
+      "error"
+    );
+    throw error;
+  } finally {
+    state.supportReportPending = false;
+    renderSupportReport();
+  }
+}
+
+function renderSupportReport() {
+  const pending = Boolean(state.supportReportPending);
+  if (els.supportReportDownloadBtn) els.supportReportDownloadBtn.disabled = pending;
+  if (els.supportReportCopyBtn) els.supportReportCopyBtn.disabled = pending;
+  if (els.supportReportSummary && state.supportReport?.compactSummary) {
+    els.supportReportSummary.value = state.supportReport.compactSummary;
+  }
+}
+
+async function downloadSupportReport() {
+  try {
+    const report = await loadSupportReport();
+    const blob = new Blob([`${JSON.stringify(report, null, 2)}\n`], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = supportReportFilename(report);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setSupportReportStatus(t("settings.supportReport.downloaded"), "ready");
+  } catch {
+    // loadSupportReport already rendered the error.
+  }
+}
+
+async function copySupportReportSummary() {
+  let report;
+  try {
+    report = await loadSupportReport();
+  } catch {
+    return;
+  }
+  try {
+    const summary = report?.compactSummary || "";
+    await copyTextToClipboard(summary);
+    if (els.supportReportSummary) els.supportReportSummary.value = summary;
+    setSupportReportStatus(t("settings.supportReport.copied"), "ready");
+  } catch {
+    setSupportReportStatus(t("settings.supportReport.copyError"), "error");
+  }
+}
+
+async function copyTextToClipboard(text) {
+  if (!text) throw new Error(t("settings.supportReport.copyError"));
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  if (!els.supportReportSummary) throw new Error(t("settings.supportReport.copyError"));
+  els.supportReportSummary.value = text;
+  els.supportReportSummary.focus();
+  els.supportReportSummary.select();
+  if (!document.execCommand("copy")) throw new Error(t("settings.supportReport.copyError"));
+}
+
+function supportReportFilename(report) {
+  const id = String(report?.reportId || "support-report").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 80);
+  return `llm-usage-dashboard-${id}.json`;
+}
+
+function setSupportReportStatus(message, status) {
+  if (!els.supportReportStatus) return;
+  els.supportReportStatus.textContent = message || "";
+  els.supportReportStatus.hidden = !message;
+  els.supportReportStatus.dataset.status = status || "";
 }
 
 async function loadSubscriptionSettings() {

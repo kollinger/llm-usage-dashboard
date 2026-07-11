@@ -38,6 +38,78 @@ try {
   assert.equal(missingDiagnostics.connected.length, 0);
   assert.equal(missingDiagnostics.candidates[0]?.accessStatus, "missing");
   assert.equal(missingDiagnostics.candidates[0]?.connected, false);
+
+  const privateClaudePath = path.join(tmp, "private-home", ".claude", "projects");
+  const supportReport = _test.buildSupportReportFromInputs({
+    generatedAt: "2026-07-11T15:00:00.000Z",
+    reportId: "support-test",
+    diagnostics: {
+      status: "candidates_denied",
+      generatedAt: "2026-07-11T14:59:00.000Z",
+      os: { platform: "linux", supported: true, supportLevel: "full", container: false },
+      counts: { readable: 0, denied: 1, candidates: 1, connected: 0 },
+      connected: [],
+      candidates: [
+        {
+          id: "claude-denied",
+          providerId: "claudeCode",
+          label: "Claude Code - current user",
+          accessStatus: "denied",
+          owner: { current: true, name: "secret-user" },
+          paths: [
+            {
+              role: "projects",
+              kind: "directory",
+              path: privateClaudePath,
+              exists: true,
+              readable: false,
+              permission: "denied",
+              mtime: "2026-07-11T14:30:00.000Z"
+            }
+          ]
+        }
+      ]
+    },
+    usage: {
+      claudeCode: {
+        id: "claudeCode",
+        status: "empty",
+        updatedAt: "2026-07-11T14:59:00.000Z",
+        source: {
+          filesScanned: 0,
+          eventCount: 0,
+          authStatus: { available: true, status: "logged_out" }
+        },
+        setup: {
+          claudeAvailable: true,
+          configured: false,
+          settingsError: "invalid_json",
+          scriptInstalled: false,
+          statusFileFound: false,
+          hasLimits: false,
+          staleLimits: false
+        },
+        browserCredits: { status: "missing" },
+        totals: {
+          allTime: { totalTokens: 0 },
+          last7d: { totalTokens: 0 }
+        },
+        latest: null,
+        limitSource: null
+      }
+    }
+  });
+  const claudeReport = supportReport.providers.find((provider) => provider.providerId === "claudeCode");
+  assert.equal(claudeReport.status, "permission_error");
+  assert(claudeReport.findings.includes("permission_error"));
+  assert(claudeReport.findings.includes("parser_error"));
+  assert(claudeReport.findings.includes("live_quota_source_not_active"));
+  assert.equal(claudeReport.source.paths[0]?.path, "source:claudeCode/projects");
+
+  const supportJson = JSON.stringify(supportReport);
+  assert(!supportJson.includes(privateClaudePath), "support report must not include raw local paths");
+  assert(!supportJson.includes("secret-user"), "support report must not include local usernames");
+  assert(!supportReport.compactSummary.includes(privateClaudePath), "compact summary must not include raw local paths");
 } finally {
   await fs.rm(tmp, { recursive: true, force: true });
 }

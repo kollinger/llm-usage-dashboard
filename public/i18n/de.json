@@ -658,6 +658,20 @@
       "copyError": "Kommandos konnten nicht in die Zwischenablage kopiert werden.",
       "automatic": "automatisch genutzt"
     },
+    "supportReport": {
+      "title": "Diagnosebericht",
+      "description": "Erzeuge einen redigierten Supportbericht fuer Multica oder WhatsApp, wenn lokale Quellen fehlen oder keine Usage liefern.",
+      "privacyNote": "Der Bericht enthaelt nur Metadaten und redigierte Pfade, keine Rohlogs, Prompts, Secrets oder Provider-Payloads.",
+      "downloadJson": "JSON-Bericht speichern",
+      "copySummary": "Zusammenfassung kopieren",
+      "summaryLabel": "Kompakte Zusammenfassung",
+      "emptySummary": "Erzeuge einen Bericht, um die kompakte Support-Zusammenfassung zu sehen.",
+      "preparing": "Diagnosebericht wird erstellt...",
+      "downloaded": "Diagnosebericht gespeichert.",
+      "copied": "Support-Zusammenfassung wurde in die Zwischenablage kopiert.",
+      "generateError": "Diagnosebericht konnte nicht erstellt werden: {message}",
+      "copyError": "Support-Zusammenfassung konnte nicht in die Zwischenablage kopiert werden."
+    },
     "updates": {
       "title": "App-Updates",
       "description": "Automatische Update-Prüfungen sind für unterstützte paketierte Desktop-Builds immer aktiv; nur Preview-Releases sind optional.",

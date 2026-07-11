@@ -13,6 +13,7 @@ const { EventEmitter } = require("node:events");
 const execFileAsync = promisify(execFile);
 const express = require("express");
 const session = require("express-session");
+const packageInfo = require("./package.json");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -95,6 +96,17 @@ const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30
 const COPILOT_LIVE_QUOTA_IDLE_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_IDLE_CACHE_SECONDS", 15 * 60);
 const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS", 12);
 const SOURCE_DIAGNOSTICS_CACHE_MS = envMs("SOURCE_DIAGNOSTICS_CACHE_SECONDS", 30);
+const SUPPORT_REPORT_SCHEMA_VERSION = 1;
+const SUPPORT_REPORT_PROVIDER_IDS = ["claudeCode", "codex", "copilot", "glm", "gemini", "ollama"];
+const SUPPORT_REPORT_PROVIDER_LABELS = {
+  claudeCode: "Claude Code",
+  codex: "Codex",
+  copilot: "GitHub Copilot",
+  glm: "GLM/Z.AI",
+  gemini: "Gemini",
+  ollama: "Ollama",
+  local: "Generic local logs"
+};
 const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("scripts", "copilot-quota-probe.mjs"));
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const CLAUDE_AUTH_STATUS_CACHE_MS = envMs("CLAUDE_AUTH_STATUS_CACHE_SECONDS", 15 * 60);
@@ -674,6 +686,14 @@ app.get("/api/sources/diagnostics", authMiddleware, async (_req, res) => {
     res.json(sanitizeSourceDiagnosticsPayload(await buildSourceDiagnostics()));
   } catch (error) {
     sendApiError(res, error, "source_diagnostics_failed");
+  }
+});
+
+app.get("/api/support/report", authMiddleware, async (_req, res) => {
+  try {
+    res.json(await buildSupportReport());
+  } catch (error) {
+    sendApiError(res, error, "support_report_failed");
   }
 });
 
@@ -1774,6 +1794,450 @@ function sanitizeDiagnosticInstance(instance) {
     startedAt: instance.startedAt || null,
     version: instance.version || null
   };
+}
+
+async function buildSupportReport() {
+  const [diagnostics, usage] = await Promise.all([
+    buildSourceDiagnostics().then(sanitizeSourceDiagnosticsPayload),
+    readUsageDashboard({ maxAgeMs: USAGE_CACHE_MS }).catch((error) => ({
+      _supportError: supportErrorCategory(error)
+    }))
+  ]);
+  return buildSupportReportFromInputs({
+    diagnostics,
+    usage,
+    generatedAt: new Date().toISOString(),
+    reportId: supportReportId()
+  });
+}
+
+function buildSupportReportFromInputs({ diagnostics = {}, usage = {}, generatedAt, reportId } = {}) {
+  const generated = normalizeOptionalDate(generatedAt) || new Date().toISOString();
+  const id = supportShortString(reportId, supportReportId());
+  const providerReports = SUPPORT_REPORT_PROVIDER_IDS.map((providerId) =>
+    buildSupportProviderReport(providerId, diagnostics, usage?.[providerId])
+  );
+  const localReport = buildLocalSupportReport(diagnostics, usage?.local, usage?._supportError || null);
+  const report = {
+    schemaVersion: SUPPORT_REPORT_SCHEMA_VERSION,
+    reportId: id,
+    generatedAt: generated,
+    app: buildSupportAppContext(),
+    privacy: {
+      scope: "metadata_only",
+      redaction: "full_local_paths_removed",
+      excluded: [
+        "raw_logs",
+        "prompts",
+        "transcripts",
+        "tool_inputs_outputs",
+        "provider_payloads",
+        "api_keys",
+        "cookies",
+        "tokens",
+        "session_data",
+        "account_ids",
+        "whatsapp_jids",
+        "phone_numbers"
+      ]
+    },
+    diagnostics: {
+      status: supportShortString(diagnostics?.status, "unknown"),
+      generatedAt: normalizeOptionalDate(diagnostics?.generatedAt) || null,
+      platformSupport: {
+        platform: supportShortString(diagnostics?.os?.platform || process.platform, "unknown"),
+        supported: diagnostics?.os?.supported === undefined ? null : Boolean(diagnostics.os.supported),
+        supportLevel: supportShortString(diagnostics?.os?.supportLevel, "unknown"),
+        container: diagnostics?.os?.container === undefined ? null : Boolean(diagnostics.os.container)
+      },
+      counts: supportCounts(diagnostics?.counts || {})
+    },
+    providers: [...providerReports, localReport]
+  };
+  report.compactSummary = buildCompactSupportSummary(report);
+  return report;
+}
+
+function supportReportId() {
+  return `support-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function buildSupportAppContext() {
+  return {
+    name: "LLM Usage Dashboard",
+    version: supportShortString(packageInfo.version, "unknown"),
+    commit: supportBuildValue(
+      process.env.LLM_USAGE_BUILD_COMMIT ||
+      process.env.GIT_COMMIT ||
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.SOURCE_VERSION ||
+      process.env.npm_package_gitHead ||
+      ""
+    ),
+    build: supportBuildValue(process.env.LLM_USAGE_BUILD_DATE || process.env.BUILD_DATE || ""),
+    runtime: {
+      node: supportShortString(process.versions?.node, "unknown"),
+      electron: supportShortString(process.versions?.electron, null),
+      isElectron: Boolean(process.versions?.electron)
+    },
+    platform: {
+      platform: supportShortString(process.platform, "unknown"),
+      arch: supportShortString(process.arch, "unknown"),
+      release: supportShortString(os.release(), "unknown")
+    }
+  };
+}
+
+function buildSupportProviderReport(providerId, diagnostics, providerUsage) {
+  const sources = diagnosticSourcesForProvider(diagnostics, providerId);
+  const sourceSummary = supportSourceSummary(providerId, sources);
+  const usageSummary = supportUsageSummary(providerId, providerUsage);
+  const categories = supportCategories(providerId, sourceSummary, usageSummary, providerUsage);
+  const status = supportProviderStatus(sourceSummary, usageSummary, categories);
+  return {
+    providerId,
+    label: SUPPORT_REPORT_PROVIDER_LABELS[providerId] || providerId,
+    status,
+    dataQuality: supportDataQuality(sourceSummary, usageSummary, providerUsage),
+    freshness: supportFreshness(usageSummary.latestUsageAt),
+    source: sourceSummary,
+    usage: usageSummary,
+    findings: categories
+  };
+}
+
+function buildLocalSupportReport(diagnostics, localUsage, usageError) {
+  const latestUsageAt = latestLocalUsageTimestamp(localUsage);
+  const usageSummary = {
+    status: supportShortString(localUsage?.status, usageError ? "error" : "unknown"),
+    filesScanned: null,
+    eventCount: supportNumber(localUsage?.eventStats?.eventCount),
+    latestUsageAt,
+    totalTokensAllTime: supportNumber(localUsage?.totals?.allTime?.totalTokens),
+    totalTokensLast7d: supportNumber(localUsage?.totals?.last7d?.totalTokens),
+    liveQuotaSource: "not_applicable",
+    parserStatus: usageError ? "usage_reader_error" : localUsage?.status ? "parsed" : "unknown"
+  };
+  const sourceCounts = diagnostics?.counts || {};
+  const sourceSummary = {
+    found: Number(sourceCounts.candidates || 0) > 0 || Number(sourceCounts.connected || 0) > 0,
+    readable: Number(sourceCounts.readable || 0) > 0,
+    accessStatus: Number(sourceCounts.denied || 0) > 0 ? "mixed" : Number(sourceCounts.readable || 0) > 0 ? "readable" : "unknown",
+    sourceCount: supportNumber(sourceCounts.connected || sourceCounts.candidates),
+    pathCount: null,
+    readablePathCount: supportNumber(sourceCounts.readable),
+    deniedPathCount: supportNumber(sourceCounts.denied),
+    missingPathCount: null,
+    processOnlyCount: supportNumber(sourceCounts.processOnly),
+    serviceOnlyCount: supportNumber(sourceCounts.serviceOnly),
+    paths: []
+  };
+  const findings = [];
+  if (usageError) findings.push(usageError);
+  if (!sourceSummary.found) findings.push("source_missing");
+  if (sourceSummary.deniedPathCount > 0) findings.push("permission_error");
+  if (!usageSummary.latestUsageAt && sourceSummary.readable) findings.push("no_usage_events");
+  return {
+    providerId: "local",
+    label: SUPPORT_REPORT_PROVIDER_LABELS.local,
+    status: supportProviderStatus(sourceSummary, usageSummary, findings),
+    dataQuality: localUsage?.status === "live" ? "calculated_from_logs" : sourceSummary.readable ? "measured_empty" : "unavailable",
+    freshness: supportFreshness(latestUsageAt),
+    source: sourceSummary,
+    usage: usageSummary,
+    findings: findings.length ? uniqueStrings(findings) : ["ok"]
+  };
+}
+
+function diagnosticSourcesForProvider(diagnostics, providerId) {
+  const byId = new Map();
+  for (const source of [...(diagnostics?.connected || []), ...(diagnostics?.candidates || [])]) {
+    if (!source || source.providerId !== providerId) continue;
+    byId.set(source.id || `${providerId}:${byId.size}`, source);
+  }
+  return Array.from(byId.values());
+}
+
+function supportSourceSummary(providerId, sources) {
+  const paths = [];
+  for (const source of sources) {
+    for (const entry of Array.isArray(source.paths) ? source.paths : []) {
+      paths.push({
+        role: supportShortString(entry.role, "unknown"),
+        kind: supportShortString(entry.kind, "unknown"),
+        path: redactSupportPath(entry.path, { providerId, role: entry.role }),
+        exists: Boolean(entry.exists),
+        readable: Boolean(entry.readable),
+        permission: supportShortString(entry.permission, "unknown"),
+        mtime: normalizeOptionalDate(entry.mtime) || null
+      });
+    }
+  }
+  const accessStatuses = sources.map((source) => source.accessStatus).filter(Boolean);
+  return {
+    found: sources.some((source) => source.accessStatus && source.accessStatus !== "missing"),
+    readable: sources.some((source) => ["readable", "mixed"].includes(source.accessStatus)),
+    accessStatus: supportAccessStatus(accessStatuses),
+    sourceCount: sources.length,
+    pathCount: paths.length,
+    readablePathCount: paths.filter((entry) => entry.readable).length,
+    deniedPathCount: paths.filter((entry) => entry.permission === "denied").length,
+    missingPathCount: paths.filter((entry) => entry.permission === "missing").length,
+    processOnlyCount: sources.filter((source) => source.accessStatus === "process_only").length,
+    serviceOnlyCount: sources.filter((source) => source.accessStatus === "service_only").length,
+    paths: dedupeSupportPaths(paths).slice(0, 12)
+  };
+}
+
+function supportUsageSummary(providerId, usage) {
+  const source = usage?.source || {};
+  const latestUsageAt = normalizeOptionalDate(usage?.latest?.timestamp || source.latestUsageAt) || null;
+  const filesScanned = firstSupportNumber(
+    source.filesScanned,
+    source.usageFilesScanned,
+    source.manualImportFilesScanned,
+    source.openCodeDatabasesScanned
+  );
+  const eventCount = firstSupportNumber(
+    source.eventCount,
+    source.responseCount,
+    usage?.source?.eventsImported,
+    usage?.totals?.allTime?.totalTokens ? null : undefined
+  );
+  const parserStatus = supportParserStatus(providerId, usage);
+  return {
+    status: supportShortString(usage?.status, "unknown"),
+    filesScanned,
+    eventCount,
+    sessionsWithEvents: firstSupportNumber(source.sessionsWithEvents, source.filesWithEvents, source.openCodeDatabasesWithEvents),
+    latestUsageAt,
+    totalTokensAllTime: supportNumber(usage?.totals?.allTime?.totalTokens),
+    totalTokensLast7d: supportNumber(usage?.totals?.last7d?.totalTokens),
+    parserStatus,
+    liveQuotaSource: supportLiveQuotaSource(providerId, usage),
+    liveQuotaUpdatedAt: normalizeOptionalDate(usage?.limitsUpdatedAt || usage?.liveRateLimits?.updatedAt) || null,
+    setup: supportSetupSummary(providerId, usage),
+    importErrors: supportNumber(source.openCodeReadErrors)
+  };
+}
+
+function supportSetupSummary(providerId, usage) {
+  if (providerId !== "claudeCode") return null;
+  return {
+    claudeAvailable: usage?.setup?.claudeAvailable === undefined ? null : Boolean(usage.setup.claudeAvailable),
+    statuslineConfigured: usage?.setup?.configured === undefined ? null : Boolean(usage.setup.configured),
+    statusFileFound: usage?.setup?.statusFileFound === undefined ? null : Boolean(usage.setup.statusFileFound),
+    hasLimits: usage?.setup?.hasLimits === undefined ? null : Boolean(usage.setup.hasLimits),
+    staleLimits: usage?.setup?.staleLimits === undefined ? null : Boolean(usage.setup.staleLimits),
+    settingsStatus: usage?.setup?.settingsError ? "parser_error" : "ok",
+    authStatus: supportShortString(usage?.source?.authStatus?.status, "unknown"),
+    browserCreditsStatus: supportShortString(usage?.browserCredits?.status, "unknown")
+  };
+}
+
+function supportCategories(providerId, sourceSummary, usageSummary, usage) {
+  const categories = [];
+  if (!sourceSummary.sourceCount && usageSummary.status === "unknown") categories.push("source_missing");
+  if (!sourceSummary.found && usageSummary.filesScanned === 0) categories.push("source_missing");
+  if (!sourceSummary.readable && sourceSummary.missingPathCount > 0) categories.push("path_not_found");
+  if (sourceSummary.deniedPathCount > 0 || sourceSummary.accessStatus === "denied") categories.push("permission_error");
+  if (usageSummary.status === "error") categories.push("usage_reader_error");
+  if (usageSummary.parserStatus === "parser_error") categories.push("parser_error");
+  if (usageSummary.importErrors > 0) categories.push("import_error");
+  if (usageSummary.status === "empty" && usageSummary.filesScanned > 0 && !usageSummary.eventCount) {
+    categories.push("no_usage_events");
+  }
+  if (usageSummary.latestUsageAt && Number(usageSummary.totalTokensLast7d || 0) === 0) categories.push("no_new_data");
+  if (providerId === "claudeCode") {
+    if (usage?.setup?.settingsError) categories.push("parser_error");
+    if (!usage?.setup?.hasLimits && !usage?.limitSource) categories.push("live_quota_source_not_active");
+    if (usage?.setup?.staleLimits) categories.push("no_new_data");
+  }
+  if (providerId === "codex" && usage?.source && !usage?.source?.liveRateLimits) categories.push("live_quota_source_not_active");
+  if (!categories.length) categories.push(usageSummary.status === "live" ? "ok" : "unknown");
+  return uniqueStrings(categories);
+}
+
+function supportProviderStatus(sourceSummary, usageSummary, categories) {
+  if (categories.includes("permission_error")) return "permission_error";
+  if (categories.includes("usage_reader_error")) return "usage_reader_error";
+  if (categories.includes("parser_error") || categories.includes("import_error")) return "parser_error";
+  if (usageSummary.status === "live" || usageSummary.latestUsageAt) return "usage_available";
+  if (categories.includes("no_usage_events")) return "no_usage_events";
+  if (categories.includes("path_not_found")) return "path_not_found";
+  if (categories.includes("source_missing")) return "source_missing";
+  if (sourceSummary.readable) return "readable_no_usage";
+  if (sourceSummary.processOnlyCount || sourceSummary.serviceOnlyCount) return "runtime_hint_only";
+  return "unknown";
+}
+
+function supportDataQuality(sourceSummary, usageSummary, usage) {
+  if (usageSummary.status === "error" || usageSummary.parserStatus === "parser_error") return "unavailable";
+  if (usage?.usageQuality) return supportShortString(usage.usageQuality, "unknown");
+  if (usageSummary.status === "live" || usageSummary.latestUsageAt) return "calculated_from_logs";
+  if (sourceSummary.readable) return "measured_empty";
+  if (sourceSummary.processOnlyCount || sourceSummary.serviceOnlyCount) return "detected_only";
+  return "unavailable";
+}
+
+function supportFreshness(latestUsageAt) {
+  const normalized = normalizeOptionalDate(latestUsageAt);
+  if (!normalized) return { latestUsageAt: null, ageHours: null, category: "unavailable" };
+  const ageHours = Math.max(0, Math.round(((Date.now() - Date.parse(normalized)) / (60 * 60 * 1000)) * 10) / 10);
+  let category = "fresh";
+  if (ageHours > 24 * 7) category = "stale";
+  else if (ageHours > 24) category = "old";
+  return { latestUsageAt: normalized, ageHours, category };
+}
+
+function supportParserStatus(providerId, usage) {
+  if (!usage) return "unknown";
+  if (usage.status === "error") return "usage_reader_error";
+  if (providerId === "claudeCode" && usage?.setup?.settingsError) return "parser_error";
+  if (providerId === "glm" && Number(usage?.source?.openCodeReadErrors || 0) > 0) return "import_error";
+  if (usage.status === "live" || usage.status === "empty") return "parsed";
+  return "unknown";
+}
+
+function supportLiveQuotaSource(providerId, usage) {
+  if (!usage) return "unknown";
+  if (providerId === "claudeCode") return supportShortString(usage.limitSource, "not_active");
+  if (providerId === "codex") return usage.source?.liveRateLimits ? "codex_app_server" : "not_active";
+  if (providerId === "copilot") return usage.limits ? "copilot_quota_probe" : "not_active";
+  return "not_applicable";
+}
+
+function latestLocalUsageTimestamp(localUsage) {
+  const timestamps = [];
+  for (const source of Array.isArray(localUsage?.sources) ? localUsage.sources : []) {
+    const ts = normalizeOptionalDate(source.latestTimestamp || source.latestUsageAt || source.updatedAt);
+    if (ts) timestamps.push(ts);
+  }
+  for (const slot of Array.isArray(localUsage?.slots) ? localUsage.slots : []) {
+    const ts = normalizeOptionalDate(slot.latestTimestamp || slot.latestUsageAt);
+    if (ts) timestamps.push(ts);
+  }
+  return timestamps.sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null;
+}
+
+function buildCompactSupportSummary(report) {
+  const lines = [
+    `LLM Usage Dashboard support report ${report.reportId}`,
+    `Generated: ${report.generatedAt}`,
+    `App: ${report.app.version}${report.app.commit ? ` (${report.app.commit})` : ""}`,
+    `Runtime: ${report.app.platform.platform}/${report.app.platform.arch}, Node ${report.app.runtime.node}, Electron ${report.app.runtime.electron || "no"}`,
+    `Diagnostics: ${report.diagnostics.status}; readable=${report.diagnostics.counts.readable ?? "?"}; denied=${report.diagnostics.counts.denied ?? "?"}; connected=${report.diagnostics.counts.connected ?? "?"}`,
+    "Providers:"
+  ];
+  for (const provider of report.providers) {
+    lines.push(
+      `- ${provider.label}: ${provider.status}; sources=${provider.source.sourceCount ?? "?"}; readable_paths=${provider.source.readablePathCount ?? "?"}; files=${provider.usage.filesScanned ?? "?"}; events=${provider.usage.eventCount ?? "?"}; latest=${provider.freshness.latestUsageAt || "none"}; findings=${provider.findings.join(",")}`
+    );
+  }
+  lines.push("Privacy: metadata only; no raw logs, prompts, transcripts, provider payloads, secrets, account IDs, WhatsApp IDs, or full local paths.");
+  return lines.join("\n");
+}
+
+function supportCounts(counts) {
+  const allowed = [
+    "connected",
+    "connectedEnabled",
+    "connectedSaved",
+    "connectedAutomatic",
+    "candidates",
+    "readable",
+    "denied",
+    "missing",
+    "processOnly",
+    "serviceOnly",
+    "otherDashboardInstances"
+  ];
+  return Object.fromEntries(allowed.map((key) => [key, supportNumber(counts[key])]));
+}
+
+function supportAccessStatus(statuses) {
+  if (statuses.includes("denied")) return "denied";
+  if (statuses.includes("mixed")) return "mixed";
+  if (statuses.includes("readable")) return "readable";
+  if (statuses.includes("process_only")) return "process_only";
+  if (statuses.includes("service_only")) return "service_only";
+  if (statuses.includes("missing")) return "missing";
+  return "unknown";
+}
+
+function dedupeSupportPaths(paths) {
+  const byKey = new Map();
+  for (const entry of paths) {
+    const key = `${entry.role}:${entry.path}:${entry.permission}`;
+    if (!byKey.has(key)) byKey.set(key, entry);
+  }
+  return Array.from(byKey.values());
+}
+
+function redactSupportPath(filePath, context = {}) {
+  const providerId = supportShortString(context.providerId, "local");
+  const role = supportShortString(context.role, "source");
+  if (!filePath) return `source:${providerId}/${role}`;
+  const text = String(filePath);
+  if (!path.isAbsolute(text)) return `source:${providerId}/${role}`;
+  const resolved = path.resolve(text);
+  const aliases = [
+    ...CODEX_HOMES.map((home) => ({ prefix: home, alias: "~/.codex" })),
+    { prefix: CLAUDE_HOME, alias: "~/.claude" },
+    { prefix: COPILOT_HOME, alias: "~/.copilot" },
+    { prefix: GEMINI_HOME, alias: "~/.gemini" },
+    { prefix: path.join(os.homedir(), ".zai"), alias: "~/.zai" },
+    { prefix: path.join(os.homedir(), ".glm"), alias: "~/.glm" },
+    { prefix: path.join(os.homedir(), ".local", "share", "opencode"), alias: "~/.local/share/opencode" },
+    { prefix: DATA_DIR, alias: "data:" }
+  ].filter((entry) => entry.prefix && path.isAbsolute(entry.prefix));
+  for (const { prefix, alias } of aliases) {
+    const normalizedPrefix = path.resolve(prefix);
+    const relative = path.relative(normalizedPrefix, resolved);
+    if (relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative))) {
+      const suffix = relative ? `/${relative.split(path.sep).join("/")}` : "";
+      return `${alias}${suffix}`;
+    }
+  }
+  return `source:${providerId}/${role}`;
+}
+
+function supportShortString(value, fallback = null) {
+  if (value === undefined || value === null || value === "") return fallback;
+  return String(value).replace(/[\r\n\t]+/g, " ").slice(0, 160);
+}
+
+function supportBuildValue(value) {
+  const text = supportShortString(value, null);
+  if (!text) return null;
+  if (!/^[a-zA-Z0-9._:@+ -]{1,120}$/u.test(text)) return "redacted";
+  return text;
+}
+
+function supportNumber(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function firstSupportNumber(...values) {
+  for (const value of values) {
+    const number = supportNumber(value);
+    if (number !== null) return number;
+  }
+  return null;
+}
+
+function supportErrorCategory(error) {
+  const code = String(error?.code || error?.message || "usage_reader_error").toLowerCase();
+  if (/parse|json|syntax/u.test(code)) return "parser_error";
+  if (/eacces|eperm|permission|denied/u.test(code)) return "permission_error";
+  if (/enoent|missing|not found/u.test(code)) return "path_not_found";
+  return "usage_reader_error";
+}
+
+function uniqueStrings(values) {
+  return Array.from(new Set(values.map((value) => supportShortString(value, "unknown")).filter(Boolean)));
 }
 
 function buildReaderSources(connectedSources = []) {
@@ -8144,6 +8608,8 @@ module.exports = {
     preferredCodexPlan,
     localizeUsageSubscriptionPrices,
     sanitizeAccountBillingSnapshots,
-    accountBillingSubscriptionPlan
+    accountBillingSubscriptionPlan,
+    buildSupportReportFromInputs,
+    redactSupportPath
   }
 };
