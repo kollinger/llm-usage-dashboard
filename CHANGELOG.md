@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0-preview.4 - 2026-07-11
+
+### Added
+
+- Added a redacted Settings support report for Multica/WhatsApp diagnostics,
+  including provider source status, freshness, failure categories, and a compact
+  copyable summary.
+
+### Improved
+
+- Kept support-report UI text translated across all supported languages.
+
 ## 1.1.0-preview.3 - 2026-07-11
 
 ### Improved
