@@ -2990,7 +2990,8 @@ button.subscription-connection-action {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -2998,6 +2999,12 @@ select {
   padding: 8px 10px;
   color: var(--ink);
   background: #fff;
+}
+
+textarea {
+  min-height: 132px;
+  resize: vertical;
+  line-height: 1.4;
 }
 
 .settings-preferences {
@@ -3143,6 +3150,40 @@ select {
 
 .settings-source-groups {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.support-report-actions {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.support-report-actions .text-button {
+  gap: 8px;
+  min-width: 0;
+}
+
+.support-report-field {
+  margin: 10px 0 0;
+}
+
+.support-report-field textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+}
+
+#supportReportStatus[data-status="ready"] {
+  color: var(--green);
+  font-weight: 800;
+}
+
+#supportReportStatus[data-status="error"] {
+  color: var(--rose);
+  font-weight: 800;
+}
+
+#supportReportStatus[data-status="loading"] {
+  color: var(--blue);
+  font-weight: 800;
 }
 
 .settings-source-group {

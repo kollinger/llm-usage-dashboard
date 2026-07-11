@@ -349,6 +349,26 @@
           </div>
         </div>
         <div class="settings-section">
+          <h3 data-i18n="settings.supportReport.title">Diagnosebericht</h3>
+          <p class="settings-desc" data-i18n="settings.supportReport.description">Erzeuge einen redigierten Supportbericht fuer Multica oder WhatsApp, wenn lokale Quellen fehlen oder keine Usage liefern.</p>
+          <p class="settings-state-note neutral-note" data-i18n="settings.supportReport.privacyNote">Der Bericht enthaelt nur Metadaten und redigierte Pfade, keine Rohlogs, Prompts, Secrets oder Provider-Payloads.</p>
+          <div class="settings-section-actions support-report-actions">
+            <button type="button" class="text-button" id="supportReportDownloadBtn">
+              <i data-lucide="download"></i>
+              <span data-i18n="settings.supportReport.downloadJson">JSON-Bericht speichern</span>
+            </button>
+            <button type="button" class="text-button ghost" id="supportReportCopyBtn">
+              <i data-lucide="copy"></i>
+              <span data-i18n="settings.supportReport.copySummary">Zusammenfassung kopieren</span>
+            </button>
+          </div>
+          <p class="settings-desc" id="supportReportStatus" hidden></p>
+          <label class="field support-report-field">
+            <span data-i18n="settings.supportReport.summaryLabel">Kompakte Zusammenfassung</span>
+            <textarea id="supportReportSummary" rows="7" readonly aria-label="Kompakte Zusammenfassung" data-i18n-aria-label="settings.supportReport.summaryLabel" data-i18n-placeholder="settings.supportReport.emptySummary"></textarea>
+          </label>
+        </div>
+        <div class="settings-section">
           <h3 data-i18n="settings.sources.title">Lokale Quellen</h3>
           <p class="settings-desc" data-i18n="settings.sources.description">Verbundene Quellen verwalten, Zugriff prüfen und ACL-Kommandos kopieren.</p>
           <div class="settings-section-actions">

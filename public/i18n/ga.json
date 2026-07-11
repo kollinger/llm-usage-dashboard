@@ -658,6 +658,20 @@
       "copyError": "Could not copy commands to the clipboard.",
       "automatic": "used automatically"
     },
+    "supportReport": {
+      "title": "Support report",
+      "description": "Generate a redacted support report for Multica or WhatsApp when local sources are missing or usage does not appear.",
+      "privacyNote": "The report contains only metadata and redacted paths, no raw logs, prompts, secrets, or provider payloads.",
+      "downloadJson": "Save JSON report",
+      "copySummary": "Copy summary",
+      "summaryLabel": "Compact summary",
+      "emptySummary": "Generate a report to preview the compact support summary.",
+      "preparing": "Preparing support report...",
+      "downloaded": "Support report saved.",
+      "copied": "Support summary copied to the clipboard.",
+      "generateError": "Could not generate support report: {message}",
+      "copyError": "Could not copy support summary to the clipboard."
+    },
     "updates": {
       "title": "App updates",
       "description": "Automatic update checks are always active for supported packaged desktop builds; only preview releases are optional.",
