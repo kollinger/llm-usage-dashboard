@@ -23,7 +23,7 @@ const empty = summarizeTokenWindow([
 const breakdownDaily = [
   {
     date: "2026-07-06",
-    totalTokens: 750,
+    totalTokens: 875,
     sources: [
       {
         id: "codex",
@@ -34,6 +34,16 @@ const breakdownDaily = [
         id: "claudeCode",
         totalTokens: 450,
         models: [{ model: "Claude Sonnet 4.6", inputTokens: 210, cachedInputTokens: 40, outputTokens: 200, totalTokens: 450 }]
+      },
+      {
+        id: "glm",
+        totalTokens: 75,
+        models: [{ model: "glm-5.2", inputTokens: 50, outputTokens: 25, totalTokens: 75 }]
+      },
+      {
+        id: "copilot",
+        totalTokens: 50,
+        models: [{ model: "GPT-4.1-Copilot", inputTokens: 20, outputTokens: 30, totalTokens: 50 }]
       }
     ]
   },
@@ -111,19 +121,33 @@ assert.deepEqual(result.providerRows, [
   {
     sourceId: "claudeCode",
     totalTokens: 450,
-    share: 51.4,
+    share: 45,
     topModel: { model: "Claude Sonnet 4.6", totalTokens: 450 }
   },
   {
     sourceId: "codex",
     totalTokens: 425,
-    share: 48.6,
+    share: 42.5,
     topModel: { model: "GPT-5.3-Codex", totalTokens: 425 }
+  },
+  {
+    sourceId: "glm",
+    totalTokens: 75,
+    share: 7.5,
+    topModel: { model: "glm-5.2", totalTokens: 75 }
+  },
+  {
+    sourceId: "copilot",
+    totalTokens: 50,
+    share: 5,
+    topModel: { model: "GPT-4.1-Copilot", totalTokens: 50 }
   }
 ]);
 assert.deepEqual(result.modelRows, [
   { sourceId: "claudeCode", model: "Claude Sonnet 4.6", totalTokens: 450 },
-  { sourceId: "codex", model: "GPT-5.3-Codex", totalTokens: 425 }
+  { sourceId: "codex", model: "GPT-5.3-Codex", totalTokens: 425 },
+  { sourceId: "glm", model: "glm-5.2", totalTokens: 75 },
+  { sourceId: "copilot", model: "GPT-4.1-Copilot", totalTokens: 50 }
 ]);
 assert.deepEqual(result.localOnlyModelRows, [
   { sourceId: "local", model: "chart.models.unknown", totalTokens: 90 }

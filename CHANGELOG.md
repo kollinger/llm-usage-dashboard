@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0-preview.3 - 2026-07-11
+
+### Improved
+
+- Clarified that logged-token summary cards show locally logged usage, not
+  provider quota limits.
+- Added provider breakdown notes to logged token summary cards.
+
+### Fixed
+
+- Kept total/provider/model token views consistent across Today, Last 24 Hours,
+  Week, Month, and All Time for multi-provider local usage.
+
 ## 1.1.0-preview.2 - 2026-07-10
 
 ### Improved

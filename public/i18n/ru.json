@@ -46,6 +46,11 @@
     "recordDay": "Рекордный день: {date} · {tokens}",
     "quotaWindowNote": "Provider quota window",
     "tokensRange": "Logged tokens: {range}",
+    "todayLogNote": "Calendar day from local logs, not provider quota limits. {providers}",
+    "totalLogNote": "All local log history, not provider quota limits. {providers}",
+    "providerTokenDetail": "{provider}: {tokens}",
+    "providerBreakdownMore": "{providers} + {count} more",
+    "providerBreakdownEmpty": "No provider log tokens.",
     "rangeNotes": {
       "h24": "Rolling 24-hour total; chart bars are day-grained.",
       "today": "Calendar day in local time.",

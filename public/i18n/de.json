@@ -46,6 +46,11 @@
     "recordDay": "Rekord-Tag: {date} · {tokens}",
     "quotaWindowNote": "Provider-Zeitfenster",
     "tokensRange": "Geloggte Tokens: {range}",
+    "todayLogNote": "Kalendertag aus lokalen Logs, nicht Provider-Limits. {providers}",
+    "totalLogNote": "Gesamte lokale Log-Historie, nicht Provider-Limits. {providers}",
+    "providerTokenDetail": "{provider}: {tokens}",
+    "providerBreakdownMore": "{providers} + {count} weitere",
+    "providerBreakdownEmpty": "Keine Provider-Log-Tokens.",
     "rangeNotes": {
       "h24": "Rollierende 24h-Summe; Chart-Balken sind tagesgenau.",
       "today": "Kalendertag in lokaler Zeit.",

@@ -541,6 +541,8 @@ async function assertFrontendUsageIntelligence() {
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const weekDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const monthDate = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const result = JSON.parse(vm.runInNewContext(
     `${code}
@@ -568,10 +570,12 @@ const daily = [
 const multiProviderDaily = [
   {
     date: "${today}",
-    totalTokens: 750,
+    totalTokens: 1000,
     sources: [
       { id: "codex", totalTokens: 300, models: [{ model: "gpt-5.5", inputTokens: 160, cachedInputTokens: 20, outputTokens: 120, totalTokens: 300 }] },
-      { id: "claudeCode", totalTokens: 450, models: [{ model: "claude-fable-5", inputTokens: 260, cachedInputTokens: 40, outputTokens: 150, totalTokens: 450 }] }
+      { id: "claudeCode", totalTokens: 450, models: [{ model: "claude-fable-5", inputTokens: 260, cachedInputTokens: 40, outputTokens: 150, totalTokens: 450 }] },
+      { id: "glm", totalTokens: 125, models: [{ model: "glm-5.2", inputTokens: 80, outputTokens: 45, totalTokens: 125 }] },
+      { id: "copilot", totalTokens: 125, models: [{ model: "gpt-4.1-copilot", inputTokens: 70, outputTokens: 55, totalTokens: 125 }] }
     ]
   }
 ];
@@ -580,21 +584,56 @@ const local = {
   totals: {
     last24h: { totalTokens: 1234 },
     last7d: { totalTokens: 3456 },
-    allTime: { totalTokens: 789 }
-  }
+    allTime: { totalTokens: 722 }
+  },
+  sources: [
+    { id: "claudeCode", totalTokens: 500 },
+    { id: "codex", totalTokens: 222 }
+  ]
+};
+const rangeDaily = [
+  { date: "${monthDate}", totalTokens: 10, sources: [{ id: "copilot", totalTokens: 10 }] },
+  { date: "${weekDate}", totalTokens: 20, sources: [{ id: "glm", totalTokens: 20 }] },
+  { date: "${yesterday}", totalTokens: 30, sources: [{ id: "claudeCode", totalTokens: 30 }] },
+  { date: "${today}", totalTokens: 40, sources: [{ id: "codex", totalTokens: 40 }] }
+];
+const rangeLocal = {
+  daily: rangeDaily,
+  totals: {
+    last24h: { totalTokens: 70 },
+    last7d: { totalTokens: 90 },
+    allTime: { totalTokens: 123 }
+  },
+  sources: [
+    { id: "codex", totalTokens: 40 },
+    { id: "claudeCode", totalTokens: 30 },
+    { id: "glm", totalTokens: 20 },
+    { id: "copilot", totalTokens: 10 }
+  ]
 };
 state.chartTimeFilter = "h24";
 const h24Total = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "h24")).totalTokens;
 state.chartTimeFilter = "today";
 const todayTotal = usageTotalsForSelectedRange(local, filterDailyByRange(daily, "today")).totalTokens;
+const rangeTotals = {};
+for (const filter of ["today", "h24", "week", "month", "all"]) {
+  state.chartTimeFilter = filter;
+  rangeTotals[filter] = usageTotalsForSelectedRange(rangeLocal, filterDailyByRange(rangeDaily, filter)).totalTokens;
+}
 const todaySummaryTotal = usageTotalsForToday({ daily }, []).totalTokens;
 const recordDay = findRecordDay(daily);
 renderSummary([], local, filterDailyByRange(daily, "today"));
 const renderedTokensToday = document.getElementById("tokensToday").textContent;
 const renderedTokensTotal = document.getElementById("tokensTotal").textContent;
+const renderedTokensTodayNote = document.getElementById("tokensRangeNote").textContent;
+const renderedTokensTotalNote = document.getElementById("tokensTotalNote").textContent;
 const renderedRecordDayTokens = document.getElementById("recordDayTokens").textContent;
 const renderedRecordDayDate = document.getElementById("recordDayDate").textContent;
 const models = summarizeModelUsageForDaily(daily);
+const rangeProviderRows = summarizeProviderUsageForDaily(rangeDaily).map((row) => ({
+  sourceId: row.sourceId,
+  totalTokens: row.totalTokens
+}));
 const providedSlotRows = buildHistoryRowsForFilter({
   slots: {
     today: [
@@ -1118,12 +1157,16 @@ JSON.stringify({
   fallbackSlotHasProviderSources: fallbackSlotRows.some((row) => row.sources.some((source) => source.id === "codex" || source.id === "claudeCode")),
   h24Total,
   todayTotal,
+  rangeTotals,
+  rangeProviderRows,
   todaySummaryTotal,
   recordDayTokens: recordDay?.totalTokens,
   recordDayLabel: t("summary.recordDayLabel"),
   recordDayFormattedDate: formatFullDate(recordDay?.date),
   renderedTokensToday,
   renderedTokensTotal,
+  renderedTokensTodayNote,
+  renderedTokensTotalNote,
   renderedRecordDayTokens,
   renderedRecordDayDate,
   topModel: models[0]?.model,
@@ -1422,15 +1465,27 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.doesNotMatch(result.overviewSlotHtml, /history-slot-backdrop/u);
   assert.equal(result.providedSlotLabels.every(Boolean), true);
   assert.equal(result.fallbackSlotCount > 0, true);
-  assert.equal(result.fallbackSlotTotal, 750);
+  assert.equal(result.fallbackSlotTotal, 1000);
   assert.equal(result.fallbackSlotHasProviderSources, true);
   assert.equal(result.h24Total, 1234);
   assert.equal(result.todayTotal, 222);
+  assert.deepEqual(result.rangeTotals, { today: 40, h24: 70, week: 90, month: 100, all: 123 });
+  assert.deepEqual(result.rangeProviderRows, [
+    { sourceId: "codex", totalTokens: 40 },
+    { sourceId: "claudeCode", totalTokens: 30 },
+    { sourceId: "glm", totalTokens: 20 },
+    { sourceId: "copilot", totalTokens: 10 }
+  ]);
   assert.equal(result.todaySummaryTotal, 222);
   assert.equal(result.recordDayTokens, 500);
   assert.equal(result.recordDayLabel, "Record day");
   assert.equal(result.renderedTokensToday, "222");
-  assert.equal(result.renderedTokensTotal, "789");
+  assert.equal(result.renderedTokensTotal, "722");
+  assert.equal(result.renderedTokensTodayNote.includes("not provider quota limits"), true);
+  assert.equal(result.renderedTokensTodayNote.includes("Codex: 222"), true);
+  assert.equal(result.renderedTokensTotalNote.includes("not provider quota limits"), true);
+  assert.equal(result.renderedTokensTotalNote.includes("Claude Code: 500"), true);
+  assert.equal(result.renderedTokensTotalNote.includes("Codex: 222"), true);
   assert.equal(result.renderedRecordDayTokens, "500");
   assert.equal(result.renderedRecordDayDate, result.recordDayFormattedDate);
   assert.equal(result.topModel, "claude-fable-5");

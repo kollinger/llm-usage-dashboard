@@ -135,6 +135,7 @@ const els = {
   tokensToday: document.getElementById("tokensToday"),
   tokensRangeNote: document.getElementById("tokensRangeNote"),
   tokensTotal: document.getElementById("tokensTotal"),
+  tokensTotalNote: document.getElementById("tokensTotalNote"),
   tokensTotalTile: document.getElementById("tokensTotal")?.closest(".metric-tile") || null,
   recordDayTokens: document.getElementById("recordDayTokens"),
   recordDayDate: document.getElementById("recordDayDate"),
@@ -3498,6 +3499,10 @@ function renderLocked() {
     els.tokensRangeNote.hidden = true;
   }
   els.tokensTotal.textContent = "--";
+  if (els.tokensTotalNote) {
+    els.tokensTotalNote.textContent = "";
+    els.tokensTotalNote.hidden = true;
+  }
   if (els.tokensTotalTile) els.tokensTotalTile.hidden = false;
   if (els.recordDayTokens) els.recordDayTokens.textContent = "--";
   if (els.recordDayDate) {
@@ -5746,22 +5751,30 @@ function renderSummary(providers, local, filteredDaily = []) {
   if (els.tokensRangeLabel) {
     els.tokensRangeLabel.textContent = t("summary.tokensToday");
   }
+  const todayRows = dailyRowsForToday(local, filteredDaily);
   const todayTotals = usageTotalsForToday(local, filteredDaily);
   els.tokensToday.textContent = formatTokens(todayTotals.totalTokens);
   if (els.tokensRangeNote) {
-    els.tokensRangeNote.textContent = t("summary.rangeNotes.today");
+    els.tokensRangeNote.textContent = loggedTokenSummaryNote("today", summarizeProviderUsageForDaily(todayRows));
     els.tokensRangeNote.hidden = false;
   }
   if (els.tokensTotalTile) els.tokensTotalTile.hidden = false;
   const allTimeTokens = Number(local?.totals?.allTime?.totalTokens);
   els.tokensTotal.textContent = Number.isFinite(allTimeTokens) ? formatTokens(allTimeTokens) : "--";
+  if (els.tokensTotalNote) {
+    els.tokensTotalNote.textContent = loggedTokenSummaryNote("total", summarizeProviderUsageForLocal(local));
+    els.tokensTotalNote.hidden = false;
+  }
   renderRecordDay(local?.daily || []);
 }
 
 function usageTotalsForToday(local, filteredDaily = []) {
+  return sumDailyUsageTotals(dailyRowsForToday(local, filteredDaily));
+}
+
+function dailyRowsForToday(local, filteredDaily = []) {
   const daily = Array.isArray(local?.daily) ? local.daily : null;
-  const todayRows = daily ? filterDailyByRange(daily, "today") : filteredDaily;
-  return sumDailyUsageTotals(todayRows);
+  return daily ? filterDailyByRange(daily, "today") : filteredDaily;
 }
 
 function usageTotalsForSelectedRange(local, filteredDaily = []) {
@@ -7162,6 +7175,24 @@ function summarizeProviderUsageForDaily(daily) {
       addProviderUsageToMap(providerMap, source.id || "local", source);
     }
   }
+  return providerUsageRows(providerMap);
+}
+
+function summarizeProviderUsageForLocal(local) {
+  const sources = Array.isArray(local?.sources) ? local.sources : [];
+  if (sources.length) return summarizeProviderUsageForSources(sources);
+  return summarizeProviderUsageForDaily(local?.daily || []);
+}
+
+function summarizeProviderUsageForSources(sources) {
+  const providerMap = new Map();
+  for (const source of Array.isArray(sources) ? sources : []) {
+    addProviderUsageToMap(providerMap, source.id || "local", source);
+  }
+  return providerUsageRows(providerMap);
+}
+
+function providerUsageRows(providerMap) {
   const total = Array.from(providerMap.values()).reduce((sum, row) => sum + row.totalTokens, 0);
   return Array.from(providerMap.values())
     .map((row) => ({
@@ -7176,6 +7207,29 @@ function summarizeProviderUsageForDaily(daily) {
       const right = chartSourceOrder.indexOf(b.sourceId);
       return (left === -1 ? Number.MAX_SAFE_INTEGER : left) - (right === -1 ? Number.MAX_SAFE_INTEGER : right);
     });
+}
+
+function loggedTokenSummaryNote(kind, providerRows) {
+  const providers = loggedTokenProviderSummary(providerRows);
+  return t(kind === "total" ? "summary.totalLogNote" : "summary.todayLogNote", { providers });
+}
+
+function loggedTokenProviderSummary(providerRows) {
+  const rows = (Array.isArray(providerRows) ? providerRows : []).filter((row) => Number(row.totalTokens || 0) > 0);
+  if (!rows.length) return t("summary.providerBreakdownEmpty");
+  const visible = rows.slice(0, 2).map((row) =>
+    t("summary.providerTokenDetail", {
+      provider: sourceLabel(row.sourceId),
+      tokens: formatTokens(row.totalTokens)
+    })
+  );
+  if (rows.length > visible.length) {
+    return t("summary.providerBreakdownMore", {
+      providers: visible.join(" · "),
+      count: formatNumber(rows.length - visible.length)
+    });
+  }
+  return visible.join(" · ");
 }
 
 function addModelUsageToMap(modelMap, sourceId, modelName, usage) {
