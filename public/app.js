@@ -4452,7 +4452,11 @@ function normalizeLocalProvider(id, provider) {
   const creditRows = normalizeCreditRows(provider?.creditRows, provider?.credits);
   const rawPlanType = provider?.planType || provider?.plan || null;
   const limitsUpdatedAt =
-    id === "claudeCode" ? provider?.limitsUpdatedAt : id === "copilot" && hasLimitData ? provider?.quotaStatus?.updatedAt : null;
+    id === "claudeCode"
+      ? provider?.limitsUpdatedAt
+      : (id === "copilot" || id === "glm") && hasLimitData
+        ? provider?.limitsUpdatedAt || provider?.quotaStatus?.updatedAt
+        : null;
   const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
   const subscription = normalizeSubscription(provider?.subscription, {
     planType: rawPlanType,
@@ -4779,6 +4783,7 @@ function localizeProviderMessage(message, fallbackKey) {
     "No local GLM/Z.AI usage events found.": "providers.messages.noGlmEvents",
     "GLM/Z.AI tokens from local imports.": "providers.messages.glmImportTokens",
     "Official quota through OpenCode is not available.": "providers.messages.glmQuotaUnavailable",
+    "Official GLM Coding Plan quota from OpenCode.": "providers.messages.glmQuotaAvailable",
     "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
     "Keine lokalen Ollama-Logs gefunden.": "providers.messages.noOllamaLogs"
   };
@@ -4786,6 +4791,12 @@ function localizeProviderMessage(message, fallbackKey) {
   if (String(message || "").startsWith(claudeOauthPrefix)) {
     return t("providers.messages.claudeOauthUnavailable", {
       reason: message.slice(claudeOauthPrefix.length)
+    });
+  }
+  const glmQuotaPrefix = "Official GLM Coding Plan quota unavailable: ";
+  if (String(message || "").startsWith(glmQuotaPrefix)) {
+    return t("providers.messages.glmQuotaUnavailableReason", {
+      reason: message.slice(glmQuotaPrefix.length)
     });
   }
   if (!message) return t(fallbackKey);

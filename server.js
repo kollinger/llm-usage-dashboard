@@ -49,6 +49,10 @@ const OPENCODE_DB_FILES = uniquePaths([
   ...defaultOpenCodeDbFilesFromEnv(process.env.OPENCODE_DB),
   ...parsePathList(process.env.LLM_USAGE_OPENCODE_DB_FILES)
 ]);
+const GLM_CODING_PLAN_CONFIG_FILES = uniquePaths([
+  ...defaultOpenCodeConfigFiles(),
+  ...parsePathList(process.env.LLM_USAGE_GLM_CODING_PLAN_CONFIG_FILES)
+]);
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
 const CODEX_HOMES = uniquePaths([
@@ -108,6 +112,9 @@ const COPILOT_LIVE_QUOTA_ENABLED = parseBoolean(process.env.COPILOT_LIVE_QUOTA_E
 const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30);
 const COPILOT_LIVE_QUOTA_IDLE_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_IDLE_CACHE_SECONDS", 15 * 60);
 const COPILOT_LIVE_QUOTA_TIMEOUT_MS = envMs("COPILOT_LIVE_QUOTA_TIMEOUT_SECONDS", 12);
+const GLM_CODING_PLAN_QUOTA_ENABLED = parseBoolean(process.env.GLM_CODING_PLAN_QUOTA_ENABLED ?? "true");
+const GLM_CODING_PLAN_QUOTA_CACHE_MS = envMs("GLM_CODING_PLAN_QUOTA_CACHE_SECONDS", 30);
+const GLM_CODING_PLAN_QUOTA_TIMEOUT_MS = envMs("GLM_CODING_PLAN_QUOTA_TIMEOUT_SECONDS", 5);
 const SOURCE_DIAGNOSTICS_CACHE_MS = envMs("SOURCE_DIAGNOSTICS_CACHE_SECONDS", 30);
 const SUPPORT_REPORT_SCHEMA_VERSION = 1;
 const SUPPORT_REPORT_PROVIDER_IDS = ["claudeCode", "codex", "copilot", "glm", "gemini", "ollama"];
@@ -423,6 +430,7 @@ const codexLiveRateLimitsCache = createTimedCache();
 const copilotLiveQuotaCache = createTimedCache();
 const claudeApiUsageCache = createTimedCache();
 const claudeAuthStatusCache = createTimedCache();
+const glmCodingPlanQuotaCache = createTimedCache();
 const usageCache = createTimedCache();
 const sourceDiagnosticsCache = createTimedCache();
 const officialSubscriptionPricingCache = createTimedCache();
@@ -460,6 +468,7 @@ function markInteractiveUsageRequest() {
     // dashboard client returns; expire them so the next rebuild refreshes.
     copilotLiveQuotaCache.expiresAt = 0;
     codexLiveRateLimitsCache.expiresAt = 0;
+    glmCodingPlanQuotaCache.expiresAt = 0;
   }
 }
 
@@ -548,6 +557,25 @@ function defaultOpenCodeDbFilesFromEnv(value) {
   const expanded = expandHome(db);
   if (path.isAbsolute(expanded)) return [expanded];
   return OPENCODE_DATA_DIRS.map((dir) => path.join(dir, expanded));
+}
+
+function defaultOpenCodeConfigFiles() {
+  const configHome = expandHome(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"));
+  const dirs = uniquePaths([
+    path.join(configHome, "opencode"),
+    path.join(os.homedir(), ".opencode"),
+    ...OPENCODE_DATA_DIRS
+  ]);
+  const names = [
+    "opencode.json",
+    "opencode.jsonc",
+    "config.json",
+    "config.jsonc",
+    "auth.json",
+    "credentials.json",
+    "providers.json"
+  ];
+  return dirs.flatMap((dir) => names.map((name) => path.join(dir, name)));
 }
 
 function resolvePackagedResourcePath(relativePath) {
@@ -829,7 +857,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       officialPricing,
       accountBilling
     );
-    await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, openai, anthropic]).catch(() => {});
+    await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, openai, anthropic]).catch(() => {});
     const local = buildLocalAggregate([codex, copilot, claudeCode, gemini, glm, ollama]);
 
     const now = new Date().toISOString();
@@ -2312,7 +2340,8 @@ function defaultGlmSources() {
 function defaultOpenCodeGlmSource() {
   const paths = [
     ...OPENCODE_DB_FILES.map((file) => ({ role: "opencode_database", path: file, kind: "file" })),
-    ...OPENCODE_DATA_DIRS.map((dir) => ({ role: "opencode_data_dir", path: dir, kind: "directory" }))
+    ...OPENCODE_DATA_DIRS.map((dir) => ({ role: "opencode_data_dir", path: dir, kind: "directory" })),
+    ...defaultOpenCodeGlmConfigPathEntries()
   ];
   if (!paths.length) return null;
   const owner = currentOwner(os.homedir());
@@ -2340,6 +2369,14 @@ function defaultOpenCodeGlmSource() {
       forbidden: ["credentials", "raw_transcripts", "provider_payloads"]
     }
   };
+}
+
+function defaultOpenCodeGlmConfigPathEntries() {
+  return GLM_CODING_PLAN_CONFIG_FILES.map((file) => ({
+    role: /(?:auth|credential)/iu.test(path.basename(file)) ? "opencode_auth" : "opencode_config",
+    path: file,
+    kind: "file"
+  }));
 }
 
 function defaultHomeSource(providerId, label, home, paths) {
@@ -5464,14 +5501,23 @@ const GLM_USAGE_IMPORT_ROLES = [
 ];
 const GLM_USAGE_IMPORT_EXTENSIONS = new Set([".json", ".jsonl", ".ndjson", ".log", ".csv"]);
 const OPENCODE_DB_ROLES = ["opencode_database", "opencode_data_dir"];
+const GLM_CODING_PLAN_AUTH_ROLES = ["opencode_auth", "opencode_config"];
+const GLM_CODING_PLAN_QUOTA_ENDPOINT_PATH = "/api/monitor/usage/quota/limit";
+const GLM_CODING_PLAN_PAYLOAD_LIMIT_BYTES = 512 * 1024;
 const OPENCODE_DB_FILE_PATTERN = /^opencode(?:-[a-z0-9._-]+)?\.db$/i;
 const GLM_NO_EVENTS_MESSAGE = "No local GLM/Z.AI usage events found.";
+const GLM_IMPORT_TOKENS_MESSAGE = "GLM/Z.AI tokens from local imports.";
 const GLM_QUOTA_UNAVAILABLE_MESSAGE = "Official quota through OpenCode is not available.";
+const GLM_QUOTA_AVAILABLE_MESSAGE = "Official GLM Coding Plan quota from OpenCode.";
+const GLM_QUOTA_UNAVAILABLE_REASON_PREFIX = "Official GLM Coding Plan quota unavailable: ";
 
 async function readGlmUsage(options = {}) {
   const sources = options.sources || buildReaderSources().glm;
   const files = await glmUsageFileRecords(sources);
   const openCodeDbs = await opencodeDbFileRecords(sources);
+  const quotaPromise = options.quotaReader
+    ? Promise.resolve().then(() => options.quotaReader({ sources }))
+    : readGlmCodingPlanQuota({ sources, force: options.force });
   const usage = createUsageAccumulator();
   const modelMap = new Map();
   let firstEvent = null;
@@ -5529,31 +5575,44 @@ async function readGlmUsage(options = {}) {
     for (const event of result.events) addNormalizedEvent(event, fileRecord);
   }
 
-  const hasConfiguredSource = Boolean(files.length || openCodeDbs.length);
+  const quota = await quotaPromise.catch(() =>
+    glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_probe_failed", "zai_usage_api_quota_limit")
+  );
+  const hasQuotaLimits = Boolean(quota?.limits?.rows?.length || quota?.limits?.fiveHour || quota?.limits?.weekly);
+  const hasQuotaConfig = glmCodingPlanHasConfiguredSignal(quota);
+  const hasConfiguredSource = Boolean(
+    files.length ||
+      openCodeDbs.length ||
+      hasQuotaConfig
+  );
   const usageQuality = hasConfiguredSource
     ? openCodeReadErrors && !latestEvent
       ? "unavailable"
       : "measured"
     : null;
+  const quotaMessage = glmQuotaStatusMessage({ latestEvent, hasQuotaLimits, hasQuotaConfig, quota });
 
   return {
     id: "glm",
-    status: latestEvent ? "live" : "empty",
+    status: latestEvent || hasQuotaLimits ? "live" : "empty",
     updatedAt: new Date().toISOString(),
-    message: latestEvent ? GLM_QUOTA_UNAVAILABLE_MESSAGE : GLM_NO_EVENTS_MESSAGE,
+    message: quotaMessage,
     usageQuality,
     source: {
       usageFiles: [GLM_USAGE_EVENTS_FILE, GLM_USAGE_EVENTS_CSV_FILE],
       filesScanned: files.length + openCodeDbs.length,
       manualImportFilesScanned: files.length,
       openCodeDatabasesScanned: openCodeDbs.length,
+      openCodeConfigFilesScanned: quota?.auth?.configFilesScanned || 0,
+      openCodeConfigFilesWithBaseUrl: quota?.auth?.configFilesWithBaseUrl || 0,
       filesWithEvents,
       openCodeDatabasesWithEvents: openCodeDbsWithEvents,
       openCodeReadErrors,
       hasConfiguredSource,
       eventCount,
       latestUsageAt: latestEvent?.timestamp || null,
-      protocol: openCodeDbs.length ? "opencode_sqlite_or_openai_compatible" : "openai_compatible"
+      protocol: openCodeDbs.length ? "opencode_sqlite_or_openai_compatible" : "openai_compatible",
+      codingPlanQuota: summarizeGlmCodingPlanQuotaProbe(quota)
     },
     latest: latestEvent
       ? {
@@ -5570,7 +5629,10 @@ async function readGlmUsage(options = {}) {
         }
       : null,
     totals: finalizeUsageAccumulator(usage),
-    limits: null,
+    limits: quota?.limits || null,
+    limitsUpdatedAt: hasQuotaLimits ? quota.updatedAt : null,
+    limitSource: hasQuotaLimits ? quota.source || "zai_usage_api_quota_limit" : null,
+    quotaStatus: summarizeGlmCodingPlanQuotaProbe(quota),
     byModel: Array.from(modelMap.entries())
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
@@ -5578,6 +5640,562 @@ async function readGlmUsage(options = {}) {
     daily: buildDaily(usage.dailyMap),
     _usageEvents: usageEvents
   };
+}
+
+function glmQuotaStatusMessage({ latestEvent, hasQuotaLimits, hasQuotaConfig, quota }) {
+  if (hasQuotaLimits) return latestEvent ? GLM_IMPORT_TOKENS_MESSAGE : GLM_QUOTA_AVAILABLE_MESSAGE;
+  if (hasQuotaConfig && quota?.reason) return `${GLM_QUOTA_UNAVAILABLE_REASON_PREFIX}${quota.reason}`;
+  return latestEvent ? GLM_QUOTA_UNAVAILABLE_MESSAGE : GLM_NO_EVENTS_MESSAGE;
+}
+
+function glmCodingPlanHasConfiguredSignal(quota) {
+  return Boolean(
+    quota?.limits?.rows?.length ||
+      quota?.baseDomain ||
+      quota?.auth?.baseDomain ||
+      quota?.auth?.configFilesWithBaseUrl ||
+      quota?.status === "available" ||
+      quota?.status === "unavailable"
+  );
+}
+
+async function readGlmCodingPlanQuota(options = {}) {
+  if (!GLM_CODING_PLAN_QUOTA_ENABLED) {
+    return glmCodingPlanQuotaProbe("missing", "glm_coding_plan_quota_disabled", "zai_usage_api_quota_limit");
+  }
+  return readThroughCache(
+    glmCodingPlanQuotaCache,
+    GLM_CODING_PLAN_QUOTA_CACHE_MS,
+    async () => {
+      const auth = await readGlmCodingPlanAuth({ sources: options.sources, env: options.env });
+      if (auth.status !== "available") {
+        return glmCodingPlanQuotaProbe(auth.status, auth.reason, auth.source || "opencode_coding_plan", {
+          auth: summarizeGlmCodingPlanAuth(auth),
+          provider: auth.provider || null,
+          baseDomain: auth.baseDomain || null
+        });
+      }
+      return fetchGlmCodingPlanQuota({
+        auth,
+        fetchImpl: options.fetchImpl,
+        timeoutMs: options.timeoutMs
+      });
+    },
+    { force: options.force }
+  );
+}
+
+async function readGlmCodingPlanAuth(options = {}) {
+  const env = options.env || process.env;
+  const sources = options.sources || buildReaderSources().glm;
+  const candidates = [];
+  const envCandidate = glmAuthCandidateFromValues({
+    baseUrl: env.ANTHROPIC_BASE_URL,
+    accessToken: env.ANTHROPIC_AUTH_TOKEN,
+    source: "environment",
+    env
+  });
+  if (envCandidate) candidates.push(envCandidate);
+
+  let configFilesScanned = 0;
+  let configFilesWithBaseUrl = 0;
+  for (const entry of sourcePathEntries(sources, GLM_CODING_PLAN_AUTH_ROLES)) {
+    let text;
+    try {
+      text = await fsp.readFile(entry.path, "utf8");
+    } catch {
+      continue;
+    }
+    configFilesScanned += 1;
+    const fileCandidates = glmAuthCandidatesFromConfigText(text, {
+      source: entry.role === "opencode_auth" ? "opencode_auth" : "opencode_config",
+      env
+    });
+    if (fileCandidates.some((candidate) => candidate.baseDomain)) configFilesWithBaseUrl += 1;
+    candidates.push(...fileCandidates);
+  }
+
+  const available = candidates.find((candidate) => candidate.status === "available");
+  if (available) {
+    return {
+      ...available,
+      configFilesScanned,
+      configFilesWithBaseUrl
+    };
+  }
+
+  const withBase = candidates.find((candidate) => candidate.baseDomain);
+  const unsupported = candidates.find((candidate) => candidate.reason === "glm_coding_plan_base_url_unsupported");
+  const withToken = candidates.find((candidate) => candidate.hasAuth);
+  const fallback = withBase || unsupported || withToken || null;
+  return {
+    status: fallback?.status || "missing",
+    reason:
+      fallback?.reason ||
+      (withToken ? "glm_coding_plan_base_url_missing" : "glm_coding_plan_auth_missing"),
+    source: fallback?.source || "opencode_coding_plan",
+    provider: fallback?.provider || null,
+    platform: fallback?.platform || null,
+    baseDomain: fallback?.baseDomain || null,
+    hasAuth: Boolean(fallback?.hasAuth),
+    configFilesScanned,
+    configFilesWithBaseUrl
+  };
+}
+
+function glmAuthCandidateFromValues({ baseUrl, accessToken, source, env }) {
+  const token = normalizeGlmAuthToken(accessToken, env);
+  const resolved = resolveGlmCodingPlanBase(baseUrl);
+  if (!baseUrl && !token) return null;
+  if (!resolved) {
+    return {
+      status: "missing",
+      reason: baseUrl ? "glm_coding_plan_base_url_unsupported" : "glm_coding_plan_base_url_missing",
+      source,
+      hasAuth: Boolean(token),
+      accessToken: token || null
+    };
+  }
+  if (!token) {
+    return {
+      ...resolved,
+      status: "missing",
+      reason: "glm_coding_plan_auth_missing",
+      source,
+      hasAuth: false
+    };
+  }
+  return {
+    ...resolved,
+    status: "available",
+    reason: null,
+    source,
+    hasAuth: true,
+    accessToken: token
+  };
+}
+
+function glmAuthCandidatesFromConfigText(text, context = {}) {
+  const candidates = [];
+  const parsed = parseJsonObjectLoose(text);
+  if (parsed) collectGlmAuthCandidatesFromObject(parsed, { ...context, tokens: [] }, candidates);
+  candidates.push(...glmAuthCandidatesFromLooseText(text, context));
+  return dedupeGlmAuthCandidates(candidates);
+}
+
+function collectGlmAuthCandidatesFromObject(value, context, candidates) {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    for (const child of value) collectGlmAuthCandidatesFromObject(child, context, candidates);
+    return;
+  }
+
+  const ownTokens = Object.entries(value)
+    .filter(([key, token]) => isGlmAuthTokenKey(key) && typeof token === "string")
+    .map(([, token]) => normalizeGlmAuthToken(token, context.env))
+    .filter(Boolean);
+  const tokens = ownTokens.length ? ownTokens : context.tokens || [];
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string" && (isGlmBaseUrlKey(key) || resolveGlmCodingPlanBase(child))) {
+      const candidate = glmAuthCandidateFromValues({
+        baseUrl: child,
+        accessToken: tokens[0] || null,
+        source: context.source || "opencode_config",
+        env: context.env
+      });
+      if (candidate) candidates.push(candidate);
+    }
+  }
+
+  for (const child of Object.values(value)) {
+    collectGlmAuthCandidatesFromObject(child, { ...context, tokens }, candidates);
+  }
+}
+
+function glmAuthCandidatesFromLooseText(text, context = {}) {
+  const candidates = [];
+  const baseMatch = String(text || "").match(/https:\/\/(?:api\.z\.ai|open\.bigmodel\.cn|dev\.bigmodel\.cn)\/[^\s"'`),}]*/iu);
+  if (!baseMatch) return candidates;
+  candidates.push(
+    glmAuthCandidateFromValues({
+      baseUrl: baseMatch[0],
+      accessToken: null,
+      source: context.source || "opencode_config",
+      env: context.env
+    })
+  );
+  return candidates.filter(Boolean);
+}
+
+function dedupeGlmAuthCandidates(candidates) {
+  const seen = new Set();
+  return candidates.filter((candidate) => {
+    const key = `${candidate.source}:${candidate.baseDomain || ""}:${candidate.hasAuth ? "auth" : "noauth"}:${candidate.reason || ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function parseJsonObjectLoose(text) {
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {}
+  try {
+    const withoutComments = String(text || "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1")
+      .replace(/,\s*([}\]])/g, "$1");
+    const parsed = JSON.parse(withoutComments);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function isGlmBaseUrlKey(key) {
+  return /^(?:base[_-]?url|baseURL|url|endpoint|apiEndpoint|api[_-]?endpoint|ANTHROPIC_BASE_URL)$/iu.test(String(key || ""));
+}
+
+function isGlmAuthTokenKey(key) {
+  return /^(?:ANTHROPIC_AUTH_TOKEN|auth[_-]?token|authentication[_-]?token|api[_-]?key|apikey|token|key)$/iu.test(
+    String(key || "")
+  );
+}
+
+function normalizeGlmAuthToken(value, env = process.env) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  const envMatch =
+    text.match(/^\$\{?([A-Z][A-Z0-9_]{2,})\}?$/u) ||
+    text.match(/^\$\{?env[:.]([A-Z][A-Z0-9_]{2,})\}?$/iu) ||
+    text.match(/^process\.env\.([A-Z][A-Z0-9_]{2,})$/u);
+  const resolved = envMatch ? String(env?.[envMatch[1]] || "").trim() : text;
+  if (!resolved || resolved.length > 4096 || /[\r\n]/u.test(resolved)) return null;
+  return resolved;
+}
+
+function resolveGlmCodingPlanBase(baseUrl) {
+  if (!baseUrl) return null;
+  let parsed;
+  try {
+    parsed = new URL(String(baseUrl).trim());
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:") return null;
+  const host = parsed.hostname.toLowerCase();
+  const baseDomain = `${parsed.protocol}//${parsed.host}`;
+  if (host === "api.z.ai") {
+    return {
+      provider: "zai",
+      platform: "ZAI",
+      baseDomain,
+      quotaLimitUrl: `${baseDomain}${GLM_CODING_PLAN_QUOTA_ENDPOINT_PATH}`
+    };
+  }
+  if (host === "open.bigmodel.cn" || host === "dev.bigmodel.cn") {
+    return {
+      provider: "bigmodel",
+      platform: "ZHIPU",
+      baseDomain,
+      quotaLimitUrl: `${baseDomain}${GLM_CODING_PLAN_QUOTA_ENDPOINT_PATH}`
+    };
+  }
+  return null;
+}
+
+async function fetchGlmCodingPlanQuota({ auth, fetchImpl = fetch, timeoutMs = GLM_CODING_PLAN_QUOTA_TIMEOUT_MS } = {}) {
+  if (!auth || auth.status !== "available") {
+    return glmCodingPlanQuotaProbe(auth?.status || "missing", auth?.reason || "glm_coding_plan_auth_missing", auth?.source || "opencode_coding_plan", {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth?.provider || null,
+      baseDomain: auth?.baseDomain || null
+    });
+  }
+
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve({ timedOut: true });
+    }, Math.max(1, Number(timeoutMs || GLM_CODING_PLAN_QUOTA_TIMEOUT_MS)));
+  });
+  const request = Promise.resolve()
+    .then(() =>
+      fetchImpl(auth.quotaLimitUrl, {
+        method: "GET",
+        headers: {
+          Authorization: auth.accessToken,
+          "Accept-Language": auth.platform === "ZHIPU" ? "zh-CN,zh,en-US,en" : "en-US,en",
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "User-Agent": "LLM Usage Dashboard local GLM quota probe"
+        },
+        signal: controller.signal
+      })
+    )
+    .then((response) => ({ response }))
+    .catch((error) => ({ error }));
+
+  const outcome = await Promise.race([request, timeout]);
+  clearTimeout(timer);
+  if (outcome.timedOut || outcome.error?.name === "AbortError") {
+    return glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_timeout", auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+  if (outcome.error) {
+    return glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_network_error", auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+
+  const response = outcome.response;
+  const statusCode = Number(response?.status || 0);
+  if (!response || typeof response.text !== "function") {
+    return glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_invalid_response", auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+  const text = await response.text();
+  if (text.length > GLM_CODING_PLAN_PAYLOAD_LIMIT_BYTES) {
+    return glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_payload_too_large", auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+  if (statusCode !== 200 || response.ok === false) {
+    return glmCodingPlanQuotaProbe(glmCodingPlanHttpStatus(statusCode), glmCodingPlanHttpReason(statusCode), auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+
+  let payload;
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    return glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_parse_failed", auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+  const limits = normalizeGlmCodingPlanQuotaPayload(payload);
+  if (!limits) {
+    return glmCodingPlanQuotaProbe("unavailable", "glm_coding_plan_schema_unavailable", auth.source, {
+      auth: summarizeGlmCodingPlanAuth(auth),
+      provider: auth.provider,
+      baseDomain: auth.baseDomain
+    });
+  }
+  return glmCodingPlanQuotaProbe("available", null, auth.source, {
+    auth: summarizeGlmCodingPlanAuth(auth),
+    provider: auth.provider,
+    platform: auth.platform,
+    baseDomain: auth.baseDomain,
+    endpointPath: GLM_CODING_PLAN_QUOTA_ENDPOINT_PATH,
+    limits
+  });
+}
+
+function normalizeGlmCodingPlanQuotaPayload(payload) {
+  const root = payload?.data && typeof payload.data === "object" ? payload.data : payload;
+  const limits = Array.isArray(root?.limits)
+    ? root.limits
+    : Array.isArray(root?.quotaLimits)
+      ? root.quotaLimits
+      : Array.isArray(root?.quota_limits)
+        ? root.quota_limits
+        : [];
+  const rows = limits.map(normalizeGlmCodingPlanQuotaLimit).filter(Boolean);
+  if (!rows.length) return null;
+  const fiveHour = rows.find((row) => row.key === "glmFiveHourTokens") || null;
+  const weekly = rows.find((row) => row.key === "glmWeekly") || null;
+  return {
+    fiveHour,
+    weekly,
+    rows,
+    summaryLabel: `${rows.length} quota windows`
+  };
+}
+
+function normalizeGlmCodingPlanQuotaLimit(limit) {
+  if (!limit || typeof limit !== "object") return null;
+  const kind = classifyGlmCodingPlanQuotaLimit(limit);
+  if (!kind) return null;
+  const current = nullableFiniteNumber(
+    limit.currentValue,
+    limit.current_value,
+    limit.currentUsage,
+    limit.current_usage,
+    limit.used,
+    limit.usageValue
+  );
+  const total = nullableFiniteNumber(limit.usage, limit.total, limit.limit, limit.max, limit.totalValue, limit.total_value);
+  const percent = nullableFiniteNumber(
+    limit.percentage,
+    limit.percent,
+    limit.usedPercent,
+    limit.used_percent,
+    limit.usagePercentage,
+    limit.usage_percentage
+  );
+  const usedPercent = percent !== null
+    ? percent
+    : current !== null && total !== null && total > 0
+      ? (current / total) * 100
+      : null;
+  if (usedPercent === null) return null;
+  const safeUsedPercent = Math.max(0, Math.min(100, usedPercent));
+  const resetsAt = normalizeOptionalDate(
+    limit.resetsAt ||
+      limit.resets_at ||
+      limit.resetAt ||
+      limit.reset_at ||
+      limit.resetTime ||
+      limit.reset_time ||
+      limit.endTime ||
+      limit.end_time
+  );
+  const resetLabel = glmCodingPlanResetLabel(limit);
+  return {
+    key: kind.key,
+    label: kind.label,
+    usedPercent: safeUsedPercent,
+    remainingPercent: Math.max(0, 100 - safeUsedPercent),
+    windowMinutes: kind.windowMinutes,
+    resetsAt,
+    resetLabel,
+    valueLabel: glmCodingPlanValueLabel({ current, total, fallback: limit.valueLabel || limit.value_label })
+  };
+}
+
+function classifyGlmCodingPlanQuotaLimit(limit) {
+  const type = String(limit.type || limit.limitType || limit.limit_type || "").trim();
+  const label = String(limit.label || limit.name || limit.title || type || "").trim();
+  const text = `${type} ${label}`.toLowerCase().replace(/[_-]+/gu, " ");
+  if (type === "TOKENS_LIMIT" || /\b(?:5\s*hour|5h)\b/u.test(text)) {
+    return { key: "glmFiveHourTokens", label: "5h tokens", windowMinutes: 300 };
+  }
+  if (/\b(?:week|weekly|7\s*day|7d)\b/u.test(text)) {
+    return { key: "glmWeekly", label: "Weekly quota", windowMinutes: 7 * 24 * 60 };
+  }
+  if (type === "TIME_LIMIT" || /\b(?:mcp|tool|month|monthly)\b/u.test(text)) {
+    return { key: "glmMcpMonthly", label: "Monthly MCP", windowMinutes: 30 * 24 * 60 };
+  }
+  return null;
+}
+
+function glmCodingPlanValueLabel({ current, total, fallback }) {
+  if (current !== null && total !== null) return `${formatPlainNumber(current)} / ${formatPlainNumber(total)}`;
+  if (current !== null) return formatPlainNumber(current);
+  const text = String(fallback || "").trim();
+  return text && text.length <= 80 && !/token|secret|authorization|bearer|cookie/i.test(text) ? text : null;
+}
+
+function glmCodingPlanResetLabel(limit) {
+  const explicit = String(limit.resetLabel || limit.reset_label || limit.periodLabel || limit.period_label || "").trim();
+  if (explicit && explicit.length <= 120) return explicit;
+  const start = normalizeOptionalDate(limit.startTime || limit.start_time || limit.windowStart || limit.window_start);
+  const end = normalizeOptionalDate(limit.endTime || limit.end_time || limit.windowEnd || limit.window_end);
+  if (start && end) return `${start} - ${end}`;
+  return null;
+}
+
+function nullableFiniteNumber(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+    const number = Number(typeof value === "string" ? value.trim().replace(",", ".").replace(/\s*%$/u, "") : value);
+    if (Number.isFinite(number) && number >= 0) return number;
+  }
+  return null;
+}
+
+function formatPlainNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(number);
+}
+
+function glmCodingPlanHttpStatus(statusCode) {
+  if (statusCode === 401 || statusCode === 403) return "expired";
+  if (statusCode === 404) return "missing";
+  return "unavailable";
+}
+
+function glmCodingPlanHttpReason(statusCode) {
+  if (statusCode === 401 || statusCode === 403) return "glm_coding_plan_auth_failed";
+  if (statusCode === 404) return "glm_coding_plan_endpoint_not_found";
+  if (statusCode === 429) return "glm_coding_plan_rate_limited";
+  if (statusCode >= 500) return "glm_coding_plan_server_error";
+  return "glm_coding_plan_http_error";
+}
+
+function glmCodingPlanQuotaProbe(status, reason, source, extra = {}) {
+  const safeStatus = ["available", "missing", "expired", "unavailable"].includes(String(status || ""))
+    ? String(status)
+    : "unavailable";
+  return {
+    status: extra.limits ? "available" : safeStatus,
+    reason: extra.limits ? null : safeGlmCodingPlanReason(reason, "glm_coding_plan_unavailable"),
+    source: String(source || extra.source || "zai_usage_api_quota_limit").trim() || "zai_usage_api_quota_limit",
+    provider: extra.provider || null,
+    platform: extra.platform || null,
+    baseDomain: extra.baseDomain || null,
+    endpointPath: extra.endpointPath || GLM_CODING_PLAN_QUOTA_ENDPOINT_PATH,
+    updatedAt: normalizeOptionalDate(extra.updatedAt) || new Date().toISOString(),
+    limits: extra.limits || null,
+    auth: extra.auth || null
+  };
+}
+
+function summarizeGlmCodingPlanQuotaProbe(probe) {
+  if (!probe) return null;
+  return {
+    status: String(probe.status || "missing"),
+    reason: safeGlmCodingPlanReason(probe.reason, null),
+    source: String(probe.source || "").trim() || null,
+    provider: probe.provider || null,
+    platform: probe.platform || null,
+    baseDomain: probe.baseDomain || null,
+    endpointPath: probe.endpointPath || GLM_CODING_PLAN_QUOTA_ENDPOINT_PATH,
+    updatedAt: normalizeOptionalDate(probe.updatedAt) || null,
+    hasLimits: Boolean(probe.limits?.rows?.length),
+    auth: probe.auth || null
+  };
+}
+
+function summarizeGlmCodingPlanAuth(auth) {
+  if (!auth) return null;
+  return {
+    status: String(auth.status || "missing"),
+    reason: safeGlmCodingPlanReason(auth.reason, null),
+    source: String(auth.source || "").trim() || null,
+    provider: auth.provider || null,
+    platform: auth.platform || null,
+    baseDomain: auth.baseDomain || null,
+    hasAuth: Boolean(auth.hasAuth || auth.accessToken),
+    configFilesScanned: Number(auth.configFilesScanned || 0),
+    configFilesWithBaseUrl: Number(auth.configFilesWithBaseUrl || 0)
+  };
+}
+
+function safeGlmCodingPlanReason(reason, fallback) {
+  const text = String(reason || fallback || "").trim();
+  if (!text) return null;
+  return /^[a-z0-9_.:-]{1,100}$/iu.test(text) ? text : fallback || "glm_coding_plan_unavailable";
 }
 
 async function glmUsageFileRecords(sources) {
@@ -8839,6 +9457,11 @@ module.exports = {
   readThroughCache,
   _test: {
     copilotLimitsFromQuota,
+    resolveGlmCodingPlanBase,
+    readGlmCodingPlanAuth,
+    summarizeGlmCodingPlanAuth,
+    fetchGlmCodingPlanQuota,
+    normalizeGlmCodingPlanQuotaPayload,
     readGeminiUsage,
     readGlmUsage,
     parseDarwinSwapUsage,
