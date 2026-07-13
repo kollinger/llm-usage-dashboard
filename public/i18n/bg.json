@@ -343,6 +343,7 @@
       "noCodexSparkEvents": "Няма намерени Codex 5.3 Spark събития.",
       "noGeminiLogs": "Няма намерени локални Gemini usage логове.",
       "glmImportTokens": "GLM/Z.AI tokens from local imports.",
+      "glmQuotaUnavailable": "Official quota through OpenCode is not available.",
       "noGlmEvents": "No local GLM/Z.AI usage events found.",
       "ollamaLogTokens": "Локални Ollama токени от логове",
       "noOllamaLogs": "Няма намерени локални Ollama логове.",
@@ -352,6 +353,7 @@
       "claudeStatuslineMissing": "Claude statusline не е настроен. Активирайте statusline командата на таблото за Pro/Max квоти на живо.",
       "claudeLiveLimitsMissing": "Claude live limits are not available from local telemetry yet.",
       "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them.",
+      "claudeOauthUnavailable": "Claude CLI/OAuth quota unavailable: {reason}.",
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking."
     },
     "emptyState": {

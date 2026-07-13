@@ -343,6 +343,7 @@
       "noCodexSparkEvents": "Nem találhatók Codex 5.3 Spark események.",
       "noGeminiLogs": "Nem találhatók helyi Gemini használati naplók.",
       "glmImportTokens": "GLM/Z.AI tokens from local imports.",
+      "glmQuotaUnavailable": "Official quota through OpenCode is not available.",
       "noGlmEvents": "No local GLM/Z.AI usage events found.",
       "ollamaLogTokens": "Helyi Ollama tokenek naplókból",
       "noOllamaLogs": "Nem találhatók helyi Ollama naplók.",
@@ -352,6 +353,7 @@
       "claudeStatuslineMissing": "A Claude statusline nincs beállítva. Kapcsold be az irányítópult statusline parancsát az élő Pro/Max kvótákhoz.",
       "claudeLiveLimitsMissing": "Claude live limits are not available from local telemetry yet.",
       "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them.",
+      "claudeOauthUnavailable": "Claude CLI/OAuth quota unavailable: {reason}.",
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking."
     },
     "emptyState": {

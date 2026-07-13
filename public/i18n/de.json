@@ -343,6 +343,7 @@
       "noCodexSparkEvents": "Keine Codex 5.3 Spark Events gefunden.",
       "noGeminiLogs": "Keine lokalen Gemini-Nutzungslogs gefunden.",
       "glmImportTokens": "GLM/Z.AI-Tokens aus lokalen Importen.",
+      "glmQuotaUnavailable": "Quota über OpenCode nicht verfügbar.",
       "noGlmEvents": "Keine lokalen GLM/Z.AI-Nutzungsereignisse gefunden.",
       "ollamaLogTokens": "Lokale Ollama-Tokens aus Logs",
       "noOllamaLogs": "Keine lokalen Ollama-Logs gefunden.",
@@ -352,6 +353,7 @@
       "claudeStatuslineMissing": "Claude-Statusline nicht eingerichtet. Aktiviere den Dashboard-Statusline-Befehl für Live-Quotas bei Pro/Max.",
       "claudeLiveLimitsMissing": "Claude Live-Limits sind derzeit nicht aus lokaler Telemetrie verfügbar.",
       "claudeLimitsStale": "Claude-Live-Limits sind veraltet. Öffne Claude Code einmal, damit neue Werte geschrieben werden.",
+      "claudeOauthUnavailable": "Claude-CLI/OAuth-Quota nicht verfügbar: {reason}.",
       "claudeBrowserLoginHint": "Bei Claude.ai im Browser anmelden, um die Guthabenanzeige zu aktivieren."
     },
     "emptyState": {

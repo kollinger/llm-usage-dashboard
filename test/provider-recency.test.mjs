@@ -899,6 +899,24 @@ const normalizedClaudeConnectionCardHtml = renderProvider(normalizeLocalProvider
     rereadOnly: true
   }
 }));
+const glmUnavailableCardHtml = renderProvider(normalizeLocalProvider("glm", {
+  status: "live",
+  message: "Official quota through OpenCode is not available.",
+  latest: {
+    timestamp: "${today}T11:00:00Z",
+    model: "z-ai/glm-4.5",
+    last: { inputTokens: 100, outputTokens: 20, totalTokens: 120 }
+  },
+  totals: {
+    last24h: { totalTokens: 120 },
+    allTime: { totalTokens: 120 }
+  },
+  limits: null,
+  source: {
+    hasConfiguredSource: true,
+    protocol: "opencode_sqlite_or_openai_compatible"
+  }
+}));
 const limitBarsHtml = renderLimitBars({
   id: "codex",
   accent: providerMeta.codex.accent,
@@ -1291,6 +1309,10 @@ JSON.stringify({
     normalizedClaudeConnectionCardHtml.includes("data-subscription-reread") &&
     normalizedClaudeConnectionCardHtml.includes("Read plan now") &&
     !normalizedClaudeConnectionCardHtml.includes("Log in to Claude.ai"),
+  glmQuotaUnavailableCard:
+    glmUnavailableCardHtml.includes("Official quota through OpenCode is not available.") &&
+    !glmUnavailableCardHtml.includes("limit-bars") &&
+    !glmUnavailableCardHtml.includes("limit-tachometer-gauge"),
   providerCardNoFableQuotaAudit:
     !providerCardHtml.includes("Fable quota source") &&
     !providerCardHtml.includes("no synthetic quota is shown") &&
@@ -1493,6 +1515,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.usedModelPricingHasTotal, true);
   assert.equal(result.unknownModelPricingHonest, true);
   assert.equal(result.glmModelPricingCosted, true);
+  assert.equal(result.glmQuotaUnavailableCard, true);
   assert.equal(result.mixedApiCostStatus, "mixed");
   assert.equal(result.mixedApiCostNote.includes("multiple currencies"), true);
   assert.equal(result.partialApiCostStatus, "partial");

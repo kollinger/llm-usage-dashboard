@@ -61,6 +61,19 @@ const CLAUDE_HOME = expandHome(process.env.CLAUDE_HOME || path.join(os.homedir()
 const CLAUDE_SETTINGS_FILE = path.join(CLAUDE_HOME, "settings.json");
 const CLAUDE_STATUSLINE_FILE = path.join(CLAUDE_HOME, "usage-dashboard-statusline.json");
 const CLAUDE_STATUSLINE_SCRIPT = path.join(CLAUDE_HOME, "llm-usage-statusline-capture.js");
+const CLAUDE_CONFIG_FILE = expandHome(
+  process.env.CLAUDE_CONFIG_FILE ||
+    process.env.LLM_USAGE_CLAUDE_CONFIG_FILE ||
+    path.join(os.homedir(), ".claude.json")
+);
+const CLAUDE_CREDENTIALS_FILES = uniquePaths(
+  [
+    process.env.CLAUDE_CREDENTIALS_FILE,
+    process.env.LLM_USAGE_CLAUDE_CREDENTIALS_FILE,
+    path.join(CLAUDE_HOME, ".credentials.json"),
+    path.join(CLAUDE_HOME, "credentials.json")
+  ].filter(Boolean)
+);
 const CLAUDE_APP_COOKIES = path.join(
   os.homedir(),
   "Library",
@@ -111,7 +124,6 @@ const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("script
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const CLAUDE_AUTH_STATUS_CACHE_MS = envMs("CLAUDE_AUTH_STATUS_CACHE_SECONDS", 15 * 60);
 const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
-const CLAUDE_API_USAGE_STALE_MS = envMs("CLAUDE_API_USAGE_STALE_SECONDS", 600);
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
@@ -2247,7 +2259,8 @@ function buildReaderSources(connectedSources = []) {
       { role: "session_state", path: path.join(COPILOT_HOME, "session-state"), kind: "directory" }
     ])],
     claudeCode: [defaultHomeSource("claudeCode", "Claude Code", CLAUDE_HOME, [
-      { role: "projects", path: path.join(CLAUDE_HOME, "projects"), kind: "directory" }
+      { role: "projects", path: path.join(CLAUDE_HOME, "projects"), kind: "directory" },
+      { role: "oauth_credentials", path: path.join(CLAUDE_HOME, ".credentials.json"), kind: "file" }
     ])],
     gemini: [defaultHomeSource("gemini", "Gemini", GEMINI_HOME, [
       { role: "telemetry", path: path.join(GEMINI_HOME, "telemetry"), kind: "directory" },
@@ -4612,57 +4625,24 @@ function decryptClaudeAppCookies() {
   return cookies.sessionKey && cookies.lastActiveOrg ? cookies : null;
 }
 
-async function readClaudeOrgUsageFromApi() {
+async function readClaudeUsageProbe() {
   const now = Date.now();
   if (claudeApiUsageCache.value && now < claudeApiUsageCache.expiresAt) return claudeApiUsageCache.value;
   if (claudeApiUsageCache.pending) return claudeApiUsageCache.pending;
 
   claudeApiUsageCache.pending = Promise.resolve()
-    .then(fetchClaudeOrgUsageFromApi)
-    .then((usage) => {
-      if (usage) {
-        const value = {
-          ...usage,
-          updatedAt: usage.updatedAt || new Date().toISOString(),
-          cache: {
-            ...(usage.cache || {}),
-            stale: false
-          }
-        };
-        claudeApiUsageCache.value = value;
-        claudeApiUsageCache.expiresAt = Date.now() + CLAUDE_API_USAGE_CACHE_MS;
-        return value;
-      }
-      if (isClaudeApiUsageFreshEnoughForFallback(claudeApiUsageCache.value)) {
-        claudeApiUsageCache.value = {
-          ...claudeApiUsageCache.value,
-          cache: {
-            ...(claudeApiUsageCache.value.cache || {}),
-            stale: true,
-            staleReason: "claude_api_unavailable",
-            staleAt: new Date().toISOString()
-          }
-        };
-        claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
-        return claudeApiUsageCache.value;
-      }
-      return null;
+    .then(fetchClaudeUsageProbe)
+    .then((probe) => {
+      const value = normalizeClaudeApiUsageProbe(probe);
+      claudeApiUsageCache.value = value;
+      claudeApiUsageCache.expiresAt = Date.now() + (value.usage ? CLAUDE_API_USAGE_CACHE_MS : Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000));
+      return value;
     })
     .catch((error) => {
-      if (isClaudeApiUsageFreshEnoughForFallback(claudeApiUsageCache.value)) {
-        claudeApiUsageCache.value = {
-          ...claudeApiUsageCache.value,
-          cache: {
-            ...(claudeApiUsageCache.value.cache || {}),
-            stale: true,
-            staleReason: error.message,
-            staleAt: new Date().toISOString()
-          }
-        };
-        claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
-        return claudeApiUsageCache.value;
-      }
-      return null;
+      const value = claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api");
+      claudeApiUsageCache.value = value;
+      claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
+      return value;
     })
     .finally(() => {
       claudeApiUsageCache.pending = null;
@@ -4671,60 +4651,312 @@ async function readClaudeOrgUsageFromApi() {
   return claudeApiUsageCache.pending;
 }
 
-function isClaudeApiUsageFreshEnoughForFallback(value) {
-  const updatedAtMs = Date.parse(value?.updatedAt || "");
-  return Number.isFinite(updatedAtMs) && Date.now() - updatedAtMs <= CLAUDE_API_USAGE_STALE_MS;
+async function fetchClaudeUsageProbe(options = {}) {
+  const oauthSession = options.oauthSession || await readClaudeCliOauthSession();
+  const fetchWithAuth = options.fetchWithAuth || fetchClaudeUsageWithAuth;
+  const fetchWithCookies = options.fetchWithCookies || fetchClaudeUsageWithAppCookies;
+  let oauthProbe = null;
+  if (oauthSession.status === "available") {
+    oauthProbe = await fetchWithAuth({
+      source: "claude_oauth",
+      hostname: "api.anthropic.com",
+      path: "/api/oauth/usage",
+      headers: {
+        Authorization: `Bearer ${oauthSession.accessToken}`,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "oauth-2025-04-20",
+        "x-app-name": "claude-code"
+      }
+    });
+    if (oauthProbe.status === "available") {
+      return {
+        ...oauthProbe,
+        planType: oauthSession.planType || null,
+        auth: summarizeClaudeOauthSession(oauthSession)
+      };
+    }
+  } else if (oauthSession.status !== "missing") {
+    oauthProbe = claudeApiProbe(oauthSession.status, oauthSession.reason, "claude_oauth", {
+      auth: summarizeClaudeOauthSession(oauthSession)
+    });
+  }
+
+  const cookieProbe = await fetchWithCookies();
+  if (cookieProbe.status === "available") return cookieProbe;
+  return oauthProbe || claudeApiProbe(oauthSession.status || "missing", oauthSession.reason || "claude_oauth_credentials_missing", "claude_oauth", {
+    auth: summarizeClaudeOauthSession(oauthSession),
+    fallback: summarizeClaudeApiUsageProbe(cookieProbe)
+  });
 }
 
-async function fetchClaudeOrgUsageFromApi() {
+async function fetchClaudeUsageWithAppCookies() {
+  const cookies = readClaudeAppCookies();
+  if (!cookies) return claudeApiProbe("missing", "claude_app_cookie_missing", "claude_app_cookie");
+  return fetchClaudeUsageWithAuth({
+    orgId: cookies.lastActiveOrg,
+    source: "claude_app_cookie",
+    hostname: "claude.ai",
+    headers: {
+      Cookie: `sessionKey=${cookies.sessionKey}`
+    }
+  });
+}
+
+async function readClaudeCliOauthSession(options = {}) {
+  const nowMs = Number.isFinite(options.nowMs) ? options.nowMs : Date.now();
+  const credentialsResult = await readClaudeOauthCredentials(options.credentialsFiles || CLAUDE_CREDENTIALS_FILES);
+  if (credentialsResult.status !== "available") return credentialsResult;
+  const oauth = credentialsResult.oauth;
+  const accessToken = firstNonEmptyString(oauth.accessToken, oauth.access_token);
+  if (!accessToken) return { status: "unavailable", reason: "claude_oauth_access_token_missing", source: "claude_oauth" };
+  const expiresAtMs = normalizeClaudeOauthExpiresAt(oauth.expiresAt ?? oauth.expires_at);
+  if (Number.isFinite(expiresAtMs) && expiresAtMs <= nowMs + 30_000) {
+    return {
+      status: "expired",
+      reason: "claude_oauth_token_expired",
+      source: "claude_oauth",
+      expiresAt: new Date(expiresAtMs).toISOString()
+    };
+  }
+
+  const [config, authStatus] = await Promise.all([
+    readClaudeOauthConfig(options.configFile || CLAUDE_CONFIG_FILE),
+    options.authStatus ? Promise.resolve(options.authStatus) : readClaudeAuthStatus().catch(() => null)
+  ]);
+  const account = config.account || {};
+  const orgId = firstNonEmptyString(
+    options.orgId,
+    authStatus?.orgId,
+    account.organizationUuid,
+    account.organizationUUID,
+    account.organizationId,
+    account.organizationID,
+    oauth.organizationUuid,
+    oauth.organizationUUID,
+    oauth.organizationId,
+    oauth.organizationID
+  );
+
+  return {
+    status: "available",
+    reason: null,
+    source: "claude_oauth",
+    accessToken,
+    orgId: orgId || null,
+    expiresAt: Number.isFinite(expiresAtMs) ? new Date(expiresAtMs).toISOString() : null,
+    planType: extractClaudePlanType({ plan_type: oauth.subscriptionType || oauth.subscription_type }) ||
+      authStatus?.planType ||
+      extractClaudePlanType({ plan_type: account.subscriptionType || account.subscription_type }) ||
+      null,
+    rateLimitTier: firstNonEmptyString(oauth.rateLimitTier, oauth.rate_limit_tier, account.organizationRateLimitTier),
+    credentialsFileFound: true,
+    configStatus: config.status
+  };
+}
+
+async function readClaudeOauthCredentials(files) {
+  let unavailable = null;
+  for (const file of files || []) {
+    try {
+      const parsed = JSON.parse(await fsp.readFile(file, "utf8"));
+      const oauth = parsed?.claudeAiOauth || parsed?.claude_ai_oauth || parsed?.oauth || parsed;
+      if (oauth && typeof oauth === "object") {
+        return {
+          status: "available",
+          reason: null,
+          source: "claude_oauth",
+          oauth
+        };
+      }
+      unavailable ||= { status: "unavailable", reason: "claude_oauth_credentials_schema", source: "claude_oauth" };
+    } catch (error) {
+      if (error?.code === "ENOENT" || error?.code === "ENOTDIR") continue;
+      if (error instanceof SyntaxError) {
+        unavailable ||= { status: "unavailable", reason: "claude_oauth_credentials_parse_failed", source: "claude_oauth" };
+        continue;
+      }
+      unavailable ||= { status: "unavailable", reason: "claude_oauth_credentials_unreadable", source: "claude_oauth" };
+    }
+  }
+  if (unavailable) return unavailable;
+  return { status: "missing", reason: "claude_oauth_credentials_missing", source: "claude_oauth" };
+}
+
+async function readClaudeOauthConfig(file) {
   try {
-    const cookies = readClaudeAppCookies();
-    if (!cookies) return null;
-    return await new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(null), CLAUDE_API_USAGE_TIMEOUT_MS);
-      const req = https.request(
-        {
-          hostname: "claude.ai",
-          path: `/api/organizations/${cookies.lastActiveOrg}/usage`,
-          method: "GET",
-          headers: {
-            Cookie: `sessionKey=${cookies.sessionKey}`,
-            "User-Agent":
-              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/136.0.0.0 Safari/537.36",
-            Accept: "application/json"
+    const parsed = JSON.parse(await fsp.readFile(file, "utf8"));
+    return {
+      status: "available",
+      account: parsed?.oauthAccount && typeof parsed.oauthAccount === "object" ? parsed.oauthAccount : {}
+    };
+  } catch (error) {
+    if (error?.code === "ENOENT" || error?.code === "ENOTDIR") return { status: "missing", account: {} };
+    return { status: "unreadable", account: {} };
+  }
+}
+
+function normalizeClaudeOauthExpiresAt(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return null;
+  return number < 10_000_000_000 ? number * 1000 : number;
+}
+
+async function fetchClaudeUsageWithAuth({ orgId, source, hostname = "claude.ai", path: requestPath = null, headers = {} }) {
+  const safePath = typeof requestPath === "string" && requestPath.startsWith("/")
+    ? requestPath
+    : orgId
+      ? `/api/organizations/${encodeURIComponent(orgId)}/usage`
+      : null;
+  if (!safePath) return claudeApiProbe("unavailable", "claude_api_org_missing", source || "claude_api");
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (probe) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(normalizeClaudeApiUsageProbe(probe));
+    };
+    const timer = setTimeout(() => {
+      req.destroy();
+      finish(claudeApiProbe("unavailable", "claude_api_timeout", source || "claude_api"));
+    }, CLAUDE_API_USAGE_TIMEOUT_MS);
+    const req = https.request(
+      {
+        hostname,
+        path: safePath,
+        method: "GET",
+        headers: {
+          ...headers,
+          "User-Agent": "LLM Usage Dashboard local quota probe",
+          Accept: "application/json"
+        }
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+          if (data.length > 512 * 1024) {
+            finish(claudeApiProbe("unavailable", "claude_api_payload_too_large", source || "claude_api"));
+            req.destroy();
           }
-        },
-        (res) => {
-          let data = "";
-          res.on("data", (chunk) => {
-            data += chunk;
-          });
-          res.on("end", () => {
-            clearTimeout(timer);
-            if (res.statusCode !== 200) {
-              resolve(null);
+        });
+        res.on("end", () => {
+          const statusCode = Number(res.statusCode || 0);
+          if (statusCode !== 200) {
+            finish(claudeApiProbe(claudeApiHttpStatus(statusCode), claudeApiHttpReason(statusCode), source || "claude_api"));
+            return;
+          }
+          try {
+            const usage = normalizeClaudeApiUsagePayload(JSON.parse(data), source || "claude_api");
+            if (!usage) {
+              finish(claudeApiProbe("unavailable", "claude_api_schema_unavailable", source || "claude_api"));
               return;
             }
-            try {
-              resolve({
-                ...JSON.parse(data),
-                updatedAt: new Date().toISOString()
-              });
-            } catch {
-              resolve(null);
-            }
-          });
-        }
-      );
-      req.on("error", () => {
-        clearTimeout(timer);
-        resolve(null);
-      });
-      req.end();
+            finish(claudeApiProbe("available", null, source || "claude_api", { usage }));
+          } catch {
+            finish(claudeApiProbe("unavailable", "claude_api_parse_failed", source || "claude_api"));
+          }
+        });
+      }
+    );
+    req.on("error", () => {
+      finish(claudeApiProbe("unavailable", "claude_api_network_error", source || "claude_api"));
     });
-  } catch {
-    return null;
-  }
+    req.end();
+  });
+}
+
+function normalizeClaudeApiUsagePayload(payload, source = "claude_api") {
+  if (!payload || typeof payload !== "object") return null;
+  const root = payload.usage && typeof payload.usage === "object" ? payload.usage : payload;
+  const usage = {
+    five_hour: root.five_hour || root.fiveHour || null,
+    seven_day: root.seven_day || root.sevenDay || null,
+    seven_day_sonnet: root.seven_day_sonnet || root.sevenDaySonnet || null,
+    seven_day_opus: root.seven_day_opus || root.sevenDayOpus || null,
+    seven_day_oauth_apps: root.seven_day_oauth_apps || root.sevenDayOauthApps || null,
+    seven_day_cowork: root.seven_day_cowork || root.sevenDayCowork || null,
+    seven_day_omelette: root.seven_day_omelette || root.sevenDayOmelette || null,
+    extra_usage: root.extra_usage || root.extraUsage || null,
+    source,
+    updatedAt: new Date().toISOString()
+  };
+  const hasUsageWindows = Boolean(usage.five_hour || usage.seven_day || usage.seven_day_sonnet);
+  return hasUsageWindows ? usage : null;
+}
+
+function claudeApiProbe(status, reason, source, extra = {}) {
+  return normalizeClaudeApiUsageProbe({
+    status,
+    reason,
+    source,
+    updatedAt: new Date().toISOString(),
+    usage: null,
+    ...extra
+  });
+}
+
+function normalizeClaudeApiUsageProbe(probe) {
+  const status = ["available", "missing", "expired", "unavailable"].includes(String(probe?.status || ""))
+    ? String(probe.status)
+    : "unavailable";
+  const usage = normalizeClaudeApiUsagePayload(probe?.usage, probe?.usage?.source || probe?.source || "claude_api");
+  return {
+    status: usage ? "available" : status,
+    reason: usage ? null : safeClaudeApiReason(probe?.reason, status === "missing" ? "claude_api_missing" : "claude_api_unavailable"),
+    source: String(probe?.source || usage?.source || "claude_api").trim() || "claude_api",
+    updatedAt: normalizeOptionalDate(probe?.updatedAt) || new Date().toISOString(),
+    usage,
+    auth: probe?.auth || null,
+    fallback: probe?.fallback || null
+  };
+}
+
+function summarizeClaudeApiUsageProbe(probe) {
+  if (!probe) return null;
+  return {
+    status: String(probe.status || "missing"),
+    reason: safeClaudeApiReason(probe.reason, null),
+    source: String(probe.source || "").trim() || null,
+    updatedAt: normalizeOptionalDate(probe.updatedAt) || null,
+    hasUsage: Boolean(probe.usage)
+  };
+}
+
+function summarizeClaudeOauthSession(session) {
+  if (!session) return null;
+  return {
+    status: String(session.status || "missing"),
+    reason: safeClaudeApiReason(session.reason, null),
+    source: "claude_oauth",
+    hasAccessToken: Boolean(session.accessToken),
+    hasOrg: Boolean(session.orgId),
+    expiresAt: normalizeOptionalDate(session.expiresAt) || null,
+    credentialsFileFound: Boolean(session.credentialsFileFound),
+    configStatus: session.configStatus || null,
+    planType: session.planType || null,
+    rateLimitTier: session.rateLimitTier || null
+  };
+}
+
+function safeClaudeApiReason(reason, fallback) {
+  const text = String(reason || fallback || "").trim();
+  if (!text) return null;
+  return /^[a-z0-9_.:-]{1,80}$/iu.test(text) ? text : fallback || "claude_api_unavailable";
+}
+
+function claudeApiHttpStatus(statusCode) {
+  if (statusCode === 401 || statusCode === 403) return "expired";
+  if (statusCode === 404) return "missing";
+  return "unavailable";
+}
+
+function claudeApiHttpReason(statusCode) {
+  if (statusCode === 401 || statusCode === 403) return "claude_api_auth_failed";
+  if (statusCode === 404) return "claude_api_org_not_found";
+  if (statusCode === 429) return "claude_api_rate_limited";
+  if (statusCode >= 500) return "claude_api_server_error";
+  return "claude_api_http_error";
 }
 
 function claudeApiWindowToLimitWindow(apiWindow, label, windowMinutes) {
@@ -4734,6 +4966,71 @@ function claudeApiWindowToLimitWindow(apiWindow, label, windowMinutes) {
     label,
     windowMinutes
   );
+}
+
+function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsageSource = null, apiUsageUpdatedAt = null } = {}) {
+  let resolvedLimits = statusline?.limits || null;
+  let resolvedLimitsUpdatedAt = statusline?.updatedAt || null;
+  let limitSource = statusline?.limits ? "claude_statusline" : null;
+  if (!apiUsage) return { resolvedLimits, resolvedLimitsUpdatedAt, limitSource };
+
+  if (resolvedLimits) {
+    const apiFiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
+    const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
+    const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
+    let updated = false;
+    if (apiFiveHour && !apiFiveHour.expired) {
+      resolvedLimits = { ...resolvedLimits, fiveHour: apiFiveHour, currentSession: apiFiveHour };
+      updated = true;
+    }
+    if (apiWeekly && !apiWeekly.expired) {
+      resolvedLimits = { ...resolvedLimits, weekly: apiWeekly, allModels: apiWeekly };
+      updated = true;
+    }
+    if (apiSonnet && !apiSonnet.expired) {
+      resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
+      updated = true;
+    }
+    if (updated) {
+      resolvedLimits.rows = buildLimitRows(resolvedLimits, [
+        "fiveHour",
+        "weekly",
+        "claudeDesign",
+        "sonnetOnly"
+      ]);
+      limitSource = apiUsageSource || "claude_api";
+      resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
+    }
+    return { resolvedLimits, resolvedLimitsUpdatedAt, limitSource };
+  }
+
+  const fiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
+  const weekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
+  const sonnetOnly = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
+  if (fiveHour || weekly || sonnetOnly) {
+    resolvedLimits = {
+      fiveHour: fiveHour && !fiveHour.expired ? fiveHour : null,
+      weekly: weekly && !weekly.expired ? weekly : null,
+      currentSession: fiveHour && !fiveHour.expired ? fiveHour : null,
+      allModels: weekly && !weekly.expired ? weekly : null,
+      claudeDesign: null,
+      sonnetOnly: sonnetOnly && !sonnetOnly.expired ? sonnetOnly : null
+    };
+    resolvedLimits.rows = buildLimitRows(resolvedLimits, [
+      "fiveHour",
+      "weekly",
+      "claudeDesign",
+      "sonnetOnly"
+    ]);
+    if (hasActiveClaudeLimits(resolvedLimits)) {
+      limitSource = apiUsageSource || "claude_api";
+      resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
+    } else {
+      resolvedLimits = null;
+    }
+  }
+
+  return { resolvedLimits, resolvedLimitsUpdatedAt, limitSource };
 }
 
 async function readClaudeCodeUsage(options = {}) {
@@ -4804,83 +5101,29 @@ async function readClaudeCodeUsage(options = {}) {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
-  const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, directApiUsage] =
+  const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, directApiProbe] =
     await Promise.all([
       readClaudeStatusline(),
       readClaudeAuthStatus(),
       readClaudeSettings(),
       pathExists(CLAUDE_STATUSLINE_SCRIPT),
       readClaudeBrowserCreditsSnapshot().catch(() => null),
-      readClaudeOrgUsageFromApi().catch(() => null)
+      readClaudeUsageProbe().catch((error) =>
+        claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api")
+      )
     ]);
+  const directApiUsage = directApiProbe?.usage || null;
   const browserSyncedApiUsage = browserCredits?.usage || null;
   const apiUsage = directApiUsage || browserSyncedApiUsage;
-  const apiUsageSource = directApiUsage ? "claude_api" : browserSyncedApiUsage ? "claude_browser_sync" : null;
+  const apiUsageSource = directApiUsage ? directApiProbe?.source || directApiUsage.source || "claude_api" : browserSyncedApiUsage ? "claude_browser_sync" : null;
   const apiUsageUpdatedAt = apiUsage?.updatedAt || null;
   const browserSubscription = browserCredits?.subscription || null;
   const planResolution = resolveClaudePlanSignals({ browserSubscription, browserCredits, statusline, authStatus });
   const planType = planResolution.planType;
   const statuslineConfigured = isClaudeStatuslineConfigured(settingsInfo.settings);
   const resolvedCredits = hasUsageCredits(browserCredits?.credits) ? browserCredits.credits : statusline?.credits || null;
-  let resolvedLimits = statusline?.limits || null;
-  let resolvedLimitsUpdatedAt = statusline?.updatedAt || null;
-  let limitSource = statusline?.limits ? "claude_statusline" : null;
-  if (apiUsage) {
-    if (resolvedLimits) {
-      const apiFiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
-      const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
-      const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
-      let updated = false;
-      if (apiFiveHour && !apiFiveHour.expired) {
-        resolvedLimits = { ...resolvedLimits, fiveHour: apiFiveHour, currentSession: apiFiveHour };
-        updated = true;
-      }
-      if (apiWeekly && !apiWeekly.expired) {
-        resolvedLimits = { ...resolvedLimits, weekly: apiWeekly, allModels: apiWeekly };
-        updated = true;
-      }
-      if (apiSonnet && !apiSonnet.expired) {
-        resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
-        updated = true;
-      }
-      if (updated) {
-        resolvedLimits.rows = buildLimitRows(resolvedLimits, [
-          "fiveHour",
-          "weekly",
-          "claudeDesign",
-          "sonnetOnly"
-        ]);
-        limitSource = apiUsageSource || "claude_api";
-        resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
-      }
-    } else {
-      const fiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
-      const weekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
-      const sonnetOnly = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
-      if (fiveHour || weekly || sonnetOnly) {
-        resolvedLimits = {
-          fiveHour: fiveHour && !fiveHour.expired ? fiveHour : null,
-          weekly: weekly && !weekly.expired ? weekly : null,
-          currentSession: fiveHour && !fiveHour.expired ? fiveHour : null,
-          allModels: weekly && !weekly.expired ? weekly : null,
-          claudeDesign: null,
-          sonnetOnly: sonnetOnly && !sonnetOnly.expired ? sonnetOnly : null
-        };
-        resolvedLimits.rows = buildLimitRows(resolvedLimits, [
-          "fiveHour",
-          "weekly",
-          "claudeDesign",
-          "sonnetOnly"
-        ]);
-        if (hasActiveClaudeLimits(resolvedLimits)) {
-          limitSource = apiUsageSource || "claude_api";
-          resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
-        } else {
-          resolvedLimits = null;
-        }
-      }
-    }
-  }
+  const limitResolution = resolveClaudeUsageLimits({ statusline, apiUsage, apiUsageSource, apiUsageUpdatedAt });
+  const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = limitResolution;
   return {
     id: "claudeCode",
     status: latestEvent || resolvedLimits ? "live" : "empty",
@@ -4902,7 +5145,8 @@ async function readClaudeCodeUsage(options = {}) {
             available: Boolean(authStatus.available),
             status: authStatus.status || "unknown"
           }
-        : null
+        : null,
+      apiUsage: summarizeClaudeApiUsageProbe(directApiProbe)
     },
     setup: {
       claudeAvailable: Boolean(authStatus?.available),
@@ -4940,7 +5184,7 @@ async function readClaudeCodeUsage(options = {}) {
     limitSource,
     planSource: planResolution.planSource,
     creditSource: hasUsageCredits(browserCredits?.credits) ? browserCredits?.source || "browser" : statusline?.credits ? "claude_statusline" : null,
-    message: claudeCodeStatusMessage(statusline, limitSource),
+    message: claudeCodeStatusMessage(statusline, limitSource, directApiProbe),
     byModel: Array.from(modelMap.entries())
       .map(([model, modelUsage]) => ({ model, ...modelUsage }))
       .sort((a, b) => b.totalTokens - a.totalTokens)
@@ -5064,12 +5308,20 @@ function claudeBrowserConnectionAction(browserCredits, conflict = null) {
   return null;
 }
 
-function claudeCodeStatusMessage(statusline, limitSource) {
+function claudeCodeStatusMessage(statusline, limitSource, apiProbe = null) {
   if (limitSource && limitSource !== "claude_statusline") return null;
+  const apiMessage = claudeApiProbeStatusMessage(apiProbe);
+  if (apiMessage) return apiMessage;
   if (statusline?.staleLimits) return "Claude live limits are stale. Open Claude Code once to refresh them.";
   if (statusline?.limits) return null;
   if (statusline?.found) return "Claude live data received, but no official Pro/Max quota values yet.";
   return "Claude live limits are not available from local telemetry yet.";
+}
+
+function claudeApiProbeStatusMessage(apiProbe) {
+  if (!apiProbe || apiProbe.status === "available" || apiProbe.status === "missing") return null;
+  const reason = safeClaudeApiReason(apiProbe.reason, "claude_api_unavailable");
+  return reason ? `Claude CLI/OAuth quota unavailable: ${reason}` : null;
 }
 
 const GEMINI_STALE_LOCAL_LOGS_MESSAGE = "Gemini local usage updates only when local log files contain new usage metadata.";
@@ -5214,6 +5466,7 @@ const GLM_USAGE_IMPORT_EXTENSIONS = new Set([".json", ".jsonl", ".ndjson", ".log
 const OPENCODE_DB_ROLES = ["opencode_database", "opencode_data_dir"];
 const OPENCODE_DB_FILE_PATTERN = /^opencode(?:-[a-z0-9._-]+)?\.db$/i;
 const GLM_NO_EVENTS_MESSAGE = "No local GLM/Z.AI usage events found.";
+const GLM_QUOTA_UNAVAILABLE_MESSAGE = "Official quota through OpenCode is not available.";
 
 async function readGlmUsage(options = {}) {
   const sources = options.sources || buildReaderSources().glm;
@@ -5287,7 +5540,7 @@ async function readGlmUsage(options = {}) {
     id: "glm",
     status: latestEvent ? "live" : "empty",
     updatedAt: new Date().toISOString(),
-    message: latestEvent ? null : GLM_NO_EVENTS_MESSAGE,
+    message: latestEvent ? GLM_QUOTA_UNAVAILABLE_MESSAGE : GLM_NO_EVENTS_MESSAGE,
     usageQuality,
     source: {
       usageFiles: [GLM_USAGE_EVENTS_FILE, GLM_USAGE_EVENTS_CSV_FILE],
@@ -6570,7 +6823,8 @@ async function probeClaudeAuthStatus() {
       available: true,
       status: "ok",
       planType: extractClaudePlanType(raw),
-      loggedIn: parseBoolean(raw.loggedIn ?? raw.logged_in)
+      loggedIn: parseBoolean(raw.loggedIn ?? raw.logged_in),
+      orgId: firstNonEmptyString(raw.orgId, raw.org_id, raw.organizationUuid, raw.organization_uuid)
     };
   } catch {
     return { available: true, status: "invalid_json", planType: null };
@@ -8599,6 +8853,13 @@ module.exports = {
     mergeUpdateSettingsPatch,
     normalizeClaudeBrowserCreditsSnapshot,
     mergeClaudeBrowserCreditsSnapshots,
+    readClaudeCliOauthSession,
+    fetchClaudeUsageProbe,
+    fetchClaudeUsageWithAuth,
+    normalizeClaudeApiUsagePayload,
+    normalizeClaudeApiUsageProbe,
+    summarizeClaudeApiUsageProbe,
+    resolveClaudeUsageLimits,
     buildNotificationAlerts,
     parseOpenAiCodexPricingPage,
     parseClaudePricingPage,

@@ -343,6 +343,7 @@
       "noCodexSparkEvents": "Inga Codex 5.3 Spark-händelser hittades.",
       "noGeminiLogs": "Inga lokala Gemini-användningsloggar hittades.",
       "glmImportTokens": "GLM/Z.AI tokens from local imports.",
+      "glmQuotaUnavailable": "Official quota through OpenCode is not available.",
       "noGlmEvents": "No local GLM/Z.AI usage events found.",
       "ollamaLogTokens": "Lokala Ollama-tokens från loggar",
       "noOllamaLogs": "Inga lokala Ollama-loggar hittades.",
@@ -352,6 +353,7 @@
       "claudeStatuslineMissing": "Claude-statusraden är inte konfigurerad. Aktivera dashboardens statusradskommando för livekvoter i Pro/Max.",
       "claudeLiveLimitsMissing": "Claude live limits are not available from local telemetry yet.",
       "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them.",
+      "claudeOauthUnavailable": "Claude CLI/OAuth quota unavailable: {reason}.",
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking."
     },
     "emptyState": {

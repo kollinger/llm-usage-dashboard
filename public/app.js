@@ -4778,9 +4778,16 @@ function localizeProviderMessage(message, fallbackKey) {
     "Gemini local usage updates only when local log files contain new usage metadata.": "providers.updateDelayHints.gemini",
     "No local GLM/Z.AI usage events found.": "providers.messages.noGlmEvents",
     "GLM/Z.AI tokens from local imports.": "providers.messages.glmImportTokens",
+    "Official quota through OpenCode is not available.": "providers.messages.glmQuotaUnavailable",
     "Lokale Ollama-Tokens aus Logs": "providers.messages.ollamaLogTokens",
     "Keine lokalen Ollama-Logs gefunden.": "providers.messages.noOllamaLogs"
   };
+  const claudeOauthPrefix = "Claude CLI/OAuth quota unavailable: ";
+  if (String(message || "").startsWith(claudeOauthPrefix)) {
+    return t("providers.messages.claudeOauthUnavailable", {
+      reason: message.slice(claudeOauthPrefix.length)
+    });
+  }
   if (!message) return t(fallbackKey);
   return knownMessages[message] ? t(knownMessages[message]) : message;
 }
