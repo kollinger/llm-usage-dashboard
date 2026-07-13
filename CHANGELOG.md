@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.0-preview.5 - 2026-07-13
+
+### Added
+
+- Added read-only Claude Code OAuth quota probing for Linux/Manjaro so current
+  Claude 5h and weekly usage windows can load without manually opening Claude
+  Code, when the local session and provider endpoint allow it.
+
+### Improved
+
+- Clarified GLM/Z.AI over OpenCode cards: measured token usage remains visible,
+  but official provider quota is shown as unavailable instead of estimating a
+  quota gauge from tokens.
+
+### Fixed
+
+- Stopped showing stale Claude statusline quota windows as live limits and
+  replaced Claude OAuth/API failures with safe, specific unavailable reasons.
+
 ## 1.1.0-preview.4 - 2026-07-11
 
 ### Added
