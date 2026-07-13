@@ -354,7 +354,9 @@
       "claudeLiveLimitsMissing": "Claude live limits are not available from local telemetry yet.",
       "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them.",
       "claudeOauthUnavailable": "Claude CLI/OAuth quota unavailable: {reason}.",
-      "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking."
+      "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
+      "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
+      "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}."
     },
     "emptyState": {
       "eyebrow": "Pakkuja",
@@ -481,7 +483,10 @@
       "tachometer": "Mõõdik",
       "bar": "Riba"
     },
-    "remainingUntilReset": "Resets in {remaining} · Reset {time}"
+    "remainingUntilReset": "Resets in {remaining} · Reset {time}",
+    "glmFiveHourTokens": "5h tokens",
+    "glmWeekly": "Weekly quota",
+    "glmMcpMonthly": "Monthly MCP"
   },
   "tokens": {
     "input": "Sisend",

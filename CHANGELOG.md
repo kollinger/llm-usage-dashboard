@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.0-preview.6 - 2026-07-14
+
+### Added
+
+- Added read-only official GLM/Z.AI Coding Plan quota probing through the
+  documented Z.AI Usage API, including the 5-hour token window and any other
+  official windows returned by the provider.
+
+### Improved
+
+- Kept local OpenCode GLM token history separate from provider quota limits,
+  with redacted unavailable diagnostics when auth, plan state, or endpoint
+  access is missing.
+
+### Fixed
+
+- Hardened GLM quota auth discovery so generic OpenCode config files and
+  malformed loose config text do not activate the GLM quota card or pair
+  unrelated tokens with a Z.AI/BigModel base URL.
+
 ## 1.1.0-preview.5 - 2026-07-13
 
 ### Added

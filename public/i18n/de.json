@@ -344,6 +344,8 @@
       "noGeminiLogs": "Keine lokalen Gemini-Nutzungslogs gefunden.",
       "glmImportTokens": "GLM/Z.AI-Tokens aus lokalen Importen.",
       "glmQuotaUnavailable": "Quota über OpenCode nicht verfügbar.",
+      "glmQuotaAvailable": "Offizielle GLM-Coding-Plan-Quota aus OpenCode.",
+      "glmQuotaUnavailableReason": "Offizielle GLM-Coding-Plan-Quota nicht verfügbar: {reason}.",
       "noGlmEvents": "Keine lokalen GLM/Z.AI-Nutzungsereignisse gefunden.",
       "ollamaLogTokens": "Lokale Ollama-Tokens aus Logs",
       "noOllamaLogs": "Keine lokalen Ollama-Logs gefunden.",
@@ -425,6 +427,9 @@
   "limits": {
     "fiveHour": "5h",
     "weekly": "Woche",
+    "glmFiveHourTokens": "5h-Tokens",
+    "glmWeekly": "Wochenquota",
+    "glmMcpMonthly": "Monatliches MCP",
     "currentSession": "Aktuelle Sitzung",
     "allModels": "Alle Modelle",
     "claudeDesign": "Claude Design",
