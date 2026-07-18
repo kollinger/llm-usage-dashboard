@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0-preview.7 - 2026-07-18
+
+### Fixed
+
+- Correctly classify Codex quota windows by their actual duration so weekly
+  `primary` windows render as weekly limits instead of phantom 5h limits,
+  including GPT-5.3-Codex-Spark and desktop notifications.
+
 ## 1.1.0-preview.6 - 2026-07-14
 
 ### Added

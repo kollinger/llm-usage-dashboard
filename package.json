@@ -1,6 +1,6 @@
 {
   "name": "llm-usage-dashboard",
-  "version": "1.1.0-preview.6",
+  "version": "1.1.0-preview.7",
   "private": true,
   "description": "Local dashboard for Codex, OpenAI, Anthropic/Claude, Gemini, and local LLM token usage.",
   "author": {
@@ -14,7 +14,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "electron": "electron .",
-    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js && node --check electron/preload.js && node --check scripts/update-pricing-data.mjs && node --check scripts/usage-cache-smoke.mjs && node --check scripts/crawler-contracts.mjs && node --check scripts/crawler-watchdog.mjs && npm run pricing:validate && node test/account-billing-source.test.mjs && node test/claude-oauth-quota.test.mjs && node test/crawler-watchdog.test.mjs && node test/chart-scroll-position.test.mjs && node test/chart-window-insights.test.mjs && node test/copilot-quota.test.mjs && node test/gemini-stale-usage.test.mjs && node test/glm-coding-plan-quota.test.mjs && node test/provider-recency.test.mjs && node test/source-diagnostics.test.mjs && node test/system-live-processes.test.mjs",
+    "check": "node --check server.js && node --check public/app.js && node --check electron/main.js && node --check electron/preload.js && node --check scripts/update-pricing-data.mjs && node --check scripts/usage-cache-smoke.mjs && node --check scripts/crawler-contracts.mjs && node --check scripts/crawler-watchdog.mjs && npm run pricing:validate && node test/account-billing-source.test.mjs && node test/claude-oauth-quota.test.mjs && node test/codex-rate-limits.test.mjs && node test/crawler-watchdog.test.mjs && node test/chart-scroll-position.test.mjs && node test/chart-window-insights.test.mjs && node test/copilot-quota.test.mjs && node test/gemini-stale-usage.test.mjs && node test/glm-coding-plan-quota.test.mjs && node test/provider-recency.test.mjs && node test/source-diagnostics.test.mjs && node test/system-live-processes.test.mjs",
     "test:usage-cache": "node scripts/usage-cache-smoke.mjs",
     "pricing:update": "node scripts/update-pricing-data.mjs",
     "pricing:validate": "node scripts/update-pricing-data.mjs --validate",

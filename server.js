@@ -7962,13 +7962,19 @@ function isCodexSparkSnapshot(snapshot) {
   return /spark|bengalfox|research/i.test(`${snapshot?.limitId || ""} ${snapshot?.limitName || ""}`);
 }
 
+const CODEX_FIVE_HOUR_WINDOW_MINUTES = 300;
+const CODEX_WEEKLY_WINDOW_MINUTES = 7 * 24 * 60;
+const CODEX_RATE_LIMIT_SLOTS = ["primary", "secondary"];
+
 function codexRateLimitsFromLive(snapshot, labelPrefix) {
   if (!snapshot) return null;
-  return {
-    planType: snapshot.planType || null,
-    fiveHour: codexWindowFromLive(snapshot.primary, `5h ${labelPrefix} limit`),
-    weekly: codexWindowFromLive(snapshot.secondary, `Weekly ${labelPrefix} limit`)
-  };
+  const windows = CODEX_RATE_LIMIT_SLOTS.map((slot, index) =>
+    normalizeCodexWindow(snapshot[slot], {
+      labelPrefix,
+      ordinal: index + 1
+    })
+  );
+  return buildCodexRateLimitBuckets(windows, { planType: snapshot.planType || null });
 }
 
 function codexCreditRowsFromLive(snapshot) {
@@ -7988,17 +7994,124 @@ function formatCodexCreditBalance(value) {
   }).format(value);
 }
 
-function codexWindowFromLive(window, label) {
-  if (!window) return null;
-  const usedPercent = Number(window.usedPercent);
-  if (!Number.isFinite(usedPercent)) return null;
+function normalizeCodexWindow(window, { labelPrefix = "Codex", ordinal = 1, timestamp = null } = {}) {
+  if (!window || typeof window !== "object") return null;
+  const usedPercent = numberOrNull(
+    window.usedPercent ??
+      window.used_percent ??
+      window.usedPercentage ??
+      window.used_percentage ??
+      window.usagePercentage ??
+      window.usage_percentage ??
+      window.percentUsed ??
+      window.percent_used
+  );
+  if (usedPercent === null) return null;
+  const windowMinutes = codexWindowMinutes(window);
+  const canonicalKey = codexWindowCanonicalKey(windowMinutes);
+  const key = canonicalKey || codexGenericWindowKey(windowMinutes, ordinal);
+  const remainingPercent = numberOrNull(window.remainingPercent ?? window.remaining_percent);
   return {
-    label,
+    key,
+    canonicalKey,
+    label: codexWindowLabel(labelPrefix, canonicalKey, windowMinutes),
     usedPercent,
-    remainingPercent: Math.max(0, 100 - usedPercent),
-    windowMinutes: Number(window.windowDurationMins || 0),
-    resetsAt: window.resetsAt ? new Date(Number(window.resetsAt) * 1000).toISOString() : null
+    remainingPercent: remainingPercent === null ? Math.max(0, 100 - usedPercent) : clampPercent(remainingPercent),
+    windowMinutes: windowMinutes || 0,
+    resetsAt: normalizeOptionalDate(window.resetsAt ?? window.resets_at ?? window.resetAt ?? window.reset_at),
+    timestamp
   };
+}
+
+function codexWindowMinutes(window) {
+  return positiveInteger(
+    window.windowDurationMins ??
+      window.window_duration_mins ??
+      window.windowMinutes ??
+      window.window_minutes ??
+      window.durationMins ??
+      window.duration_minutes
+  );
+}
+
+function codexWindowCanonicalKey(windowMinutes) {
+  if (windowMinutes === CODEX_FIVE_HOUR_WINDOW_MINUTES) return "fiveHour";
+  if (windowMinutes === CODEX_WEEKLY_WINDOW_MINUTES) return "weekly";
+  return null;
+}
+
+function codexGenericWindowKey(windowMinutes, ordinal) {
+  return windowMinutes ? `codexWindow${windowMinutes}m` : `codexWindow${ordinal}`;
+}
+
+function codexWindowLabel(labelPrefix, canonicalKey, windowMinutes) {
+  const prefix = firstNonEmptyString(labelPrefix, "Codex");
+  if (canonicalKey === "fiveHour") return `5h ${prefix} limit`;
+  if (canonicalKey === "weekly") return `Weekly ${prefix} limit`;
+  const durationLabel = codexWindowDurationLabel(windowMinutes);
+  return durationLabel ? `${prefix} limit (${durationLabel})` : `${prefix} limit`;
+}
+
+function codexWindowDurationLabel(windowMinutes) {
+  const minutes = positiveInteger(windowMinutes);
+  if (!minutes) return null;
+  const dayMinutes = 24 * 60;
+  if (minutes % dayMinutes === 0) return `${minutes / dayMinutes}d`;
+  if (minutes % 60 === 0) return `${minutes / 60}h`;
+  return `${minutes} min`;
+}
+
+function buildCodexRateLimitBuckets(windows, extras = {}) {
+  const limits = {
+    ...extras,
+    fiveHour: null,
+    weekly: null
+  };
+  const genericRowsByKey = new Map();
+  for (const window of selectBestCodexWindows((windows || []).filter(Boolean))) {
+    const row = codexWindowOutputRow(window);
+    if (window.canonicalKey === "fiveHour" || window.canonicalKey === "weekly") {
+      limits[window.canonicalKey] = preferCodexWindow(limits[window.canonicalKey], row);
+      continue;
+    }
+    genericRowsByKey.set(row.key, preferCodexWindow(genericRowsByKey.get(row.key), row));
+  }
+  limits.rows = [...buildLimitRows(limits, ["fiveHour", "weekly"]), ...genericRowsByKey.values()];
+  return limits;
+}
+
+function codexWindowOutputRow(window) {
+  const { canonicalKey, timestamp, ...row } = window;
+  return row;
+}
+
+function selectBestCodexWindows(windows) {
+  const byKey = new Map();
+  for (const window of windows) {
+    const key = window.canonicalKey || window.key;
+    byKey.set(key, preferCodexWindow(byKey.get(key), window));
+  }
+  return Array.from(byKey.values());
+}
+
+function preferCodexWindow(current, candidate) {
+  if (!current) return candidate;
+  if (!candidate) return current;
+  const candidateReset = Date.parse(candidate.resetsAt || "");
+  const currentReset = Date.parse(current.resetsAt || "");
+  if (Number.isFinite(candidateReset) || Number.isFinite(currentReset)) {
+    if (!Number.isFinite(currentReset)) return candidate;
+    if (!Number.isFinite(candidateReset)) return current;
+    if (candidateReset !== currentReset) return candidateReset > currentReset ? candidate : current;
+  }
+  const candidateTime = Date.parse(candidate.timestamp || "");
+  const currentTime = Date.parse(current.timestamp || "");
+  if (Number.isFinite(candidateTime) || Number.isFinite(currentTime)) {
+    if (!Number.isFinite(currentTime)) return candidate;
+    if (!Number.isFinite(candidateTime)) return current;
+    if (candidateTime !== currentTime) return candidateTime > currentTime ? candidate : current;
+  }
+  return Number(candidate.usedPercent || 0) >= Number(current.usedPercent || 0) ? candidate : current;
 }
 
 async function getCodexAppServer() {
@@ -8139,98 +8252,56 @@ function resolveCodexBinary() {
   return null;
 }
 
-function codexRateLimits(rateLimits) {
+function codexRateLimits(rateLimits, labelPrefix = "Codex") {
   if (!rateLimits) {
     return {
       fiveHour: null,
-      weekly: null
+      weekly: null,
+      rows: []
     };
   }
-  return {
-    fiveHour: codexWindow(rateLimits.primary, "5h Codex limit"),
-    weekly: codexWindow(rateLimits.secondary, "Weekly Codex limit")
-  };
+  const windows = CODEX_RATE_LIMIT_SLOTS.map((slot, index) =>
+    normalizeCodexWindow(rateLimits[slot], {
+      labelPrefix,
+      ordinal: index + 1
+    })
+  );
+  return buildCodexRateLimitBuckets(windows);
 }
 
-function codexRateLimitsFromEvents(events, fallbackRateLimits) {
-  if (!events.length) return codexRateLimits(fallbackRateLimits);
-  return {
-    fiveHour: codexWindowFromEvents(events, "primary", "5h Codex limit"),
-    weekly: codexWindowFromEvents(events, "secondary", "Weekly Codex limit")
-  };
+function codexRateLimitsFromEvents(events, fallbackRateLimits, labelPrefix = "Codex") {
+  if (!events.length) return codexRateLimits(fallbackRateLimits, labelPrefix);
+  const nowSeconds = Date.now() / 1000;
+  const windows = [];
+  for (const event of events) {
+    for (const [index, slot] of CODEX_RATE_LIMIT_SLOTS.entries()) {
+      const window = event.rateLimits?.[slot];
+      if (!window) continue;
+      const resetsAtSeconds = numberOrNull(window.resets_at ?? window.resetsAt);
+      if (resetsAtSeconds !== null && resetsAtSeconds < nowSeconds) continue;
+      windows.push(
+        normalizeCodexWindow(window, {
+          labelPrefix,
+          ordinal: index + 1,
+          timestamp: event.timestamp
+        })
+      );
+    }
+  }
+  return buildCodexRateLimitBuckets(windows);
 }
 
-function codexSparkRateLimitsFromEvents(events, fallbackRateLimits, hasSparkUsage) {
-  const limits = codexRateLimitsFromEvents(events, fallbackRateLimits);
-  const hasAnyLimit = Boolean(limits.fiveHour || limits.weekly);
+function codexSparkRateLimitsFromEvents(events, fallbackRateLimits, _hasSparkUsage) {
+  const limits = codexRateLimitsFromEvents(events, fallbackRateLimits, "Codex 5.3 Spark");
   return {
-    fiveHour: relabelCodexWindow(
-      limits.fiveHour || (hasAnyLimit || hasSparkUsage ? emptyCodexWindow("5h Codex 5.3 Spark limit", 300) : null),
-      "5h Codex 5.3 Spark limit"
-    ),
-    weekly: relabelCodexWindow(limits.weekly, "Weekly Codex 5.3 Spark limit")
+    fiveHour: relabelCodexWindow(limits.fiveHour, "5h Codex 5.3 Spark limit"),
+    weekly: relabelCodexWindow(limits.weekly, "Weekly Codex 5.3 Spark limit"),
+    rows: limits.rows || []
   };
 }
 
 function relabelCodexWindow(window, label) {
   return window ? { ...window, label } : null;
-}
-
-function emptyCodexWindow(label, minutes) {
-  return {
-    label,
-    usedPercent: 0,
-    remainingPercent: 100,
-    windowMinutes: minutes,
-    resetsAt: null
-  };
-}
-
-function codexWindowFromEvents(events, key, label) {
-  const nowSeconds = Date.now() / 1000;
-  const candidates = events
-    .map((event) => ({
-      timestamp: event.timestamp,
-      window: event.rateLimits?.[key],
-      file: event.file
-    }))
-    .filter(({ window }) => {
-      if (!window) return false;
-      if (window.resets_at && Number(window.resets_at) < nowSeconds) return false;
-      return Number.isFinite(Number(window.used_percent));
-    });
-
-  if (!candidates.length) return null;
-
-  // Prefer the newest reset window first. Older active sessions can keep
-  // emitting stale quota windows after a plan change or quota recalculation.
-  const best = candidates.reduce((selected, candidate) => {
-    const candidateReset = Number(candidate.window.resets_at || 0);
-    const selectedReset = Number(selected.window.resets_at || 0);
-    if (candidateReset !== selectedReset) return candidateReset > selectedReset ? candidate : selected;
-
-    const candidateTime = Date.parse(candidate.timestamp);
-    const selectedTime = Date.parse(selected.timestamp);
-    if (candidateTime !== selectedTime) return candidateTime > selectedTime ? candidate : selected;
-
-    const candidateUsed = Number(candidate.window.used_percent || 0);
-    const selectedUsed = Number(selected.window.used_percent || 0);
-    return candidateUsed > selectedUsed ? candidate : selected;
-  });
-
-  return codexWindow(best.window, label);
-}
-
-function codexWindow(window, label) {
-  if (!window) return null;
-  const usedPercent = Number(window.used_percent || 0);
-  return {
-    label,
-    usedPercent,
-    remainingPercent: Math.max(0, 100 - usedPercent),
-    windowMinutes: Number(window.window_minutes || 0),
-    resetsAt: window.resets_at ? new Date(Number(window.resets_at) * 1000).toISOString() : null
-  };
 }
 
 async function readOpenAiUsage() {
@@ -9074,17 +9145,18 @@ function quotaWindowEventFromLimitRow(provider, row, capturedAt, source) {
   const usedPercent = numberOrNull(row.usedPercent ?? row.used_percentage ?? row.usage_percentage ?? row.percent_used);
   if (usedPercent === null) return null;
   const rawWindowKey = row.key || row.windowKey || row.name || row.label || row.limitName || row.limitLabel || "limit";
+  const windowMinutes = positiveInteger(row.windowMinutes ?? row.window_minutes);
   return finalizeQuotaEvent({
     type: "quota_window",
     provider,
-    windowKey: quotaWindowKey(rawWindowKey),
+    windowKey: quotaWindowKeyForWindow(rawWindowKey, windowMinutes),
     label: String(row.label || row.limitLabel || row.name || row.limitName || rawWindowKey),
     capturedAt,
     source: source || null,
     usedPercent: clampPercent(usedPercent),
     remainingPercent: clampPercent(row.remainingPercent ?? row.remaining_percentage ?? 100 - usedPercent),
     resetsAt: normalizeOptionalDate(row.resetsAt ?? row.reset_at ?? row.resets_at),
-    windowMinutes: positiveInteger(row.windowMinutes ?? row.window_minutes)
+    windowMinutes
   });
 }
 
@@ -9315,6 +9387,15 @@ function quotaWindowKey(value) {
   return aliases[normalized] || normalized;
 }
 
+function quotaWindowKeyForWindow(rawKey, windowMinutes) {
+  const minutes = positiveInteger(windowMinutes);
+  if (minutes === CODEX_FIVE_HOUR_WINDOW_MINUTES) return "five_hour";
+  if (minutes === CODEX_WEEKLY_WINDOW_MINUTES) return "weekly";
+  const key = quotaWindowKey(rawKey);
+  if (key === "primary" || key === "secondary") return minutes ? `window_${minutes}m` : "generic";
+  return key;
+}
+
 function numberOrNull(value) {
   if (value === undefined || value === null || value === "") return null;
   const number = Number(value);
@@ -9346,6 +9427,7 @@ function buildNotificationAlerts(settings, usageMap) {
         windowKey,
         windowLabel: label,
         usedPercent,
+        windowMinutes,
         resetsAt: resetsAt || null
       });
       continue;
@@ -9376,6 +9458,7 @@ function buildNotificationAlerts(settings, usageMap) {
           projectedPercent: Math.round(projectedPercent),
           remainingMinutes: Math.round(remainingMs / 60000),
           exhaustInMinutes: exhaustMsFromNow > 0 ? Math.round(exhaustMsFromNow / 60000) : null,
+          windowMinutes,
           resetsAt: resetsAt || null
         });
       }
@@ -9408,15 +9491,15 @@ function collectNotificationWindows(usageMap) {
       const usedPercent =
         win.usedPercent ?? win.used_percent ?? win.usage_percentage ?? null;
       const resetsAt = win.resetsAt ?? win.reset_at ?? null;
-      const windowMinutes = win.windowMinutes ?? win.window_minutes ?? null;
+      const windowMinutes = positiveInteger(win.windowMinutes ?? win.window_minutes);
       const rawKey = win.key ?? win.windowKey ?? win.window_key ?? win.name ?? win.limitName ?? win.limitLabel ?? win.label;
       const label = win.label ?? win.limitLabel ?? win.name ?? win.limitName ?? "Limit";
       if (usedPercent !== null && Number.isFinite(Number(usedPercent))) {
         windows.push({
-          key: quotaWindowKey(rawKey || label),
+          key: quotaWindowKeyForWindow(rawKey || label, windowMinutes),
           label,
           usedPercent: Number(usedPercent),
-          windowMinutes: Number(windowMinutes || 0),
+          windowMinutes: windowMinutes || 0,
           resetsAt
         });
       }
@@ -9474,6 +9557,9 @@ module.exports = {
     buildSourceDiagnosticsPayload,
     sanitizeUpdateSettings,
     mergeUpdateSettingsPatch,
+    codexRateLimitsFromLive,
+    codexRateLimitsFromEvents,
+    codexSparkRateLimitsFromEvents,
     normalizeClaudeBrowserCreditsSnapshot,
     mergeClaudeBrowserCreditsSnapshots,
     readClaudeCliOauthSession,
