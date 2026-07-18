@@ -351,6 +351,12 @@ async function getNotificationLanguage() {
 }
 
 function notificationWindowKey(alert) {
+  const windowMinutes = Number(alert?.windowMinutes ?? alert?.window_minutes ?? alert?.windowDurationMins ?? alert?.window_duration_mins);
+  if (Number.isFinite(windowMinutes)) {
+    const roundedMinutes = Math.round(windowMinutes);
+    if (roundedMinutes === 300) return "fiveHour";
+    if (roundedMinutes === 7 * 24 * 60) return "weekly";
+  }
   const raw = String(alert?.windowKey || alert?.window_key || alert?.key || alert?.windowLabel || alert?.label || "")
     .trim()
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -361,8 +367,8 @@ function notificationWindowKey(alert) {
   if (/fable/.test(raw)) return "fable";
   if (/sonnet/.test(raw)) return "sonnetOnly";
   if (/design/.test(raw)) return "claudeDesign";
-  if (/5h|five_hour|fivehour|current_session|session|primary/.test(raw)) return "fiveHour";
-  if (/week|weekly|seven_day|7d|woche|all_models|secondary/.test(raw)) return "weekly";
+  if (/5h|five_hour|fivehour|current_session|session/.test(raw)) return "fiveHour";
+  if (/week|weekly|seven_day|7d|woche|all_models/.test(raw)) return "weekly";
   return "generic";
 }
 
