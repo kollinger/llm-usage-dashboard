@@ -8248,27 +8248,28 @@ function codexBinaryCandidates({
   env = process.env
 } = {}) {
   const candidates = [env.CODEX_BIN, env.CODEX_CLI_PATH];
+  const platformPath = platform === "win32" ? path.win32 : path.posix;
 
   if (platform === "darwin") {
     candidates.push(
       "/Applications/ChatGPT.app/Contents/Resources/codex",
-      path.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex"),
+      platformPath.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex"),
       "/Applications/Codex.app/Contents/Resources/codex",
-      path.join(homeDir, "Applications", "Codex.app", "Contents", "Resources", "codex"),
+      platformPath.join(homeDir, "Applications", "Codex.app", "Contents", "Resources", "codex"),
       "/Applications/Codex.app/Contents/MacOS/Codex",
-      path.join(homeDir, "Applications", "Codex.app", "Contents", "MacOS", "Codex"),
+      platformPath.join(homeDir, "Applications", "Codex.app", "Contents", "MacOS", "Codex"),
       "/opt/homebrew/bin/codex",
       "/usr/local/bin/codex"
     );
   } else if (platform === "linux") {
     candidates.push("/usr/local/bin/codex", "/usr/bin/codex", "/snap/bin/codex");
   } else if (platform === "win32" && env.APPDATA) {
-    candidates.push(path.join(env.APPDATA, "npm", "codex.cmd"));
+    candidates.push(platformPath.join(env.APPDATA, "npm", "codex.cmd"));
   }
 
   candidates.push(
-    path.join(homeDir, ".local", "bin", platform === "win32" ? "codex.exe" : "codex"),
-    path.join(homeDir, ".npm-global", "bin", platform === "win32" ? "codex.cmd" : "codex")
+    platformPath.join(homeDir, ".local", "bin", platform === "win32" ? "codex.exe" : "codex"),
+    platformPath.join(homeDir, ".npm-global", "bin", platform === "win32" ? "codex.cmd" : "codex")
   );
   return candidates.filter(Boolean);
 }
