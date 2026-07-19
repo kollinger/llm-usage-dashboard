@@ -41,6 +41,14 @@ function assertCodexBinaryCandidates() {
   assert.equal(linuxCandidates[0], "/custom/codex");
   assert.equal(linuxCandidates.includes("/usr/local/bin/codex"), true);
   assert.equal(linuxCandidates.includes("/home/example/.local/bin/codex"), true);
+
+  const windowsCandidates = _test.codexBinaryCandidates({
+    platform: "win32",
+    homeDir: "C:\\Users\\example",
+    env: { APPDATA: "C:\\Users\\example\\AppData\\Roaming" }
+  });
+  assert.equal(windowsCandidates.includes("C:\\Users\\example\\AppData\\Roaming\\npm\\codex.cmd"), true);
+  assert.equal(windowsCandidates.includes("C:\\Users\\example\\.local\\bin\\codex.exe"), true);
 }
 
 function assertLegacyCodexWindows() {
