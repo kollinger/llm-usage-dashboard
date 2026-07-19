@@ -549,9 +549,9 @@ async function assertFrontendUsageIntelligence() {
   assert.match(appSource, /overviewHistoryModeToggle\.innerHTML = renderChartModeToggle\(\)/u, "compact history mode toggle must reuse the chart tokens/costs mode");
   assert.match(appSource, /overviewChartScrollToLatest:\s*true/u, "compact history must default to the latest/current time window");
   assert.match(appSource, /function requestChartLatestForRangeChange\(\) \{[\s\S]*?state\.overviewChartScrollToLatest = true/u, "compact history must scroll to the latest slot after range changes");
-  assert.match(appSource, /requestOverviewHistoryLatestForViewChange\(\)/u, "compact history must preserve latest-scroll intent when toggling tokens/costs");
+  assert.match(appSource, /function requestOverviewHistoryLatestForViewChange\(\) \{\s*state\.overviewChartScrollToLatest = true;/u, "compact history must reset to the latest window when toggling tokens/costs");
   assert.match(appSource, /function isOverviewHistoryScrolledToLatest\([\s\S]*?CHART_LATEST_SCROLL_TOLERANCE_PX/u, "compact history must use the latest-scroll tolerance when preserving scroll intent");
-  assert.match(appSource, /function finishOverviewHistoryRenderScroll\([\s\S]*?window\.requestAnimationFrame\([\s\S]*?window\.requestAnimationFrame\([\s\S]*?setOverviewHistoryScroll\(settledScroller,\s*true/u, "compact history must re-apply latest-scroll after layout settles");
+  assert.match(appSource, /function finishOverviewHistoryRenderScroll\([\s\S]*?CHART_SCROLL_SETTLE_ATTEMPTS[\s\S]*?finishOverviewHistoryRenderScroll\(previousScrollLeft,\s*true,\s*renderVersion,\s*attempt \+ 1\)/u, "compact history must keep retrying latest-scroll while layout settles");
   assert.match(appSource, /finishOverviewHistoryRenderScroll\(previousScrollLeft,\s*shouldScrollToLatest,\s*renderVersion\)/u, "compact history render must use the settled latest-scroll helper");
   assert.match(appSource, /renderOverviewHistory\(chartRows\);\s*updateDashboardLayoutMode\(\);/u, "compact history must refresh dashboard handles after becoming visible");
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));

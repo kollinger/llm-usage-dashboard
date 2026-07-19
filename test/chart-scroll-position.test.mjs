@@ -23,10 +23,13 @@ els.chart.scrollLeft = 0;
 handleChartScroll();
 const manualAway = chartSnapshot();
 
+renderChart(daily);
+const preservedManualRefresh = chartSnapshot();
+
 requestChartLatestForViewChange();
 state.chartBreakdownMode = "provider";
 renderChart(daily);
-const preservedManual = chartSnapshot();
+const viewReset = chartSnapshot();
 
 els.chart.scrollLeft = chartMaxScrollLeft();
 handleChartScroll();
@@ -77,12 +80,68 @@ const preservedPageScroll = {
   calls: pageScrollCalls
 };
 
+const delayedFrames = [];
+window.requestAnimationFrame = (callback) => {
+  delayedFrames.push(callback);
+  return delayedFrames.length;
+};
+state.chartRendered = false;
+state.chartScrollToLatest = true;
+state.chartUserScrolledAwayFromLatest = false;
+els.chart.clientWidth = 900;
+renderChart(daily);
+els.chart.clientWidth = 0;
+els.chart.scrollWidth = 0;
+els.chart.scrollLeft = 0;
+flushNextFrame();
+flushNextFrame();
+const delayedChartBeforeLayout = chartSnapshot();
+els.chart.clientWidth = 900;
+els.chart.scrollWidth = 1800;
+flushFrames();
+const delayedChartSettled = chartSnapshot();
+
+const overviewScroller = {
+  scrollLeft: 0,
+  scrollWidth: 0,
+  clientWidth: 0
+};
+els.overviewHistoryChart.clientWidth = 900;
+els.overviewHistoryChart.querySelector = (selector) => selector === ".overview-history-scroll" ? overviewScroller : null;
+state.overviewChartRendered = false;
+state.overviewChartScrollToLatest = true;
+renderOverviewHistory(daily);
+flushNextFrame();
+flushNextFrame();
+const delayedOverviewBeforeLayout = {
+  scrollLeft: overviewScroller.scrollLeft,
+  scrollToLatest: state.overviewChartScrollToLatest
+};
+overviewScroller.clientWidth = 900;
+overviewScroller.scrollWidth = 1800;
+flushFrames();
+const delayedOverviewSettled = {
+  scrollLeft: overviewScroller.scrollLeft,
+  maxScrollLeft: overviewHistoryMaxScrollLeft(overviewScroller),
+  scrollToLatest: state.overviewChartScrollToLatest
+};
+overviewScroller.scrollLeft = 0;
+state.overviewChartScrollToLatest = false;
+requestOverviewHistoryLatestForViewChange();
+const overviewViewResetRequested = state.overviewChartScrollToLatest;
+
 JSON.stringify({
   initial,
   manualAway,
-  preservedManual,
+  preservedManualRefresh,
+  viewReset,
   endPinnedRefresh,
   rangeReset,
+  delayedChartBeforeLayout,
+  delayedChartSettled,
+  delayedOverviewBeforeLayout,
+  delayedOverviewSettled,
+  overviewViewResetRequested,
   totalProviderSegments,
   localOnlySegments,
   codexColor: chartSourceColor("codex"),
@@ -99,6 +158,20 @@ function chartSnapshot() {
     scrollToLatest: state.chartScrollToLatest,
     rendered: state.chartRendered
   };
+}
+
+function flushNextFrame() {
+  const callback = delayedFrames.shift();
+  if (callback) callback();
+}
+
+function flushFrames() {
+  let count = 0;
+  while (delayedFrames.length) {
+    flushNextFrame();
+    count += 1;
+    if (count > 10) throw new Error("chart scroll settling did not finish");
+  }
 }
 
 function makeDaily(count) {
@@ -138,9 +211,13 @@ assert.equal(result.initial.scrollToLatest, false);
 assert.equal(result.manualAway.scrollLeft, 0);
 assert.equal(result.manualAway.userScrolledAway, true);
 
-assert.equal(result.preservedManual.scrollLeft, 0);
-assert.equal(result.preservedManual.userScrolledAway, true);
-assert.equal(result.preservedManual.scrollToLatest, false);
+assert.equal(result.preservedManualRefresh.scrollLeft, 0);
+assert.equal(result.preservedManualRefresh.userScrolledAway, true);
+assert.equal(result.preservedManualRefresh.scrollToLatest, false);
+
+assert.equal(result.viewReset.scrollLeft, result.viewReset.maxScrollLeft);
+assert.equal(result.viewReset.userScrolledAway, false);
+assert.equal(result.viewReset.scrollToLatest, false);
 
 assert.ok(result.endPinnedRefresh.maxScrollLeft > result.initial.maxScrollLeft);
 assert.equal(result.endPinnedRefresh.scrollLeft, result.endPinnedRefresh.maxScrollLeft);
@@ -148,6 +225,18 @@ assert.equal(result.endPinnedRefresh.userScrolledAway, false);
 
 assert.equal(result.rangeReset.scrollLeft, result.rangeReset.maxScrollLeft);
 assert.equal(result.rangeReset.userScrolledAway, false);
+
+assert.equal(result.delayedChartBeforeLayout.scrollLeft, 0);
+assert.equal(result.delayedChartBeforeLayout.scrollToLatest, true);
+assert.equal(result.delayedChartSettled.scrollLeft, result.delayedChartSettled.maxScrollLeft);
+assert.equal(result.delayedChartSettled.userScrolledAway, false);
+assert.equal(result.delayedChartSettled.scrollToLatest, false);
+
+assert.equal(result.delayedOverviewBeforeLayout.scrollLeft, 0);
+assert.equal(result.delayedOverviewBeforeLayout.scrollToLatest, true);
+assert.equal(result.delayedOverviewSettled.scrollLeft, result.delayedOverviewSettled.maxScrollLeft);
+assert.equal(result.delayedOverviewSettled.scrollToLatest, false);
+assert.equal(result.overviewViewResetRequested, true);
 
 assert.deepEqual(result.totalProviderSegments.map((segment) => segment.sourceId), ["codex", "claudeCode"]);
 assert.deepEqual(
