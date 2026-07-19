@@ -240,29 +240,42 @@ async function assertGlmUsageMergesOfficialQuotaWithoutChangingTokens() {
 }
 
 async function assertGenericOpenCodeConfigDoesNotActivateGlmCard() {
-  const usage = await _test.readGlmUsage({
-    sources: [],
-    quotaReader: async () => ({
-      status: "missing",
-      reason: "glm_coding_plan_auth_missing",
-      source: "opencode_config",
-      updatedAt: "2099-01-01T00:00:01.000Z",
-      limits: null,
-      auth: {
+  const root = await mkdtemp(path.join(os.tmpdir(), "glm-generic-opencode-"));
+  try {
+    const database = path.join(root, "opencode.db");
+    await writeFile(database, "");
+    const usage = await _test.readGlmUsage({
+      sources: [{
+        id: "generic-opencode",
+        providerId: "glm",
+        paths: [{ role: "opencode_database", path: database, kind: "file" }]
+      }],
+      quotaReader: async () => ({
         status: "missing",
         reason: "glm_coding_plan_auth_missing",
         source: "opencode_config",
-        hasAuth: false,
-        configFilesScanned: 1,
-        configFilesWithBaseUrl: 0
-      }
-    })
-  });
+        updatedAt: "2099-01-01T00:00:01.000Z",
+        limits: null,
+        auth: {
+          status: "missing",
+          reason: "glm_coding_plan_auth_missing",
+          source: "opencode_config",
+          hasAuth: false,
+          configFilesScanned: 1,
+          configFilesWithBaseUrl: 0
+        }
+      })
+    });
 
-  assert.equal(usage.status, "empty");
-  assert.equal(usage.usageQuality, null);
-  assert.equal(usage.source.hasConfiguredSource, false);
-  assert.equal(usage.message, "No local GLM/Z.AI usage events found.");
+    assert.equal(usage.status, "empty");
+    assert.equal(usage.usageQuality, null);
+    assert.equal(usage.source.openCodeDatabasesScanned, 1);
+    assert.equal(usage.source.openCodeDatabasesWithEvents, 0);
+    assert.equal(usage.source.hasConfiguredSource, false);
+    assert.equal(usage.message, "No local GLM/Z.AI usage events found.");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 }
 
 async function assertFrontendRendersGlmQuotaRows() {

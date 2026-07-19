@@ -5589,7 +5589,7 @@ async function readGlmUsage(options = {}) {
   const hasQuotaConfig = glmCodingPlanHasConfiguredSignal(quota);
   const hasConfiguredSource = Boolean(
     files.length ||
-      openCodeDbs.length ||
+      openCodeDbsWithEvents ||
       hasQuotaConfig
   );
   const usageQuality = hasConfiguredSource
