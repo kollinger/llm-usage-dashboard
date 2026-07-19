@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.0-preview.8 - 2026-07-19
+
+### Improved
+
+- Replaced the overlapping subscription actions with one contextual action:
+  open the provider page when login is required, or read the plan again when a
+  reusable browser session is available.
+
+### Fixed
+
+- Restored live Codex quota and plan reads after Codex moved into the ChatGPT
+  macOS app, while retaining support for the legacy standalone Codex app,
+  common CLI installations, and explicit binary overrides.
+- Accept the authenticated plan reported by the ChatGPT/Codex app as the
+  current plan, show the official price range when the exact variant is not
+  available, and stop asking users to reconnect an already working account.
+- Recognize the current ChatGPT billing layout that labels the active section
+  as `Your plan`, including the displayed Pro tier price needed to distinguish
+  the 5x and 20x variants.
+- Keep browser fallbacks on the exact account domain and ignore partitioned
+  Chromium cookies that would otherwise invalidate a reusable login session.
+
 ## 1.1.0-preview.7 - 2026-07-18
 
 ### Fixed

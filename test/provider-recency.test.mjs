@@ -12,7 +12,7 @@ process.env.CODEX_LIVE_RATE_LIMITS = "false";
 const require = createRequire(import.meta.url);
 const { readCodexUsage, _test } = require("../server.js");
 const { aggregateUsageEvents } = require("../lib/usage-events.js");
-const { detectOpenAiPlanType, detectClaudePlanType, normalizePlanKey } = require("../lib/subscription-plan-detection");
+const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal, normalizePlanKey } = require("../lib/subscription-plan-detection");
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 await assertSubscriptionPlanDetection();
@@ -29,6 +29,12 @@ async function assertSubscriptionPlanDetection() {
   assert.equal(normalizePlanKey("Pro 20 x"), "pro 20x");
   assert.equal(detectOpenAiPlanType("Pro 20 x", { explicit: true }), "Pro 20x");
   assert.equal(detectOpenAiPlanType("ChatGPT Pro 20x Your plan auto-renews", { explicit: true, allowGeneric: false }), "Pro 20x");
+  assert.equal(
+    detectOpenAiPlanType("Usage & billing Your plan Pro plan $200/mo View plans", { explicit: true, allowGeneric: false }),
+    "Pro 20x"
+  );
+  assert.equal(hasPlanProbeSignal("Usage & billing Your plan"), false);
+  assert.equal(hasPlanProbeSignal("Usage & billing Your plan Pro plan $200/mo View plans"), true);
   assert.equal(detectOpenAiPlanType("Team workspace metadata without a plan field"), null);
   assert.equal(detectOpenAiPlanType("Team", { explicit: true }), "Team");
   assert.equal(detectOpenAiPlanType("ChatGPT Pro 5 x 20 x $100 $200", { allowGeneric: false }), null);
@@ -67,6 +73,16 @@ async function assertSubscriptionPlanDetection() {
     electronMain,
     /detectClaudePlanType\(text, \{ explicit: true, allowGeneric: false \}\)/,
     "Claude browser account probe must use explicit plan detection"
+  );
+  assert.match(
+    electronMain,
+    /host_key = '\$\{escapedDomain\}' or host_key = '\.\$\{escapedDomain\}'/,
+    "Browser plan probes must not mix cookies from unrelated subdomains"
+  );
+  assert.match(
+    electronMain,
+    /if \(row\.topFrameSiteKey\) continue;/,
+    "Browser plan probes must ignore partitioned cookies they cannot reproduce"
   );
   const openAiProbeStart = electronMain.indexOf("async function fetchOpenAiPlanFromBrowserSession");
   const claudeProbeStart = electronMain.indexOf("async function fetchClaudePlanFromBrowserSession");
@@ -883,6 +899,23 @@ const normalizedCodexConnectionCardHtml = renderProvider(normalizeCodexProvider(
     statusKey: "subscriptions.connectionStatus.chatgptLoginRequired"
   }
 }));
+const normalizedCodexRefreshCardHtml = renderProvider({
+  id: "codex",
+  name: "Codex",
+  kicker: "local CLI capture",
+  accent: providerMeta.codex.accent,
+  status: "empty",
+  creditRows: [],
+  subscriptionConnectionAction: {
+    provider: "chatgpt",
+    mode: "refresh",
+    url: "https://chatgpt.com/#settings/Billing",
+    labelKey: "subscriptions.connectionActions.chatgptRefresh",
+    statusKey: "subscriptions.connectionStatus.chatgptRefreshRequired"
+  },
+  foot: [],
+  message: "Logged tokens"
+});
 const normalizedClaudeConnectionCardHtml = renderProvider(normalizeLocalProvider("claudeCode", {
   status: "live",
   limits: {
@@ -1298,8 +1331,8 @@ JSON.stringify({
     normalizedCodexConnectionCardHtml.includes("Log in to ChatGPT and read plan") &&
     normalizedCodexConnectionCardHtml.includes("https://chatgpt.com/#settings/Billing") &&
     normalizedCodexConnectionCardHtml.includes("data-subscription-provider-open") &&
-    normalizedCodexConnectionCardHtml.includes("data-subscription-reread") &&
-    normalizedCodexConnectionCardHtml.includes("Read plan now") &&
+    !normalizedCodexConnectionCardHtml.includes("data-subscription-reread") &&
+    !normalizedCodexConnectionCardHtml.includes("Read plan now") &&
     !normalizedCodexConnectionCardHtml.includes("Pro (Cost unknown)") &&
     !normalizedCodexConnectionCardHtml.includes("pro (Cost unknown)") &&
     !/plan-badge[^>]*>\\s*pro\\s*</iu.test(normalizedCodexConnectionCardHtml),
@@ -1307,8 +1340,14 @@ JSON.stringify({
     normalizedClaudeConnectionCardHtml.includes("Read Claude plan again") &&
     !normalizedClaudeConnectionCardHtml.includes("data-subscription-provider-open") &&
     normalizedClaudeConnectionCardHtml.includes("data-subscription-reread") &&
-    normalizedClaudeConnectionCardHtml.includes("Read plan now") &&
+    !normalizedClaudeConnectionCardHtml.includes("Read plan now") &&
     !normalizedClaudeConnectionCardHtml.includes("Log in to Claude.ai"),
+  normalizedCodexRefreshAction:
+    normalizedCodexRefreshCardHtml.includes("Read ChatGPT plan again") &&
+    normalizedCodexRefreshCardHtml.includes("data-subscription-reread") &&
+    !normalizedCodexRefreshCardHtml.includes("data-subscription-provider-open") &&
+    !normalizedCodexRefreshCardHtml.includes("Read plan now") &&
+    !normalizedCodexRefreshCardHtml.includes("Open the provider page"),
   glmQuotaUnavailableCard:
     glmUnavailableCardHtml.includes("Official quota through OpenCode is not available.") &&
     !glmUnavailableCardHtml.includes("limit-bars") &&
@@ -1375,7 +1414,7 @@ JSON.stringify({
 		    !claudeLoginCardHtml.includes("Claude login required") &&
 		    !claudeLoginCardHtml.includes("data-subscription-provider-open") &&
 		    claudeLoginCardHtml.includes("data-subscription-reread") &&
-		    claudeLoginCardHtml.includes("Read plan now") &&
+		    !claudeLoginCardHtml.includes("Read plan now") &&
 		    !claudeLoginCardHtml.includes("Open the provider page"),
 		  connectionRereadFlow:
 		    pendingPlanReadProvider === "claude" &&
@@ -1392,7 +1431,8 @@ JSON.stringify({
 	    claudeConflictCardHtml.includes("Claude Max: conflicting sources") &&
 	    claudeConflictCardHtml.includes("Claude Max 20x") &&
 	    claudeConflictCardHtml.includes("Claude Max 5x") &&
-	    claudeConflictCardHtml.includes("Read plan now") &&
+	    claudeConflictCardHtml.includes("Read Claude plan again") &&
+	    !claudeConflictCardHtml.includes("Read plan now") &&
 	    !claudeConflictCardHtml.includes("data-subscription-provider-open"),
   rejectedPaceLegendRemoved: !limitBarsHtml.includes("limit-status-note"),
   riskLimitBarHasTachometerGauge:
@@ -1569,6 +1609,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.relativeFreshness, true);
   assert.equal(result.normalizedProviderConnectionActions, true);
   assert.equal(result.normalizedClaudeConnectionAction, true);
+  assert.equal(result.normalizedCodexRefreshAction, true);
   assert.equal(result.providerCardNoFableQuotaAudit, true);
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
@@ -1742,24 +1783,25 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
     officialPricing,
     missingAccountBilling
   );
-  assert.equal(officialMerged.subscription.source, "codex_app_server");
-  assert.equal(officialMerged.subscription.planType, null);
-  assert.equal(officialMerged.subscription.monthlyCost, 0);
-  assert.equal(officialMerged.subscription.monthlyCostMin, null);
-  assert.equal(officialMerged.subscription.monthlyCostMax, null);
-  assert.equal(officialMerged.subscription.priceType, null);
-  assert.equal(officialMerged.subscription.priceVariant, null);
-  assert.equal(officialMerged.subscription.tierVariant, null);
+  assert.equal(officialMerged.subscription.source, "official_pricing_page");
+  assert.equal(officialMerged.subscription.planSource, "codex_app_server");
+  assert.equal(officialMerged.subscription.planType, "Pro 5x/20x");
+  assert.equal(officialMerged.subscription.monthlyCost, 100);
+  assert.equal(officialMerged.subscription.monthlyCostMin, 100);
+  assert.equal(officialMerged.subscription.monthlyCostMax, 200);
+  assert.equal(officialMerged.subscription.priceType, "official_variant_range");
+  assert.equal(officialMerged.subscription.priceVariant, "pro_5x_20x");
+  assert.equal(officialMerged.subscription.tierVariant, "pro_5x_20x");
   assert.equal(officialMerged.subscription.actualBillingKnown, false);
-  assert.equal(officialMerged.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
+  assert.equal(officialMerged.subscriptionConnectionAction, null);
   const localizedOfficialMerged = _test.localizeUsageSubscriptionPrices({ codex: officialMerged }, "de").codex;
-  assert.equal(localizedOfficialMerged.subscription.planType, null);
-  assert.equal(localizedOfficialMerged.subscription.monthlyCost, 0);
-  assert.equal(localizedOfficialMerged.subscription.monthlyCostMin, null);
-  assert.equal(localizedOfficialMerged.subscription.monthlyCostMax, null);
-  assert.equal(localizedOfficialMerged.subscription.priceType, null);
-  assert.equal(localizedOfficialMerged.subscription.costStatus, "variant_required");
-  assert.equal(localizedOfficialMerged.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
+  assert.equal(localizedOfficialMerged.subscription.planType, "Pro 5x/20x");
+  assert.equal(localizedOfficialMerged.subscription.monthlyCost, 115);
+  assert.equal(localizedOfficialMerged.subscription.monthlyCostMin, 115);
+  assert.equal(localizedOfficialMerged.subscription.monthlyCostMax, 229);
+  assert.equal(localizedOfficialMerged.subscription.priceType, "official_variant_range");
+  assert.equal(localizedOfficialMerged.subscription.costStatus, "official_pricing_page");
+  assert.equal(localizedOfficialMerged.subscriptionConnectionAction, null);
   const bundledMerged = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro 20x" }, null, "codex", officialPricing);
   assert.equal(bundledMerged.subscription.source, "official_pricing_page");
   assert.equal(bundledMerged.subscription.monthlyCost, 200);
@@ -1870,9 +1912,10 @@ const browserScopedSnapshot = _test.normalizeClaudeBrowserCreditsSnapshot({
   );
   assert.equal(thirdPartyPlanMerged.planType, preferredPlan.planType);
   assert.equal(thirdPartyPlanMerged.planSource, preferredPlan.source);
-  assert.equal(thirdPartyPlanMerged.subscription.planType, null);
-  assert.equal(thirdPartyPlanMerged.subscription.monthlyCost, 0);
-  assert.equal(thirdPartyPlanMerged.subscription.priceVariant, null);
+  assert.equal(thirdPartyPlanMerged.subscription.planType, "Pro 5x/20x");
+  assert.equal(thirdPartyPlanMerged.subscription.monthlyCost, 100);
+  assert.equal(thirdPartyPlanMerged.subscription.priceVariant, "pro_5x_20x");
+  assert.equal(thirdPartyPlanMerged.subscriptionConnectionAction, null);
   const bundledGenericPro = _test.mergeProviderSubscription({ id: "codex", status: "live", planType: "Pro" }, null, "codex", { families: {} });
   assert.equal(bundledGenericPro.subscription.source, null);
   assert.equal(bundledGenericPro.subscription.planType, null);

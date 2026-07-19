@@ -5154,8 +5154,8 @@ function renderProviderSubscriptionConnection(provider) {
   const connectionProvider = action?.provider || providerSubscriptionConnectionProvider(provider?.id);
   const mode = action?.mode || "refresh";
   const isReading = state.subscriptionRereadProvider === connectionProvider;
-  const showProviderOpenAction = Boolean(action?.url && !action?.rereadOnly);
-  const showRereadAction = action?.rereadOnly !== false;
+  const showProviderOpenAction = Boolean(mode === "login" && action?.url && !action?.rereadOnly);
+  const showRereadAction = !showProviderOpenAction;
   const actionHtml = action
     ? `
       <span class="subscription-connection-actions">
@@ -5176,7 +5176,7 @@ function renderProviderSubscriptionConnection(provider) {
           ${isReading ? "disabled aria-busy=\"true\"" : ""}
           data-subscription-reread
           data-subscription-provider="${escapeHtml(connectionProvider)}"
-        >${escapeHtml(t("subscriptions.connectionActions.rereadPlan"))}</button>` : ""}
+        >${escapeHtml(subscriptionConnectionActionLabel(action))}</button>` : ""}
       </span>
       ${showProviderOpenAction ? `<small class="subscription-connection-help">${escapeHtml(t("subscriptions.connectionHelp"))}</small>` : ""}
     `

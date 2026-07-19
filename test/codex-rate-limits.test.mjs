@@ -15,10 +15,33 @@ const fiveHourResetSeconds = Math.floor(Date.parse("2026-07-18T18:00:00.000Z") /
 const weeklyResetSeconds = Math.floor(Date.parse("2026-07-24T18:00:00.000Z") / 1000);
 
 assertLegacyCodexWindows();
+assertCodexBinaryCandidates();
 assertWeeklyPrimaryCodexWindow();
 assertWeeklyPrimarySparkWindow();
 assertUnknownCodexWindow();
 await assertCodexCardDomRendering();
+
+function assertCodexBinaryCandidates() {
+  const macCandidates = _test.codexBinaryCandidates({
+    platform: "darwin",
+    homeDir: "/Users/example",
+    env: {}
+  });
+  assert.equal(macCandidates.includes("/Applications/ChatGPT.app/Contents/Resources/codex"), true);
+  assert.equal(macCandidates.includes("/Applications/Codex.app/Contents/Resources/codex"), true);
+  assert.equal(macCandidates.includes("/Users/example/Applications/ChatGPT.app/Contents/Resources/codex"), true);
+  assert.equal(macCandidates.includes("/Users/example/Applications/Codex.app/Contents/Resources/codex"), true);
+  assert.equal(macCandidates.includes("/opt/homebrew/bin/codex"), true);
+
+  const linuxCandidates = _test.codexBinaryCandidates({
+    platform: "linux",
+    homeDir: "/home/example",
+    env: { CODEX_BIN: "/custom/codex" }
+  });
+  assert.equal(linuxCandidates[0], "/custom/codex");
+  assert.equal(linuxCandidates.includes("/usr/local/bin/codex"), true);
+  assert.equal(linuxCandidates.includes("/home/example/.local/bin/codex"), true);
+}
 
 function assertLegacyCodexWindows() {
   const limits = _test.codexRateLimitsFromLive(
