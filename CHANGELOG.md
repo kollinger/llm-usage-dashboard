@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0-preview.9 - 2026-07-19
+
+### Fixed
+
+- Hide GLM/Z.AI from the normal active-provider view when a generic OpenCode
+  database exists but contains no GLM usage. GLM remains available through
+  `Show all` and becomes active when GLM events or provider-specific quota
+  configuration are detected.
+
 ## 1.1.0-preview.8 - 2026-07-19
 
 ### Improved
