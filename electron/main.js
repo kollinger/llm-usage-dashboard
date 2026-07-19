@@ -9,7 +9,7 @@ const zlib = require("node:zlib");
 const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
 const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain, powerMonitor } = require("electron");
-const { detectOpenAiPlanType, detectClaudePlanType } = require("../lib/subscription-plan-detection");
+const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal } = require("../lib/subscription-plan-detection");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -1208,7 +1208,7 @@ async function buildOpenAiAccountBillingSnapshot({ force = false } = {}) {
     const dashboard = await fetchOpenAiDashboardSnapshot(session.cookieHeader);
     const candidatePlan =
       normalizeOpenAiPlanType(findOpenAiPlanValue(dashboard)) ||
-      (await fetchOpenAiPlanFromBrowserSession(session.cookieHeader, { force, sessionSource: session.source || "" }));
+      (await fetchOpenAiPlanFromBrowserSession(session, { force }));
     lastDashboard = dashboard;
     lastSession = session;
     if (candidatePlan) {
@@ -1385,11 +1385,12 @@ function normalizeOpenAiPlanType(value) {
   return planType || (String(value || "").trim() ? String(value).trim().slice(0, 80) : null);
 }
 
-async function fetchOpenAiPlanFromBrowserSession(cookieHeader, { force = false, sessionSource = "" } = {}) {
-  return probePlanWithBackoff(`chatgpt.com:${sessionSource}`, force, async () => {
+async function fetchOpenAiPlanFromBrowserSession(browserSession, { force = false } = {}) {
+  return probePlanWithBackoff(`chatgpt.com:${browserSession?.source || ""}`, force, async () => {
     for (const url of [OPENAI_CHATGPT_BILLING_URL, OPENAI_DASHBOARD_USAGE_URL]) {
       const planType = await detectPlanWithBrowserSession({
-        cookieHeader,
+        cookieHeader: browserSession?.cookieHeader,
+        cookies: browserSession?.cookies,
         domain: "chatgpt.com",
         url,
         detector: (text) => detectOpenAiPlanType(text, { explicit: true, allowGeneric: false })
@@ -1448,12 +1449,12 @@ async function probePlanWithBackoff(domain, force, probe) {
   return null;
 }
 
-async function detectPlanWithBrowserSession({ cookieHeader, domain, url, detector }) {
+async function detectPlanWithBrowserSession({ cookieHeader, cookies, domain, url, detector }) {
   if (!cookieHeader || !domain || !url || typeof detector !== "function" || !electronSession?.fromPartition) return null;
   const partition = `llm-usage-plan-probe-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const probeSession = electronSession.fromPartition(partition);
   try {
-    await setProbeSessionCookies(probeSession, cookieHeader, domain);
+    await setProbeSessionCookies(probeSession, cookies?.length ? cookies : parseCookieHeader(cookieHeader), domain);
     const text = await loadHiddenProbeWindowText(url, partition);
     const detected = detector(text);
     return detected || null;
@@ -1464,17 +1465,17 @@ async function detectPlanWithBrowserSession({ cookieHeader, domain, url, detecto
   }
 }
 
-async function setProbeSessionCookies(probeSession, cookieHeader, domain) {
-  const cookies = parseCookieHeader(cookieHeader);
+async function setProbeSessionCookies(probeSession, cookies, domain) {
   for (const cookie of cookies) {
+    const cookieDomain = cookie.domain === domain || cookie.domain === `.${domain}` ? cookie.domain : `.${domain}`;
     await probeSession.cookies.set({
       url: `https://${domain}`,
-      domain: `.${domain}`,
-      path: "/",
+      domain: cookieDomain,
+      path: cookie.path || "/",
       name: cookie.name,
       value: cookie.value,
-      secure: true,
-      httpOnly: true
+      secure: cookie.secure !== false,
+      httpOnly: cookie.httpOnly !== false
     }).catch(() => {});
   }
 }
@@ -1542,10 +1543,6 @@ async function waitForProbeWindowText(probe, maxWaitMs = 9000) {
   return bestText;
 }
 
-function hasPlanProbeSignal(text) {
-  return /(?:\b(?:chatgpt\s+)?pro\s+(?:5x|20x)\b|\bclaude\s+max\s+(?:5x|20x)\b|\bmax\s+(?:5x|20x)\b|current plan|dein aktueller plan|your plan auto-renews|billing history|zahlungsverlauf|abrechnungsverlauf)/iu.test(String(text || ""));
-}
-
 async function readClaudeBrowserSession() {
   const chrome = await readChromeClaudeSession();
   if (chrome.cookieHeader) return chrome;
@@ -1609,24 +1606,37 @@ async function queryChromeCookieRowsForDomain(domain) {
   try {
     await fs.copyFile(CLAUDE_CHROME_COOKIE_DB, tmpDb);
     const escapedDomain = String(domain || "").replace(/'/g, "''");
-    const sql = [
-      "select host_key, name, value, hex(encrypted_value), path, is_secure",
+    const exactDomainFilter = `(host_key = '${escapedDomain}' or host_key = '.${escapedDomain}')`;
+    const partitionAwareSql = [
+      "select host_key, name, value, hex(encrypted_value), path, is_secure, is_httponly, top_frame_site_key",
       "from cookies",
-      `where host_key like '%${escapedDomain}%';`
+      `where ${exactDomainFilter};`
     ].join(" ");
-    const { stdout } = await execFileAsync(SQLITE_BINARY, ["-tabs", tmpDb, sql], { maxBuffer: 1024 * 1024 });
+    const legacySql = [
+      "select host_key, name, value, hex(encrypted_value), path, is_secure, is_httponly, ''",
+      "from cookies",
+      `where ${exactDomainFilter};`
+    ].join(" ");
+    let stdout = "";
+    try {
+      ({ stdout } = await execFileAsync(SQLITE_BINARY, ["-tabs", tmpDb, partitionAwareSql], { maxBuffer: 1024 * 1024 }));
+    } catch {
+      ({ stdout } = await execFileAsync(SQLITE_BINARY, ["-tabs", tmpDb, legacySql], { maxBuffer: 1024 * 1024 }));
+    }
     return String(stdout || "")
       .split(/\r?\n/)
       .filter(Boolean)
       .map((line) => {
-        const [host, name, value, encryptedHex, cookiePath, isSecure] = line.split("\t");
+        const [host, name, value, encryptedHex, cookiePath, isSecure, isHttpOnly, topFrameSiteKey] = line.split("\t");
         return {
           domain: host || "",
           name: name || "",
           value: value || "",
           encryptedValue: encryptedHex ? Buffer.from(encryptedHex, "hex") : Buffer.alloc(0),
           path: cookiePath || "/",
-          secure: isSecure === "1"
+          secure: isSecure === "1",
+          httpOnly: isHttpOnly === "1",
+          topFrameSiteKey: topFrameSiteKey || ""
         };
       });
   } catch {
@@ -1667,19 +1677,32 @@ async function readSafariClaudeSession() {
 }
 
 function buildGenericCookieSession(rows, source, chromeKey = null) {
-  const decryptedCookies = [];
+  const cookies = [];
   for (const row of rows) {
+    // Partitioned Chromium cookies are bound to a top-level site and cannot
+    // be reproduced through Electron's cookie API. Copying them as ordinary
+    // cookies can invalidate an otherwise usable login session.
+    if (row.topFrameSiteKey) continue;
     const value = decodeBrowserCookieValue(row, chromeKey);
-    if (value) decryptedCookies.push(`${row.name}=${value}`);
+    if (!value) continue;
+    cookies.push({
+      name: row.name,
+      value,
+      domain: row.domain,
+      path: row.path || "/",
+      secure: row.secure !== false,
+      httpOnly: row.httpOnly !== false
+    });
   }
-  if (!decryptedCookies.length) {
+  if (!cookies.length) {
     return { status: "unsupported", reason: "browser_cookies_encrypted", source };
   }
   return {
     status: "available",
     reason: null,
     source,
-    cookieHeader: decryptedCookies.join("; ")
+    cookies,
+    cookieHeader: cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ")
   };
 }
 

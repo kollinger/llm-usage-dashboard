@@ -3388,7 +3388,8 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
   const status = accountBillingProviderStatus(providerId, accountBilling);
   if (!status) return provider;
   const connectionAction = providerSubscriptionHasActualBilling(provider.subscription) ||
-    providerSubscriptionHasConcretePlanPrice(providerId, provider.subscription)
+    providerSubscriptionHasConcretePlanPrice(providerId, provider.subscription) ||
+    providerSubscriptionHasTrustedAppPlan(providerId, provider.subscription)
     ? null
     : accountBillingConnectionAction(providerId, status);
   return {
@@ -3403,6 +3404,12 @@ function attachAccountBillingStatus(provider, providerId, accountBilling) {
       accountBillingSourceType: status.sourceType
     }
   };
+}
+
+function providerSubscriptionHasTrustedAppPlan(providerId, subscription) {
+  if (subscription?.planSource !== "codex_app_server") return false;
+  if (subscriptionCatalogFamily(providerId) !== "openai") return false;
+  return Boolean(String(subscription.planType || "").trim());
 }
 
 function providerSubscriptionHasActualBilling(subscription) {
@@ -3529,7 +3536,7 @@ function enrichProviderSubscriptionFromCatalog(provider, providerId = provider?.
   if (!planType) return provider;
 
   const planSource = existing?.planSource || existing?.source || provider.planSource || null;
-  if (isAmbiguousSubscriptionPlanVariant(providerId, planType)) {
+  if (isAmbiguousSubscriptionPlanVariant(providerId, planType) && planSource !== "codex_app_server") {
     return {
       ...provider,
       subscription: unresolvedSubscriptionVariant(providerId, existing, planType, planSource)
@@ -8235,20 +8242,47 @@ async function getCodexAppServer() {
   }
 }
 
+function codexBinaryCandidates({
+  platform = process.platform,
+  homeDir = os.homedir(),
+  env = process.env
+} = {}) {
+  const candidates = [env.CODEX_BIN, env.CODEX_CLI_PATH];
+
+  if (platform === "darwin") {
+    candidates.push(
+      "/Applications/ChatGPT.app/Contents/Resources/codex",
+      path.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex"),
+      "/Applications/Codex.app/Contents/Resources/codex",
+      path.join(homeDir, "Applications", "Codex.app", "Contents", "Resources", "codex"),
+      "/Applications/Codex.app/Contents/MacOS/Codex",
+      path.join(homeDir, "Applications", "Codex.app", "Contents", "MacOS", "Codex"),
+      "/opt/homebrew/bin/codex",
+      "/usr/local/bin/codex"
+    );
+  } else if (platform === "linux") {
+    candidates.push("/usr/local/bin/codex", "/usr/bin/codex", "/snap/bin/codex");
+  } else if (platform === "win32" && env.APPDATA) {
+    candidates.push(path.join(env.APPDATA, "npm", "codex.cmd"));
+  }
+
+  candidates.push(
+    path.join(homeDir, ".local", "bin", platform === "win32" ? "codex.exe" : "codex"),
+    path.join(homeDir, ".npm-global", "bin", platform === "win32" ? "codex.cmd" : "codex")
+  );
+  return candidates.filter(Boolean);
+}
+
 function resolveCodexBinary() {
-  const candidates = [
-    process.env.CODEX_BIN,
-    process.env.CODEX_CLI_PATH,
-    "/Applications/Codex.app/Contents/Resources/codex",
-    "/Applications/Codex.app/Contents/MacOS/Codex"
-  ];
+  const candidates = codexBinaryCandidates();
 
   for (const candidate of candidates) {
     if (candidate && fs.existsSync(candidate)) return candidate;
   }
 
-  const which = spawnSync("which", ["codex"], { encoding: "utf8" });
-  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
+  const lookupCommand = process.platform === "win32" ? "where.exe" : "which";
+  const lookup = spawnSync(lookupCommand, ["codex"], { encoding: "utf8" });
+  if (lookup.status === 0 && lookup.stdout.trim()) return lookup.stdout.trim().split(/\r?\n/u)[0];
   return null;
 }
 
@@ -9557,6 +9591,7 @@ module.exports = {
     buildSourceDiagnosticsPayload,
     sanitizeUpdateSettings,
     mergeUpdateSettingsPatch,
+    codexBinaryCandidates,
     codexRateLimitsFromLive,
     codexRateLimitsFromEvents,
     codexSparkRateLimitsFromEvents,

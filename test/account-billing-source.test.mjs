@@ -318,10 +318,13 @@ const genericCodexWithoutBilling = _test.mergeProviderSubscription(
   officialPricing,
   _test.sanitizeAccountBillingSnapshots({}, { nowMs })
 );
-assert.equal(genericCodexWithoutBilling.subscription.monthlyCost, 0);
-assert.equal(genericCodexWithoutBilling.subscription.planType, null);
-assert.equal(genericCodexWithoutBilling.subscription.priceVariant, null);
-assert.equal(genericCodexWithoutBilling.subscriptionConnectionAction.labelKey, "subscriptions.connectionActions.chatgptRefresh");
+assert.equal(genericCodexWithoutBilling.subscription.monthlyCost, 100);
+assert.equal(genericCodexWithoutBilling.subscription.monthlyCostMin, 100);
+assert.equal(genericCodexWithoutBilling.subscription.monthlyCostMax, 200);
+assert.equal(genericCodexWithoutBilling.subscription.planType, "Pro 5x/20x");
+assert.equal(genericCodexWithoutBilling.subscription.priceVariant, "pro_5x_20x");
+assert.equal(genericCodexWithoutBilling.subscription.planSource, "codex_app_server");
+assert.equal(genericCodexWithoutBilling.subscriptionConnectionAction, null);
 
 const concreteOpenAiPlanOnlyBilling = _test.sanitizeAccountBillingSnapshots(
   {
