@@ -1,6 +1,6 @@
 # LLM Usage Dashboard
 
-Local-first dashboard for LLM usage, rate limits, token logs, and API cost estimates across Codex, GitHub Copilot CLI, Claude Code, Gemini, Ollama, OpenAI, and Anthropic.
+Local-first dashboard for LLM usage, rate limits, token logs, GPT accounts, and API cost estimates across Codex, OpenCode, GitHub Copilot CLI, Claude Code, Gemini, Ollama, OpenAI, and Anthropic.
 
 The app is intentionally simple: a Node.js/Express backend serves a vanilla HTML/CSS/JavaScript frontend. Electron packages the same local dashboard as a desktop app, and Docker is available for server-style installs.
 
@@ -10,6 +10,8 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 
 - Codex local token usage from `~/.codex/sessions` and `~/.codex/archived_sessions`.
 - Codex Spark / research quota detection from Codex `token_count` events when available.
+- Local GPT account registry across Codex and OpenCode profiles, including previously seen accounts and a manual re-scan after account changes.
+- OpenCode OpenAI/GPT token usage from local message metadata without reading prompt or response text.
 - GitHub Copilot CLI session metrics from local shutdown events, without reading prompt/response content into dashboard output.
 - Claude Code local transcript token usage from `~/.claude/projects`.
 - Claude Code plan limit capture from a statusline JSON file when Claude exposes those values.
@@ -104,6 +106,7 @@ The default Compose file expects:
 ~/.copilot
 ~/.claude
 ~/.gemini
+~/.local/share/opencode
 ```
 
 Inside the container those folders are mounted as:
@@ -113,6 +116,7 @@ Inside the container those folders are mounted as:
 /host/copilot
 /host/claude
 /host/gemini
+/host/opencode
 ```
 
 For Ollama on the Linux host, Compose maps `host.docker.internal` and uses:
@@ -172,6 +176,8 @@ CODEX_HOME=~/.codex
 LLM_USAGE_CODEX_HOMES=
 CODEX_LIVE_RATE_LIMITS=true
 CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS=15
+LLM_USAGE_OPENCODE_DATA_DIRS=
+LLM_USAGE_OPENCODE_DB_FILES=
 COPILOT_HOME=~/.copilot
 CLAUDE_HOME=~/.claude
 GEMINI_HOME=~/.gemini
@@ -220,6 +226,16 @@ The dashboard reads `token_count` events and aggregates input, cached input, out
 
 By default, Codex rate-limit rings also try to read a live snapshot from the local Codex app-server with `account/rateLimits/read`. This is cached for 15 seconds and falls back to session logs if Codex is missing, logged out, unavailable, or disabled with `CODEX_LIVE_RATE_LIMITS=false`.
 
+### GPT accounts and OpenCode
+
+The GPT accounts panel combines the current Codex ChatGPT account with OpenCode OpenAI OAuth identities found in each configured OpenCode data profile. It also keeps previously observed identities locally, so switching accounts and choosing **Re-scan accounts** builds a history instead of replacing the prior row. Additional profiles can be supplied with `LLM_USAGE_CODEX_HOMES`, `LLM_USAGE_OPENCODE_DATA_DIRS`, and `LLM_USAGE_OPENCODE_DB_FILES` using the OS path delimiter.
+
+Codex still has one active cached login per `CODEX_HOME`. Changing only the account in a normal ChatGPT browser tab does not replace that cached Codex login; sign in again through Codex, then use the account re-scan. OpenCode similarly exposes the active OpenAI OAuth identity stored in each profile's `auth.json`.
+
+The local registry is stored as `data/gpt-account-registry.json` with owner-only permissions on POSIX systems. It contains opaque hashed account/source identifiers, masked labels, sanitized aggregate usage, limits, and timestamps. It never stores OAuth access/refresh tokens, raw account IDs, full email addresses, local profile paths, prompts, responses, or transcripts.
+
+OpenCode GPT usage is read from assistant-message token metadata in `opencode.db` and appears as the separate **OpenCode GPT** provider. OpenCode's message rows do not record which OAuth account produced each message, so those tokens are intentionally shown for OpenCode as a whole rather than being assigned to individual account cards.
+
 ### GitHub Copilot CLI
 
 Copilot CLI stores resumable local session data under:
@@ -262,7 +278,7 @@ Example `~/.claude/settings.json`:
 Fields parsed when present:
 
 - official Claude Code statusline quota windows: `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, and `rate_limits.seven_day.resets_at`
-- optional Claude model quota buckets exposed by local telemetry, including `rate_limits.fable` / `rate_limits.seven_day_fable` and `rate_limits.sonnet_only`
+- optional Claude model quota buckets exposed by local telemetry or the Claude browser/API usage response, including one or more scoped Fable limits plus `rate_limits.fable` / `rate_limits.seven_day_fable` and `rate_limits.sonnet_only`
 - plan type from the sanitized statusline data, or from the read-only `claude auth status --json` `subscriptionType` field
 - best-effort fallback aliases for older local statusline helpers
 - best-effort Claude Design usage when a local statusline helper exposes it
@@ -279,7 +295,7 @@ data/quota-events.jsonl
 
 Events are written only when relevant values change, such as utilization percentage, reset time, sync status, or credit utilization. Each event stores provider, window key, timestamps, percentage, reset time, source label, and similar aggregate metadata. It does not store cookies, raw API responses, prompts, tool payloads, account IDs, or transcript content. Finished window summaries can be derived from these change events through `/api/quota-history`.
 
-The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Fable token usage can appear in local Claude transcript model totals as `claude-fable-5`, but a separate Fable usage limit is shown only when Claude exposes a stable local/statusline/API bucket for it. Some Claude account UI fields, such as routines, Fable plan buckets, or usage credits, may be plan-specific or unavailable through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
+The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file, the read-only auth status plan field, and the sanitized Claude browser/API usage response. Fable token usage can appear in local Claude transcript model totals as `claude-fable-5`; separate Fable limits are shown only when Claude exposes machine-readable scoped buckets for them. Plan-specific fields that are absent from these sources stay empty instead of being estimated.
 
 ### Crawler Watchdog
 

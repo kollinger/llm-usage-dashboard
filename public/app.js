@@ -26,6 +26,8 @@ const state = {
   overviewChartRendered: false,
   overviewChartScrollToLatest: true,
   overviewChartRenderVersion: 0,
+  overviewChartExpectedOverflow: false,
+  overviewChartResizeObserver: null,
   chartRendered: false,
   chartScrollToLatest: true,
   chartUserScrolledAwayFromLatest: false,
@@ -44,6 +46,8 @@ const state = {
   systemMetricsError: "",
   sourceDiagnosticsError: "",
   sourceRecheckResult: null,
+  gptAccountScanPending: false,
+  gptAccountScanMessage: "",
   supportReport: null,
   supportReportPending: false,
   loadingSourceDiagnostics: false,
@@ -71,6 +75,11 @@ const els = {
   sourceDiagnosticsGrid: document.getElementById("sourceDiagnosticsGrid"),
   sourceDiagnosticsInstances: document.getElementById("sourceDiagnosticsInstances"),
   diagnosticsRecheckBtn: document.getElementById("diagnosticsRecheckBtn"),
+  gptAccountsSection: document.getElementById("gptAccountsSection"),
+  gptAccountsMeta: document.getElementById("gptAccountsMeta"),
+  gptAccountList: document.getElementById("gptAccountList"),
+  gptAccountsNote: document.getElementById("gptAccountsNote"),
+  gptAccountsRecheckBtn: document.getElementById("gptAccountsRecheckBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
   layoutResetBtn: document.getElementById("layoutResetBtn"),
@@ -176,6 +185,7 @@ const els = {
 
 const providerMeta = {
   codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: "#23745c" },
+  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: "#316f8f" },
   codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: "#5b6ee1" },
   copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: "#6f42c1" },
   claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: "#d55e00" },
@@ -188,6 +198,7 @@ const providerMeta = {
 
 const providerBrandMeta = {
   codex: { label: "Codex", mark: "Cx", logo: "codex.svg", accent: providerMeta.codex.accent },
+  openCode: { label: "OpenCode GPT", mark: "OC", logo: "openai.svg", accent: providerMeta.openCode.accent },
   codexSpark: { label: "Codex Spark", mark: "Sp", logo: "codex.svg", accent: providerMeta.codexSpark.accent },
   copilot: { label: "GitHub Copilot", mark: "GH", logo: "github-copilot.svg", accent: providerMeta.copilot.accent },
   claudeCode: { label: "Claude Code", mark: "Cl", logo: "claude.svg", accent: providerMeta.claudeCode.accent },
@@ -208,6 +219,8 @@ const providerBrandMeta = {
 
 const providerBrandAliases = new Map([
   ["codex", "codex"],
+  ["opencode", "openCode"],
+  ["opencodegpt", "openCode"],
   ["openaicodex", "openai"],
   ["codexspark", "codexSpark"],
   ["spark", "codexSpark"],
@@ -259,6 +272,7 @@ const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
 const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "overview-history",
   "overview",
+  "gpt-accounts",
   "providers",
   "live",
   "token-history",
@@ -328,10 +342,11 @@ const MODAL_BACKDROP_GRACE_MS = 450;
 const translationCache = new Map();
 const dialogOpenedAt = new WeakMap();
 const dialogPointerStartedInside = new WeakMap();
-const chartSourceOrder = ["codex", "codexSpark", "copilot", "claudeCode", "ollama", "gemini", "glm", "openai", "anthropic", "local"];
+const chartSourceOrder = ["codex", "codexSpark", "openCode", "copilot", "claudeCode", "ollama", "gemini", "glm", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
   codexSpark: providerMeta.codexSpark.accent,
+  openCode: providerMeta.openCode.accent,
   copilot: providerMeta.copilot.accent,
   claudeCode: providerMeta.claudeCode.accent,
   ollama: providerMeta.ollama.accent,
@@ -1719,6 +1734,7 @@ function bindEvents() {
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
+  els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
   els.supportReportDownloadBtn?.addEventListener("click", downloadSupportReport);
   els.supportReportCopyBtn?.addEventListener("click", copySupportReportSummary);
   els.loginDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
@@ -1970,9 +1986,16 @@ function loadDashboardSectionOrderPreference() {
   try {
     const saved = JSON.parse(localStorage.getItem(DASHBOARD_SECTION_ORDER_STORAGE_KEY) || "[]");
     const order = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
-    state.dashboardSectionOrder = order.length && !order.includes("overview-history")
+    let nextOrder = order.length && !order.includes("overview-history")
       ? ["overview-history", ...order]
       : order;
+    if (nextOrder.length && !nextOrder.includes("gpt-accounts")) {
+      const overviewIndex = nextOrder.indexOf("overview");
+      nextOrder = overviewIndex >= 0
+        ? [...nextOrder.slice(0, overviewIndex + 1), "gpt-accounts", ...nextOrder.slice(overviewIndex + 1)]
+        : [...nextOrder, "gpt-accounts"];
+    }
+    state.dashboardSectionOrder = nextOrder;
   } catch {
     state.dashboardSectionOrder = [];
   }
@@ -2104,12 +2127,17 @@ function applyDashboardSectionOrder(nextOrder = state.dashboardSectionOrder, { p
   const panelsById = new Map(
     Array.from(els.dashboardLayout.querySelectorAll(":scope > [data-dashboard-panel-id]")).map((panel) => [panel.dataset.dashboardPanelId, panel])
   );
-  for (const id of state.dashboardSectionOrder) {
+  const overviewScroller = overviewHistoryScroller();
+  const overviewScrollLeft = overviewScroller?.scrollLeft ?? null;
+  for (const [index, id] of state.dashboardSectionOrder.entries()) {
     const panel = panelsById.get(id);
-    if (panel) {
-      els.dashboardLayout.appendChild(panel);
-    }
+    if (!panel) continue;
+    const currentPanel = els.dashboardLayout.querySelectorAll(":scope > [data-dashboard-panel-id]")[index] || null;
+    if (currentPanel === panel) continue;
+    if (currentPanel) els.dashboardLayout.insertBefore(panel, currentPanel);
+    else els.dashboardLayout.appendChild(panel);
   }
+  if (overviewScroller && overviewScrollLeft !== null) overviewScroller.scrollLeft = overviewScrollLeft;
   if (persist) saveDashboardSectionOrder();
   updateDashboardLayoutMode();
 }
@@ -3391,6 +3419,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     renderLocked();
     return;
   }
+  if (force) state.gptAccountScanMessage = "";
   setUsageLoading(true, showIndicator);
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
@@ -3545,7 +3574,9 @@ function renderLocked() {
   }
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
+  clearOverviewHistoryResizeObserver();
   state.overviewChartRendered = false;
+  state.overviewChartExpectedOverflow = false;
   state.chartRendered = false;
   state.layoutEditMode = true;
   state.keyboardDragSectionId = null;
@@ -3560,6 +3591,7 @@ function renderLocked() {
   updateLayoutControls([], []);
   renderSourceDiagnostics();
   renderSourceSettings();
+  renderGptAccounts(null);
 }
 
 // Skips the full dashboard DOM rebuild when the payload is unchanged apart
@@ -3600,6 +3632,7 @@ function render() {
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
   const chartRows = buildHistoryRowsForFilter(usage.local, filteredDaily, state.chartTimeFilter);
   renderSummary(visibleProviders, usage.local, filteredDaily);
+  renderGptAccounts(usage.gptAccounts);
   updateSummaryMetricLayout();
   renderOverviewHistory(chartRows);
   updateDashboardLayoutMode();
@@ -3629,6 +3662,103 @@ function render() {
   renderSourceDiagnostics();
   renderSourceSettings();
   refreshIcons();
+}
+
+function renderGptAccounts(registry) {
+  if (!els.gptAccountsSection || !els.gptAccountsMeta || !els.gptAccountList) return;
+  const accounts = Array.isArray(registry?.accounts) ? registry.accounts : [];
+  const activeCount = accounts.filter((account) => account.active).length;
+  const scanStatus = registry?.scan?.status || registry?.status || "empty";
+  els.gptAccountsRecheckBtn.disabled = state.gptAccountScanPending;
+  els.gptAccountsRecheckBtn.classList.toggle("is-loading", state.gptAccountScanPending);
+  els.gptAccountsRecheckBtn.toggleAttribute("aria-busy", state.gptAccountScanPending);
+
+  if (state.gptAccountScanMessage) {
+    els.gptAccountsMeta.textContent = state.gptAccountScanMessage;
+    els.gptAccountsMeta.dataset.status = scanStatus;
+  } else if (registry?.lastScannedAt) {
+    els.gptAccountsMeta.textContent = t("gptAccounts.summary", {
+      active: activeCount,
+      count: accounts.length,
+      time: formatRelativeUpdatedAt(registry.lastScannedAt)
+    });
+    els.gptAccountsMeta.dataset.status = scanStatus;
+  } else {
+    els.gptAccountsMeta.textContent = t("gptAccounts.notScanned");
+    els.gptAccountsMeta.dataset.status = "empty";
+  }
+
+  els.gptAccountList.innerHTML = accounts.length
+    ? accounts.map(renderGptAccount).join("")
+    : `<div class="gpt-accounts-empty">
+        <strong>${escapeHtml(t("gptAccounts.empty"))}</strong>
+        <span>${escapeHtml(t("gptAccounts.guidance"))}</span>
+      </div>`;
+  if (els.gptAccountsNote) {
+    const hasOpenCode = accounts.some((account) => account.sources?.some((source) => source.id === "openCode"));
+    els.gptAccountsNote.hidden = !hasOpenCode;
+  }
+}
+
+function renderGptAccount(account) {
+  const sources = Array.isArray(account.sources) ? account.sources : [];
+  const activeSources = sources.filter((source) => source.active);
+  const codexSource = sources.find((source) => source.id === "codex");
+  const lifetimeTokens = codexSource?.usage?.summary?.lifetimeTokens;
+  const limits = (codexSource?.limits?.rows || []).slice(0, 2);
+  const sourceBadges = sources.map((source) => `
+    <span class="gpt-account-source${source.active ? " is-active" : ""}">
+      ${escapeHtml(t(`gptAccounts.sources.${source.id}`, {}, source.id))}
+    </span>
+  `).join("");
+  const metrics = [];
+  if (Number.isFinite(Number(lifetimeTokens))) {
+    metrics.push(`<span><strong>${escapeHtml(formatTokens(lifetimeTokens))}</strong>${escapeHtml(t("gptAccounts.lifetimeTokens"))}</span>`);
+  }
+  for (const limit of limits) {
+    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(limit.label || t("gptAccounts.limit"))}</span>`);
+  }
+  return `
+    <article class="gpt-account-card${account.active ? " is-active" : " is-historical"}">
+      <div class="gpt-account-main">
+        <div>
+          <div class="gpt-account-title-row">
+            <strong>${escapeHtml(account.label || account.id)}</strong>
+            ${account.planType ? `<span class="gpt-account-plan">${escapeHtml(account.planType)}</span>` : ""}
+          </div>
+          <div class="gpt-account-sources">${sourceBadges}</div>
+        </div>
+        <span class="gpt-account-state">${escapeHtml(t(account.active ? "gptAccounts.active" : "gptAccounts.historical"))}</span>
+      </div>
+      ${metrics.length ? `<div class="gpt-account-metrics">${metrics.join("")}</div>` : ""}
+      <div class="gpt-account-seen">
+        ${escapeHtml(t("gptAccounts.lastSeen", { time: formatRelativeUpdatedAt(account.lastSeenAt) }))}
+        ${activeSources.length ? ` · ${escapeHtml(t(
+          activeSources.length === 1 ? "gptAccounts.activeSourceCountOne" : "gptAccounts.activeSourceCount",
+          { count: activeSources.length }
+        ))}` : ""}
+      </div>
+    </article>
+  `;
+}
+
+async function recheckGptAccounts() {
+  if (state.gptAccountScanPending) return;
+  state.gptAccountScanPending = true;
+  state.gptAccountScanMessage = t("gptAccounts.checking");
+  renderGptAccounts(state.usage?.gptAccounts);
+  try {
+    const response = await fetchJson("/api/gpt-accounts/recheck", { method: "POST" });
+    if (state.usage) state.usage.gptAccounts = response.gptAccounts;
+    state.gptAccountScanMessage = t("gptAccounts.rechecked");
+  } catch (error) {
+    state.gptAccountScanMessage = t("gptAccounts.recheckError", {
+      message: error.message || t("gptAccounts.recheckErrorFallback")
+    });
+  } finally {
+    state.gptAccountScanPending = false;
+    renderGptAccounts(state.usage?.gptAccounts);
+  }
 }
 
 function preservePageScrollDuring(callback) {
@@ -3672,6 +3802,7 @@ function buildProviders(usage) {
     normalizeApiProvider("anthropic", usage.anthropic),
     normalizeCodexProvider(usage.codex),
     normalizeCodexSparkProvider(usage.codex?.spark, usage.codex?.subscription),
+    normalizeLocalProvider("openCode", usage.openCode),
     normalizeLocalProvider("copilot", usage.copilot),
     normalizeLocalProvider("ollama", usage.ollama),
     normalizeLocalProvider("glm", usage.glm),
@@ -3947,6 +4078,38 @@ function setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft) 
     : Math.min(maxScrollLeft, Math.max(0, Number(previousScrollLeft) || 0));
 }
 
+function clearOverviewHistoryResizeObserver() {
+  state.overviewChartResizeObserver?.disconnect();
+  state.overviewChartResizeObserver = null;
+}
+
+function observeOverviewHistoryLayout(scroller, renderVersion) {
+  clearOverviewHistoryResizeObserver();
+  if (typeof ResizeObserver !== "function") return;
+  const observer = new ResizeObserver(() => {
+    if (
+      state.overviewChartResizeObserver !== observer ||
+      renderVersion !== state.overviewChartRenderVersion ||
+      scroller !== overviewHistoryScroller() ||
+      !state.overviewChartScrollToLatest
+    ) {
+      if (state.overviewChartResizeObserver === observer) clearOverviewHistoryResizeObserver();
+      return;
+    }
+    setOverviewHistoryScroll(scroller, true, 0);
+    const hasLayout = Number(scroller.clientWidth || 0) > 0;
+    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
+    if (hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller)) {
+      state.overviewChartScrollToLatest = false;
+      clearOverviewHistoryResizeObserver();
+    }
+  });
+  state.overviewChartResizeObserver = observer;
+  observer.observe(scroller);
+  const canvas = scroller.querySelector?.(".overview-history-canvas");
+  if (canvas) observer.observe(canvas);
+}
+
 function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion, attempt = 0) {
   window.requestAnimationFrame(() => {
     if (renderVersion !== state.overviewChartRenderVersion) return;
@@ -3956,14 +4119,20 @@ function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, r
     state.overviewChartRendered = true;
     if (!scrollToLatest) {
       state.overviewChartScrollToLatest = false;
+      clearOverviewHistoryResizeObserver();
       return;
     }
-    const shouldRetry = attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
     const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const reachedLatest = hasLayout && isOverviewHistoryScrolledToLatest(scroller);
-    state.overviewChartScrollToLatest = shouldRetry || !reachedLatest;
+    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
+    const reachedLatest = hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller);
+    const shouldRetry = !reachedLatest && attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
+    state.overviewChartScrollToLatest = !reachedLatest;
     if (shouldRetry) {
       finishOverviewHistoryRenderScroll(previousScrollLeft, true, renderVersion, attempt + 1);
+    } else if (!reachedLatest) {
+      observeOverviewHistoryLayout(scroller, renderVersion);
+    } else {
+      clearOverviewHistoryResizeObserver();
     }
   });
 }
@@ -3980,12 +4149,14 @@ function renderOverviewHistory(daily) {
     ? costRows.filter((row) => Number(row.totalEur || 0) > 0)
     : inputRows.filter((day) => Number(day.totalTokens || 0) > 0);
   if (!activeRows.length) {
+    clearOverviewHistoryResizeObserver();
     els.overviewHistoryPanel.hidden = true;
     els.overviewHistoryFilterBar.innerHTML = "";
     els.overviewHistoryModeToggle.innerHTML = "";
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
+    state.overviewChartExpectedOverflow = false;
     return;
   }
 
@@ -4017,6 +4188,7 @@ function renderOverviewHistory(daily) {
     ? Math.max(barWidth + barGap, plotViewportWidth / Math.max(visibleDays, 1))
     : barWidth + barGap;
   const width = Math.max(plotViewportWidth, rows.length * barStep);
+  state.overviewChartExpectedOverflow = width > plotViewportWidth;
   const barX = (index) => (isSlotSeries
     ? index * barStep + Math.max(0, (barStep - barWidth) / 2)
     : index * barStep);
@@ -4027,6 +4199,7 @@ function renderOverviewHistory(daily) {
     !state.overviewChartRendered ||
     !previousScroller ||
     isOverviewHistoryScrolledToLatest(previousScroller, previousScrollLeft);
+  clearOverviewHistoryResizeObserver();
   const timeline = isSlotSeries
     ? renderHistorySlotTimeline({
       rows,
@@ -4519,7 +4692,11 @@ function normalizeLocalProvider(id, provider) {
     subscriptionConflict: provider?.subscriptionConflict || subscription?.conflict || null,
     message: localizeProviderMessage(
       provider?.message,
-      id === "copilot" ? "providers.messages.copilotLogTokens" : "providers.messages.logTokens24h"
+      id === "copilot"
+        ? "providers.messages.copilotLogTokens"
+        : id === "openCode"
+          ? "providers.messages.noOpenCodeGptEvents"
+          : "providers.messages.logTokens24h"
     ),
     foot
   };
@@ -4639,13 +4816,15 @@ function normalizeLimitRows(limits) {
   return [
     normalizeLimitRow(limits.fiveHour ? { key: "fiveHour", label: t("limits.fiveHour"), ...limits.fiveHour } : null),
     normalizeLimitRow(limits.weekly ? { key: "weekly", label: t("limits.weekly"), ...limits.weekly } : null),
-    normalizeLimitRow(limits.sonnetOnly ? { key: "sonnetOnly", label: t("limits.sonnetOnly"), ...limits.sonnetOnly } : null)
+    normalizeLimitRow(limits.sonnetOnly ? { key: "sonnetOnly", label: t("limits.sonnetOnly"), ...limits.sonnetOnly } : null),
+    ...(Array.isArray(limits.fableRows) && limits.fableRows.length
+      ? limits.fableRows.map(normalizeLimitRow)
+      : [normalizeLimitRow(limits.fable ? { key: "fable", label: "Fable", ...limits.fable } : null)])
   ].filter(Boolean);
 }
 
 function normalizeLimitRow(row) {
   if (!row) return null;
-  if (isFableLimit(row)) return null;
   const usedPercentValue = finiteUiNumberOrNull(row.usedPercent);
   const hasUsedPercent = usedPercentValue !== null;
   const status = row.status ? String(row.status) : null;
@@ -4676,10 +4855,6 @@ function normalizeLimitRow(row) {
     resetsAt,
     resetLabel
   };
-}
-
-function isFableLimit(row) {
-  return /fable/i.test(`${row.key || ""} ${row.label || ""} ${row.limitLabel || ""} ${row.name || ""}`);
 }
 
 function isLimitDetailText(value) {
@@ -4782,6 +4957,7 @@ function localizeProviderMessage(message, fallbackKey) {
     "Keine lokalen Gemini Usage-Logs gefunden.": "providers.messages.noGeminiLogs",
     "Gemini local usage updates only when local log files contain new usage metadata.": "providers.updateDelayHints.gemini",
     "No local GLM/Z.AI usage events found.": "providers.messages.noGlmEvents",
+    "No local OpenAI/GPT usage events found in OpenCode.": "providers.messages.noOpenCodeGptEvents",
     "GLM/Z.AI tokens from local imports.": "providers.messages.glmImportTokens",
     "Official quota through OpenCode is not available.": "providers.messages.glmQuotaUnavailable",
     "Official GLM Coding Plan quota from OpenCode.": "providers.messages.glmQuotaAvailable",
@@ -4891,7 +5067,7 @@ function providerHasUsage(provider) {
   const hasMeaningfulLimitTelemetry = allowLimitTelemetry && providerHasMeaningfulLimitTelemetry(provider);
   const needsAttention = provider.status === "error" || (allowLimitTelemetry && Boolean(provider.limitAlert));
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
-  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi || Boolean(provider.configuredSource);
+  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi;
 }
 
 function providerHasRecentUsage(provider, windowMs) {
