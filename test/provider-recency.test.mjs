@@ -533,6 +533,7 @@ async function assertFrontendUsageIntelligence() {
   assert.equal(appSource.includes("function renderRing("), false, "legacy quota ring renderer must stay removed");
   const stylesSource = await readFile(path.join(rootDir, "public", "styles.css"), "utf8");
   const indexSource = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
+  assert.match(stylesSource, /\.topbar \.icon-button\s*\{[^}]*background:\s*var\(--ink\)[^}]*color:\s*#fff/su, "header icon buttons must keep their dark high-contrast treatment");
   assert.match(stylesSource, /\.limit-bars\s*\{[^}]*width:\s*100%/su, "Current Usage grid must stretch to provider card width");
   assert.match(stylesSource, /\.limit-bars-grid\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/su, "5h/week grid must use full-width equal columns");
   assert.match(stylesSource, /\.limit-tachometer-svg\s*\{[^}]*max-width:\s*none/su, "tachometer SVG must not keep a narrow fixed max-width");

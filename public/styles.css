@@ -179,6 +179,22 @@ a {
   padding: 0;
 }
 
+.topbar .icon-button {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.topbar .icon-button:hover:not(:disabled),
+.topbar .icon-button:focus-visible {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.topbar .icon-button.is-loading {
+  color: #fff;
+}
+
 .text-button {
   min-width: 84px;
   padding: 0 16px;
