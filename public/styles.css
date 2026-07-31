@@ -293,6 +293,143 @@ a {
   padding: 16px;
 }
 
+.gpt-accounts-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.gpt-accounts-heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.gpt-accounts-meta,
+.gpt-accounts-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.gpt-accounts-meta[data-status="error"],
+.gpt-accounts-meta[data-status="partial"] {
+  color: var(--rose);
+}
+
+.gpt-account-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.gpt-account-card,
+.gpt-accounts-empty {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.gpt-account-card.is-active {
+  border-color: rgba(35, 116, 92, 0.38);
+  box-shadow: inset 3px 0 0 var(--green);
+}
+
+:root[dir="rtl"] .gpt-account-card.is-active {
+  box-shadow: inset -3px 0 0 var(--green);
+}
+
+.gpt-account-card.is-historical {
+  opacity: 0.72;
+}
+
+.gpt-account-main,
+.gpt-account-title-row,
+.gpt-account-sources,
+.gpt-account-metrics {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gpt-account-main {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.gpt-account-title-row,
+.gpt-account-sources {
+  flex-wrap: wrap;
+}
+
+.gpt-account-title-row > strong {
+  overflow-wrap: anywhere;
+}
+
+.gpt-account-plan,
+.gpt-account-source,
+.gpt-account-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(72, 80, 90, 0.1);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.gpt-account-sources {
+  margin-top: 8px;
+}
+
+.gpt-account-source.is-active,
+.gpt-account-card.is-active .gpt-account-state {
+  background: rgba(35, 116, 92, 0.12);
+  color: var(--green);
+}
+
+.gpt-account-metrics {
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-top: 13px;
+}
+
+.gpt-account-metrics > span {
+  display: grid;
+  gap: 2px;
+  min-width: 92px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.gpt-account-metrics strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.gpt-account-seen {
+  margin-top: 11px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.gpt-accounts-empty {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.gpt-accounts-empty strong {
+  color: var(--ink);
+}
+
 .provider-view-notice {
   display: flex;
   align-items: flex-start;
@@ -3542,6 +3679,16 @@ textarea {
   .diagnostics-summary-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .gpt-accounts-heading,
+  .gpt-account-main {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .gpt-accounts-heading .text-button {
+    width: 100%;
   }
 
   .chart-heading {

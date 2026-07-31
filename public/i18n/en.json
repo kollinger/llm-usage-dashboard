@@ -58,6 +58,32 @@
       "month": "Last 30 calendar days from local logs."
     }
   },
+  "gptAccounts": {
+    "ariaLabel": "GPT accounts",
+    "eyebrow": "Local account registry",
+    "heading": "GPT accounts",
+    "recheck": "Re-scan accounts",
+    "checking": "Scanning Codex and OpenCode accounts…",
+    "rechecked": "Account scan complete.",
+    "recheckError": "Account scan failed: {message}",
+    "recheckErrorFallback": "Unknown error",
+    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "notScanned": "Accounts have not been scanned yet.",
+    "empty": "No ChatGPT account found yet",
+    "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
+    "active": "Active",
+    "historical": "Previous",
+    "lifetimeTokens": "Codex lifetime tokens",
+    "limit": "Limit",
+    "lastSeen": "Last seen {time}",
+    "activeSourceCountOne": "1 active source",
+    "activeSourceCount": "{count} active sources",
+    "attributionNote": "OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.",
+    "sources": {
+      "codex": "Codex",
+      "openCode": "OpenCode"
+    }
+  },
   "chart": {
     "eyebrow": "Local capture",
     "heading": "Token History from Logs",
@@ -310,6 +336,9 @@
     "codex": {
       "kicker": "Codex"
     },
+    "openCode": {
+      "kicker": "OpenCode GPT logs"
+    },
     "codexSpark": {
       "kicker": "Codex Spark"
     },
@@ -356,7 +385,8 @@
       "claudeLiveLimitsMissing": "Claude live limits are not available from local telemetry yet.",
       "claudeLimitsStale": "Claude live limits are out of date. Open Claude Code once to refresh them.",
       "claudeOauthUnavailable": "Claude CLI/OAuth quota unavailable: {reason}.",
-      "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking."
+      "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
     },
     "emptyState": {
       "eyebrow": "Provider",

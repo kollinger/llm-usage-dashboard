@@ -356,7 +356,8 @@
       "claudeOauthUnavailable": "Claude CLI/OAuth quota unavailable: {reason}.",
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
-      "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}."
+      "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
     },
     "emptyState": {
       "eyebrow": "Fornecedor",
@@ -387,6 +388,9 @@
       "prices": "Preços {time}",
       "catalog": "Catálogo {date}",
       "unknown": "Hora dos dados desconhecida"
+    },
+    "openCode": {
+      "kicker": "OpenCode GPT logs"
     }
   },
   "status": {
@@ -974,5 +978,31 @@
       "claudeConflict": "Claude Max: fontes conflitantes ({details})"
     },
     "connectionHelp": "Abra a página do provedor, entre se necessário e volte aqui. O app relê o plano quando recupera o foco, ou use o botão."
+  },
+  "gptAccounts": {
+    "ariaLabel": "GPT accounts",
+    "eyebrow": "Local account registry",
+    "heading": "GPT accounts",
+    "recheck": "Re-scan accounts",
+    "checking": "Scanning Codex and OpenCode accounts…",
+    "rechecked": "Account scan complete.",
+    "recheckError": "Account scan failed: {message}",
+    "recheckErrorFallback": "Unknown error",
+    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "notScanned": "Accounts have not been scanned yet.",
+    "empty": "No ChatGPT account found yet",
+    "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
+    "active": "Active",
+    "historical": "Previous",
+    "lifetimeTokens": "Codex lifetime tokens",
+    "limit": "Limit",
+    "lastSeen": "Last seen {time}",
+    "activeSourceCount": "{count} active sources",
+    "attributionNote": "OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.",
+    "sources": {
+      "codex": "Codex",
+      "openCode": "OpenCode"
+    },
+    "activeSourceCountOne": "1 active source"
   }
 }

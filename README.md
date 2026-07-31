@@ -1,6 +1,6 @@
 # LLM Usage Dashboard
 
-Local-first dashboard for LLM usage, rate limits, token logs, and API cost estimates across Codex, GitHub Copilot CLI, Claude Code, Gemini, Ollama, OpenAI, and Anthropic.
+Local-first dashboard for LLM usage, rate limits, token logs, GPT accounts, and API cost estimates across Codex, OpenCode, GitHub Copilot CLI, Claude Code, Gemini, Ollama, OpenAI, and Anthropic.
 
 The app is intentionally simple: a Node.js/Express backend serves a vanilla HTML/CSS/JavaScript frontend. Electron packages the same local dashboard as a desktop app, and Docker is available for server-style installs.
 
@@ -10,6 +10,8 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 
 - Codex local token usage from `~/.codex/sessions` and `~/.codex/archived_sessions`.
 - Codex Spark / research quota detection from Codex `token_count` events when available.
+- Local GPT account registry across Codex and OpenCode profiles, including previously seen accounts and a manual re-scan after account changes.
+- OpenCode OpenAI/GPT token usage from local message metadata without reading prompt or response text.
 - GitHub Copilot CLI session metrics from local shutdown events, without reading prompt/response content into dashboard output.
 - Claude Code local transcript token usage from `~/.claude/projects`.
 - Claude Code plan limit capture from a statusline JSON file when Claude exposes those values.
@@ -104,6 +106,7 @@ The default Compose file expects:
 ~/.copilot
 ~/.claude
 ~/.gemini
+~/.local/share/opencode
 ```
 
 Inside the container those folders are mounted as:
@@ -113,6 +116,7 @@ Inside the container those folders are mounted as:
 /host/copilot
 /host/claude
 /host/gemini
+/host/opencode
 ```
 
 For Ollama on the Linux host, Compose maps `host.docker.internal` and uses:
@@ -172,6 +176,8 @@ CODEX_HOME=~/.codex
 LLM_USAGE_CODEX_HOMES=
 CODEX_LIVE_RATE_LIMITS=true
 CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS=15
+LLM_USAGE_OPENCODE_DATA_DIRS=
+LLM_USAGE_OPENCODE_DB_FILES=
 COPILOT_HOME=~/.copilot
 CLAUDE_HOME=~/.claude
 GEMINI_HOME=~/.gemini
@@ -219,6 +225,16 @@ The dashboard always considers the default `~/.codex` path, the active `CODEX_HO
 The dashboard reads `token_count` events and aggregates input, cached input, output, reasoning, 5-hour usage, 24-hour usage, all-time totals, daily history, and Codex Spark buckets when present. The `/api/usage` response includes `codex.source.codexHomes`, `codex.source.rootsScanned`, and `codex.source.duplicatesSkipped` for diagnostics.
 
 By default, Codex rate-limit rings also try to read a live snapshot from the local Codex app-server with `account/rateLimits/read`. This is cached for 15 seconds and falls back to session logs if Codex is missing, logged out, unavailable, or disabled with `CODEX_LIVE_RATE_LIMITS=false`.
+
+### GPT accounts and OpenCode
+
+The GPT accounts panel combines the current Codex ChatGPT account with OpenCode OpenAI OAuth identities found in each configured OpenCode data profile. It also keeps previously observed identities locally, so switching accounts and choosing **Re-scan accounts** builds a history instead of replacing the prior row. Additional profiles can be supplied with `LLM_USAGE_CODEX_HOMES`, `LLM_USAGE_OPENCODE_DATA_DIRS`, and `LLM_USAGE_OPENCODE_DB_FILES` using the OS path delimiter.
+
+Codex still has one active cached login per `CODEX_HOME`. Changing only the account in a normal ChatGPT browser tab does not replace that cached Codex login; sign in again through Codex, then use the account re-scan. OpenCode similarly exposes the active OpenAI OAuth identity stored in each profile's `auth.json`.
+
+The local registry is stored as `data/gpt-account-registry.json` with owner-only permissions on POSIX systems. It contains opaque hashed account/source identifiers, masked labels, sanitized aggregate usage, limits, and timestamps. It never stores OAuth access/refresh tokens, raw account IDs, full email addresses, local profile paths, prompts, responses, or transcripts.
+
+OpenCode GPT usage is read from assistant-message token metadata in `opencode.db` and appears as the separate **OpenCode GPT** provider. OpenCode's message rows do not record which OAuth account produced each message, so those tokens are intentionally shown for OpenCode as a whole rather than being assigned to individual account cards.
 
 ### GitHub Copilot CLI
 

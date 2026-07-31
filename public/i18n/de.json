@@ -58,6 +58,32 @@
       "month": "Letzte 30 Kalendertage aus lokalen Logs."
     }
   },
+  "gptAccounts": {
+    "ariaLabel": "GPT-Accounts",
+    "eyebrow": "Lokales Account-Register",
+    "heading": "GPT-Accounts",
+    "recheck": "Accounts neu erfassen",
+    "checking": "Codex- und OpenCode-Accounts werden erfasst…",
+    "rechecked": "Account-Erfassung abgeschlossen.",
+    "recheckError": "Account-Erfassung fehlgeschlagen: {message}",
+    "recheckErrorFallback": "Unbekannter Fehler",
+    "summary": "{active} von {count} bekannten Accounts aktiv · erfasst {time}",
+    "notScanned": "Accounts wurden noch nicht erfasst.",
+    "empty": "Noch kein ChatGPT-Account gefunden",
+    "guidance": "In Codex oder OpenCode anmelden und danach neu erfassen. Früher erkannte Accounts bleiben als Verlauf in dieser Liste.",
+    "active": "Aktiv",
+    "historical": "Früher",
+    "lifetimeTokens": "Codex-Tokens insgesamt",
+    "limit": "Limit",
+    "lastSeen": "Zuletzt gesehen {time}",
+    "activeSourceCountOne": "1 aktive Quelle",
+    "activeSourceCount": "{count} aktive Quellen",
+    "attributionNote": "OpenCode-Tokens werden für OpenCode insgesamt gemessen, weil seine Nachrichten-Datenbank nicht speichert, welcher Account die jeweilige Nachricht erzeugt hat.",
+    "sources": {
+      "codex": "Codex",
+      "openCode": "OpenCode"
+    }
+  },
   "chart": {
     "eyebrow": "Lokale Erfassung",
     "heading": "Token-Verlauf aus Logs",
@@ -310,6 +336,9 @@
     "codex": {
       "kicker": "Codex"
     },
+    "openCode": {
+      "kicker": "OpenCode-GPT-Logs"
+    },
     "codexSpark": {
       "kicker": "Codex Spark"
     },
@@ -356,7 +385,8 @@
       "claudeLiveLimitsMissing": "Claude Live-Limits sind derzeit nicht aus lokaler Telemetrie verfügbar.",
       "claudeLimitsStale": "Claude-Live-Limits sind veraltet. Öffne Claude Code einmal, damit neue Werte geschrieben werden.",
       "claudeOauthUnavailable": "Claude-CLI/OAuth-Quota nicht verfügbar: {reason}.",
-      "claudeBrowserLoginHint": "Bei Claude.ai im Browser anmelden, um die Guthabenanzeige zu aktivieren."
+      "claudeBrowserLoginHint": "Bei Claude.ai im Browser anmelden, um die Guthabenanzeige zu aktivieren.",
+      "noOpenCodeGptEvents": "Keine lokalen OpenAI-/GPT-Nutzungsereignisse in OpenCode gefunden."
     },
     "emptyState": {
       "eyebrow": "Anbieter",

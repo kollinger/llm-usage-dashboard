@@ -23,6 +23,20 @@ try {
   assert.equal(codex.paths.find((entry) => entry.role === "archived_sessions")?.permission, "missing");
   assert.equal(discovery.counts.readable, 1);
 
+  const openCodeDataDir = path.join(tmp, ".local", "share", "opencode");
+  await fs.mkdir(openCodeDataDir, { recursive: true });
+  await fs.writeFile(path.join(openCodeDataDir, "opencode.db"), "");
+  const openCodeDiscovery = await discoverSources({
+    platform: "darwin",
+    codexHomes: [],
+    openCodeDataDirs: [openCodeDataDir],
+    openCodeDbFiles: []
+  });
+  const openCode = openCodeDiscovery.candidates.find((source) => source.providerId === "openCode");
+  assert.ok(openCode, "configured current-user OpenCode candidate should be present on host-discovery stubs");
+  assert.equal(openCode.accessStatus, "readable");
+  assert.equal(openCode.paths.find((entry) => entry.role === "opencode_data_dir")?.permission, "readable");
+
   const diagnostics = _test.buildSourceDiagnosticsPayload({ version: 1, sources: [] }, discovery);
   assert.equal(diagnostics.status, "connected_live");
   assert.equal(diagnostics.counts.connected, 1);
