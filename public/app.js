@@ -4816,13 +4816,15 @@ function normalizeLimitRows(limits) {
   return [
     normalizeLimitRow(limits.fiveHour ? { key: "fiveHour", label: t("limits.fiveHour"), ...limits.fiveHour } : null),
     normalizeLimitRow(limits.weekly ? { key: "weekly", label: t("limits.weekly"), ...limits.weekly } : null),
-    normalizeLimitRow(limits.sonnetOnly ? { key: "sonnetOnly", label: t("limits.sonnetOnly"), ...limits.sonnetOnly } : null)
+    normalizeLimitRow(limits.sonnetOnly ? { key: "sonnetOnly", label: t("limits.sonnetOnly"), ...limits.sonnetOnly } : null),
+    ...(Array.isArray(limits.fableRows) && limits.fableRows.length
+      ? limits.fableRows.map(normalizeLimitRow)
+      : [normalizeLimitRow(limits.fable ? { key: "fable", label: "Fable", ...limits.fable } : null)])
   ].filter(Boolean);
 }
 
 function normalizeLimitRow(row) {
   if (!row) return null;
-  if (isFableLimit(row)) return null;
   const usedPercentValue = finiteUiNumberOrNull(row.usedPercent);
   const hasUsedPercent = usedPercentValue !== null;
   const status = row.status ? String(row.status) : null;
@@ -4853,10 +4855,6 @@ function normalizeLimitRow(row) {
     resetsAt,
     resetLabel
   };
-}
-
-function isFableLimit(row) {
-  return /fable/i.test(`${row.key || ""} ${row.label || ""} ${row.limitLabel || ""} ${row.name || ""}`);
 }
 
 function isLimitDetailText(value) {

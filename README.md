@@ -278,7 +278,7 @@ Example `~/.claude/settings.json`:
 Fields parsed when present:
 
 - official Claude Code statusline quota windows: `rate_limits.five_hour.used_percentage`, `rate_limits.five_hour.resets_at`, `rate_limits.seven_day.used_percentage`, and `rate_limits.seven_day.resets_at`
-- optional Claude model quota buckets exposed by local telemetry, including `rate_limits.fable` / `rate_limits.seven_day_fable` and `rate_limits.sonnet_only`
+- optional Claude model quota buckets exposed by local telemetry or the Claude browser/API usage response, including one or more scoped Fable limits plus `rate_limits.fable` / `rate_limits.seven_day_fable` and `rate_limits.sonnet_only`
 - plan type from the sanitized statusline data, or from the read-only `claude auth status --json` `subscriptionType` field
 - best-effort fallback aliases for older local statusline helpers
 - best-effort Claude Design usage when a local statusline helper exposes it
@@ -295,7 +295,7 @@ data/quota-events.jsonl
 
 Events are written only when relevant values change, such as utilization percentage, reset time, sync status, or credit utilization. Each event stores provider, window key, timestamps, percentage, reset time, source label, and similar aggregate metadata. It does not store cookies, raw API responses, prompts, tool payloads, account IDs, or transcript content. Finished window summaries can be derived from these change events through `/api/quota-history`.
 
-The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file and the read-only auth status plan field. Fable token usage can appear in local Claude transcript model totals as `claude-fable-5`, but a separate Fable usage limit is shown only when Claude exposes a stable local/statusline/API bucket for it. Some Claude account UI fields, such as routines, Fable plan buckets, or usage credits, may be plan-specific or unavailable through a stable documented local API; those fields stay empty until a stable provider-specific local source exposes them.
+The dashboard does not read Claude prompt text, tool inputs, tool outputs, full statusline payloads, or internal Claude session/cache files for quota data. Transcript scanning is limited to assistant usage counters in `~/.claude/projects`; live quota values come only from the statusline capture file, the read-only auth status plan field, and the sanitized Claude browser/API usage response. Fable token usage can appear in local Claude transcript model totals as `claude-fable-5`; separate Fable limits are shown only when Claude exposes machine-readable scoped buckets for them. Plan-specific fields that are absent from these sources stay empty instead of being estimated.
 
 ### Crawler Watchdog
 

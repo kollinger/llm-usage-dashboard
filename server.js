@@ -4007,7 +4007,27 @@ function buildLimitRows(limits, keys) {
       const limit = limits?.[key];
       return limit ? { key, ...limit } : null;
     })
-    .filter((row) => row && row.key !== "fable" && !/fable/i.test(`${row.label || ""} ${row.limitLabel || ""}`));
+    .filter(Boolean);
+}
+
+function buildClaudeLimitRows(limits, keys) {
+  const baseRows = buildLimitRows(limits, keys);
+  const fableRows = Array.isArray(limits?.fableRows) && limits.fableRows.length
+    ? limits.fableRows
+    : limits?.fable
+      ? [{ key: "fable", ...limits.fable }]
+      : [];
+  const rows = [];
+  const seen = new Set();
+  for (const row of [...baseRows, ...fableRows]) {
+    if (!row) continue;
+    const key = String(row.key || row.label || "limit");
+    const identity = `${key}|${row.resetsAt || ""}|${row.usedPercent ?? ""}`;
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    rows.push({ ...row, key });
+  }
+  return rows;
 }
 
 async function readCodexUsage(options = {}) {
@@ -5006,12 +5026,79 @@ function normalizeClaudeApiUsagePayload(payload, source = "claude_api") {
     seven_day_oauth_apps: root.seven_day_oauth_apps || root.sevenDayOauthApps || null,
     seven_day_cowork: root.seven_day_cowork || root.sevenDayCowork || null,
     seven_day_omelette: root.seven_day_omelette || root.sevenDayOmelette || null,
+    seven_day_fable: root.seven_day_fable || root.sevenDayFable || root.fable || null,
+    limits: sanitizeClaudeScopedUsageLimits(root.limits),
     extra_usage: root.extra_usage || root.extraUsage || null,
     source,
     updatedAt: new Date().toISOString()
   };
-  const hasUsageWindows = Boolean(usage.five_hour || usage.seven_day || usage.seven_day_sonnet);
+  const hasUsageWindows = Boolean(
+    usage.five_hour ||
+      usage.seven_day ||
+      usage.seven_day_sonnet ||
+      usage.seven_day_fable ||
+      usage.limits.length
+  );
   return hasUsageWindows ? usage : null;
+}
+
+function sanitizeClaudeScopedUsageLimits(limits) {
+  if (!Array.isArray(limits)) return [];
+  const sanitized = [];
+  for (const limit of limits) {
+    if (!isClaudeFableUsageLimit(limit)) continue;
+    const percent = numberOrNull(
+      limit.percent ?? limit.utilization ?? limit.used_percentage ?? limit.usedPercent ?? limit.used_percent
+    );
+    if (percent === null) continue;
+    sanitized.push({
+      label: claudeFableUsageLimitLabel(limit),
+      percent: clampPercent(percent),
+      resets_at: normalizeOptionalDate(limit.resets_at ?? limit.resetsAt ?? limit.reset_at),
+      window_minutes: positiveInteger(limit.window_minutes ?? limit.windowMinutes) || 10080
+    });
+  }
+  return sanitized;
+}
+
+function isClaudeFableUsageLimit(limit) {
+  if (!limit || typeof limit !== "object") return false;
+  const model = limit.scope?.model;
+  const surface = limit.scope?.surface;
+  return /fable/i.test([
+    limit.key,
+    limit.kind,
+    limit.name,
+    limit.label,
+    model && typeof model === "object" ? model.id : model,
+    model && typeof model === "object" ? model.display_name || model.displayName || model.name : "",
+    surface && typeof surface === "object" ? surface.id : surface,
+    surface && typeof surface === "object" ? surface.display_name || surface.displayName || surface.name : ""
+  ].filter(Boolean).join(" "));
+}
+
+function claudeFableUsageLimitLabel(limit) {
+  const model = limit?.scope?.model;
+  const surface = limit?.scope?.surface;
+  const modelLabel = firstNonEmptyString(
+    model && typeof model === "object" ? model.display_name : "",
+    model && typeof model === "object" ? model.displayName : "",
+    model && typeof model === "object" ? model.name : "",
+    model && typeof model === "object" ? model.id : model,
+    limit?.label,
+    limit?.name,
+    "Fable"
+  );
+  const surfaceLabel = firstNonEmptyString(
+    surface && typeof surface === "object" ? surface.display_name : "",
+    surface && typeof surface === "object" ? surface.displayName : "",
+    surface && typeof surface === "object" ? surface.name : "",
+    surface && typeof surface === "object" ? surface.id : surface
+  );
+  const label = surfaceLabel && !modelLabel.toLowerCase().includes(surfaceLabel.toLowerCase())
+    ? `${modelLabel} · ${surfaceLabel}`
+    : modelLabel;
+  return label.slice(0, 80);
 }
 
 function claudeApiProbe(status, reason, source, extra = {}) {
@@ -5089,12 +5176,40 @@ function claudeApiHttpReason(statusCode) {
 }
 
 function claudeApiWindowToLimitWindow(apiWindow, label, windowMinutes) {
-  if (!apiWindow || apiWindow.utilization == null) return null;
+  if (!apiWindow || typeof apiWindow !== "object") return null;
+  const usedPercent = apiWindow.utilization ?? apiWindow.percent ?? apiWindow.used_percentage ?? apiWindow.usedPercent;
+  if (usedPercent == null) return null;
   return claudeLimitWindow(
-    { used_percentage: apiWindow.utilization, resets_at: apiWindow.resets_at },
+    { used_percentage: usedPercent, resets_at: apiWindow.resets_at ?? apiWindow.resetsAt },
     label,
     windowMinutes
   );
+}
+
+function claudeApiFableLimitRows(apiUsage) {
+  if (!apiUsage || typeof apiUsage !== "object") return [];
+  const candidates = [
+    ...sanitizeClaudeScopedUsageLimits(apiUsage.limits),
+    apiUsage.seven_day_fable
+      ? { ...apiUsage.seven_day_fable, label: apiUsage.seven_day_fable.label || "Fable" }
+      : null
+  ].filter(Boolean);
+  const rows = [];
+  const seen = new Set();
+  for (const candidate of candidates) {
+    const label = firstNonEmptyString(candidate.label, "Fable").slice(0, 80);
+    const windowMinutes = positiveInteger(candidate.window_minutes ?? candidate.windowMinutes) || 10080;
+    const window = claudeApiWindowToLimitWindow(candidate, label, windowMinutes);
+    if (!window || window.expired) continue;
+    const identity = `${label.toLowerCase()}|${window.resetsAt || ""}|${window.usedPercent}`;
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    rows.push({
+      key: rows.length === 0 ? "fable" : `fable-${rows.length + 1}`,
+      ...window
+    });
+  }
+  return rows;
 }
 
 function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsageSource = null, apiUsageUpdatedAt = null } = {}) {
@@ -5107,6 +5222,7 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
     const apiFiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
     const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
     const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
+    const apiFableRows = claudeApiFableLimitRows(apiUsage);
     let updated = false;
     if (apiFiveHour && !apiFiveHour.expired) {
       resolvedLimits = { ...resolvedLimits, fiveHour: apiFiveHour, currentSession: apiFiveHour };
@@ -5120,8 +5236,12 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
       resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
       updated = true;
     }
+    if (apiFableRows.length) {
+      resolvedLimits = { ...resolvedLimits, fable: apiFableRows[0], fableRows: apiFableRows };
+      updated = true;
+    }
     if (updated) {
-      resolvedLimits.rows = buildLimitRows(resolvedLimits, [
+      resolvedLimits.rows = buildClaudeLimitRows(resolvedLimits, [
         "fiveHour",
         "weekly",
         "claudeDesign",
@@ -5136,16 +5256,19 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
   const fiveHour = claudeApiWindowToLimitWindow(apiUsage.five_hour, "5h", 300);
   const weekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
   const sonnetOnly = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
-  if (fiveHour || weekly || sonnetOnly) {
+  const fableRows = claudeApiFableLimitRows(apiUsage);
+  if (fiveHour || weekly || sonnetOnly || fableRows.length) {
     resolvedLimits = {
       fiveHour: fiveHour && !fiveHour.expired ? fiveHour : null,
       weekly: weekly && !weekly.expired ? weekly : null,
       currentSession: fiveHour && !fiveHour.expired ? fiveHour : null,
       allModels: weekly && !weekly.expired ? weekly : null,
       claudeDesign: null,
-      sonnetOnly: sonnetOnly && !sonnetOnly.expired ? sonnetOnly : null
+      sonnetOnly: sonnetOnly && !sonnetOnly.expired ? sonnetOnly : null,
+      fable: fableRows[0] || null,
+      fableRows
     };
-    resolvedLimits.rows = buildLimitRows(resolvedLimits, [
+    resolvedLimits.rows = buildClaudeLimitRows(resolvedLimits, [
       "fiveHour",
       "weekly",
       "claudeDesign",
@@ -7826,9 +7949,11 @@ function extractClaudeRateLimits(rateLimits) {
     const limits = {
       ...official,
       claudeDesign: fallback?.claudeDesign || null,
-      sonnetOnly: fallback?.sonnetOnly || null
+      sonnetOnly: fallback?.sonnetOnly || null,
+      fable: fallback?.fable || null,
+      fableRows: fallback?.fableRows || []
     };
-    limits.rows = buildLimitRows(limits, ["fiveHour", "weekly", "claudeDesign", "sonnetOnly"]);
+    limits.rows = buildClaudeLimitRows(limits, ["fiveHour", "weekly", "claudeDesign", "sonnetOnly"]);
     return limits;
   }
   return fallback;
@@ -7885,16 +8010,24 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     "Nur Sonnet",
     10080
   );
+  const fableCandidate = claudeLimitWindow(
+    findClaudeLimit(weeklyRoot, ["fable", "seven_day_fable", "sevenDayFable"]) ||
+      findClaudeLimit(rateLimits, ["fable", "seven_day_fable", "sevenDayFable"]),
+    "Fable",
+    10080
+  );
   const staleWindows = staleClaudeWindows(
     currentSessionCandidate,
     allModelsCandidate,
     claudeDesignCandidate,
-    sonnetOnlyCandidate
+    sonnetOnlyCandidate,
+    fableCandidate
   );
   const currentSession = freshClaudeWindow(currentSessionCandidate);
   const allModels = freshClaudeWindow(allModelsCandidate);
   const claudeDesign = freshClaudeWindow(claudeDesignCandidate);
   const sonnetOnly = freshClaudeWindow(sonnetOnlyCandidate);
+  const fable = freshClaudeWindow(fableCandidate);
   const weeklyCandidate = allModelsCandidate || claudeLimitWindow(findClaudeLimit(rateLimits, ["weekly"]), "Woche", 10080);
   const weekly = freshClaudeWindow(weeklyCandidate);
   if (!allModelsCandidate && weeklyCandidate?.expired) staleWindows.push(weeklyCandidate.label);
@@ -7905,11 +8038,13 @@ function extractFallbackClaudeRateLimits(rateLimits) {
     currentSession,
     allModels,
     claudeDesign,
-    sonnetOnly
+    sonnetOnly,
+    fable,
+    fableRows: fable ? [{ key: "fable", ...fable }] : []
   };
   if (staleWindows.length) limits.staleWindows = staleWindows;
-  limits.rows = buildLimitRows(limits, ["currentSession", "allModels", "claudeDesign", "sonnetOnly"]);
-  if (!fiveHour && !weekly && !claudeDesign && !sonnetOnly && !staleWindows.length) return null;
+  limits.rows = buildClaudeLimitRows(limits, ["currentSession", "allModels", "claudeDesign", "sonnetOnly"]);
+  if (!fiveHour && !weekly && !claudeDesign && !sonnetOnly && !fable && !staleWindows.length) return null;
   return limits;
 }
 
@@ -9469,7 +9604,14 @@ function firstNonEmptyString(...values) {
 
 function normalizeClaudeBrowserUsageSnapshot(payload, fallbackUpdatedAt) {
   if (!payload || typeof payload !== "object") return null;
-  const hasUsageWindows = Boolean(payload.five_hour || payload.seven_day || payload.seven_day_sonnet);
+  const hasUsageWindows = Boolean(
+    payload.five_hour ||
+      payload.seven_day ||
+      payload.seven_day_sonnet ||
+      payload.seven_day_fable ||
+      payload.fable ||
+      sanitizeClaudeScopedUsageLimits(payload.limits).length
+  );
   if (!hasUsageWindows) return null;
   return {
     ...payload,
@@ -9573,9 +9715,23 @@ function buildClaudeBrowserQuotaEvents(snapshot) {
     ["seven_day_opus", "Opus", 10080],
     ["seven_day_oauth_apps", "OAuth Apps", 10080],
     ["seven_day_cowork", "Cowork", 10080],
-    ["seven_day_omelette", "Omelette", 10080]
+    ["seven_day_omelette", "Omelette", 10080],
+    ["seven_day_fable", "Fable", 10080],
+    ["fable", "Fable", 10080]
   ]) {
     const event = quotaWindowEventFromClaudeUsage("claudeCode", windowKey, label, windowMinutes, usage[windowKey], capturedAt, source);
+    if (event) events.push(event);
+  }
+  for (const [index, limit] of sanitizeClaudeScopedUsageLimits(usage.limits).entries()) {
+    const event = quotaWindowEventFromClaudeUsage(
+      "claudeCode",
+      index === 0 ? "fable" : `fable-${index + 1}`,
+      limit.label,
+      limit.window_minutes,
+      limit,
+      capturedAt,
+      source
+    );
     if (event) events.push(event);
   }
   const extraUsage = quotaCreditEventFromClaudeExtraUsage(usage.extra_usage, capturedAt, source);
@@ -9601,7 +9757,7 @@ function buildStatusQuotaEvent(provider, status, reason, source, capturedAt) {
 
 function quotaWindowEventFromClaudeUsage(provider, windowKey, label, windowMinutes, rawWindow, capturedAt, source) {
   if (!rawWindow || typeof rawWindow !== "object") return null;
-  const usedPercent = numberOrNull(rawWindow.utilization ?? rawWindow.used_percentage ?? rawWindow.usedPercent);
+  const usedPercent = numberOrNull(rawWindow.utilization ?? rawWindow.percent ?? rawWindow.used_percentage ?? rawWindow.usedPercent);
   if (usedPercent === null) return null;
   return finalizeQuotaEvent({
     type: "quota_window",
@@ -9865,10 +10021,11 @@ function quotaWindowKey(value) {
 }
 
 function quotaWindowKeyForWindow(rawKey, windowMinutes) {
+  const key = quotaWindowKey(rawKey);
+  if (key === "fable" || key.startsWith("fable_")) return key;
   const minutes = positiveInteger(windowMinutes);
   if (minutes === CODEX_FIVE_HOUR_WINDOW_MINUTES) return "five_hour";
   if (minutes === CODEX_WEEKLY_WINDOW_MINUTES) return "weekly";
-  const key = quotaWindowKey(rawKey);
   if (key === "primary" || key === "secondary") return minutes ? `window_${minutes}m` : "generic";
   return key;
 }

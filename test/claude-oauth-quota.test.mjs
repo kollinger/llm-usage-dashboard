@@ -18,6 +18,7 @@ await assertClaudeOauthCredentialsTryNextCandidate();
 await assertClaudeOauthEndpointUsesTokenScopedUsagePath();
 assertClaudeApiPayloadIsSanitized();
 assertClaudeOauthApiLimitsOverrideStaleStatusline();
+assertClaudeFableScopedLimitsSupportMultipleBuckets();
 
 async function assertClaudeOauthSessionReadsTokenAndOrg() {
   const root = await mkdtemp(path.join(os.tmpdir(), "claude-oauth-"));
@@ -239,12 +240,26 @@ function assertClaudeApiPayloadIsSanitized() {
     accessToken: "must-not-survive",
     five_hour: { utilization: 37, resets_at: Math.floor((Date.now() + 60 * 60 * 1000) / 1000) },
     seven_day: { utilization: 61, resets_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() },
+    limits: [
+      { kind: "weekly_all", percent: 61, resets_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() },
+      {
+        kind: "weekly_scoped",
+        percent: 29,
+        resets_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        scope: { model: { display_name: "Fable" } },
+        accessToken: "must-not-survive"
+      }
+    ],
     unexpected: { raw: "payload" }
   }, "claude_oauth");
 
   assert.equal(usage.source, "claude_oauth");
   assert.equal(usage.five_hour.utilization, 37);
   assert.equal(usage.seven_day.utilization, 61);
+  assert.deepEqual(usage.limits.map((limit) => limit.label), ["Fable"]);
+  assert.equal(usage.limits[0].percent, 29);
+  assert.equal(usage.limits[0].scope, undefined);
+  assert.equal(usage.limits[0].accessToken, undefined);
   assert.equal(usage.accessToken, undefined);
   assert.equal(usage.unexpected, undefined);
 
@@ -276,7 +291,15 @@ function assertClaudeOauthApiLimitsOverrideStaleStatusline() {
   const reset = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
   const usage = _test.normalizeClaudeApiUsagePayload({
     five_hour: { utilization: 12, resets_at: reset },
-    seven_day: { utilization: 44, resets_at: reset }
+    seven_day: { utilization: 44, resets_at: reset },
+    limits: [{
+      kind: "weekly_scoped",
+      group: "weekly",
+      percent: 100,
+      resets_at: reset,
+      scope: { model: { id: null, display_name: "Fable" }, surface: null },
+      is_active: true
+    }]
   }, "claude_oauth");
 
   const resolved = _test.resolveClaudeUsageLimits({
@@ -293,6 +316,52 @@ function assertClaudeOauthApiLimitsOverrideStaleStatusline() {
   assert.equal(resolved.limitSource, "claude_oauth");
   assert.equal(resolved.resolvedLimits.fiveHour.usedPercent, 12);
   assert.equal(resolved.resolvedLimits.weekly.usedPercent, 44);
-  assert.equal(resolved.resolvedLimits.rows.length, 2);
+  assert.equal(resolved.resolvedLimits.fable.usedPercent, 100);
+  assert.equal(resolved.resolvedLimits.rows.length, 3);
+  assert.equal(resolved.resolvedLimits.rows[2].key, "fable");
+  assert.equal(resolved.resolvedLimits.rows[2].label, "Fable");
   assert.equal(resolved.resolvedLimitsUpdatedAt, usage.updatedAt);
+}
+
+function assertClaudeFableScopedLimitsSupportMultipleBuckets() {
+  const reset = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+  const usage = _test.normalizeClaudeApiUsagePayload({
+    limits: [
+      {
+        kind: "weekly_scoped",
+        percent: 35,
+        resets_at: reset,
+        scope: { model: { display_name: "Fable" }, surface: null }
+      },
+      {
+        kind: "weekly_scoped",
+        percent: 72,
+        resets_at: reset,
+        scope: { model: { display_name: "Fable" }, surface: { display_name: "Claude Code" } }
+      },
+      {
+        kind: "weekly_all",
+        percent: 90,
+        resets_at: reset,
+        scope: null
+      }
+    ]
+  }, "claude_browser_sync");
+
+  assert.deepEqual(usage.limits.map((limit) => limit.label), ["Fable", "Fable · Claude Code"]);
+  const resolved = _test.resolveClaudeUsageLimits({
+    apiUsage: usage,
+    apiUsageSource: usage.source,
+    apiUsageUpdatedAt: usage.updatedAt
+  });
+
+  assert.deepEqual(resolved.resolvedLimits.rows.map((row) => row.key), ["fable", "fable-2"]);
+  assert.deepEqual(resolved.resolvedLimits.rows.map((row) => row.usedPercent), [35, 72]);
+  assert.deepEqual(resolved.resolvedLimits.rows.map((row) => row.windowMinutes), [10080, 10080]);
+
+  const alerts = _test.buildNotificationAlerts(
+    { hardLimitPercent: 70, pacingPercent: 200 },
+    { claudeCode: { limits: resolved.resolvedLimits } }
+  );
+  assert(alerts.some((alert) => alert.windowKey === "fable_2" && alert.usedPercent === 72));
 }

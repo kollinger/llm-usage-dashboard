@@ -1469,9 +1469,9 @@ JSON.stringify({
     risingLiveRate.input.value > 0,
   liveRateDecaysToZero: decayedLiveRate.value === 0,
   liveRateKeepsZero: zeroLiveRate.value === 0,
-  fableLimitRowHidden:
-    !claudeWithFableHtml.includes(">Fable<") &&
-    !claudeWithFableHtml.includes("Distinct Fable quota was machine-readable"),
+  fableLimitRowVisible:
+    claudeWithFableHtml.includes(">Fable<") &&
+    claudeWithFableHtml.includes("29% used"),
 	  mixedCurrencyDeltaHidden: !mixedCurrencySubscriptionCard.includes("<dd>Unknown</dd>"),
   sameCurrencyDeltaHidden: !sameCurrencySubscriptionCard.includes("$20.00"),
   duplicateOpenAiSubscriptionDeduped:
@@ -1650,7 +1650,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.liveRateRisesFromSamples, true);
   assert.equal(result.liveRateDecaysToZero, true);
   assert.equal(result.liveRateKeepsZero, true);
-  assert.equal(result.fableLimitRowHidden, true);
+  assert.equal(result.fableLimitRowVisible, true);
   assert.equal(result.mixedCurrencyDeltaHidden, true);
   assert.equal(result.sameCurrencyDeltaHidden, true);
   assert.equal(result.duplicateOpenAiSubscriptionDeduped, true);
