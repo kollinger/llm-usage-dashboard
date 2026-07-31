@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0-preview.12 - 2026-07-31
+
+### Fixed
+
+- Keep the private GPT account-registry permission test strict on macOS and
+  Linux while allowing Windows builds, where POSIX `0600` mode bits are not
+  available.
+
 ## 1.1.0-preview.11 - 2026-07-31
 
 ### Added
