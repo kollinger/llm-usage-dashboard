@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.0-preview.11 - 2026-07-31
+
+### Added
+
+- Track privacy-safe GPT account identities observed through Codex and OpenCode,
+  keep previously seen accounts across sign-ins, and provide a manual account
+  re-scan in the dashboard. OpenCode GPT token totals remain correctly labeled
+  as OpenCode-wide when its database cannot attribute messages to an account.
+- Show separate machine-readable Claude Fable limits from the browser/API or
+  statusline telemetry. Multiple scoped Fable buckets remain separate from the
+  general weekly limit, quota history, and notifications.
+
+### Fixed
+
+- Keep both all-time timelines at their latest data after delayed Electron
+  layout measurement, refreshes, and real dashboard panel moves while still
+  preserving intentional manual history scrolling.
+- Hide empty setup-only providers such as an unused OpenCode GPT database from
+  the normal provider view; they remain available through `Show all`.
+
 ## 1.1.0-preview.10 - 2026-07-31
 
 ### Fixed
