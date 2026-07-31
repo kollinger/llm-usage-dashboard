@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0-preview.10 - 2026-07-31
+
+### Fixed
+
+- Keep both usage-history timelines pinned to the latest data after initial
+  rendering and view changes, including when their scrollable layout settles
+  after the first render frame. Intentional manual scrolling is still preserved
+  during ordinary background refreshes.
+- Restore dark, high-contrast styling for the Refresh and Settings buttons in
+  the dashboard header, including the Refresh loading state.
+
 ## 1.1.0-preview.9 - 2026-07-19
 
 ### Fixed

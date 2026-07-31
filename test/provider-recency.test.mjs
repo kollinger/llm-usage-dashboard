@@ -533,6 +533,7 @@ async function assertFrontendUsageIntelligence() {
   assert.equal(appSource.includes("function renderRing("), false, "legacy quota ring renderer must stay removed");
   const stylesSource = await readFile(path.join(rootDir, "public", "styles.css"), "utf8");
   const indexSource = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
+  assert.match(stylesSource, /\.topbar \.icon-button\s*\{[^}]*background:\s*var\(--ink\)[^}]*color:\s*#fff/su, "header icon buttons must keep their dark high-contrast treatment");
   assert.match(stylesSource, /\.limit-bars\s*\{[^}]*width:\s*100%/su, "Current Usage grid must stretch to provider card width");
   assert.match(stylesSource, /\.limit-bars-grid\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/su, "5h/week grid must use full-width equal columns");
   assert.match(stylesSource, /\.limit-tachometer-svg\s*\{[^}]*max-width:\s*none/su, "tachometer SVG must not keep a narrow fixed max-width");
@@ -549,9 +550,9 @@ async function assertFrontendUsageIntelligence() {
   assert.match(appSource, /overviewHistoryModeToggle\.innerHTML = renderChartModeToggle\(\)/u, "compact history mode toggle must reuse the chart tokens/costs mode");
   assert.match(appSource, /overviewChartScrollToLatest:\s*true/u, "compact history must default to the latest/current time window");
   assert.match(appSource, /function requestChartLatestForRangeChange\(\) \{[\s\S]*?state\.overviewChartScrollToLatest = true/u, "compact history must scroll to the latest slot after range changes");
-  assert.match(appSource, /requestOverviewHistoryLatestForViewChange\(\)/u, "compact history must preserve latest-scroll intent when toggling tokens/costs");
+  assert.match(appSource, /function requestOverviewHistoryLatestForViewChange\(\) \{\s*state\.overviewChartScrollToLatest = true;/u, "compact history must reset to the latest window when toggling tokens/costs");
   assert.match(appSource, /function isOverviewHistoryScrolledToLatest\([\s\S]*?CHART_LATEST_SCROLL_TOLERANCE_PX/u, "compact history must use the latest-scroll tolerance when preserving scroll intent");
-  assert.match(appSource, /function finishOverviewHistoryRenderScroll\([\s\S]*?window\.requestAnimationFrame\([\s\S]*?window\.requestAnimationFrame\([\s\S]*?setOverviewHistoryScroll\(settledScroller,\s*true/u, "compact history must re-apply latest-scroll after layout settles");
+  assert.match(appSource, /function finishOverviewHistoryRenderScroll\([\s\S]*?CHART_SCROLL_SETTLE_ATTEMPTS[\s\S]*?finishOverviewHistoryRenderScroll\(previousScrollLeft,\s*true,\s*renderVersion,\s*attempt \+ 1\)/u, "compact history must keep retrying latest-scroll while layout settles");
   assert.match(appSource, /finishOverviewHistoryRenderScroll\(previousScrollLeft,\s*shouldScrollToLatest,\s*renderVersion\)/u, "compact history render must use the settled latest-scroll helper");
   assert.match(appSource, /renderOverviewHistory\(chartRows\);\s*updateDashboardLayoutMode\(\);/u, "compact history must refresh dashboard handles after becoming visible");
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));

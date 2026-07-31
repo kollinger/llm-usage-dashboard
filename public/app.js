@@ -248,6 +248,7 @@ const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
 const CHART_LATEST_SCROLL_TOLERANCE_PX = 24;
+const CHART_SCROLL_SETTLE_ATTEMPTS = 3;
 const HISTORY_SLOT_MINUTES = 15;
 const HISTORY_SLOT_MS = HISTORY_SLOT_MINUTES * 60 * 1000;
 const HISTORY_SLOT_FILTERS = new Set(["h24", "today"]);
@@ -3946,7 +3947,7 @@ function setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft) 
     : Math.min(maxScrollLeft, Math.max(0, Number(previousScrollLeft) || 0));
 }
 
-function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion) {
+function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion, attempt = 0) {
   window.requestAnimationFrame(() => {
     if (renderVersion !== state.overviewChartRenderVersion) return;
     const scroller = overviewHistoryScroller();
@@ -3957,13 +3958,13 @@ function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, r
       state.overviewChartScrollToLatest = false;
       return;
     }
-    window.requestAnimationFrame(() => {
-      if (renderVersion !== state.overviewChartRenderVersion) return;
-      const settledScroller = overviewHistoryScroller();
-      if (!settledScroller) return;
-      setOverviewHistoryScroll(settledScroller, true, previousScrollLeft);
-      state.overviewChartScrollToLatest = false;
-    });
+    const shouldRetry = attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
+    const hasLayout = Number(scroller.clientWidth || 0) > 0;
+    const reachedLatest = hasLayout && isOverviewHistoryScrolledToLatest(scroller);
+    state.overviewChartScrollToLatest = shouldRetry || !reachedLatest;
+    if (shouldRetry) {
+      finishOverviewHistoryRenderScroll(previousScrollLeft, true, renderVersion, attempt + 1);
+    }
   });
 }
 
@@ -7643,7 +7644,7 @@ function renderStackedHistoryChart({
       </div>
     </div>
   `;
-  finishChartRenderScroll(scrollState.previousScrollLeft, scrollState.scrollToLatest);
+  finishChartRenderScroll(scrollState.previousScrollLeft, scrollState.scrollToLatest, chartScroller());
 }
 
 function shouldScrollChartToLatest(previousScrollLeft) {
@@ -7658,10 +7659,11 @@ function captureChartScrollState() {
   };
 }
 
-function finishChartRenderScroll(previousScrollLeft, scrollToLatest) {
+function finishChartRenderScroll(previousScrollLeft, scrollToLatest, renderedScroller = chartScroller(), attempt = 0) {
   window.requestAnimationFrame(() => {
-    const scroller = chartScroller();
-    if (scroller !== els.chart) scroller.addEventListener("scroll", handleChartScroll, { passive: true });
+    if (chartScroller() !== renderedScroller) return;
+    const scroller = renderedScroller;
+    if (attempt === 0 && scroller !== els.chart) scroller.addEventListener("scroll", handleChartScroll, { passive: true });
     const maxScrollLeft = chartMaxScrollLeft();
     state.chartProgrammaticScroll = true;
     try {
@@ -7670,13 +7672,24 @@ function finishChartRenderScroll(previousScrollLeft, scrollToLatest) {
       state.chartProgrammaticScroll = false;
     }
     state.chartRendered = true;
-    state.chartScrollToLatest = false;
     updateChartManualScrollState();
+    if (!scrollToLatest) {
+      state.chartScrollToLatest = false;
+      return;
+    }
+    const shouldRetry = attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
+    const hasLayout = Number(scroller.clientWidth || 0) > 0;
+    const reachedLatest = hasLayout && isChartScrolledToLatest(scroller.scrollLeft);
+    state.chartScrollToLatest = shouldRetry || !reachedLatest;
+    if (shouldRetry) {
+      finishChartRenderScroll(previousScrollLeft, true, renderedScroller, attempt + 1);
+    }
   });
 }
 
 function requestChartLatestForViewChange() {
-  state.chartScrollToLatest = !state.chartUserScrolledAwayFromLatest;
+  state.chartUserScrolledAwayFromLatest = false;
+  state.chartScrollToLatest = true;
 }
 
 function requestChartLatestForRangeChange() {
@@ -7686,11 +7699,7 @@ function requestChartLatestForRangeChange() {
 }
 
 function requestOverviewHistoryLatestForViewChange() {
-  const scroller = overviewHistoryScroller();
-  state.overviewChartScrollToLatest =
-    !state.overviewChartRendered ||
-    !scroller ||
-    isOverviewHistoryScrolledToLatest(scroller);
+  state.overviewChartScrollToLatest = true;
 }
 
 function handleChartScroll() {
