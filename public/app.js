@@ -2127,12 +2127,17 @@ function applyDashboardSectionOrder(nextOrder = state.dashboardSectionOrder, { p
   const panelsById = new Map(
     Array.from(els.dashboardLayout.querySelectorAll(":scope > [data-dashboard-panel-id]")).map((panel) => [panel.dataset.dashboardPanelId, panel])
   );
-  for (const id of state.dashboardSectionOrder) {
+  const overviewScroller = overviewHistoryScroller();
+  const overviewScrollLeft = overviewScroller?.scrollLeft ?? null;
+  for (const [index, id] of state.dashboardSectionOrder.entries()) {
     const panel = panelsById.get(id);
-    if (panel) {
-      els.dashboardLayout.appendChild(panel);
-    }
+    if (!panel) continue;
+    const currentPanel = els.dashboardLayout.querySelectorAll(":scope > [data-dashboard-panel-id]")[index] || null;
+    if (currentPanel === panel) continue;
+    if (currentPanel) els.dashboardLayout.insertBefore(panel, currentPanel);
+    else els.dashboardLayout.appendChild(panel);
   }
+  if (overviewScroller && overviewScrollLeft !== null) overviewScroller.scrollLeft = overviewScrollLeft;
   if (persist) saveDashboardSectionOrder();
   updateDashboardLayoutMode();
 }
@@ -5064,7 +5069,7 @@ function providerHasUsage(provider) {
   const hasMeaningfulLimitTelemetry = allowLimitTelemetry && providerHasMeaningfulLimitTelemetry(provider);
   const needsAttention = provider.status === "error" || (allowLimitTelemetry && Boolean(provider.limitAlert));
   const configuredApi = provider.status === "live" && (provider.id === "anthropic" || provider.id === "openai");
-  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi || Boolean(provider.configuredSource);
+  return hasActiveUsage || hasMeaningfulLimitTelemetry || needsAttention || configuredApi;
 }
 
 function providerHasRecentUsage(provider, windowMs) {

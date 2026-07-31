@@ -150,6 +150,40 @@ state.overviewChartScrollToLatest = false;
 requestOverviewHistoryLatestForViewChange();
 const overviewViewResetRequested = state.overviewChartScrollToLatest;
 
+const layoutPanels = [makeLayoutPanel("overview-history"), makeLayoutPanel("overview")];
+const layoutMoveCalls = [];
+els.dashboardLayout = {
+  classList: { toggle() {} },
+  querySelector(selector) {
+    const match = selector.match(/data-dashboard-panel-id="([^"]+)"/u);
+    return match ? layoutPanels.find((panel) => panel.dataset.dashboardPanelId === match[1]) || null : null;
+  },
+  querySelectorAll(selector) {
+    return selector.startsWith(":scope > [data-dashboard-panel-id]") ? layoutPanels.slice() : [];
+  },
+  insertBefore(panel, reference) {
+    moveLayoutPanel(panel, layoutPanels.indexOf(reference));
+  },
+  appendChild(panel) {
+    moveLayoutPanel(panel, layoutPanels.length);
+  }
+};
+state.layoutEditMode = false;
+state.dashboardSectionOrder = ["overview-history", "overview"];
+overviewScroller.scrollLeft = 1409;
+applyDashboardSectionOrder();
+const stableLayoutRefresh = {
+  order: layoutPanels.map((panel) => panel.dataset.dashboardPanelId),
+  moves: layoutMoveCalls.length,
+  scrollLeft: overviewScroller.scrollLeft
+};
+applyDashboardSectionOrder(["overview", "overview-history"]);
+const reorderedLayout = {
+  order: layoutPanels.map((panel) => panel.dataset.dashboardPanelId),
+  moves: layoutMoveCalls.length,
+  scrollLeft: overviewScroller.scrollLeft
+};
+
 JSON.stringify({
   initial,
   manualAway,
@@ -164,6 +198,8 @@ JSON.stringify({
   lateOverviewBeforeLayout,
   lateOverviewSettled,
   overviewViewResetRequested,
+  stableLayoutRefresh,
+  reorderedLayout,
   totalProviderSegments,
   localOnlySegments,
   codexColor: chartSourceColor("codex"),
@@ -180,6 +216,25 @@ function chartSnapshot() {
     scrollToLatest: state.chartScrollToLatest,
     rendered: state.chartRendered
   };
+}
+
+function makeLayoutPanel(id) {
+  return {
+    dataset: { dashboardPanelId: id },
+    hidden: false,
+    querySelector() { return null; },
+    setAttribute() {},
+    removeAttribute() {}
+  };
+}
+
+function moveLayoutPanel(panel, targetIndex) {
+  const currentIndex = layoutPanels.indexOf(panel);
+  if (currentIndex >= 0) layoutPanels.splice(currentIndex, 1);
+  const adjustedIndex = currentIndex >= 0 && currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
+  layoutPanels.splice(Math.max(0, Math.min(adjustedIndex, layoutPanels.length)), 0, panel);
+  layoutMoveCalls.push(panel.dataset.dashboardPanelId);
+  overviewScroller.scrollLeft = 0;
 }
 
 function flushNextFrame() {
@@ -263,6 +318,12 @@ assert.equal(result.lateOverviewBeforeLayout.scrollToLatest, true);
 assert.equal(result.lateOverviewSettled.scrollLeft, result.lateOverviewSettled.maxScrollLeft);
 assert.equal(result.lateOverviewSettled.scrollToLatest, false);
 assert.equal(result.overviewViewResetRequested, true);
+assert.deepEqual(result.stableLayoutRefresh.order, ["overview-history", "overview"]);
+assert.equal(result.stableLayoutRefresh.moves, 0);
+assert.equal(result.stableLayoutRefresh.scrollLeft, 1409);
+assert.deepEqual(result.reorderedLayout.order, ["overview", "overview-history"]);
+assert.equal(result.reorderedLayout.moves, 1);
+assert.equal(result.reorderedLayout.scrollLeft, 1409);
 
 assert.deepEqual(result.totalProviderSegments.map((segment) => segment.sourceId), ["codex", "claudeCode"]);
 assert.deepEqual(

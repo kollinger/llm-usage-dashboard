@@ -159,6 +159,14 @@ state.usage = {
     }
   },
   ollama: {},
+  openCode: {
+    status: "empty",
+    totals: {
+      allTime: { totalTokens: 0 },
+      last24h: { totalTokens: 0 }
+    },
+    source: { hasConfiguredSource: true }
+  },
   openai: {},
   glm: {},
   gemini: {}
@@ -277,14 +285,16 @@ JSON.stringify({
   assert.equal(result.recentFullCopilot, true);
   assert.equal(result.neutralSpark, false);
   assert.equal(result.activeCodexLimit, true);
-  assert.equal(result.configuredGlmZero, true);
+  assert.equal(result.configuredGlmZero, false);
   assert(result.activeIds.includes("codex"));
   assert(!result.activeIds.includes("copilot"));
   assert(!result.activeIds.includes("codexSpark"));
   assert(!result.activeIds.includes("glm"));
+  assert(!result.activeIds.includes("openCode"));
   assert(result.allIds.includes("copilot"));
   assert(result.allIds.includes("codexSpark"));
   assert(result.allIds.includes("glm"));
+  assert(result.allIds.includes("openCode"));
   assert.equal(result.showAllNoticeVisible, true);
   assert.match(result.showAllNoticeHtml, /All providers view/);
   assert.match(result.showAllNoticeHtml, /Inactive, empty, setup-only, and historical provider cards/);
