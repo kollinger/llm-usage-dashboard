@@ -26,6 +26,8 @@ const state = {
   overviewChartRendered: false,
   overviewChartScrollToLatest: true,
   overviewChartRenderVersion: 0,
+  overviewChartExpectedOverflow: false,
+  overviewChartResizeObserver: null,
   chartRendered: false,
   chartScrollToLatest: true,
   chartUserScrolledAwayFromLatest: false,
@@ -3567,7 +3569,9 @@ function renderLocked() {
   }
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
+  clearOverviewHistoryResizeObserver();
   state.overviewChartRendered = false;
+  state.overviewChartExpectedOverflow = false;
   state.chartRendered = false;
   state.layoutEditMode = true;
   state.keyboardDragSectionId = null;
@@ -4069,6 +4073,38 @@ function setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft) 
     : Math.min(maxScrollLeft, Math.max(0, Number(previousScrollLeft) || 0));
 }
 
+function clearOverviewHistoryResizeObserver() {
+  state.overviewChartResizeObserver?.disconnect();
+  state.overviewChartResizeObserver = null;
+}
+
+function observeOverviewHistoryLayout(scroller, renderVersion) {
+  clearOverviewHistoryResizeObserver();
+  if (typeof ResizeObserver !== "function") return;
+  const observer = new ResizeObserver(() => {
+    if (
+      state.overviewChartResizeObserver !== observer ||
+      renderVersion !== state.overviewChartRenderVersion ||
+      scroller !== overviewHistoryScroller() ||
+      !state.overviewChartScrollToLatest
+    ) {
+      if (state.overviewChartResizeObserver === observer) clearOverviewHistoryResizeObserver();
+      return;
+    }
+    setOverviewHistoryScroll(scroller, true, 0);
+    const hasLayout = Number(scroller.clientWidth || 0) > 0;
+    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
+    if (hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller)) {
+      state.overviewChartScrollToLatest = false;
+      clearOverviewHistoryResizeObserver();
+    }
+  });
+  state.overviewChartResizeObserver = observer;
+  observer.observe(scroller);
+  const canvas = scroller.querySelector?.(".overview-history-canvas");
+  if (canvas) observer.observe(canvas);
+}
+
 function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion, attempt = 0) {
   window.requestAnimationFrame(() => {
     if (renderVersion !== state.overviewChartRenderVersion) return;
@@ -4078,14 +4114,20 @@ function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, r
     state.overviewChartRendered = true;
     if (!scrollToLatest) {
       state.overviewChartScrollToLatest = false;
+      clearOverviewHistoryResizeObserver();
       return;
     }
-    const shouldRetry = attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
     const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const reachedLatest = hasLayout && isOverviewHistoryScrolledToLatest(scroller);
-    state.overviewChartScrollToLatest = shouldRetry || !reachedLatest;
+    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
+    const reachedLatest = hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller);
+    const shouldRetry = !reachedLatest && attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
+    state.overviewChartScrollToLatest = !reachedLatest;
     if (shouldRetry) {
       finishOverviewHistoryRenderScroll(previousScrollLeft, true, renderVersion, attempt + 1);
+    } else if (!reachedLatest) {
+      observeOverviewHistoryLayout(scroller, renderVersion);
+    } else {
+      clearOverviewHistoryResizeObserver();
     }
   });
 }
@@ -4102,12 +4144,14 @@ function renderOverviewHistory(daily) {
     ? costRows.filter((row) => Number(row.totalEur || 0) > 0)
     : inputRows.filter((day) => Number(day.totalTokens || 0) > 0);
   if (!activeRows.length) {
+    clearOverviewHistoryResizeObserver();
     els.overviewHistoryPanel.hidden = true;
     els.overviewHistoryFilterBar.innerHTML = "";
     els.overviewHistoryModeToggle.innerHTML = "";
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
+    state.overviewChartExpectedOverflow = false;
     return;
   }
 
@@ -4139,6 +4183,7 @@ function renderOverviewHistory(daily) {
     ? Math.max(barWidth + barGap, plotViewportWidth / Math.max(visibleDays, 1))
     : barWidth + barGap;
   const width = Math.max(plotViewportWidth, rows.length * barStep);
+  state.overviewChartExpectedOverflow = width > plotViewportWidth;
   const barX = (index) => (isSlotSeries
     ? index * barStep + Math.max(0, (barStep - barWidth) / 2)
     : index * barStep);
@@ -4149,6 +4194,7 @@ function renderOverviewHistory(daily) {
     !state.overviewChartRendered ||
     !previousScroller ||
     isOverviewHistoryScrolledToLatest(previousScroller, previousScrollLeft);
+  clearOverviewHistoryResizeObserver();
   const timeline = isSlotSeries
     ? renderHistorySlotTimeline({
       rows,

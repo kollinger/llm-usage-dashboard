@@ -125,6 +125,26 @@ const delayedOverviewSettled = {
   maxScrollLeft: overviewHistoryMaxScrollLeft(overviewScroller),
   scrollToLatest: state.overviewChartScrollToLatest
 };
+
+state.overviewChartRendered = false;
+state.overviewChartScrollToLatest = true;
+overviewScroller.scrollLeft = 0;
+overviewScroller.scrollWidth = 0;
+overviewScroller.clientWidth = 0;
+renderOverviewHistory(daily);
+flushFrames();
+const lateOverviewBeforeLayout = {
+  scrollLeft: overviewScroller.scrollLeft,
+  scrollToLatest: state.overviewChartScrollToLatest
+};
+overviewScroller.clientWidth = 900;
+overviewScroller.scrollWidth = 1800;
+flushResizeObservers();
+const lateOverviewSettled = {
+  scrollLeft: overviewScroller.scrollLeft,
+  maxScrollLeft: overviewHistoryMaxScrollLeft(overviewScroller),
+  scrollToLatest: state.overviewChartScrollToLatest
+};
 overviewScroller.scrollLeft = 0;
 state.overviewChartScrollToLatest = false;
 requestOverviewHistoryLatestForViewChange();
@@ -141,6 +161,8 @@ JSON.stringify({
   delayedChartSettled,
   delayedOverviewBeforeLayout,
   delayedOverviewSettled,
+  lateOverviewBeforeLayout,
+  lateOverviewSettled,
   overviewViewResetRequested,
   totalProviderSegments,
   localOnlySegments,
@@ -236,6 +258,10 @@ assert.equal(result.delayedOverviewBeforeLayout.scrollLeft, 0);
 assert.equal(result.delayedOverviewBeforeLayout.scrollToLatest, true);
 assert.equal(result.delayedOverviewSettled.scrollLeft, result.delayedOverviewSettled.maxScrollLeft);
 assert.equal(result.delayedOverviewSettled.scrollToLatest, false);
+assert.equal(result.lateOverviewBeforeLayout.scrollLeft, 0);
+assert.equal(result.lateOverviewBeforeLayout.scrollToLatest, true);
+assert.equal(result.lateOverviewSettled.scrollLeft, result.lateOverviewSettled.maxScrollLeft);
+assert.equal(result.lateOverviewSettled.scrollToLatest, false);
 assert.equal(result.overviewViewResetRequested, true);
 
 assert.deepEqual(result.totalProviderSegments.map((segment) => segment.sourceId), ["codex", "claudeCode"]);
@@ -265,6 +291,23 @@ assert.deepEqual(result.preservedPageScroll.calls, [
 
 function createAppContext() {
   const elements = new Map();
+  const resizeObservers = [];
+  class ResizeObserver {
+    constructor(callback) {
+      this.callback = callback;
+      this.connected = true;
+      resizeObservers.push(this);
+    }
+    observe() {}
+    disconnect() {
+      this.connected = false;
+    }
+  }
+  function flushResizeObservers() {
+    for (const observer of resizeObservers) {
+      if (observer.connected) observer.callback([]);
+    }
+  }
   function makeElement(id = "") {
     let html = "";
     const element = {
@@ -355,6 +398,8 @@ function createAppContext() {
     document,
     navigator: { language: "en-US", languages: ["en-US"], platform: "Linux x86_64" },
     window: { lucide: null, requestAnimationFrame: (fn) => fn(), Notification: undefined, focus() {} },
+    ResizeObserver,
+    flushResizeObservers,
     localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
     setTimeout,
     clearTimeout,
