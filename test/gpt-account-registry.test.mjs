@@ -95,7 +95,9 @@ async function assertPrivateAccountRegistry(dataDir) {
   for (const secret of [accessToken, refreshToken, "access-secret-789", "account-secret-123", "reinhard@example.com", "/private/opencode/profile-a", "/private/codex/profile-b", "/private/codex/home"]) {
     assert(!stored.includes(secret), `registry must not persist secret or raw identity material: ${secret}`);
   }
-  assert.equal((await stat(path.join(dataDir, "gpt-account-registry.json"))).mode & 0o777, 0o600);
+  if (process.platform !== "win32") {
+    assert.equal((await stat(path.join(dataDir, "gpt-account-registry.json"))).mode & 0o777, 0o600);
+  }
 
   const secondAccount = createGptAccountObservation({
     sourceId: "codex",
