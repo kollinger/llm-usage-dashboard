@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0-preview.13 - 2026-08-01
+
+### Added
+
+- Read the current 5-hour and weekly ChatGPT quota separately for every
+  configured Codex home and reachable OpenCode OpenAI OAuth profile.
+- Show quota coverage across active GPT accounts and mark an account's limit as
+  unavailable when its current quota cannot be read.
+
+### Improved
+
+- Keep per-account quota probing read-only and privacy-safe: credentials and raw
+  provider responses are never written to the local account registry.
+
 ## 1.1.0-preview.12 - 2026-07-31
 
 ### Fixed
