@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -24,6 +24,7 @@ const tmp = await mkdtemp(path.join(os.tmpdir(), "gpt-account-registry-"));
 
 try {
   await assertPrivateAccountRegistry(tmp);
+  await assertPerAccountQuotaProbes(tmp);
   await assertOpenCodeGptUsage(tmp);
   await assertFrontendContract();
 } finally {
@@ -112,8 +113,162 @@ async function assertPrivateAccountRegistry(dataDir) {
   const publicRegistry = publicGptAccountRegistry(registry);
   assert.equal(publicRegistry.accountCount, 2);
   assert.equal(publicRegistry.activeAccountCount, 1);
+  assert.equal(publicRegistry.quotaAccountCount, 0);
+  assert.equal(publicRegistry.quotaMissingAccountCount, 1);
   assert.equal(publicRegistry.accounts.find((account) => account.label.endsWith(".com"))?.active, false);
   assert.equal(publicRegistry.accounts.find((account) => account.label.endsWith(".net"))?.active, true);
+}
+
+async function assertPerAccountQuotaProbes(tmpDir) {
+  const codexHomes = [path.join(tmpDir, "codex-a"), path.join(tmpDir, "codex-b")];
+  const codexAccounts = new Map();
+  for (const [index, codexHome] of codexHomes.entries()) {
+    const account = {
+      email: `account-${index + 1}@example.test`,
+      accountId: `account-secret-${index + 1}`,
+      planType: index ? "team" : "pro",
+      usedPercent: index ? 62 : 18
+    };
+    codexAccounts.set(codexHome, account);
+    await mkdir(codexHome, { recursive: true });
+    await writeFile(path.join(codexHome, "auth.json"), JSON.stringify({
+      auth_mode: "chatgpt",
+      tokens: {
+        id_token: fakeJwt({
+          email: account.email,
+          "https://api.openai.com/auth": {
+            chatgpt_account_id: account.accountId,
+            chatgpt_plan_type: account.planType
+          }
+        }),
+        access_token: "not-used-by-the-mock",
+        account_id: account.accountId
+      }
+    }));
+  }
+
+  const closedHomes = [];
+  const codexResult = await _test.readCodexGptAccountObservation({
+    codexHomes,
+    refreshToken: true,
+    clientFactory: async (codexHome) => {
+      const account = codexAccounts.get(codexHome);
+      return {
+        closeWhenDone: true,
+        client: {
+          async request(method) {
+            if (method === "account/read") {
+              return { account: { type: "chatgpt", email: account.email, planType: account.planType } };
+            }
+            if (method === "account/usage/read") {
+              return { summary: { lifetimeTokens: account.usedPercent * 1_000 } };
+            }
+            if (method === "account/rateLimits/read") {
+              return {
+                rateLimitsByLimitId: {
+                  codex: {
+                    limitId: "codex",
+                    planType: account.planType,
+                    primary: {
+                      usedPercent: account.usedPercent,
+                      windowDurationMins: 300,
+                      resetsAt: "2026-08-01T20:00:00.000Z"
+                    },
+                    secondary: {
+                      usedPercent: account.usedPercent + 10,
+                      windowDurationMins: 10080,
+                      resetsAt: "2026-08-08T20:00:00.000Z"
+                    }
+                  }
+                }
+              };
+            }
+            throw new Error(`Unexpected Codex request: ${method}`);
+          },
+          close() {
+            closedHomes.push(codexHome);
+          }
+        }
+      };
+    }
+  });
+  assert.equal(codexResult.status, "ready");
+  assert.equal(codexResult.profilesScanned, 2);
+  assert.equal(codexResult.quotaAvailable, 2);
+  assert.equal(codexResult.quotaUnavailable, 0);
+  assert.equal(new Set(codexResult.observations.filter((entry) => entry.limits?.rows?.length).map((entry) => entry.id)).size, 2);
+  assert.equal(closedHomes.length, 2);
+
+  const openCodeDir = path.join(tmpDir, "opencode-quota");
+  const openCodeToken = fakeJwt({
+    email: "opencode@example.test",
+    "https://api.openai.com/auth": {
+      chatgpt_account_id: "opencode-account-secret",
+      chatgpt_plan_type: "pro"
+    }
+  });
+  await mkdir(openCodeDir, { recursive: true });
+  await writeFile(path.join(openCodeDir, "auth.json"), JSON.stringify({
+    openai: {
+      type: "oauth",
+      access: openCodeToken,
+      refresh: "must-never-be-sent",
+      accountId: "opencode-account-secret"
+    }
+  }));
+  const openCodeSources = [{
+    id: "opencode-quota-test",
+    providerId: "openCode",
+    paths: [{ role: "opencode_data_dir", path: openCodeDir, kind: "directory" }]
+  }];
+  const fetchImpl = async (url, options) => {
+    assert.equal(url, "https://quota.test/usage");
+    assert.equal(options.method, "GET");
+    assert.equal(options.headers.authorization, `Bearer ${openCodeToken}`);
+    assert.equal(options.headers["chatgpt-account-id"], "opencode-account-secret");
+    assert.equal(JSON.stringify(options).includes("must-never-be-sent"), false);
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return {
+          plan_type: "pro",
+          rate_limit: {
+            primary_window: {
+              used_percent: 22,
+              limit_window_seconds: 18_000,
+              reset_at: 1_775_252_800
+            },
+            secondary_window: {
+              used_percent: 47,
+              limit_window_seconds: 604_800,
+              reset_at: 1_775_857_600
+            }
+          }
+        };
+      }
+    };
+  };
+  const openCodeResult = await _test.readOpenCodeGptAccountObservations(openCodeSources, {
+    fetchImpl,
+    usageUrl: "https://quota.test/usage"
+  });
+  assert.equal(openCodeResult.status, "ready");
+  assert.equal(openCodeResult.quotaAvailable, 1);
+  assert.equal(openCodeResult.quotaUnavailable, 0);
+  assert.equal(openCodeResult.observations[0]?.limits?.rows?.length, 2);
+  assert.equal(openCodeResult.observations[0]?.limits?.rows?.[0]?.remainingPercent, 78);
+  assert.equal(openCodeResult.observations[0]?.limits?.rows?.[1]?.remainingPercent, 53);
+  assert.equal(openCodeResult.observations[0]?.dataQuality, "account_quota_api");
+
+  const unavailableResult = await _test.readOpenCodeGptAccountObservations(openCodeSources, {
+    fetchImpl: async () => ({ ok: false, status: 401 }),
+    usageUrl: "https://quota.test/usage"
+  });
+  assert.equal(unavailableResult.status, "partial");
+  assert.equal(unavailableResult.quotaAvailable, 0);
+  assert.equal(unavailableResult.quotaUnavailable, 1);
+  assert.equal(unavailableResult.observations[0]?.limits, null);
 }
 
 async function assertOpenCodeGptUsage(tmpDir) {
@@ -163,6 +318,9 @@ async function assertFrontendContract() {
   assert.match(html, /data-dashboard-panel-id="gpt-accounts"/);
   assert.match(app, /\/api\/gpt-accounts\/recheck/);
   assert.match(app, /normalizeLocalProvider\("openCode", usage\.openCode\)/);
+  assert.match(app, /gptAccountLimitSource/);
+  assert.match(app, /quotaAccountCount/);
+  assert.match(app, /liveMetrics\.unavailable/);
 
   const i18nDir = path.join(rootDir, "public", "i18n");
   const files = (await import("node:fs/promises")).readdir(i18nDir);

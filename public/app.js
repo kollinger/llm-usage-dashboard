@@ -3677,11 +3677,17 @@ function renderGptAccounts(registry) {
     els.gptAccountsMeta.textContent = state.gptAccountScanMessage;
     els.gptAccountsMeta.dataset.status = scanStatus;
   } else if (registry?.lastScannedAt) {
-    els.gptAccountsMeta.textContent = t("gptAccounts.summary", {
+    const summary = t("gptAccounts.summary", {
       active: activeCount,
       count: accounts.length,
       time: formatRelativeUpdatedAt(registry.lastScannedAt)
     });
+    const quotaCount = Number.isFinite(Number(registry?.quotaAccountCount))
+      ? Number(registry.quotaAccountCount)
+      : accounts.filter((account) => account.active && gptAccountLimitSource(account.sources, { currentOnly: true })).length;
+    els.gptAccountsMeta.textContent = activeCount
+      ? `${summary} · ${t("gptAccounts.limit")}: ${quotaCount}/${activeCount}`
+      : summary;
     els.gptAccountsMeta.dataset.status = scanStatus;
   } else {
     els.gptAccountsMeta.textContent = t("gptAccounts.notScanned");
@@ -3704,8 +3710,9 @@ function renderGptAccount(account) {
   const sources = Array.isArray(account.sources) ? account.sources : [];
   const activeSources = sources.filter((source) => source.active);
   const codexSource = sources.find((source) => source.id === "codex");
+  const limitSource = gptAccountLimitSource(sources, { currentOnly: account.active });
   const lifetimeTokens = codexSource?.usage?.summary?.lifetimeTokens;
-  const limits = (codexSource?.limits?.rows || []).slice(0, 2);
+  const limits = (limitSource?.limits?.rows || []).slice(0, 2);
   const sourceBadges = sources.map((source) => `
     <span class="gpt-account-source${source.active ? " is-active" : ""}">
       ${escapeHtml(t(`gptAccounts.sources.${source.id}`, {}, source.id))}
@@ -3716,8 +3723,14 @@ function renderGptAccount(account) {
     metrics.push(`<span><strong>${escapeHtml(formatTokens(lifetimeTokens))}</strong>${escapeHtml(t("gptAccounts.lifetimeTokens"))}</span>`);
   }
   for (const limit of limits) {
-    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(limit.label || t("gptAccounts.limit"))}</span>`);
+    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(gptAccountLimitLabel(limit))}</span>`);
   }
+  if (!limits.length) {
+    metrics.push(`<span><strong>${escapeHtml(t("liveMetrics.unavailable"))}</strong>${escapeHtml(t("gptAccounts.limit"))}</span>`);
+  }
+  const limitFreshness = limitSource?.limitsUpdatedAt
+    ? ` · ${escapeHtml(t("providers.freshness.limits", { time: formatRelativeUpdatedAt(limitSource.limitsUpdatedAt) }))}`
+    : "";
   return `
     <article class="gpt-account-card${account.active ? " is-active" : " is-historical"}">
       <div class="gpt-account-main">
@@ -3736,10 +3749,31 @@ function renderGptAccount(account) {
         ${activeSources.length ? ` · ${escapeHtml(t(
           activeSources.length === 1 ? "gptAccounts.activeSourceCountOne" : "gptAccounts.activeSourceCount",
           { count: activeSources.length }
-        ))}` : ""}
+        ))}` : ""}${limitFreshness}
       </div>
     </article>
   `;
+}
+
+function gptAccountLimitLabel(limit) {
+  if (limit?.key === "fiveHour") return t("summary.fiveHourOpen");
+  if (limit?.key === "weekly") return t("summary.weeklyOpen");
+  return limit?.label || t("gptAccounts.limit");
+}
+
+function gptAccountLimitSource(sources, options = {}) {
+  return (Array.isArray(sources) ? sources : [])
+    .filter((source) => (
+      (source?.limits?.rows || []).length > 0 &&
+      (!options.currentOnly || (source.active && source.quotaStatus === "ready"))
+    ))
+    .sort((left, right) => {
+      const activeDelta = Number(Boolean(right.active)) - Number(Boolean(left.active));
+      if (activeDelta) return activeDelta;
+      const timeDelta = Date.parse(right.limitsUpdatedAt || "") - Date.parse(left.limitsUpdatedAt || "");
+      if (Number.isFinite(timeDelta) && timeDelta) return timeDelta;
+      return String(left.id || "").localeCompare(String(right.id || ""));
+    })[0] || null;
 }
 
 async function recheckGptAccounts() {

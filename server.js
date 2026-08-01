@@ -28,6 +28,7 @@ const {
   createGptAccountObservation,
   mergeGptAccountRegistry,
   openCodeAccountObservationsFromAuth,
+  parseJwtClaims,
   publicGptAccountRegistry,
   readGptAccountRegistry,
   writeGptAccountRegistry
@@ -116,6 +117,7 @@ const CODEX_LIVE_RATE_LIMITS_ENABLED = parseBoolean(process.env.CODEX_LIVE_RATE_
 const CODEX_LIVE_RATE_LIMITS_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_CACHE_SECONDS", 15);
 const CODEX_LIVE_RATE_LIMITS_IDLE_CACHE_MS = envMs("CODEX_LIVE_RATE_LIMITS_IDLE_CACHE_SECONDS", 10 * 60);
 const CODEX_APP_SERVER_TIMEOUT_MS = envMs("CODEX_APP_SERVER_TIMEOUT_SECONDS", 5);
+const GPT_ACCOUNT_QUOTA_TIMEOUT_MS = envMs("GPT_ACCOUNT_QUOTA_TIMEOUT_SECONDS", 10);
 const CODEX_APP_SERVER_IDLE_SHUTDOWN_MS = envMs("CODEX_APP_SERVER_IDLE_SHUTDOWN_SECONDS", 30 * 60);
 const COPILOT_LIVE_QUOTA_ENABLED = parseBoolean(process.env.COPILOT_LIVE_QUOTA_ENABLED ?? "true");
 const COPILOT_LIVE_QUOTA_CACHE_MS = envMs("COPILOT_LIVE_QUOTA_CACHE_SECONDS", 30);
@@ -126,6 +128,7 @@ const GLM_CODING_PLAN_QUOTA_CACHE_MS = envMs("GLM_CODING_PLAN_QUOTA_CACHE_SECOND
 const GLM_CODING_PLAN_QUOTA_TIMEOUT_MS = envMs("GLM_CODING_PLAN_QUOTA_TIMEOUT_SECONDS", 5);
 const SOURCE_DIAGNOSTICS_CACHE_MS = envMs("SOURCE_DIAGNOSTICS_CACHE_SECONDS", 30);
 const GPT_ACCOUNT_SCAN_CACHE_MS = envMs("GPT_ACCOUNT_SCAN_CACHE_SECONDS", 60);
+const CHATGPT_CODEX_USAGE_URL = "https://chatgpt.com/backend-api/wham/usage";
 const SUPPORT_REPORT_SCHEMA_VERSION = 1;
 const SUPPORT_REPORT_PROVIDER_IDS = ["claudeCode", "codex", "openCode", "copilot", "glm", "gemini", "ollama"];
 const SUPPORT_REPORT_PROVIDER_LABELS = {
@@ -8283,7 +8286,9 @@ async function readGptAccounts(options = {}) {
       sources: Object.fromEntries(Object.entries(sourceResults).map(([id, result]) => [id, {
         status: result.status,
         observations: result.observations.length,
-        profilesScanned: result.profilesScanned
+        profilesScanned: result.profilesScanned,
+        quotaAvailable: result.quotaAvailable,
+        quotaUnavailable: result.quotaUnavailable
       }]))
     };
     const current = await readGptAccountRegistry(DATA_DIR);
@@ -8292,69 +8297,135 @@ async function readGptAccounts(options = {}) {
   }, { force: options.force });
 }
 
-async function readCodexGptAccountObservation({ refreshToken = false } = {}) {
+async function readCodexGptAccountObservation(options = {}) {
+  const refreshToken = Boolean(options.refreshToken);
+  const codexHomes = uniquePaths(options.codexHomes || CODEX_HOMES);
   const observations = [];
   let profilesScanned = 0;
   let readErrors = 0;
-  try {
-    const client = await getCodexAppServer();
-    const response = await client.request("account/read", { refreshToken: Boolean(refreshToken) });
-    const account = response?.account;
-    if (account && ["chatgpt", "chatgptAuthTokens"].includes(String(account.type || ""))) {
-      const [usageResult, rateLimitsResult] = await Promise.allSettled([
-        client.request("account/usage/read", undefined),
-        client.request("account/rateLimits/read", undefined)
-      ]);
-      const liveLimits = rateLimitsResult.status === "fulfilled"
-        ? normalizeCodexLiveRateLimits(rateLimitsResult.value)
-        : null;
-      const observation = createGptAccountObservation({
-        sourceId: "codex",
-        sourceRef: CODEX_HOME,
-        email: account.email,
-        planType: account.planType,
-        seenAt: new Date().toISOString(),
-        usage: usageResult.status === "fulfilled" ? usageResult.value : null,
-        limits: codexRateLimitsFromLive(liveLimits?.codex, "Codex"),
-        limitsUpdatedAt: liveLimits?.source?.updatedAt,
-        dataQuality: usageResult.status === "fulfilled" ? "account_api" : "identity_and_limits"
-      });
-      if (observation) observations.push(observation);
-    }
-  } catch {
-    readErrors += 1;
-  }
+  let quotaAvailable = 0;
+  let quotaUnavailable = 0;
 
-  for (const codexHome of CODEX_HOMES) {
+  for (const codexHome of codexHomes) {
     const authFile = path.join(codexHome, "auth.json");
+    let authObservations = [];
     try {
       const stat = await fsp.stat(authFile);
       if (!stat.isFile() || stat.size > 5 * 1024 * 1024) {
         if (stat.size > 5 * 1024 * 1024) readErrors += 1;
-        continue;
+      } else {
+        const auth = JSON.parse(await fsp.readFile(authFile, "utf8"));
+        profilesScanned += 1;
+        authObservations = codexAccountObservationsFromAuth(auth, {
+          profileRef: codexHome,
+          seenAt: new Date().toISOString()
+        });
+        observations.push(...authObservations);
       }
-      const auth = JSON.parse(await fsp.readFile(authFile, "utf8"));
-      profilesScanned += 1;
-      observations.push(...codexAccountObservationsFromAuth(auth, {
-        profileRef: codexHome,
-        seenAt: new Date().toISOString()
-      }));
     } catch (error) {
       if (error?.code !== "ENOENT") readErrors += 1;
+    }
+
+    const shouldProbe = authObservations.length > 0 || sameResolvedPath(codexHome, CODEX_HOME);
+    if (!shouldProbe) continue;
+    try {
+      const liveObservation = await readCodexProfileGptAccountObservation(codexHome, {
+        refreshToken,
+        clientFactory: options.clientFactory
+      });
+      if (!liveObservation) {
+        if (authObservations.length) {
+          markGptQuotaUnavailable(authObservations);
+          quotaUnavailable += authObservations.length;
+        }
+        continue;
+      }
+      observations.push(liveObservation);
+      if (liveObservation.limits?.rows?.length) quotaAvailable += 1;
+      else quotaUnavailable += 1;
+    } catch {
+      if (authObservations.length) {
+        markGptQuotaUnavailable(authObservations);
+        quotaUnavailable += authObservations.length;
+      } else {
+        readErrors += 1;
+      }
     }
   }
 
   return {
-    status: observations.length ? readErrors ? "partial" : "ready" : readErrors ? "error" : "empty",
+    status: gptAccountSourceScanStatus(observations, readErrors, quotaUnavailable),
     profilesScanned,
+    quotaAvailable,
+    quotaUnavailable,
     observations
   };
 }
 
-async function readOpenCodeGptAccountObservations(sources) {
+async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
+  const lease = await acquireCodexAccountClient(codexHome, options.clientFactory);
+  try {
+    const response = await lease.client.request("account/read", {
+      refreshToken: Boolean(options.refreshToken)
+    });
+    const account = response?.account;
+    if (!account || !["chatgpt", "chatgptAuthTokens"].includes(String(account.type || ""))) return null;
+    const [usageResult, rateLimitsResult] = await Promise.allSettled([
+      lease.client.request("account/usage/read", undefined),
+      lease.client.request("account/rateLimits/read", undefined)
+    ]);
+    const liveLimits = rateLimitsResult.status === "fulfilled"
+      ? normalizeCodexLiveRateLimits(rateLimitsResult.value)
+      : null;
+    const limits = codexRateLimitsFromLive(liveLimits?.codex, "Codex");
+    const quotaCheckedAt = new Date().toISOString();
+    return createGptAccountObservation({
+      sourceId: "codex",
+      sourceRef: codexHome,
+      email: account.email,
+      planType: liveLimits?.codex?.planType || account.planType,
+      seenAt: new Date().toISOString(),
+      usage: usageResult.status === "fulfilled" ? usageResult.value : null,
+      limits,
+      limitsUpdatedAt: limits ? liveLimits?.source?.updatedAt : null,
+      quotaStatus: limits ? "ready" : "unavailable",
+      quotaCheckedAt,
+      dataQuality: usageResult.status === "fulfilled"
+        ? "account_api"
+        : limits
+          ? "identity_and_limits"
+          : "identity_only"
+    });
+  } finally {
+    if (lease.closeWhenDone) lease.client.close();
+  }
+}
+
+async function acquireCodexAccountClient(codexHome, clientFactory) {
+  if (typeof clientFactory === "function") {
+    const lease = await clientFactory(codexHome);
+    if (lease?.client) return { client: lease.client, closeWhenDone: Boolean(lease.closeWhenDone) };
+    return { client: lease, closeWhenDone: false };
+  }
+  if (sameResolvedPath(codexHome, CODEX_HOME)) {
+    return { client: await getCodexAppServer(), closeWhenDone: false };
+  }
+  return {
+    client: await createCodexAppServer({ codexHome }),
+    closeWhenDone: true
+  };
+}
+
+function sameResolvedPath(left, right) {
+  return path.resolve(String(left || "")) === path.resolve(String(right || ""));
+}
+
+async function readOpenCodeGptAccountObservations(sources, options = {}) {
   const observations = [];
   let profilesScanned = 0;
   let readErrors = 0;
+  let quotaAvailable = 0;
+  let quotaUnavailable = 0;
   const profileDirs = new Set();
   for (const entry of sourcePathEntries(sources || defaultOpenCodeSources(), OPENCODE_DB_ROLES)) {
     profileDirs.add(path.resolve(entry.role === "opencode_data_dir" ? entry.path : path.dirname(entry.path)));
@@ -8370,10 +8441,15 @@ async function readOpenCodeGptAccountObservations(sources) {
       }
       const auth = JSON.parse(await fsp.readFile(authFile, "utf8"));
       profilesScanned += 1;
-      observations.push(...openCodeAccountObservationsFromAuth(auth, {
+      const result = await openCodeAccountObservationsWithQuota(auth, {
         profileRef: profileDir,
-        seenAt: new Date().toISOString()
-      }));
+        seenAt: new Date().toISOString(),
+        fetchImpl: options.fetchImpl,
+        usageUrl: options.usageUrl
+      });
+      observations.push(...result.observations);
+      quotaAvailable += result.quotaAvailable;
+      quotaUnavailable += result.quotaUnavailable;
     } catch (error) {
       if (error?.code !== "ENOENT") readErrors += 1;
     }
@@ -8383,20 +8459,167 @@ async function readOpenCodeGptAccountObservations(sources) {
     try {
       const auth = JSON.parse(process.env.OPENCODE_AUTH_CONTENT);
       profilesScanned += 1;
-      observations.push(...openCodeAccountObservationsFromAuth(auth, {
+      const result = await openCodeAccountObservationsWithQuota(auth, {
         profileRef: "environment",
-        seenAt: new Date().toISOString()
-      }));
+        seenAt: new Date().toISOString(),
+        fetchImpl: options.fetchImpl,
+        usageUrl: options.usageUrl
+      });
+      observations.push(...result.observations);
+      quotaAvailable += result.quotaAvailable;
+      quotaUnavailable += result.quotaUnavailable;
     } catch {
       readErrors += 1;
     }
   }
 
   return {
-    status: observations.length ? readErrors ? "partial" : "ready" : readErrors ? "error" : "empty",
+    status: gptAccountSourceScanStatus(observations, readErrors, quotaUnavailable),
     profilesScanned,
+    quotaAvailable,
+    quotaUnavailable,
     observations
   };
+}
+
+async function openCodeAccountObservationsWithQuota(auth, options = {}) {
+  const identityObservations = openCodeAccountObservationsFromAuth(auth, options);
+  if (!identityObservations.length) {
+    return { observations: [], quotaAvailable: 0, quotaUnavailable: 0 };
+  }
+  const entry = openCodeOpenAiOauthEntry(auth);
+  const quota = await readChatGptQuotaFromOauthEntry(entry, options);
+  if (!quota.limits?.rows?.length) {
+    return {
+      observations: markGptQuotaUnavailable(identityObservations),
+      quotaAvailable: 0,
+      quotaUnavailable: identityObservations.length
+    };
+  }
+  const quotaObservations = identityObservations.map((observation) => ({
+    ...observation,
+    planType: quota.planType || observation.planType,
+    limits: quota.limits,
+    limitsUpdatedAt: quota.updatedAt,
+    quotaStatus: "ready",
+    quotaCheckedAt: quota.updatedAt,
+    dataQuality: "account_quota_api"
+  }));
+  return {
+    observations: quotaObservations,
+    quotaAvailable: quotaObservations.length,
+    quotaUnavailable: 0
+  };
+}
+
+function openCodeOpenAiOauthEntry(auth) {
+  if (!auth || typeof auth !== "object" || Array.isArray(auth)) return null;
+  for (const [providerId, entry] of Object.entries(auth)) {
+    if (String(providerId || "").trim().toLowerCase().replace(/[^a-z0-9]+/gu, "") !== "openai") continue;
+    if (entry && typeof entry === "object" && String(entry.type || "").toLowerCase() === "oauth") return entry;
+  }
+  return null;
+}
+
+async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
+  const accessToken = String(entry?.access || "").trim();
+  const claims = parseJwtClaims(accessToken) || {};
+  const nestedAuth = claims["https://api.openai.com/auth"] || {};
+  const accountId = String(
+    entry?.accountId ||
+      claims.chatgpt_account_id ||
+      nestedAuth.chatgpt_account_id ||
+      claims.organizations?.[0]?.id ||
+      ""
+  ).trim();
+  if (!accessToken || !accountId || /[\r\n]/u.test(accessToken) || /[\r\n]/u.test(accountId)) {
+    return { status: "unavailable", reason: "credentials_missing", limits: null };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs || GPT_ACCOUNT_QUOTA_TIMEOUT_MS);
+  try {
+    const response = await (options.fetchImpl || fetch)(options.usageUrl || CHATGPT_CODEX_USAGE_URL, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${accessToken}`,
+        "chatgpt-account-id": accountId,
+        "user-agent": "LLM Usage Dashboard account quota probe"
+      },
+      signal: controller.signal
+    });
+    if (!response?.ok) {
+      return {
+        status: "unavailable",
+        reason: [401, 403].includes(Number(response?.status)) ? "auth_required" : "request_failed",
+        limits: null
+      };
+    }
+    const payload = await response.json();
+    const limits = codexRateLimitsFromUsagePayload(payload, "Codex");
+    if (!limits?.rows?.length) return { status: "unavailable", reason: "limits_missing", limits: null };
+    const root = codexUsagePayloadRoot(payload);
+    return {
+      status: "ready",
+      reason: null,
+      planType: firstNonEmptyString(root?.plan_type, root?.planType, claims.chatgpt_plan_type, nestedAuth.chatgpt_plan_type),
+      updatedAt: new Date().toISOString(),
+      limits
+    };
+  } catch (error) {
+    return {
+      status: "unavailable",
+      reason: error?.name === "AbortError" ? "timeout" : "request_failed",
+      limits: null
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function codexRateLimitsFromUsagePayload(payload, labelPrefix = "Codex") {
+  const root = codexUsagePayloadRoot(payload);
+  const details = root?.rate_limit || root?.rateLimit;
+  if (!details || typeof details !== "object") return null;
+  return codexRateLimitsFromLive({
+    limitId: "codex",
+    planType: root.plan_type || root.planType || null,
+    primary: codexUsageWindow(details.primary_window || details.primaryWindow),
+    secondary: codexUsageWindow(details.secondary_window || details.secondaryWindow)
+  }, labelPrefix);
+}
+
+function codexUsagePayloadRoot(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  const nested = payload.rate_limits || payload.rateLimits;
+  return nested && typeof nested === "object" && !Array.isArray(nested) ? nested : payload;
+}
+
+function codexUsageWindow(window) {
+  if (!window || typeof window !== "object" || Array.isArray(window)) return null;
+  const windowSeconds = numberOrNull(window.limit_window_seconds ?? window.limitWindowSeconds);
+  return {
+    usedPercent: window.used_percent ?? window.usedPercent,
+    remainingPercent: window.remaining_percent ?? window.remainingPercent,
+    windowMinutes: windowSeconds && windowSeconds > 0
+      ? windowSeconds / 60
+      : window.window_minutes ?? window.windowMinutes,
+    resetsAt: window.reset_at ?? window.resetAt
+  };
+}
+
+function gptAccountSourceScanStatus(observations, readErrors, quotaUnavailable) {
+  if (!(observations || []).length) return readErrors ? "error" : "empty";
+  return readErrors || quotaUnavailable ? "partial" : "ready";
+}
+
+function markGptQuotaUnavailable(observations, checkedAt = new Date().toISOString()) {
+  for (const observation of observations || []) {
+    observation.quotaStatus = "unavailable";
+    observation.quotaCheckedAt = checkedAt;
+  }
+  return observations;
 }
 
 async function readCodexLiveRateLimits() {
@@ -8702,17 +8925,16 @@ async function getCodexAppServer() {
   codexAppServerLastUseAt = Date.now();
   if (codexAppServer) return codexAppServer;
 
-  const codexBinary = resolveCodexBinary();
-  if (!codexBinary) {
-    throw new Error("Codex CLI not found");
-  }
-
-  const proc = spawn(codexBinary, ["app-server", "--listen", "stdio://"], {
-    stdio: ["pipe", "pipe", "pipe"]
+  const client = await createCodexAppServer({
+    codexHome: CODEX_HOME,
+    onRequest: () => {
+      codexAppServerLastUseAt = Date.now();
+    },
+    onExit: (closedClient) => {
+      if (codexAppServer === closedClient) codexAppServer = null;
+    }
   });
-  const pending = new Map();
-  let buffer = "";
-  let closing = false;
+  codexAppServer = client;
 
   // Shut the resident app-server down after a long idle stretch; the next
   // live rate-limit read lazily respawns it.
@@ -8727,6 +8949,24 @@ async function getCodexAppServer() {
     client.close();
   }, 60 * 1000);
   if (typeof idleShutdownTimer.unref === "function") idleShutdownTimer.unref();
+  return client;
+}
+
+async function createCodexAppServer(options = {}) {
+  const codexHome = options.codexHome ? path.resolve(options.codexHome) : null;
+
+  const codexBinary = resolveCodexBinary();
+  if (!codexBinary) {
+    throw new Error("Codex CLI not found");
+  }
+
+  const proc = spawn(codexBinary, ["app-server", "--listen", "stdio://"], {
+    stdio: ["pipe", "pipe", "pipe"],
+    env: codexHome ? { ...process.env, CODEX_HOME: codexHome } : process.env
+  });
+  const pending = new Map();
+  let buffer = "";
+  let closing = false;
 
   const send = (message) => {
     proc.stdin.write(`${JSON.stringify(message)}\n`);
@@ -8734,7 +8974,7 @@ async function getCodexAppServer() {
 
   const client = {
     request(method, params) {
-      codexAppServerLastUseAt = Date.now();
+      if (typeof options.onRequest === "function") options.onRequest(client);
       return new Promise((resolve, reject) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
         const timeout = setTimeout(() => {
@@ -8746,6 +8986,7 @@ async function getCodexAppServer() {
       });
     },
     close() {
+      if (closing) return;
       closing = true;
       proc.kill("SIGTERM");
     }
@@ -8794,17 +9035,16 @@ async function getCodexAppServer() {
 
   proc.on("error", (error) => {
     if (!closing) rejectPending(error);
-    codexAppServer = null;
+    if (typeof options.onExit === "function") options.onExit(client);
   });
 
   proc.on("exit", (code, signal) => {
     if (!closing) {
       rejectPending(new Error(`Codex app-server exited (${code ?? "unknown"}${signal ? `, ${signal}` : ""})`));
     }
-    codexAppServer = null;
+    if (typeof options.onExit === "function") options.onExit(client);
   });
 
-  codexAppServer = client;
   try {
     await client.request("initialize", {
       clientInfo: { name: "llm-usage-dashboard", version: "1.0.0" },
@@ -8814,7 +9054,6 @@ async function getCodexAppServer() {
     return client;
   } catch (error) {
     client.close();
-    codexAppServer = null;
     throw error;
   }
 }
@@ -10196,8 +10435,12 @@ module.exports = {
     mergeUpdateSettingsPatch,
     codexBinaryCandidates,
     codexRateLimitsFromLive,
+    codexRateLimitsFromUsagePayload,
     codexRateLimitsFromEvents,
     codexSparkRateLimitsFromEvents,
+    readCodexGptAccountObservation,
+    readOpenCodeGptAccountObservations,
+    readChatGptQuotaFromOauthEntry,
     normalizeClaudeBrowserCreditsSnapshot,
     mergeClaudeBrowserCreditsSnapshots,
     readClaudeCliOauthSession,
