@@ -85,6 +85,47 @@ try {
       ]
     },
     usage: {
+      gptAccounts: {
+        status: "ready",
+        lastScannedAt: "2026-07-11T14:58:00.000Z",
+        accountCount: 2,
+        activeAccountCount: 1,
+        quotaAccountCount: 0,
+        accounts: [
+          {
+            id: "gpt-secret-id",
+            label: "se••••t@example.com",
+            active: true,
+            planType: "pro",
+            lastSeenAt: "2026-07-11T14:58:00.000Z",
+            sources: [{
+              id: "codex",
+              active: true,
+              profileRefs: ["src-secret-profile"],
+              quotaStatus: "unavailable",
+              quotaReason: "auth_required",
+              quotaCheckedAt: "2026-07-11T14:58:00.000Z",
+              limits: { rows: [{ key: "fiveHour", remainingPercent: 42 }] },
+              limitsUpdatedAt: "2026-07-11T13:00:00.000Z",
+              dataQuality: "identity_only"
+            }]
+          },
+          {
+            id: "gpt-second-secret-id",
+            label: "ot•••r@example.net",
+            active: false,
+            lastSeenAt: "2026-07-10T12:00:00.000Z",
+            sources: [{ id: "openCode", active: false, quotaStatus: "unknown", profileRefs: [] }]
+          }
+        ],
+        scan: {
+          status: "partial",
+          checkedAt: "2026-07-11T14:58:00.000Z",
+          sources: {
+            codex: { status: "partial", profilesScanned: 1, quotaAvailable: 0, quotaUnavailable: 1 }
+          }
+        }
+      },
       claudeCode: {
         id: "claudeCode",
         status: "empty",
@@ -119,10 +160,19 @@ try {
   assert(claudeReport.findings.includes("parser_error"));
   assert(claudeReport.findings.includes("live_quota_source_not_active"));
   assert.equal(claudeReport.source.paths[0]?.path, "source:claudeCode/projects");
+  assert.equal(supportReport.gptAccounts.accountCount, 2);
+  assert.equal(supportReport.gptAccounts.activeAccountCount, 1);
+  assert.equal(supportReport.gptAccounts.liveQuotaAccountCount, 0);
+  assert.equal(supportReport.gptAccounts.savedQuotaAccountCount, 1);
+  assert.equal(supportReport.gptAccounts.accounts[0]?.sources[0]?.quotaReason, "auth_required");
+  assert.match(supportReport.compactSummary, /GPT accounts: known=2; active=1; live_limits=0; saved_limits=1/);
 
   const supportJson = JSON.stringify(supportReport);
   assert(!supportJson.includes(privateClaudePath), "support report must not include raw local paths");
   assert(!supportJson.includes("secret-user"), "support report must not include local usernames");
+  assert(!supportJson.includes("gpt-secret-id"), "support report must not include account ids");
+  assert(!supportJson.includes("src-secret-profile"), "support report must not include profile references");
+  assert(!supportJson.includes("se••••t@example.com"), "support report must not include account labels");
   assert(!supportReport.compactSummary.includes(privateClaudePath), "compact summary must not include raw local paths");
 } finally {
   await fs.rm(tmp, { recursive: true, force: true });

@@ -24,11 +24,28 @@ const tmp = await mkdtemp(path.join(os.tmpdir(), "gpt-account-registry-"));
 
 try {
   await assertPrivateAccountRegistry(tmp);
+  await assertCodexAccountProfileDiscovery(tmp);
   await assertPerAccountQuotaProbes(tmp);
   await assertOpenCodeGptUsage(tmp);
   await assertFrontendContract();
 } finally {
   await rm(tmp, { recursive: true, force: true });
+}
+
+async function assertCodexAccountProfileDiscovery(tmpDir) {
+  const profilesRoot = path.join(tmpDir, "codex-accounts");
+  const profileA = path.join(profilesRoot, "account-a");
+  const profileB = path.join(profilesRoot, "account-b");
+  await mkdir(profileA, { recursive: true });
+  await mkdir(profileB, { recursive: true });
+  await writeFile(path.join(profilesRoot, "README.txt"), "not a profile");
+  assert.deepEqual(_test.defaultCodexAccountHomes(profilesRoot), [profileA, profileB]);
+
+  const authFile = path.join(profileA, "auth.json");
+  const missingSignature = await _test.gptAccountAuthFileSignature([authFile]);
+  await writeFile(authFile, "{}");
+  const presentSignature = await _test.gptAccountAuthFileSignature([authFile]);
+  assert.notEqual(presentSignature, missingSignature, "the background watcher must notice a new or replaced login file");
 }
 
 async function assertPrivateAccountRegistry(dataDir) {
@@ -74,6 +91,9 @@ async function assertPrivateAccountRegistry(dataDir) {
     seenAt: "2026-07-31T08:01:00.000Z",
     usage: { summary: { lifetimeTokens: 123456 } },
     limits: { rows: [{ key: "fiveHour", label: "5h Codex limit", usedPercent: 25, remainingPercent: 75 }] },
+    limitsUpdatedAt: "2026-07-31T08:01:00.000Z",
+    quotaStatus: "ready",
+    quotaCheckedAt: "2026-07-31T08:01:00.000Z",
     dataQuality: "account_api"
   });
   let registry = mergeGptAccountRegistry(null, [...openCode, ...codexAuth, codex], {
@@ -99,6 +119,28 @@ async function assertPrivateAccountRegistry(dataDir) {
   if (process.platform !== "win32") {
     assert.equal((await stat(path.join(dataDir, "gpt-account-registry.json"))).mode & 0o777, 0o600);
   }
+
+  const failedRefresh = createGptAccountObservation({
+    sourceId: "codex",
+    sourceRef: "/private/codex/home",
+    email: "Reinhard@example.com",
+    planType: "pro",
+    seenAt: "2026-07-31T08:30:00.000Z",
+    quotaStatus: "unavailable",
+    quotaReason: "auth_required",
+    quotaCheckedAt: "2026-07-31T08:30:00.000Z",
+    dataQuality: "identity_only"
+  });
+  registry = mergeGptAccountRegistry(await readGptAccountRegistry(dataDir), [failedRefresh], {
+    scannedAt: "2026-07-31T08:30:00.000Z",
+    scan: { status: "partial", checkedAt: "2026-07-31T08:30:00.000Z", sources: {} }
+  });
+  const failedSource = registry.accounts[0].sources.find((source) => source.id === "codex");
+  assert.equal(failedSource.quotaStatus, "unavailable");
+  assert.equal(failedSource.quotaReason, "auth_required");
+  assert.equal(failedSource.limits?.rows?.[0]?.remainingPercent, 75, "a failed refresh must keep the last known limit snapshot");
+  assert.equal(failedSource.limitsUpdatedAt, "2026-07-31T08:01:00.000Z");
+  assert.equal(publicGptAccountRegistry(registry).quotaAccountCount, 0, "saved snapshots must not be counted as live quota");
 
   const secondAccount = createGptAccountObservation({
     sourceId: "codex",
@@ -320,6 +362,7 @@ async function assertFrontendContract() {
   assert.match(app, /normalizeLocalProvider\("openCode", usage\.openCode\)/);
   assert.match(app, /gptAccountLimitSource/);
   assert.match(app, /quotaAccountCount/);
+  assert.match(app, /account\.active && limits\.length && !hasCurrentLimits/);
   assert.match(app, /liveMetrics\.unavailable/);
 
   const i18nDir = path.join(rootDir, "public", "i18n");
