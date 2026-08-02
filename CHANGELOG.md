@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0-preview.14 - 2026-08-02
+
+### Fixed
+
+- Show every distinct ChatGPT account managed through common OpenCode
+  multi-account stores and read each account's 5-hour and weekly quota
+  independently.
+- Retain the last successful per-account quota snapshot when a live refresh is
+  temporarily unavailable or OpenCode switches to another account.
+
+### Improved
+
+- Watch built-in OpenCode auth plus `oc-codex-multi-auth` and
+  `opencode-multi-auth-codex` account stores for changes while the desktop
+  backend is running.
+- Keep multi-account probing read-only: the dashboard never sends refresh
+  tokens and persists only masked identities and normalized quota snapshots.
+
 ## 1.1.0-preview.13 - 2026-08-01
 
 ### Added
