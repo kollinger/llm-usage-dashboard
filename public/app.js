@@ -3710,7 +3710,8 @@ function renderGptAccount(account) {
   const sources = Array.isArray(account.sources) ? account.sources : [];
   const activeSources = sources.filter((source) => source.active);
   const codexSource = sources.find((source) => source.id === "codex");
-  const limitSource = gptAccountLimitSource(sources, { currentOnly: account.active });
+  const limitSource = gptAccountLimitSource(sources);
+  const hasCurrentLimits = Boolean(limitSource?.active && limitSource?.quotaStatus === "ready");
   const lifetimeTokens = codexSource?.usage?.summary?.lifetimeTokens;
   const limits = (limitSource?.limits?.rows || []).slice(0, 2);
   const sourceBadges = sources.map((source) => `
@@ -3741,7 +3742,9 @@ function renderGptAccount(account) {
           </div>
           <div class="gpt-account-sources">${sourceBadges}</div>
         </div>
-        <span class="gpt-account-state">${escapeHtml(t(account.active ? "gptAccounts.active" : "gptAccounts.historical"))}</span>
+        <span class="gpt-account-state">${escapeHtml(t(account.active ? "gptAccounts.active" : "gptAccounts.historical"))}${account.active && limits.length && !hasCurrentLimits
+          ? ` · ${escapeHtml(t("gptAccounts.limit"))}: ${escapeHtml(t("gptAccounts.historical"))}`
+          : ""}</span>
       </div>
       ${metrics.length ? `<div class="gpt-account-metrics">${metrics.join("")}</div>` : ""}
       <div class="gpt-account-seen">

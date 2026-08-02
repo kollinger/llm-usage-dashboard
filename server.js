@@ -65,9 +65,13 @@ const GLM_CODING_PLAN_CONFIG_FILES = uniquePaths([
 ]);
 const DEFAULT_CODEX_HOME = path.join(os.homedir(), ".codex");
 const CODEX_HOME = expandHome(process.env.CODEX_HOME || DEFAULT_CODEX_HOME);
+const CODEX_ACCOUNT_PROFILES_DIR = expandHome(
+  process.env.LLM_USAGE_CODEX_ACCOUNT_PROFILES_DIR || path.join(os.homedir(), ".codex-accounts")
+);
 const CODEX_HOMES = uniquePaths([
   DEFAULT_CODEX_HOME,
   CODEX_HOME,
+  ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR),
   ...parsePathList(process.env.LLM_USAGE_CODEX_HOMES)
 ]);
 const COPILOT_HOME = expandHome(process.env.COPILOT_HOME || path.join(os.homedir(), ".copilot"));
@@ -128,6 +132,7 @@ const GLM_CODING_PLAN_QUOTA_CACHE_MS = envMs("GLM_CODING_PLAN_QUOTA_CACHE_SECOND
 const GLM_CODING_PLAN_QUOTA_TIMEOUT_MS = envMs("GLM_CODING_PLAN_QUOTA_TIMEOUT_SECONDS", 5);
 const SOURCE_DIAGNOSTICS_CACHE_MS = envMs("SOURCE_DIAGNOSTICS_CACHE_SECONDS", 30);
 const GPT_ACCOUNT_SCAN_CACHE_MS = envMs("GPT_ACCOUNT_SCAN_CACHE_SECONDS", 60);
+const GPT_ACCOUNT_AUTH_WATCH_INTERVAL_MS = envMs("GPT_ACCOUNT_AUTH_WATCH_SECONDS", 15);
 const CHATGPT_CODEX_USAGE_URL = "https://chatgpt.com/backend-api/wham/usage";
 const SUPPORT_REPORT_SCHEMA_VERSION = 1;
 const SUPPORT_REPORT_PROVIDER_IDS = ["claudeCode", "codex", "openCode", "copilot", "glm", "gemini", "ollama"];
@@ -474,6 +479,10 @@ const usageFileScanCaches = {
   gemini: new Map()
 };
 let quotaEventsLatestByKeyPromise = null;
+let gptAccountAuthWatchTimer = null;
+let gptAccountAuthWatchInitialTimer = null;
+let gptAccountAuthWatchSignature = null;
+let gptAccountAuthWatchPending = null;
 
 function markInteractiveUsageRequest() {
   const wasIdle = !isInteractiveUsageRecent();
@@ -565,6 +574,17 @@ function defaultOpenCodeDataDirs() {
   }
   if (process.env.OPENCODE_DATA_DIR) candidates.push(expandHome(process.env.OPENCODE_DATA_DIR));
   return candidates;
+}
+
+function defaultCodexAccountHomes(root = path.join(os.homedir(), ".codex-accounts")) {
+  try {
+    return fs.readdirSync(root, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(root, entry.name))
+      .sort();
+  } catch {
+    return [];
+  }
 }
 
 function defaultOpenCodeDbFilesFromEnv(value) {
@@ -1946,10 +1966,63 @@ function buildSupportReportFromInputs({ diagnostics = {}, usage = {}, generatedA
       },
       counts: supportCounts(diagnostics?.counts || {})
     },
+    gptAccounts: buildSupportGptAccountReport(usage?.gptAccounts),
     providers: [...providerReports, localReport]
   };
   report.compactSummary = buildCompactSupportSummary(report);
   return report;
+}
+
+function buildSupportGptAccountReport(registry) {
+  const accounts = (Array.isArray(registry?.accounts) ? registry.accounts : []).slice(0, 12);
+  const accountReports = accounts.map((account) => ({
+    active: Boolean(account?.active),
+    planType: supportShortString(account?.planType, null),
+    lastSeenAt: normalizeOptionalDate(account?.lastSeenAt) || null,
+    sources: (Array.isArray(account?.sources) ? account.sources : []).slice(0, 4).map((source) => ({
+      sourceId: ["codex", "openCode"].includes(source?.id) ? source.id : "unknown",
+      active: Boolean(source?.active),
+      profileCount: Math.min(24, Math.max(0, Array.isArray(source?.profileRefs) ? source.profileRefs.length : 0)),
+      quotaStatus: supportShortString(source?.quotaStatus, "unknown"),
+      quotaReason: supportShortString(source?.quotaReason, null),
+      quotaCheckedAt: normalizeOptionalDate(source?.quotaCheckedAt) || null,
+      hasSavedLimits: Boolean(source?.limits?.rows?.length),
+      limitWindowCount: Math.min(12, Math.max(0, Array.isArray(source?.limits?.rows) ? source.limits.rows.length : 0)),
+      limitsUpdatedAt: normalizeOptionalDate(source?.limitsUpdatedAt) || null,
+      dataQuality: supportShortString(source?.dataQuality, "unknown")
+    }))
+  }));
+  const activeAccounts = accountReports.filter((account) => account.active);
+  const liveQuotaAccountCount = activeAccounts.filter((account) => account.sources.some((source) => (
+    source.active && source.quotaStatus === "ready" && source.hasSavedLimits
+  ))).length;
+  const savedQuotaAccountCount = accountReports.filter((account) => account.sources.some((source) => source.hasSavedLimits)).length;
+  const scanSources = {};
+  for (const sourceId of ["codex", "openCode"]) {
+    const source = registry?.scan?.sources?.[sourceId];
+    if (!source || typeof source !== "object") continue;
+    scanSources[sourceId] = {
+      status: supportShortString(source.status, "unknown"),
+      profilesScanned: supportNumber(source.profilesScanned),
+      quotaAvailable: supportNumber(source.quotaAvailable),
+      quotaUnavailable: supportNumber(source.quotaUnavailable)
+    };
+  }
+  return {
+    status: supportShortString(registry?.status || registry?.scan?.status, accountReports.length ? "ready" : "empty"),
+    lastScannedAt: normalizeOptionalDate(registry?.lastScannedAt) || null,
+    accountCount: accountReports.length,
+    activeAccountCount: activeAccounts.length,
+    liveQuotaAccountCount,
+    savedQuotaAccountCount,
+    missingLiveQuotaAccountCount: Math.max(0, activeAccounts.length - liveQuotaAccountCount),
+    scan: {
+      status: supportShortString(registry?.scan?.status, "unknown"),
+      checkedAt: normalizeOptionalDate(registry?.scan?.checkedAt) || null,
+      sources: scanSources
+    },
+    accounts: accountReports
+  };
 }
 
 function supportReportId() {
@@ -2221,6 +2294,7 @@ function buildCompactSupportSummary(report) {
     `App: ${report.app.version}${report.app.commit ? ` (${report.app.commit})` : ""}`,
     `Runtime: ${report.app.platform.platform}/${report.app.platform.arch}, Node ${report.app.runtime.node}, Electron ${report.app.runtime.electron || "no"}`,
     `Diagnostics: ${report.diagnostics.status}; readable=${report.diagnostics.counts.readable ?? "?"}; denied=${report.diagnostics.counts.denied ?? "?"}; connected=${report.diagnostics.counts.connected ?? "?"}`,
+    `GPT accounts: known=${report.gptAccounts.accountCount}; active=${report.gptAccounts.activeAccountCount}; live_limits=${report.gptAccounts.liveQuotaAccountCount}; saved_limits=${report.gptAccounts.savedQuotaAccountCount}; missing_live_limits=${report.gptAccounts.missingLiveQuotaAccountCount}`,
     "Providers:"
   ];
   for (const provider of report.providers) {
@@ -8264,6 +8338,61 @@ function prepareForcedGptAccountRefresh() {
   }
 }
 
+function startGptAccountAuthWatch() {
+  if (gptAccountAuthWatchTimer) return;
+  const poll = () => pollGptAccountAuthChanges().catch(() => {});
+  gptAccountAuthWatchInitialTimer = setTimeout(poll, Math.min(10_000, GPT_ACCOUNT_AUTH_WATCH_INTERVAL_MS));
+  gptAccountAuthWatchTimer = setInterval(poll, GPT_ACCOUNT_AUTH_WATCH_INTERVAL_MS);
+  if (typeof gptAccountAuthWatchInitialTimer.unref === "function") gptAccountAuthWatchInitialTimer.unref();
+  if (typeof gptAccountAuthWatchTimer.unref === "function") gptAccountAuthWatchTimer.unref();
+}
+
+async function pollGptAccountAuthChanges() {
+  if (gptAccountAuthWatchPending) return gptAccountAuthWatchPending;
+  gptAccountAuthWatchPending = (async () => {
+    const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
+    const localSources = buildReaderSources(connectedSettings.sources || []);
+    const codexHomes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)]);
+    const authFiles = codexHomes.map((home) => path.join(home, "auth.json"));
+    for (const entry of sourcePathEntries(localSources.openCode, OPENCODE_DB_ROLES)) {
+      const profileDir = path.resolve(entry.role === "opencode_data_dir" ? entry.path : path.dirname(entry.path));
+      authFiles.push(path.join(profileDir, "auth.json"));
+    }
+    const signature = await gptAccountAuthFileSignature(uniquePaths(authFiles));
+    const previousSignature = gptAccountAuthWatchSignature;
+    gptAccountAuthWatchSignature = signature;
+    const registry = await readGptAccountRegistry(DATA_DIR);
+    const lastScanAgeMs = Date.now() - Date.parse(registry.lastScannedAt || "");
+    const initialScanNeeded = previousSignature === null && (
+      !Number.isFinite(lastScanAgeMs) || lastScanAgeMs > GPT_ACCOUNT_SCAN_CACHE_MS
+    );
+    const authChanged = previousSignature !== null && previousSignature !== signature;
+    if (!initialScanNeeded && !authChanged) return;
+    prepareForcedGptAccountRefresh();
+    await readGptAccounts({
+      sources: localSources.openCode,
+      codexHomes,
+      force: true,
+      refreshToken: true
+    });
+  })().finally(() => {
+    gptAccountAuthWatchPending = null;
+  });
+  return gptAccountAuthWatchPending;
+}
+
+async function gptAccountAuthFileSignature(files) {
+  const entries = await Promise.all((files || []).map(async (file) => {
+    try {
+      const stat = await fsp.stat(file);
+      return `${file}\0${stat.isFile() ? stat.size : "not_file"}\0${stat.mtimeMs}`;
+    } catch (error) {
+      return `${file}\0${error?.code === "ENOENT" ? "missing" : "unreadable"}`;
+    }
+  }));
+  return crypto.createHash("sha256").update(entries.sort().join("\n")).digest("hex");
+}
+
 async function readGptAccounts(options = {}) {
   return readThroughCache(gptAccountsCache, GPT_ACCOUNT_SCAN_CACHE_MS, async () => {
     if (!options.force && !isInteractiveUsageRecent()) {
@@ -8271,7 +8400,10 @@ async function readGptAccounts(options = {}) {
     }
     const checkedAt = new Date().toISOString();
     const [codexResult, openCodeResult] = await Promise.all([
-      readCodexGptAccountObservation({ refreshToken: options.refreshToken }),
+      readCodexGptAccountObservation({
+        refreshToken: options.refreshToken,
+        codexHomes: options.codexHomes
+      }),
       readOpenCodeGptAccountObservations(options.sources)
     ]);
     const observations = [...codexResult.observations, ...openCodeResult.observations];
@@ -8299,7 +8431,10 @@ async function readGptAccounts(options = {}) {
 
 async function readCodexGptAccountObservation(options = {}) {
   const refreshToken = Boolean(options.refreshToken);
-  const codexHomes = uniquePaths(options.codexHomes || CODEX_HOMES);
+  const codexHomes = uniquePaths(options.codexHomes || [
+    ...CODEX_HOMES,
+    ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)
+  ]);
   const observations = [];
   let profilesScanned = 0;
   let readErrors = 0;
@@ -8335,7 +8470,7 @@ async function readCodexGptAccountObservation(options = {}) {
       });
       if (!liveObservation) {
         if (authObservations.length) {
-          markGptQuotaUnavailable(authObservations);
+          markGptQuotaUnavailable(authObservations, new Date().toISOString(), "live_quota_unavailable");
           quotaUnavailable += authObservations.length;
         }
         continue;
@@ -8345,7 +8480,7 @@ async function readCodexGptAccountObservation(options = {}) {
       else quotaUnavailable += 1;
     } catch {
       if (authObservations.length) {
-        markGptQuotaUnavailable(authObservations);
+        markGptQuotaUnavailable(authObservations, new Date().toISOString(), "profile_probe_failed");
         quotaUnavailable += authObservations.length;
       } else {
         readErrors += 1;
@@ -8389,6 +8524,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
       limits,
       limitsUpdatedAt: limits ? liveLimits?.source?.updatedAt : null,
       quotaStatus: limits ? "ready" : "unavailable",
+      quotaReason: limits ? null : "limits_missing",
       quotaCheckedAt,
       dataQuality: usageResult.status === "fulfilled"
         ? "account_api"
@@ -8491,7 +8627,7 @@ async function openCodeAccountObservationsWithQuota(auth, options = {}) {
   const quota = await readChatGptQuotaFromOauthEntry(entry, options);
   if (!quota.limits?.rows?.length) {
     return {
-      observations: markGptQuotaUnavailable(identityObservations),
+      observations: markGptQuotaUnavailable(identityObservations, new Date().toISOString(), quota.reason),
       quotaAvailable: 0,
       quotaUnavailable: identityObservations.length
     };
@@ -8614,9 +8750,10 @@ function gptAccountSourceScanStatus(observations, readErrors, quotaUnavailable) 
   return readErrors || quotaUnavailable ? "partial" : "ready";
 }
 
-function markGptQuotaUnavailable(observations, checkedAt = new Date().toISOString()) {
+function markGptQuotaUnavailable(observations, checkedAt = new Date().toISOString(), reason = null) {
   for (const observation of observations || []) {
     observation.quotaStatus = "unavailable";
+    observation.quotaReason = reason;
     observation.quotaCheckedAt = checkedAt;
   }
   return observations;
@@ -10395,6 +10532,7 @@ function startDashboard(options = {}) {
     console.log(`LLM usage dashboard listening on http://localhost:${actualPort}`);
   });
   const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy();
+  startGptAccountAuthWatch();
   return { dashboardServer, ollamaProxyServer };
 }
 
@@ -10461,6 +10599,8 @@ module.exports = {
     sanitizeAccountBillingSnapshots,
     accountBillingSubscriptionPlan,
     buildSupportReportFromInputs,
+    defaultCodexAccountHomes,
+    gptAccountAuthFileSignature,
     redactSupportPath
   }
 };
