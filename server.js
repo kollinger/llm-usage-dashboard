@@ -27,7 +27,7 @@ const {
   codexAccountObservationsFromAuth,
   createGptAccountObservation,
   mergeGptAccountRegistry,
-  openCodeAccountObservationsFromAuth,
+  openCodeOauthEntriesFromAuth,
   parseJwtClaims,
   publicGptAccountRegistry,
   readGptAccountRegistry,
@@ -55,6 +55,7 @@ const OPENCODE_DATA_DIRS = uniquePaths([
   ...defaultOpenCodeDataDirs(),
   ...parsePathList(process.env.LLM_USAGE_OPENCODE_DATA_DIRS)
 ]);
+const OPENCODE_MULTI_AUTH_FILES = uniquePaths(parsePathList(process.env.LLM_USAGE_OPENCODE_AUTH_FILES));
 const OPENCODE_DB_FILES = uniquePaths([
   ...defaultOpenCodeDbFilesFromEnv(process.env.OPENCODE_DB),
   ...parsePathList(process.env.LLM_USAGE_OPENCODE_DB_FILES)
@@ -573,6 +574,30 @@ function defaultOpenCodeDataDirs() {
     candidates.push(path.join(os.homedir(), "AppData", "Roaming", "opencode"));
   }
   if (process.env.OPENCODE_DATA_DIR) candidates.push(expandHome(process.env.OPENCODE_DATA_DIR));
+  return candidates;
+}
+
+function defaultOpenCodeMultiAuthFiles(homeDir = os.homedir()) {
+  const openCodeRoot = path.join(homeDir, ".opencode");
+  const candidates = [
+    path.join(openCodeRoot, "auth", "openai.json"),
+    path.join(openCodeRoot, "openai-codex-accounts.json"),
+    path.join(openCodeRoot, "oc-codex-multi-auth-accounts.json"),
+    path.join(homeDir, ".config", "opencode-multi-auth", "accounts.json")
+  ];
+  const storeFile = String(process.env.OPENCODE_MULTI_AUTH_STORE_FILE || "").trim();
+  const storeDir = String(process.env.OPENCODE_MULTI_AUTH_STORE_DIR || "").trim();
+  if (storeFile) candidates.push(expandHome(storeFile));
+  if (storeDir) candidates.push(path.join(expandHome(storeDir), "accounts.json"));
+  try {
+    for (const entry of fs.readdirSync(path.join(openCodeRoot, "projects"), { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      candidates.push(path.join(openCodeRoot, "projects", entry.name, "openai-codex-accounts.json"));
+      candidates.push(path.join(openCodeRoot, "projects", entry.name, "oc-codex-multi-auth-accounts.json"));
+    }
+  } catch {
+    // The multi-account plugin directory is optional.
+  }
   return candidates;
 }
 
@@ -8353,11 +8378,10 @@ async function pollGptAccountAuthChanges() {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
     const codexHomes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)]);
-    const authFiles = codexHomes.map((home) => path.join(home, "auth.json"));
-    for (const entry of sourcePathEntries(localSources.openCode, OPENCODE_DB_ROLES)) {
-      const profileDir = path.resolve(entry.role === "opencode_data_dir" ? entry.path : path.dirname(entry.path));
-      authFiles.push(path.join(profileDir, "auth.json"));
-    }
+    const authFiles = [
+      ...codexHomes.map((home) => path.join(home, "auth.json")),
+      ...openCodeGptAccountAuthFiles(localSources.openCode)
+    ];
     const signature = await gptAccountAuthFileSignature(uniquePaths(authFiles));
     const previousSignature = gptAccountAuthWatchSignature;
     gptAccountAuthWatchSignature = signature;
@@ -8562,13 +8586,8 @@ async function readOpenCodeGptAccountObservations(sources, options = {}) {
   let readErrors = 0;
   let quotaAvailable = 0;
   let quotaUnavailable = 0;
-  const profileDirs = new Set();
-  for (const entry of sourcePathEntries(sources || defaultOpenCodeSources(), OPENCODE_DB_ROLES)) {
-    profileDirs.add(path.resolve(entry.role === "opencode_data_dir" ? entry.path : path.dirname(entry.path)));
-  }
-
-  for (const profileDir of profileDirs) {
-    const authFile = path.join(profileDir, "auth.json");
+  const authFiles = openCodeGptAccountAuthFiles(sources, options.authFiles);
+  for (const authFile of authFiles) {
     try {
       const stat = await fsp.stat(authFile);
       if (!stat.isFile() || stat.size > 5 * 1024 * 1024) {
@@ -8578,7 +8597,7 @@ async function readOpenCodeGptAccountObservations(sources, options = {}) {
       const auth = JSON.parse(await fsp.readFile(authFile, "utf8"));
       profilesScanned += 1;
       const result = await openCodeAccountObservationsWithQuota(auth, {
-        profileRef: profileDir,
+        profileRef: authFile,
         seenAt: new Date().toISOString(),
         fetchImpl: options.fetchImpl,
         usageUrl: options.usageUrl
@@ -8609,52 +8628,83 @@ async function readOpenCodeGptAccountObservations(sources, options = {}) {
     }
   }
 
+  const uniqueObservations = dedupeOpenCodeAccountObservations(observations);
+  quotaAvailable = uniqueObservations.filter((observation) => observation.limits?.rows?.length).length;
+  quotaUnavailable = uniqueObservations.length - quotaAvailable;
+
   return {
-    status: gptAccountSourceScanStatus(observations, readErrors, quotaUnavailable),
+    status: gptAccountSourceScanStatus(uniqueObservations, readErrors, quotaUnavailable),
     profilesScanned,
     quotaAvailable,
     quotaUnavailable,
-    observations
+    observations: uniqueObservations
   };
 }
 
 async function openCodeAccountObservationsWithQuota(auth, options = {}) {
-  const identityObservations = openCodeAccountObservationsFromAuth(auth, options);
-  if (!identityObservations.length) {
+  const candidates = dedupeOpenCodeOauthCandidates(openCodeOauthEntriesFromAuth(auth, options));
+  if (!candidates.length) {
     return { observations: [], quotaAvailable: 0, quotaUnavailable: 0 };
   }
-  const entry = openCodeOpenAiOauthEntry(auth);
-  const quota = await readChatGptQuotaFromOauthEntry(entry, options);
-  if (!quota.limits?.rows?.length) {
+  const checkedAt = new Date().toISOString();
+  const quotaObservations = await Promise.all(candidates.map(async ({ entry, observation }) => {
+    const quota = await readChatGptQuotaFromOauthEntry(entry, options);
+    if (!quota.limits?.rows?.length) {
+      return markGptQuotaUnavailable([observation], checkedAt, quota.reason)[0];
+    }
     return {
-      observations: markGptQuotaUnavailable(identityObservations, new Date().toISOString(), quota.reason),
-      quotaAvailable: 0,
-      quotaUnavailable: identityObservations.length
+      ...observation,
+      planType: quota.planType || observation.planType,
+      limits: quota.limits,
+      limitsUpdatedAt: quota.updatedAt,
+      quotaStatus: "ready",
+      quotaCheckedAt: quota.updatedAt,
+      dataQuality: "account_quota_api"
     };
-  }
-  const quotaObservations = identityObservations.map((observation) => ({
-    ...observation,
-    planType: quota.planType || observation.planType,
-    limits: quota.limits,
-    limitsUpdatedAt: quota.updatedAt,
-    quotaStatus: "ready",
-    quotaCheckedAt: quota.updatedAt,
-    dataQuality: "account_quota_api"
   }));
+  const quotaAvailable = quotaObservations.filter((observation) => observation.limits?.rows?.length).length;
   return {
     observations: quotaObservations,
-    quotaAvailable: quotaObservations.length,
-    quotaUnavailable: 0
+    quotaAvailable,
+    quotaUnavailable: quotaObservations.length - quotaAvailable
   };
 }
 
-function openCodeOpenAiOauthEntry(auth) {
-  if (!auth || typeof auth !== "object" || Array.isArray(auth)) return null;
-  for (const [providerId, entry] of Object.entries(auth)) {
-    if (String(providerId || "").trim().toLowerCase().replace(/[^a-z0-9]+/gu, "") !== "openai") continue;
-    if (entry && typeof entry === "object" && String(entry.type || "").toLowerCase() === "oauth") return entry;
+function openCodeGptAccountAuthFiles(sources, extraFiles = []) {
+  const files = [...defaultOpenCodeMultiAuthFiles(), ...OPENCODE_MULTI_AUTH_FILES, ...(extraFiles || [])];
+  const profileDirs = new Set();
+  for (const entry of sourcePathEntries(sources || defaultOpenCodeSources(), OPENCODE_DB_ROLES)) {
+    profileDirs.add(path.resolve(entry.role === "opencode_data_dir" ? entry.path : path.dirname(entry.path)));
   }
-  return null;
+  for (const profileDir of profileDirs) files.push(path.join(profileDir, "auth.json"));
+  return uniquePaths(files);
+}
+
+function dedupeOpenCodeOauthCandidates(candidates) {
+  const byAccount = new Map();
+  for (const candidate of candidates || []) {
+    const current = byAccount.get(candidate.observation.id);
+    if (!current || Number(candidate.entry.expires || 0) > Number(current.entry.expires || 0)) {
+      byAccount.set(candidate.observation.id, candidate);
+    }
+  }
+  return [...byAccount.values()];
+}
+
+function dedupeOpenCodeAccountObservations(observations) {
+  const byAccount = new Map();
+  for (const observation of observations || []) {
+    const current = byAccount.get(observation.id);
+    const currentHasLimits = Boolean(current?.limits?.rows?.length);
+    const candidateHasLimits = Boolean(observation?.limits?.rows?.length);
+    if (!current || (candidateHasLimits && !currentHasLimits) || (
+      candidateHasLimits === currentHasLimits &&
+      Date.parse(observation.quotaCheckedAt || observation.seenAt || "") > Date.parse(current.quotaCheckedAt || current.seenAt || "")
+    )) {
+      byAccount.set(observation.id, observation);
+    }
+  }
+  return [...byAccount.values()];
 }
 
 async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
@@ -8662,9 +8712,10 @@ async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
   const claims = parseJwtClaims(accessToken) || {};
   const nestedAuth = claims["https://api.openai.com/auth"] || {};
   const accountId = String(
-    entry?.accountId ||
-      claims.chatgpt_account_id ||
+    claims.chatgpt_account_id ||
       nestedAuth.chatgpt_account_id ||
+      entry?.chatgptAccountId ||
+      entry?.accountId ||
       claims.organizations?.[0]?.id ||
       ""
   ).trim();
@@ -10578,6 +10629,7 @@ module.exports = {
     codexSparkRateLimitsFromEvents,
     readCodexGptAccountObservation,
     readOpenCodeGptAccountObservations,
+    openCodeAccountObservationsWithQuota,
     readChatGptQuotaFromOauthEntry,
     normalizeClaudeBrowserCreditsSnapshot,
     mergeClaudeBrowserCreditsSnapshots,
@@ -10600,6 +10652,8 @@ module.exports = {
     accountBillingSubscriptionPlan,
     buildSupportReportFromInputs,
     defaultCodexAccountHomes,
+    defaultOpenCodeMultiAuthFiles,
+    openCodeGptAccountAuthFiles,
     gptAccountAuthFileSignature,
     redactSupportPath
   }

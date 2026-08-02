@@ -46,6 +46,13 @@ async function assertCodexAccountProfileDiscovery(tmpDir) {
   await writeFile(authFile, "{}");
   const presentSignature = await _test.gptAccountAuthFileSignature([authFile]);
   assert.notEqual(presentSignature, missingSignature, "the background watcher must notice a new or replaced login file");
+
+  const openCodeProjectsDir = path.join(tmpDir, ".opencode", "projects", "project-a");
+  await mkdir(openCodeProjectsDir, { recursive: true });
+  const multiAuthFiles = _test.defaultOpenCodeMultiAuthFiles(tmpDir);
+  assert(multiAuthFiles.includes(path.join(tmpDir, ".opencode", "oc-codex-multi-auth-accounts.json")));
+  assert(multiAuthFiles.includes(path.join(openCodeProjectsDir, "oc-codex-multi-auth-accounts.json")));
+  assert(multiAuthFiles.includes(path.join(openCodeProjectsDir, "openai-codex-accounts.json")));
 }
 
 async function assertPrivateAccountRegistry(dataDir) {
@@ -311,6 +318,69 @@ async function assertPerAccountQuotaProbes(tmpDir) {
   assert.equal(unavailableResult.quotaAvailable, 0);
   assert.equal(unavailableResult.quotaUnavailable, 1);
   assert.equal(unavailableResult.observations[0]?.limits, null);
+
+  const multiAuthFile = path.join(tmpDir, "oc-codex-multi-auth-accounts.json");
+  const multiAuthTokens = [
+    fakeJwt({
+      "https://api.openai.com/auth": {
+        chatgpt_account_id: "opencode-multi-account-a",
+        chatgpt_plan_type: "plus"
+      },
+      "https://api.openai.com/profile": { email: "multi-a@example.test" }
+    }),
+    fakeJwt({
+      "https://api.openai.com/auth": {
+        chatgpt_account_id: "opencode-multi-account-b",
+        chatgpt_plan_type: "pro"
+      },
+      "https://api.openai.com/profile": { email: "multi-b@example.test" }
+    })
+  ];
+  await writeFile(multiAuthFile, JSON.stringify({
+    version: 3,
+    accounts: multiAuthTokens.map((accessToken, index) => ({
+      accountId: `stored-organization-${index}`,
+      accessToken,
+      refreshToken: `refresh-token-${index}`,
+      expiresAt: Date.now() + ((index + 1) * 60_000),
+      addedAt: Date.now(),
+      lastUsed: Date.now()
+    })),
+    activeIndex: 0
+  }));
+  const multiAuthResult = await _test.readOpenCodeGptAccountObservations([], {
+    authFiles: [multiAuthFile],
+    usageUrl: "https://quota.test/usage",
+    fetchImpl: async (_url, options) => {
+      const accountId = options.headers["chatgpt-account-id"];
+      assert.match(accountId, /^opencode-multi-account-[ab]$/u, "quota must use the ChatGPT account ID from each token");
+      const usedPercent = accountId.endsWith("a") ? 31 : 64;
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            rate_limit: {
+              primary_window: {
+                used_percent: usedPercent,
+                limit_window_seconds: 18_000,
+                reset_at: 1_775_252_800
+              }
+            }
+          };
+        }
+      };
+    }
+  });
+  assert.equal(multiAuthResult.status, "ready");
+  assert.equal(multiAuthResult.quotaAvailable, 2);
+  assert.equal(multiAuthResult.quotaUnavailable, 0);
+  assert.equal(multiAuthResult.observations.length, 2, "both OpenCode accounts must be visible separately");
+  assert.equal(new Set(multiAuthResult.observations.map((entry) => entry.id)).size, 2);
+  assert.deepEqual(
+    multiAuthResult.observations.map((entry) => entry.limits.rows[0].usedPercent).sort((a, b) => a - b),
+    [31, 64]
+  );
 }
 
 async function assertOpenCodeGptUsage(tmpDir) {
