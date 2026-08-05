@@ -426,8 +426,15 @@ async function assertOpenCodeGptUsage(tmpDir) {
 async function assertFrontendContract() {
   const html = await readFile(path.join(rootDir, "public", "index.html"), "utf8");
   const app = await readFile(path.join(rootDir, "public", "app.js"), "utf8");
+  const settingsStart = html.indexOf('<dialog id="settingsDialog"');
+  const settingsEnd = html.indexOf("</dialog>", settingsStart);
+  const accountsStart = html.indexOf('id="gptAccountsSection"');
   assert.match(html, /id="gptAccountsRecheckBtn"/);
-  assert.match(html, /data-dashboard-panel-id="gpt-accounts"/);
+  assert.ok(
+    settingsStart >= 0 && accountsStart > settingsStart && accountsStart < settingsEnd,
+    "GPT accounts must be rendered inside Settings"
+  );
+  assert.doesNotMatch(html, /data-dashboard-panel-id="gpt-accounts"/);
   assert.match(app, /\/api\/gpt-accounts\/recheck/);
   assert.match(app, /normalizeLocalProvider\("openCode", usage\.openCode\)/);
   assert.match(app, /gptAccountLimitSource/);

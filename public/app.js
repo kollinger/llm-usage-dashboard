@@ -272,7 +272,6 @@ const PROVIDER_ORDER_STORAGE_KEY = "llmUsage.providerOrder";
 const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "overview-history",
   "overview",
-  "gpt-accounts",
   "providers",
   "live",
   "token-history",
@@ -1985,17 +1984,13 @@ function loadProviderFilterPreference() {
 function loadDashboardSectionOrderPreference() {
   try {
     const saved = JSON.parse(localStorage.getItem(DASHBOARD_SECTION_ORDER_STORAGE_KEY) || "[]");
-    const order = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+    const savedOrder = Array.isArray(saved) ? saved.map(String).filter(Boolean) : [];
+    const order = savedOrder.filter((id) => id !== "gpt-accounts");
     let nextOrder = order.length && !order.includes("overview-history")
       ? ["overview-history", ...order]
       : order;
-    if (nextOrder.length && !nextOrder.includes("gpt-accounts")) {
-      const overviewIndex = nextOrder.indexOf("overview");
-      nextOrder = overviewIndex >= 0
-        ? [...nextOrder.slice(0, overviewIndex + 1), "gpt-accounts", ...nextOrder.slice(overviewIndex + 1)]
-        : [...nextOrder, "gpt-accounts"];
-    }
     state.dashboardSectionOrder = nextOrder;
+    if (order.length !== savedOrder.length) saveDashboardSectionOrder();
   } catch {
     state.dashboardSectionOrder = [];
   }

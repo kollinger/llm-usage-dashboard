@@ -293,15 +293,20 @@ a {
   padding: 16px;
 }
 
-.gpt-accounts-panel {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-
-.gpt-accounts-heading {
+.gpt-accounts-settings-heading {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.gpt-accounts-settings-heading .settings-desc {
+  margin-bottom: 0;
+}
+
+.gpt-accounts-settings {
+  display: grid;
+  gap: 12px;
 }
 
 .gpt-accounts-meta,
@@ -3681,13 +3686,13 @@ textarea {
     flex-direction: column;
   }
 
-  .gpt-accounts-heading,
+  .gpt-accounts-settings-heading,
   .gpt-account-main {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .gpt-accounts-heading .text-button {
+  .gpt-accounts-settings-heading .text-button {
     width: 100%;
   }
 

@@ -64,23 +64,6 @@
         </div>
       </section>
 
-      <section class="panel gpt-accounts-panel" id="gptAccountsSection" aria-label="GPT accounts" data-i18n-aria-label="gptAccounts.ariaLabel" data-dashboard-panel-id="gpt-accounts" data-dashboard-panel-label-key="gptAccounts.heading">
-        <div class="panel-heading gpt-accounts-heading">
-          <div>
-            <p class="eyebrow" data-i18n="gptAccounts.eyebrow">Local account registry</p>
-            <h2 data-i18n="gptAccounts.heading">GPT accounts</h2>
-          </div>
-          <button class="text-button ghost" id="gptAccountsRecheckBtn" type="button" data-i18n="gptAccounts.recheck">
-            Re-scan accounts
-          </button>
-        </div>
-        <p class="gpt-accounts-meta" id="gptAccountsMeta"></p>
-        <div class="gpt-account-list" id="gptAccountList"></div>
-        <p class="gpt-accounts-note" id="gptAccountsNote" data-i18n="gptAccounts.attributionNote">
-          OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.
-        </p>
-      </section>
-
       <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel" data-dashboard-panel-id="diagnostics" data-dashboard-panel-label-key="diagnostics.heading">
         <div class="panel-heading diagnostics-heading">
           <div>
@@ -232,6 +215,22 @@
             <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>
           </label>
         </div>
+        <section class="settings-section gpt-accounts-settings" id="gptAccountsSection" aria-label="GPT accounts" data-i18n-aria-label="gptAccounts.ariaLabel">
+          <div class="gpt-accounts-settings-heading">
+            <div>
+              <h3 data-i18n="gptAccounts.heading">GPT accounts</h3>
+              <p class="settings-desc" data-i18n="gptAccounts.eyebrow">Local account registry</p>
+            </div>
+            <button class="text-button ghost" id="gptAccountsRecheckBtn" type="button" data-i18n="gptAccounts.recheck">
+              Re-scan accounts
+            </button>
+          </div>
+          <p class="gpt-accounts-meta" id="gptAccountsMeta"></p>
+          <div class="gpt-account-list" id="gptAccountList"></div>
+          <p class="gpt-accounts-note" id="gptAccountsNote" data-i18n="gptAccounts.attributionNote">
+            OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.
+          </p>
+        </section>
         <div class="settings-section">
           <h3 data-i18n="settings.notifications.title">Limits & Warnungen</h3>
           <p class="settings-desc" data-i18n="settings.notifications.description">Warnungen beziehen sich auf reale 5-Stunden- und Wochenfenster sowie Projektionen, nicht auf API-Kosten.</p>
