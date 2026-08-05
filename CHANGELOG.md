@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0-preview.15 - 2026-08-06
+
+### Fixed
+
+- Correctly recognize Claude Max 5x and 20x plans from the German billing
+  summary even when unrelated Team wording appears elsewhere on the page.
+
+### Improved
+
+- Move the local GPT account registry and its manual account re-scan from the
+  main dashboard into Settings.
+
 ## 1.1.0-preview.14 - 2026-08-02
 
 ### Fixed
