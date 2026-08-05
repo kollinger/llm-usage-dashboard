@@ -53,6 +53,16 @@ async function assertSubscriptionPlanDetection() {
   assert.equal(detectClaudePlanType("Choose a Claude plan Max 5x $100 Max 20x $200", { allowGeneric: false }), null);
   assert.equal(detectClaudePlanType("Pro capacity comparison text without current plan"), null);
   assert.equal(detectClaudePlanType("Claude Team", { explicit: true }), "Claude Team");
+  const germanClaudeMaxBilling = "Max Plan 20-mal mehr Nutzung als Pro Ihr Abonnement verlängert sich automatisch. Nutzungsguthaben Kaufe Nutzungsguthaben, damit dein Team Claude auch dann weiter nutzen kann.";
+  assert.equal(
+    detectClaudePlanType(germanClaudeMaxBilling, { explicit: true, allowGeneric: false }),
+    "Claude Max 20x"
+  );
+  assert.equal(hasPlanProbeSignal(germanClaudeMaxBilling), true);
+  assert.equal(
+    detectClaudePlanType("Max Plan 5-mal mehr Nutzung als Pro Guthaben für dein Team", { explicit: true, allowGeneric: false }),
+    "Claude Max 5x"
+  );
   assert.equal(
     detectClaudePlanType("Claude Max $200 Current plan 20x Pro capacity per session", { allowGeneric: false }),
     "Claude Max 20x"
