@@ -143,8 +143,15 @@ handoff so review never comes from an older local Git state or stale artifact.
 
 - The intended WhatsApp review group name is `LLM Usage Dashboard Review`
   unless Gerhard explicitly chooses another name.
-- The review bot is addressed with `@Opus`. Every WhatsApp reply from that bot
-  must start with the visible identity prefix `🤖 [Opus]`.
+- The review bot runs as GPT-5.6 Sol with maximum reasoning and is addressed
+  with `@Sol`. During the migration, `@Opus` remains a trigger alias so older
+  group habits do not break. Every WhatsApp reply from that bot must start with
+  the truthful visible identity prefix `🤖 [Sol 5.6]`.
+- The review route must use the shared project-bound Sol admin runner, start in
+  `/srv/multica/projects/llm-usage-dashboard`, and have shell/file access to
+  that repository. Its live model, workdir, display name, mention, and response
+  prefix must pass gateway validation together so a model switch cannot leave
+  stale identity or repository permissions behind.
 - The route should accept messages from Gerhard Kollinger and Reinhard
   Schneidewind only, and should support voice notes through the reviewed
   WhatsApp Agent Gateway audio transcription path.
@@ -155,8 +162,9 @@ handoff so review never comes from an older local Git state or stale artifact.
   not grant unrelated machine administration, unrelated project access,
   destructive system changes, secret disclosure, or external sends beyond the
   reviewed route contract.
-- Reinhard may discuss changes with `@Opus`, but a Multica issue for this
-  product may be created only after Gerhard explicitly approves the concrete
+- Reinhard may discuss changes with `@Sol` (or the temporary `@Opus` alias),
+  but a Multica issue for this product may be created only after Gerhard
+  explicitly approves the concrete
   ticket draft in the same WhatsApp group. After approval, implementation
   should run through Multica on Manjaro with the usual GPT+Opus owner/reviewer
   pattern and a durable heartbeat/lifecycle watch until the ticket is truthfully
