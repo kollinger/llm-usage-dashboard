@@ -155,6 +155,13 @@ handoff so review never comes from an older local Git state or stale artifact.
 - The route should accept messages from Gerhard Kollinger and Reinhard
   Schneidewind only, and should support voice notes through the reviewed
   WhatsApp Agent Gateway audio transcription path.
+- Never ask Gerhard or Reinhard to operate internal fixtures, replay reactions,
+  validate routing, or perform gateway E2E/QA steps. Run those checks
+  synthetically or through an internal operator path. A question in the review
+  group is allowed only for a real product decision and must explain the
+  visible outcome and the effect of approval in plain language; parked test
+  tickets, lifecycle-watch mechanics, and other test scaffolding are not user
+  tasks.
 - The bot may have project-admin authority for the LLM Usage Dashboard on the
   Manjaro runner: inspect and change this repository, create branches, commit,
   push, run checks, run Linux builds, inspect GitHub Actions and releases, and
