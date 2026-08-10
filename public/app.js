@@ -38,6 +38,7 @@ const state = {
   usageProjectionMode: "tachometer",
   pricingView: "api",
   pricingSort: { key: "total", direction: "desc" },
+  themePreference: "system",
   language: "en",
   translations: {},
   fallbackTranslations: {},
@@ -143,6 +144,7 @@ const els = {
   notificationLastTestDetails: document.getElementById("notificationLastTestDetails"),
   notificationLastTestAt: document.getElementById("notificationLastTestAt"),
   notificationLastTestResult: document.getElementById("notificationLastTestResult"),
+  themeSelect: document.getElementById("themeSelect"),
   languageSelect: document.getElementById("languageSelect"),
   fiveHourOpen: document.getElementById("fiveHourOpen"),
   weeklyOpen: document.getElementById("weeklyOpen"),
@@ -1698,6 +1700,7 @@ const modelQualityScores = {
 init();
 
 async function init() {
+  loadThemePreference();
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
   loadDashboardSectionOrderPreference();
@@ -1795,7 +1798,12 @@ function bindEvents() {
   });
   els.notificationSettingsBtn?.addEventListener("click", openNotificationSettings);
   els.notificationTestBtn?.addEventListener("click", sendTestNotification);
+  els.themeSelect?.addEventListener("change", () => setThemePreference(els.themeSelect.value));
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
+  window.addEventListener("llm-usage-theme-change", (event) => {
+    state.themePreference = normalizeThemePreference(event.detail?.preference);
+    syncThemeSelect();
+  });
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
   });
@@ -1837,6 +1845,25 @@ function bindEvents() {
     requestChartLatestForRangeChange();
     if (state.usage) render();
   });
+}
+
+function normalizeThemePreference(theme) {
+  return ["system", "light", "dark"].includes(theme) ? theme : "system";
+}
+
+function loadThemePreference() {
+  state.themePreference = normalizeThemePreference(window.llmUsageTheme?.getPreference?.());
+  syncThemeSelect();
+}
+
+function setThemePreference(theme) {
+  state.themePreference = normalizeThemePreference(theme);
+  window.llmUsageTheme?.setPreference?.(state.themePreference);
+  syncThemeSelect();
+}
+
+function syncThemeSelect() {
+  if (els.themeSelect) els.themeSelect.value = state.themePreference;
 }
 
 async function setLanguage(language) {
@@ -4318,7 +4345,7 @@ function renderOverviewHistory(daily) {
         <div class="overview-history-canvas" style="width: ${width}px">
           <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.overviewAria"))}" style="width: ${width}px">
             ${gridLines}
-            <line x1="0" y1="${axisY}" x2="${width}" y2="${axisY}" stroke="#dfe5dd"></line>
+            <line x1="0" y1="${axisY}" x2="${width}" y2="${axisY}" stroke="var(--line)"></line>
             ${timeline}
             ${bars}
           </svg>
@@ -6508,7 +6535,7 @@ function renderLiveHistory(metrics) {
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("liveMetrics.historyAria"))}" style="width: ${width}px">
         ${gridLines}
         ${tokenAxis}
-        <line x1="${padLeft}" y1="${axisY}" x2="${width - padRight}" y2="${axisY}" stroke="#dfe5dd"></line>
+        <line x1="${padLeft}" y1="${axisY}" x2="${width - padRight}" y2="${axisY}" stroke="var(--line)"></line>
         ${lines}
         <text x="${padLeft}" y="${dateLabelY}" text-anchor="start" class="axis-label">${escapeHtml(formatTime(first))}</text>
         <text x="${width - padRight}" y="${dateLabelY}" text-anchor="end" class="axis-label">${escapeHtml(formatTime(last))}</text>
@@ -7843,7 +7870,7 @@ function renderStackedHistoryChart({
         <div class="chart-canvas" style="width: ${plotWidth}px">
           <svg viewBox="0 0 ${plotWidth} ${height}" role="img" aria-label="${escapeHtml(ariaLabel)}" style="width: ${plotWidth}px">
             ${gridLines}
-            <line x1="0" y1="${axisY}" x2="${plotWidth}" y2="${axisY}" stroke="#dfe5dd"></line>
+            <line x1="0" y1="${axisY}" x2="${plotWidth}" y2="${axisY}" stroke="var(--line)"></line>
             ${timeline}
             ${timelineLabels}
             ${bars}

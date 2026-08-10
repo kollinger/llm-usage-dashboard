@@ -517,6 +517,12 @@
     "language": {
       "label": "Язык"
     },
+    "theme": {
+      "label": "Тема",
+      "system": "Системная",
+      "light": "Светлая",
+      "dark": "Тёмная"
+    },
     "notifications": {
       "title": "Limits & warnings",
       "description": "Warnings use real 5-hour and weekly provider windows plus projections; they are separate from monthly subscription/API cost comparisons.",

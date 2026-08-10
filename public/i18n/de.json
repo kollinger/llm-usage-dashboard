@@ -543,6 +543,12 @@
     "language": {
       "label": "Sprache"
     },
+    "theme": {
+      "label": "Darstellung",
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
     "notifications": {
       "title": "Limits & Warnungen",
       "description": "Warnungen nutzen echte 5-Stunden- und Wochenfenster der Provider plus Projektionen; sie sind von Abo-/API-Kosten getrennt.",

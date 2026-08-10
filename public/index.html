@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f7f4" />
     <title data-i18n="app.title">LLM Usage</title>
+    <script src="/theme-bootstrap.js"></script>
     <link rel="stylesheet" href="/styles.css" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script src="/app.js" defer></script>
@@ -210,6 +212,14 @@
           </button>
         </div>
         <div class="settings-preferences">
+          <label class="field theme-field">
+            <span data-i18n="settings.theme.label">Theme</span>
+            <select id="themeSelect" aria-label="Theme" data-i18n-aria-label="settings.theme.label">
+              <option value="system" data-i18n="settings.theme.system">System</option>
+              <option value="light" data-i18n="settings.theme.light">Light</option>
+              <option value="dark" data-i18n="settings.theme.dark">Dark</option>
+            </select>
+          </label>
           <label class="field language-field">
             <span data-i18n="settings.language.label">Sprache</span>
             <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>

@@ -517,6 +517,12 @@
     "language": {
       "label": "Keel"
     },
+    "theme": {
+      "label": "Teema",
+      "system": "Süsteem",
+      "light": "Hele",
+      "dark": "Tume"
+    },
     "notifications": {
       "title": "Limits & warnings",
       "description": "Warnings use real 5-hour and weekly provider windows plus projections; they are separate from monthly subscription/API cost comparisons.",
