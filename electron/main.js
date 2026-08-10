@@ -8,7 +8,7 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
-const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain, powerMonitor } = require("electron");
+const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain, powerMonitor, nativeTheme } = require("electron");
 const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal } = require("../lib/subscription-plan-detection");
 
 let dashboardServer = null;
@@ -29,6 +29,7 @@ let systemSuspended = false;
 let lastBadgeCount = null;
 let lastNotificationStatusWriteAt = 0;
 let lastNotificationStatusSignature = null;
+let themePreference = "system";
 // Plan-probe backoff state per domain: { until, failures, planType, successAt }
 const planProbeBackoff = new Map();
 // Chrome cookie rows cached per domain, keyed by the cookie DB size+mtime.
@@ -63,6 +64,11 @@ const CLAUDE_BROWSER_SYNC_ENDPOINT = "/api/claude/browser-credits";
 const ACCOUNT_BILLING_SYNC_ENDPOINT = "/api/account-billing/snapshots";
 const CLAUDE_SYNC_TOKEN_HEADER = "x-llm-usage-sync-token";
 const BACKGROUND_START_ARG = "--background";
+const THEME_PREFERENCES = new Set(["system", "light", "dark"]);
+const THEME_BACKGROUND_COLORS = {
+  light: "#f6f7f4",
+  dark: "#0f1512"
+};
 const LINUX_AUTOSTART_ID = "local.llm-usage-dashboard";
 const INSTANCE_MARKER_DIR = path.join(os.tmpdir(), "llm-usage-dashboard");
 const CLAUDE_COOKIE_CANDIDATE_NAMES = ["sessionKey", "__Secure-next-auth.session-token", "sessionKeyLC"];
@@ -110,6 +116,12 @@ ipcMain.handle("subscription:refresh", async (_event, payload = {}) => {
   return refreshSubscriptionSources(payload?.provider);
 });
 
+ipcMain.handle("theme:set-preference", async (_event, preference) => {
+  const normalized = applyNativeThemePreference(preference);
+  await writeThemePreference(normalized.preference);
+  return normalized;
+});
+
 function setDefaultEnv(name, value) {
   if (!process.env[name]) process.env[name] = value;
 }
@@ -119,6 +131,56 @@ function configureDashboardEnv() {
   setDefaultEnv("LLM_USAGE_DATA_DIR", path.join(app.getPath("userData"), "data"));
   setDefaultEnv("OLLAMA_HOST", "http://localhost:11434");
   setDefaultEnv("LLM_USAGE_ELECTRON_SYNC_TOKEN", crypto.randomUUID());
+}
+
+function normalizeThemePreference(preference) {
+  const normalized = String(preference || "").trim().toLowerCase();
+  return THEME_PREFERENCES.has(normalized) ? normalized : "system";
+}
+
+function getThemeSettingsFile() {
+  return path.join(app.getPath("userData"), "theme-settings.json");
+}
+
+async function readThemePreference() {
+  try {
+    const settings = JSON.parse(await fs.readFile(getThemeSettingsFile(), "utf8"));
+    return normalizeThemePreference(settings?.preference);
+  } catch {
+    return "system";
+  }
+}
+
+async function writeThemePreference(preference) {
+  const filePath = getThemeSettingsFile();
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, `${JSON.stringify({ preference }, null, 2)}\n`, { mode: 0o600 });
+  } catch {
+    // The renderer keeps its local preference even if native persistence fails.
+  }
+}
+
+function resolvedNativeTheme() {
+  return nativeTheme.shouldUseDarkColors ? "dark" : "light";
+}
+
+function updateNativeWindowTheme() {
+  const resolvedTheme = resolvedNativeTheme();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setBackgroundColor(THEME_BACKGROUND_COLORS[resolvedTheme]);
+    mainWindow.webContents.send("theme:system-changed", { resolvedTheme });
+  }
+  return resolvedTheme;
+}
+
+function applyNativeThemePreference(preference) {
+  themePreference = normalizeThemePreference(preference);
+  nativeTheme.themeSource = themePreference;
+  return {
+    preference: themePreference,
+    resolvedTheme: updateNativeWindowTheme()
+  };
 }
 
 async function startBackend() {
@@ -176,15 +238,17 @@ function removeInstanceMarkerSync() {
 
 function createWindow(port) {
   const appUrl = `http://localhost:${port}`;
+  const resolvedTheme = resolvedNativeTheme();
   mainWindow = new BrowserWindow({
     width: 1480,
     height: 980,
     minWidth: 980,
     minHeight: 680,
     title: "LLM Usage Dashboard",
-    backgroundColor: "#f6f7f4",
+    backgroundColor: THEME_BACKGROUND_COLORS[resolvedTheme],
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      additionalArguments: [`--llm-usage-theme=${themePreference}`],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -2377,6 +2441,8 @@ async function fileExists(filePath) {
 
 app.whenReady().then(async () => {
   if (!hasSingleInstanceLock) return;
+  applyNativeThemePreference(await readThemePreference());
+  nativeTheme.on("updated", updateNativeWindowTheme);
   const port = await startBackend();
   dashboardPort = port;
   await writeInstanceMarker(port).catch(() => {});

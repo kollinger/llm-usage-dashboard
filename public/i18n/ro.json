@@ -517,6 +517,12 @@
     "language": {
       "label": "Limbă"
     },
+    "theme": {
+      "label": "Temă",
+      "system": "Sistem",
+      "light": "Luminos",
+      "dark": "Întunecat"
+    },
     "notifications": {
       "title": "Limits & warnings",
       "description": "Warnings use real 5-hour and weekly provider windows plus projections; they are separate from monthly subscription/API cost comparisons.",
