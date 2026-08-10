@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0-preview.16 - 2026-08-10
+
+### Added
+
+- Add a translated appearance setting with System, Light, and Dark modes.
+- Follow the operating-system appearance live on macOS, Windows, and Linux
+  while keeping manual overrides across browser and desktop restarts.
+
+### Improved
+
+- Apply the selected appearance before the first visible render and extend the
+  dark palette across dashboard surfaces, charts, controls, dialogs, focus and
+  interaction states.
+
 ## 1.1.0-preview.15 - 2026-08-06
 
 ### Fixed
