@@ -184,6 +184,13 @@ handoff so review never comes from an older local Git state or stale artifact.
   updater metadata, then send the WhatsApp update message with version,
   download/update status, GitHub release link, and short changelog. Gerhard is
   not an additional release/send gate for this reviewed route.
+- Every published GitHub release for this product must be announced in `LLM
+  Usage Dashboard Review`, regardless of whether its work originated in
+  WhatsApp, Codex, Multica, GitHub, or another approved workflow. The Manjaro
+  Gateway heartbeat owns this source-independent check, deduplicates by release
+  tag, and routes the announcement through the same asset/updater verification
+  and audited send path. This announcement rule does not itself authorize a
+  release that otherwise still requires a release gate.
 - Prefer resolving Reinhard and the review group through the Manjaro WhatsApp
   bridge contacts/chats by name. A newly created group may need to sync into
   the bridge first, but agents should not require Reinhard to send a dummy
