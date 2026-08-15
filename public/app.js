@@ -5683,6 +5683,9 @@ function renderLimitBar(row, accent, mode = "tachometer") {
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
   const pace = limitPaceAssessment(row);
   const gauge = renderLimitProjectionVisualization(row, accent, mode);
+  const paceNote = pace.message
+    ? `<p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>`
+    : "";
   return `
     <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
@@ -5701,7 +5704,7 @@ function renderLimitBar(row, accent, mode = "tachometer") {
           ${detail ? `<p class="limit-detail">${escapeHtml(detail)}</p>` : ""}
         </div>
         ${gauge}
-        <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
+        ${paceNote}
       </div>
     </div>
   `;
@@ -5732,13 +5735,19 @@ function renderLimitProjectionVisualization(row, accent, mode = "tachometer") {
 }
 
 function renderLimitProjectionGauge(row, accent) {
+  const inactive = isInactiveFiveHourWindow(row);
   const projected = limitProjectedEndPercent(row);
   const hasProjection = Number.isFinite(projected);
   const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
-  const value = hasProjection
-    ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
-    : t("limits.gauge.unavailable");
+  const value = inactive
+    ? t("limits.leftValue", { percent: 100 })
+    : hasProjection
+      ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
+      : t("limits.gauge.unavailable");
+  const ariaLabel = inactive
+    ? `${row.label}: ${value}`
+    : t("limits.gauge.aria", { label: row.label });
   const needleStart = gaugePoint(clamped, 64);
   const needleEnd = gaugePoint(clamped, 91);
   const targetStart = gaugePoint(LIMIT_GAUGE_TARGET_PERCENT, 76);
@@ -5751,7 +5760,7 @@ function renderLimitProjectionGauge(row, accent) {
       aria-valuemin="0"
       aria-valuemax="${LIMIT_GAUGE_MAX_PERCENT}"
       ${ariaNow}
-      aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
+      aria-label="${escapeHtml(ariaLabel)}"
       style="--gauge-position: ${clamped}; --accent: ${escapeHtml(accent)}"
     >
       <div class="limit-tachometer-shell" aria-hidden="true">
@@ -5781,14 +5790,20 @@ function renderLimitProjectionGauge(row, accent) {
 }
 
 function renderLimitProjectionBar(row, accent) {
+  const inactive = isInactiveFiveHourWindow(row);
   const projected = limitProjectedEndPercent(row);
   const hasProjection = Number.isFinite(projected);
   const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
   const gaugeLeft = (clamped / LIMIT_GAUGE_MAX_PERCENT) * 100;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
-  const value = hasProjection
-    ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
-    : t("limits.gauge.unavailable");
+  const value = inactive
+    ? t("limits.leftValue", { percent: 100 })
+    : hasProjection
+      ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
+      : t("limits.gauge.unavailable");
+  const ariaLabel = inactive
+    ? `${row.label}: ${value}`
+    : t("limits.gauge.aria", { label: row.label });
   const ariaNow = hasProjection ? ` aria-valuenow="${escapeHtml(String(Math.round(clamped)))}"` : "";
   return `
     <div
@@ -5797,7 +5812,7 @@ function renderLimitProjectionBar(row, accent) {
       aria-valuemin="0"
       aria-valuemax="${LIMIT_GAUGE_MAX_PERCENT}"
       ${ariaNow}
-      aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
+      aria-label="${escapeHtml(ariaLabel)}"
       style="--gauge-position: ${clamped}; --gauge-left: ${gaugeLeft}; --accent: ${escapeHtml(accent)}"
     >
       <div class="limit-gauge-head">
@@ -5901,6 +5916,7 @@ function limitPaceAssessment(limit, nowMs = Date.now()) {
       message: resetTime ? t("limits.pace.fullWithReset", { time: resetTime }) : t("limits.pace.fullNoReset")
     };
   }
+  if (isInactiveFiveHourWindow(limit)) return { status: "ok", message: "" };
 
   const windowMinutes = finiteUiNumberOrNull(limit.windowMinutes ?? limit.window_minutes);
   if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return limitPaceUnavailable("noWindow");
@@ -5951,6 +5967,7 @@ function limitProjectedEndPercent(limit, nowMs = Date.now()) {
   const used = finiteUiNumberOrNull(limit.usedPercent);
   if (used === null) return null;
   if (used >= 99.5) return Math.max(100, used);
+  if (isInactiveFiveHourWindow(limit)) return 0;
   const windowMinutes = finiteUiNumberOrNull(limit.windowMinutes ?? limit.window_minutes);
   if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return null;
   const resetMs = Date.parse(limit.resetsAt);
@@ -5960,6 +5977,11 @@ function limitProjectedEndPercent(limit, nowMs = Date.now()) {
   if (!Number.isFinite(startMs) || nowMs <= startMs || nowMs >= resetMs) return null;
   const elapsedFraction = (nowMs - startMs) / windowMs;
   return elapsedFraction > 0 ? used / elapsedFraction : null;
+}
+
+function isInactiveFiveHourWindow(limit) {
+  const used = finiteUiNumberOrNull(limit?.usedPercent);
+  return used === 0 && isFiveHourLimit(limit) && !limit?.resetsAt;
 }
 
 function limitProjectionStatus(projectedPercent) {
