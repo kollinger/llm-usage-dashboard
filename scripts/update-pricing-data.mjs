@@ -5,8 +5,9 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const I18N_DIR = new URL("../public/i18n/", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_CATALOG_VERSION = "2026.07.09";
-const PRICING_REVIEW_DATE = "2026-07-09";
+const PRICING_CATALOG_VERSION = "2026.08.15";
+const PRICING_REVIEW_DATE = "2026-08-15";
+const BASELINE_SOURCE_REVIEW_DATE = "2026-07-09";
 const SCORE_REVIEW_DATE = "2026-07-09";
 const PRICING_MAX_AGE_DAYS = 45;
 
@@ -30,6 +31,9 @@ const REQUIRED_MODEL_COVERAGE = [
   "Claude Opus 4.8",
   "Claude Sonnet 5",
   "Claude Sonnet 4.6",
+  "GPT-5.6 Sol",
+  "GPT-5.6 Terra",
+  "GPT-5.6 Luna",
   "GPT-5.5 Pro",
   "GPT-5.4 Pro",
   "GPT-5.4 Nano",
@@ -48,6 +52,51 @@ const REQUIRED_MODEL_COVERAGE = [
 // Pricing reviewed from official provider pricing/model pages. Unknown values are
 // kept as null so the UI can expose gaps instead of treating them as zero-cost.
 const rawPricingModels = [
+  {
+    provider: "OpenAI",
+    model: "GPT-5.6 Sol",
+    aliases: ["gpt-5.6-sol", "gpt-5-6-sol", "gpt-5.6", "gpt-5-6"],
+    region: "API/Codex",
+    inputUsd: 5,
+    cacheWriteUsd: 6.25,
+    cachedInputUsd: 0.5,
+    outputUsd: 30,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/compare",
+    sourceReviewDate: PRICING_REVIEW_DATE
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.6 Terra",
+    aliases: ["gpt-5.6-terra", "gpt-5-6-terra"],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 12,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/compare",
+    sourceReviewDate: PRICING_REVIEW_DATE
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.6 Luna",
+    aliases: ["gpt-5.6-luna", "gpt-5-6-luna"],
+    region: "API/Codex",
+    inputUsd: 0.2,
+    cacheWriteUsd: 0.25,
+    cachedInputUsd: 0.02,
+    outputUsd: 1.2,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/compare",
+    sourceReviewDate: PRICING_REVIEW_DATE
+  },
   {
     provider: "OpenAI",
     model: "GPT-5.5",
@@ -689,6 +738,9 @@ const rawPricingModels = [
 ];
 
 const modelQualityScores = {
+  "GPT-5.6 Sol": null,
+  "GPT-5.6 Terra": null,
+  "GPT-5.6 Luna": null,
   "Claude Fable 5": 100,
   "Claude Mythos 5": 99,
   "GPT-5.5 Pro": 99,
@@ -787,7 +839,7 @@ function enrichPricingModels(rows) {
       limitStatus: row.limitStatus || (contextTokens || maxOutputTokens ? "official" : "unknown"),
       source: row.source,
       sourceUrl: row.sourceUrl,
-      sourceReviewDate: row.sourceReviewDate || PRICING_REVIEW_DATE,
+      sourceReviewDate: row.sourceReviewDate || BASELINE_SOURCE_REVIEW_DATE,
       sourceNotes: row.sourceNotes,
       china: row.china || undefined
     };
@@ -865,7 +917,7 @@ function validateFreshReviewDate() {
 function validateCatalogRows() {
   const models = new Set(pricingModels.map((row) => row.model));
   const providers = new Set(pricingModels.map((row) => row.provider));
-  const missingScores = pricingModels.filter((row) => !modelQualityScores[row.model]).map((row) => row.model);
+  const missingScores = pricingModels.filter((row) => !Object.hasOwn(modelQualityScores, row.model)).map((row) => row.model);
   const staleScores = Object.keys(modelQualityScores).filter((model) => !models.has(model));
   const missingProviders = REQUIRED_PROVIDER_COVERAGE.filter((provider) => !providers.has(provider));
   const missingRequiredModels = REQUIRED_MODEL_COVERAGE.filter((model) => !models.has(model));

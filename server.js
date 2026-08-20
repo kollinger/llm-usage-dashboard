@@ -4438,7 +4438,7 @@ async function readCodexUsage(options = {}) {
     const entries = await readCachedFileEvents(usageFileScanCaches.codex, fileRecord, parseCodexSessionFileEvents);
     let fileEvents = 0;
     for (const entry of entries) {
-      const { timestamp, timestampMs, model: currentModel, usage, info, rateLimits } = entry;
+      const { timestamp, timestampMs, model: currentModel, reasoningEffort, usage, info, rateLimits } = entry;
       if (rateLimits) {
         const rateLimitEvent = {
           timestamp,
@@ -4467,7 +4467,8 @@ async function readCodexUsage(options = {}) {
           rolloutSessionId: fileRecord.sessionId
         },
         metadata: {
-          sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex"
+          sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex",
+          reasoningEffort
         }
       });
       if (!usageEvent) continue;
@@ -4592,12 +4593,17 @@ async function readCodexUsage(options = {}) {
 async function parseCodexSessionFileEvents(fileRecord) {
   const events = [];
   let currentModel = null;
+  let currentReasoningEffort = null;
   await readJsonl(fileRecord.file, (event, meta) => {
     if (event?.type === "turn_context" && event.payload?.model) {
       currentModel = event.payload.model;
+      currentReasoningEffort = normalizeCodexReasoningEffort(event.payload.effort);
     }
     if (event?.type === "session_meta" && event.payload?.model) {
       currentModel = event.payload.model;
+      if (Object.hasOwn(event.payload, "effort")) {
+        currentReasoningEffort = normalizeCodexReasoningEffort(event.payload.effort);
+      }
     }
     if (event?.type !== "event_msg" || event?.payload?.type !== "token_count") return;
     const timestampMs = Date.parse(event.timestamp);
@@ -4607,6 +4613,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       timestamp: event.timestamp,
       timestampMs,
       model: currentModel,
+      reasoningEffort: currentReasoningEffort,
       // Kept separately so model attribution survives rate-limit compaction.
       limitName: rateLimits?.limit_name || null,
       usage: event.payload.info?.last_token_usage || {},
@@ -4620,6 +4627,11 @@ async function parseCodexSessionFileEvents(fileRecord) {
     });
   });
   return compactCodexFileEvents(events);
+}
+
+function normalizeCodexReasoningEffort(value) {
+  const effort = String(value || "").trim().toLowerCase();
+  return /^[a-z0-9_-]{1,32}$/u.test(effort) ? effort : null;
 }
 
 // Drops per-event info/rate-limit payloads that can no longer influence the

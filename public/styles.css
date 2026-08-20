@@ -1937,6 +1937,46 @@ button.subscription-connection-action {
   margin-left: auto;
 }
 
+.chart-range-total {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 3px 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+.chart-range-total span,
+.chart-range-total small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 820;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-range-total span {
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.chart-range-total strong {
+  color: var(--ink);
+  font-size: clamp(1.2rem, 2vw, 1.75rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 920;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.chart-range-total small {
+  grid-column: 1 / -1;
+}
+
 .chart-mode-toggle {
   display: inline-flex;
   flex-wrap: wrap;

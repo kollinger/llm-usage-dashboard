@@ -195,6 +195,7 @@ const els = {
   chart: document.getElementById("chart"),
   chartFilterBar: document.getElementById("chartFilterBar"),
   chartLegend: document.getElementById("chartLegend"),
+  chartRangeTotal: document.getElementById("chartRangeTotal"),
   sourceTotals: document.getElementById("sourceTotals"),
   chartWindowInsights: document.getElementById("chartWindowInsights"),
   liveGaugesSection: document.getElementById("liveGaugesSection"),
@@ -282,11 +283,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1404;
-const FX_DATE = "2026-07-08";
-const PRICING_DATE = "2026-07-09";
+const USD_PER_EUR = 1.1567;
+const FX_DATE = "2026-08-14";
+const PRICING_DATE = "2026-08-15";
 const SCORE_DATE = "2026-07-09";
-const PRICING_CATALOG_VERSION = "2026.07.09";
+const PRICING_CATALOG_VERSION = "2026.08.15";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -649,6 +650,77 @@ const DIAGNOSTIC_ISSUE_STATUSES = new Set([
 ]);
 
 const pricingModels = [
+  {
+    provider: "OpenAI",
+    model: "GPT-5.6 Sol",
+    aliases: [
+      "gpt-5.6-sol",
+      "gpt-5-6-sol",
+      "gpt-5.6",
+      "gpt-5-6"
+    ],
+    region: "API/Codex",
+    inputUsd: 5,
+    cacheWriteUsd: 6.25,
+    cachedInputUsd: 0.5,
+    outputUsd: 30,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/compare",
+    sourceReviewDate: "2026-08-15"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.6 Terra",
+    aliases: [
+      "gpt-5.6-terra",
+      "gpt-5-6-terra"
+    ],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 12,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/compare",
+    sourceReviewDate: "2026-08-15"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-5.6 Luna",
+    aliases: [
+      "gpt-5.6-luna",
+      "gpt-5-6-luna"
+    ],
+    region: "API/Codex",
+    inputUsd: 0.2,
+    cacheWriteUsd: 0.25,
+    cachedInputUsd: 0.02,
+    outputUsd: 1.2,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/compare",
+    sourceReviewDate: "2026-08-15"
+  },
   {
     provider: "OpenAI",
     model: "GPT-5.5",
@@ -1680,6 +1752,9 @@ const pricingModelAliasByCanonicalName = new Map(
 );
 
 const modelQualityScores = {
+  "GPT-5.6 Sol": null,
+  "GPT-5.6 Terra": null,
+  "GPT-5.6 Luna": null,
   "Claude Fable 5": 100,
   "Claude Mythos 5": 99,
   "GPT-5.5 Pro": 99,
@@ -1852,7 +1927,7 @@ function bindEvents() {
       : "api";
     if (state.usage) {
       const local = activeDashboardUsage();
-      renderPricing(local, filterDailyByRange(local?.daily || [], state.chartTimeFilter), buildProviders(state.usage));
+      renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
     }
   });
   els.loginForm.addEventListener("submit", login);
@@ -2036,7 +2111,7 @@ function sortPricing(key) {
     const local = activeDashboardUsage();
     renderPricing(
       local,
-      filterDailyByRange(local?.daily || [], state.chartTimeFilter),
+      chartRowsForCurrentRange(local),
       buildProviders(state.usage)
     );
   }
@@ -3727,6 +3802,7 @@ function renderLocked() {
   els.chartLegend.innerHTML = "";
   els.chartFilterBar.innerHTML = "";
   els.chartWindowInsights.innerHTML = "";
+  if (els.chartRangeTotal) els.chartRangeTotal.textContent = "--";
   els.sourceTotals.textContent = "--";
   renderLiveGauges(null);
   els.tokenList.innerHTML = "";
@@ -3803,6 +3879,7 @@ function render() {
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
   const chartRows = buildHistoryRowsForFilter(local, filteredDaily, state.chartTimeFilter);
+  const selectedRangeRows = usageRowsForSelectedRange(local, chartRows);
   renderSummary(visibleProviders, local, filteredDaily);
   renderGptAccounts(usage.gptAccounts);
   updateSummaryMetricLayout();
@@ -3820,6 +3897,9 @@ function render() {
     els.chartBreakdownToggle.innerHTML = state.chartMode === "costs" ? "" : renderChartBreakdownToggle();
   }
   els.chartFilterBar.innerHTML = renderChartFilterBar(allDaily);
+  if (els.chartRangeTotal) {
+    els.chartRangeTotal.innerHTML = renderChartRangeTotal(selectedRangeRows, state.chartMode);
+  }
   if (state.chartMode === "costs") {
     renderCostChart(chartRows, chartScrollState);
     els.sourceTotals.innerHTML = renderCostSummary(chartRows, state.subscriptionHistory);
@@ -3830,7 +3910,7 @@ function render() {
   els.chartWindowInsights.innerHTML = renderChartWindowInsights(chartRows, state.chartMode, state.chartBreakdownMode);
   renderTokenList(local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
-  renderPricing(local, filteredDaily, providers);
+  renderPricing(local, chartRows, providers);
   renderSourceDiagnostics();
   renderSourceSettings();
   renderSyncSettings();
@@ -4053,6 +4133,18 @@ function renderTokenBreakdownSummary(daily, breakdownMode) {
   return renderTotalBreakdownSummary(daily);
 }
 
+function renderChartRangeTotal(daily, mode) {
+  const normalizedMode = mode === "costs" ? "costs" : "tokens";
+  const label = `${chartRangeLabel(state.chartTimeFilter)} · ${t(`chart.mode.${normalizedMode}`)}`;
+  if (normalizedMode === "costs") {
+    const summary = summarizeUsedModelApiCost(summarizeModelUsageForDaily(daily));
+    const status = summary.status === "complete" ? "" : `<small>${escapeHtml(summary.statusLabel)}</small>`;
+    return `<span>${escapeHtml(label)}</span><strong>${escapeHtml(summary.valueLabel)}</strong>${status}`;
+  }
+  const summary = summarizeTokenWindow(daily);
+  return `<span>${escapeHtml(label)}</span><strong>${escapeHtml(summary.hasActivity ? formatTokens(summary.total) : "--")}</strong>`;
+}
+
 function renderTotalBreakdownSummary(daily) {
   const summary = summarizeTokenWindow(daily);
   if (!summary.hasActivity) return "--";
@@ -4158,6 +4250,32 @@ function renderSourceSummaryRows(rows) {
       </div>
     `)
     .join("");
+}
+
+function chartRowsForCurrentRange(local) {
+  const daily = Array.isArray(local?.daily) ? local.daily : [];
+  const filteredDaily = filterDailyByRange(daily, state.chartTimeFilter);
+  return buildHistoryRowsForFilter(local, filteredDaily, state.chartTimeFilter);
+}
+
+function usageRowsForSelectedRange(local, chartRows, filter = state.chartTimeFilter) {
+  const rows = Array.isArray(chartRows) ? chartRows : [];
+  if (filter !== "all") return rows;
+  const allTime = local?.totals?.allTime;
+  if (!Number(allTime?.totalTokens || 0)) return rows;
+  const sources = (Array.isArray(local?.sources) ? local.sources : [])
+    .map((source) => {
+      const totals = source?.totals?.allTime;
+      if (!totals || !Number(totals.totalTokens || 0)) return null;
+      return {
+        id: source.id || "local",
+        ...totals,
+        ...(Array.isArray(source.models) && source.models.length ? { models: source.models } : {})
+      };
+    })
+    .filter(Boolean);
+  const firstDate = local?.daily?.[0]?.date || new Date().toISOString().slice(0, 10);
+  return [{ date: firstDate, ...allTime, sources }];
 }
 
 function buildHistoryRowsForFilter(local, filteredDaily, filter) {
@@ -5834,6 +5952,9 @@ function renderLimitBar(row, accent, mode = "tachometer") {
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
   const pace = limitPaceAssessment(row);
   const gauge = renderLimitProjectionVisualization(row, accent, mode);
+  const paceNote = pace.message
+    ? `<p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>`
+    : "";
   return `
     <div class="limit-bar limit-status-${escapeHtml(status)}">
       <div class="limit-bar-top">
@@ -5852,7 +5973,7 @@ function renderLimitBar(row, accent, mode = "tachometer") {
           ${detail ? `<p class="limit-detail">${escapeHtml(detail)}</p>` : ""}
         </div>
         ${gauge}
-        <p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>
+        ${paceNote}
       </div>
     </div>
   `;
@@ -5883,13 +6004,19 @@ function renderLimitProjectionVisualization(row, accent, mode = "tachometer") {
 }
 
 function renderLimitProjectionGauge(row, accent) {
+  const inactive = isInactiveFiveHourWindow(row);
   const projected = limitProjectedEndPercent(row);
   const hasProjection = Number.isFinite(projected);
   const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
-  const value = hasProjection
-    ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
-    : t("limits.gauge.unavailable");
+  const value = inactive
+    ? t("limits.leftValue", { percent: 100 })
+    : hasProjection
+      ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
+      : t("limits.gauge.unavailable");
+  const ariaLabel = inactive
+    ? `${row.label}: ${value}`
+    : t("limits.gauge.aria", { label: row.label });
   const needleStart = gaugePoint(clamped, 64);
   const needleEnd = gaugePoint(clamped, 91);
   const targetStart = gaugePoint(LIMIT_GAUGE_TARGET_PERCENT, 76);
@@ -5902,7 +6029,7 @@ function renderLimitProjectionGauge(row, accent) {
       aria-valuemin="0"
       aria-valuemax="${LIMIT_GAUGE_MAX_PERCENT}"
       ${ariaNow}
-      aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
+      aria-label="${escapeHtml(ariaLabel)}"
       style="--gauge-position: ${clamped}; --accent: ${escapeHtml(accent)}"
     >
       <div class="limit-tachometer-shell" aria-hidden="true">
@@ -5932,14 +6059,20 @@ function renderLimitProjectionGauge(row, accent) {
 }
 
 function renderLimitProjectionBar(row, accent) {
+  const inactive = isInactiveFiveHourWindow(row);
   const projected = limitProjectedEndPercent(row);
   const hasProjection = Number.isFinite(projected);
   const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
   const gaugeLeft = (clamped / LIMIT_GAUGE_MAX_PERCENT) * 100;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
-  const value = hasProjection
-    ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
-    : t("limits.gauge.unavailable");
+  const value = inactive
+    ? t("limits.leftValue", { percent: 100 })
+    : hasProjection
+      ? t("limits.gauge.projectedValue", { percent: formatGaugePercent(projected) })
+      : t("limits.gauge.unavailable");
+  const ariaLabel = inactive
+    ? `${row.label}: ${value}`
+    : t("limits.gauge.aria", { label: row.label });
   const ariaNow = hasProjection ? ` aria-valuenow="${escapeHtml(String(Math.round(clamped)))}"` : "";
   return `
     <div
@@ -5948,7 +6081,7 @@ function renderLimitProjectionBar(row, accent) {
       aria-valuemin="0"
       aria-valuemax="${LIMIT_GAUGE_MAX_PERCENT}"
       ${ariaNow}
-      aria-label="${escapeHtml(t("limits.gauge.aria", { label: row.label }))}"
+      aria-label="${escapeHtml(ariaLabel)}"
       style="--gauge-position: ${clamped}; --gauge-left: ${gaugeLeft}; --accent: ${escapeHtml(accent)}"
     >
       <div class="limit-gauge-head">
@@ -6052,6 +6185,7 @@ function limitPaceAssessment(limit, nowMs = Date.now()) {
       message: resetTime ? t("limits.pace.fullWithReset", { time: resetTime }) : t("limits.pace.fullNoReset")
     };
   }
+  if (isInactiveFiveHourWindow(limit)) return { status: "ok", message: "" };
 
   const windowMinutes = finiteUiNumberOrNull(limit.windowMinutes ?? limit.window_minutes);
   if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return limitPaceUnavailable("noWindow");
@@ -6102,6 +6236,7 @@ function limitProjectedEndPercent(limit, nowMs = Date.now()) {
   const used = finiteUiNumberOrNull(limit.usedPercent);
   if (used === null) return null;
   if (used >= 99.5) return Math.max(100, used);
+  if (isInactiveFiveHourWindow(limit)) return 0;
   const windowMinutes = finiteUiNumberOrNull(limit.windowMinutes ?? limit.window_minutes);
   if (windowMinutes === null || windowMinutes <= 0 || !limit.resetsAt) return null;
   const resetMs = Date.parse(limit.resetsAt);
@@ -6111,6 +6246,11 @@ function limitProjectedEndPercent(limit, nowMs = Date.now()) {
   if (!Number.isFinite(startMs) || nowMs <= startMs || nowMs >= resetMs) return null;
   const elapsedFraction = (nowMs - startMs) / windowMs;
   return elapsedFraction > 0 ? used / elapsedFraction : null;
+}
+
+function isInactiveFiveHourWindow(limit) {
+  const used = finiteUiNumberOrNull(limit?.usedPercent);
+  return used === 0 && isFiveHourLimit(limit) && !limit?.resetsAt;
 }
 
 function limitProjectionStatus(projectedPercent) {
@@ -6817,24 +6957,25 @@ function roundSvg(value) {
   return Math.round(Number(value) * 10) / 10;
 }
 
-function renderPricing(local, filteredDaily = [], providers = []) {
+function renderPricing(local, rangeRows = [], providers = []) {
+  const modelUsageRows = usageRowsForSelectedRange(local, rangeRows);
   if (els.pricingViewToggle) {
     els.pricingViewToggle.innerHTML = renderPricingViewToggle();
   }
   if (els.pricingApiView) els.pricingApiView.hidden = state.pricingView !== "api";
   if (els.pricingUsedModels) {
     els.pricingUsedModels.hidden = state.pricingView !== "models";
-    els.pricingUsedModels.innerHTML = state.pricingView === "models" ? renderUsedModelPricingView(filteredDaily) : "";
+    els.pricingUsedModels.innerHTML = state.pricingView === "models" ? renderUsedModelPricingView(modelUsageRows) : "";
   }
   if (els.pricingSubscriptionCosts) {
     els.pricingSubscriptionCosts.hidden = state.pricingView !== "subscriptions";
     els.pricingSubscriptionCosts.innerHTML =
       state.pricingView === "subscriptions"
-        ? renderSubscriptionPricingView(filteredDaily, state.subscriptionHistory, providers)
+        ? renderSubscriptionPricingView(rangeRows, state.subscriptionHistory, providers)
         : "";
   }
 
-  const todayUsage = billingTotalsForWindow(local, "last24h");
+  const todayUsage = billingTotalsForDaily(dailyRowsForToday(local));
   const totalUsage = billingTotalsForWindow(local, "allTime");
   const rows = pricingModels.map((price) => ({
     price,
@@ -6918,6 +7059,7 @@ function renderUsedModelPricingView(filteredDaily) {
             <th scope="col">${escapeHtml(t("pricing.columns.model"))}</th>
             <th scope="col">${escapeHtml(t("tokens.input"))}</th>
             <th scope="col">${escapeHtml(t("tokens.output"))}</th>
+            <th scope="col">${escapeHtml(t("tokens.reasoningOutput"))}</th>
             <th scope="col">${escapeHtml(t("tokens.cachedInput"))}</th>
             <th scope="col">${escapeHtml(t("tokens.total"))}</th>
             <th scope="col">${escapeHtml(t("labels.cost"))}</th>
@@ -6927,7 +7069,7 @@ function renderUsedModelPricingView(filteredDaily) {
         <tbody>${rows.map(renderUsedModelPricingRow).join("")}</tbody>
         <tfoot>
           <tr class="used-model-total-row">
-            <th scope="row" colspan="5">${escapeHtml(t("pricing.usedModels.totalRow"))}</th>
+            <th scope="row" colspan="6">${escapeHtml(t("pricing.usedModels.totalRow"))}</th>
             <td class="numeric cost-cell">${escapeHtml(costSummary.valueLabel)}</td>
             <td></td>
           </tr>
@@ -6947,17 +7089,32 @@ function renderUsedModelPricingRow(row) {
           <div>
             <strong>${escapeHtml(row.model)}</strong>
             <span>${escapeHtml(sourceLabel(row.sourceId))}</span>
+            ${renderReasoningEffortSummary(row.reasoningEfforts)}
           </div>
         </div>
       </th>
       <td class="numeric">${escapeHtml(formatTokens(row.inputTokens))}</td>
-      <td class="numeric">${escapeHtml(formatTokens(row.outputTokens + row.reasoningOutputTokens))}</td>
+      <td class="numeric">${escapeHtml(formatTokens(row.outputTokens))}</td>
+      <td class="numeric">${escapeHtml(formatTokens(row.reasoningOutputTokens))}</td>
       <td class="numeric">${escapeHtml(formatTokens(row.cachedInputTokens + row.cacheCreationInputTokens))}</td>
       <td class="numeric">${escapeHtml(formatTokens(row.totalTokens))}</td>
       <td class="numeric cost-cell">${escapeHtml(formatCostEstimate(row.cost))}</td>
       <td>${escapeHtml(priceLabel)}</td>
     </tr>
   `;
+}
+
+function renderReasoningEffortSummary(reasoningEfforts) {
+  const efforts = (Array.isArray(reasoningEfforts) ? reasoningEfforts : [])
+    .filter((row) => row?.effort && Number(row.totalTokens || 0) > 0)
+    .map((row) => `${formatReasoningEffort(row.effort)} ${formatTokens(row.totalTokens)}`);
+  return efforts.length ? `<span>${escapeHtml(efforts.join(" · "))}</span>` : "";
+}
+
+function formatReasoningEffort(effort) {
+  const normalized = String(effort || "").trim().toLowerCase();
+  if (normalized === "xhigh") return "XHigh";
+  return normalized ? `${normalized[0].toUpperCase()}${normalized.slice(1)}` : "";
 }
 
 function summarizeUsedModelApiCost(rows) {
@@ -7267,6 +7424,23 @@ function billingTotalsForWindow(local, windowKey) {
   return acc;
 }
 
+function billingTotalsForDaily(daily) {
+  const acc = createBillingTotals();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    const sources = Array.isArray(day?.sources)
+      ? day.sources.filter((source) => !pricingExcludedSourceIds.has(source?.id))
+      : [];
+    if (!sources.length) {
+      addBillingTotals(acc, normalizeBillingTotals("mixed", day));
+      continue;
+    }
+    for (const source of sources) {
+      addBillingTotals(acc, normalizeBillingTotals(source.id, source));
+    }
+  }
+  return acc;
+}
+
 function normalizeBillingTotals(sourceId, totals) {
   const input = Number(totals?.inputTokens || 0);
   const cached = Number(totals?.cachedInputTokens || 0);
@@ -7513,6 +7687,7 @@ function renderModelWindowSummary(daily) {
               <th scope="col">${escapeHtml(t("pricing.columns.model"))}</th>
               <th scope="col">${escapeHtml(t("tokens.input"))}</th>
               <th scope="col">${escapeHtml(t("tokens.output"))}</th>
+              <th scope="col">${escapeHtml(t("tokens.reasoningOutput"))}</th>
               <th scope="col">${escapeHtml(t("tokens.cachedInput"))}</th>
               <th scope="col">${escapeHtml(t("tokens.total"))}</th>
               <th scope="col">${escapeHtml(t("labels.cost"))}</th>
@@ -7528,12 +7703,16 @@ function renderModelWindowSummary(daily) {
 }
 
 function renderModelUsageRow(row) {
-  const source = row.sourceId ? ` <small>${renderProviderInlineLabel(row.sourceId, sourceLabel(row.sourceId), { size: "tiny" })}</small>` : "";
+  const effortSummary = renderReasoningEffortSummary(row.reasoningEfforts);
+  const source = row.sourceId
+    ? ` <small>${renderProviderInlineLabel(row.sourceId, sourceLabel(row.sourceId), { size: "tiny" })}${effortSummary}</small>`
+    : effortSummary;
   return `
     <tr>
       <th scope="row">${escapeHtml(row.model)}${source}</th>
       <td>${escapeHtml(formatTokens(row.inputTokens))}</td>
-      <td>${escapeHtml(formatTokens(row.outputTokens + row.reasoningOutputTokens))}</td>
+      <td>${escapeHtml(formatTokens(row.outputTokens))}</td>
+      <td>${escapeHtml(formatTokens(row.reasoningOutputTokens))}</td>
       <td>${escapeHtml(formatTokens(row.cachedInputTokens + row.cacheCreationInputTokens))}</td>
       <td>${escapeHtml(formatTokens(row.totalTokens))}</td>
       <td>${escapeHtml(formatCostEstimate(row.cost))}</td>
@@ -7563,8 +7742,13 @@ function summarizeModelUsageForDaily(daily) {
   return Array.from(modelMap.values())
     .map((row) => {
       const price = pricingModelForUsageModel(row.model);
+      const reasoningEfforts = Array.from(row.reasoningEffortTotals.entries())
+        .map(([effort, totals]) => ({ effort, ...totals }))
+        .filter((effort) => effort.totalTokens > 0)
+        .sort((a, b) => b.totalTokens - a.totalTokens || String(a.effort).localeCompare(String(b.effort)));
       return {
         ...row,
+        reasoningEfforts,
         price,
         cost: price ? estimateCost(normalizeBillingTotals(row.sourceId, row), price) : { eur: null, costed: false }
       };
@@ -7658,10 +7842,20 @@ function addModelUsageToMap(modelMap, sourceId, modelName, usage) {
       outputTokens: 0,
       reasoningOutputTokens: 0,
       totalTokens: 0,
+      reasoningEffortTotals: new Map(),
       cost: { eur: null, costed: false }
     });
   }
-  addUiUsageTotals(modelMap.get(key), usage);
+  const target = modelMap.get(key);
+  addUiUsageTotals(target, usage);
+  for (const effort of Array.isArray(usage?.reasoningEfforts) ? usage.reasoningEfforts : []) {
+    const effortId = String(effort?.effort || "").trim().toLowerCase();
+    if (!effortId) continue;
+    if (!target.reasoningEffortTotals.has(effortId)) {
+      target.reasoningEffortTotals.set(effortId, createUiUsageTotals());
+    }
+    addUiUsageTotals(target.reasoningEffortTotals.get(effortId), effort);
+  }
 }
 
 function addProviderUsageToMap(providerMap, sourceId, source) {

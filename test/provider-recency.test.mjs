@@ -1094,6 +1094,8 @@ const claudeConflictCardHtml = renderProvider({
 const riskLimitBarHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent, "bar");
 const zeroUsageLimit = normalizeLimitRow({ label: "Claude Code", usedPercent: "0%", remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset });
 const zeroUsageLimitHtml = renderLimitBar(zeroUsageLimit, providerMeta.claudeCode.accent);
+const inactiveClaudeFiveHourLimit = normalizeLimitRow({ label: "5h", usedPercent: 0, remainingPercent: 100, windowMinutes: 300, resetsAt: null });
+const inactiveClaudeFiveHourHtml = renderLimitBar(inactiveClaudeFiveHourLimit, providerMeta.claudeCode.accent);
 const emptyUsageLimit = normalizeLimitRow({ label: "Claude Code", usedPercent: "", remainingPercent: 100, windowMinutes: 300, resetsAt: okFiveHourReset });
 const liveRateBase = Date.parse("${today}T10:00:00Z");
 const risingLiveRate = smoothedLiveTokenRateForDisplay({
@@ -1471,6 +1473,11 @@ JSON.stringify({
     limitProjectedEndPercent(zeroUsageLimit) === 0 &&
     zeroUsageLimitHtml.includes("0% projected") &&
     !zeroUsageLimitHtml.includes("Projection unavailable"),
+  inactiveClaudeWindowShowsAvailability:
+    limitProjectedEndPercent(inactiveClaudeFiveHourLimit) === 0 &&
+    inactiveClaudeFiveHourHtml.includes("100% left") &&
+    !inactiveClaudeFiveHourHtml.includes("Projection unavailable") &&
+    !inactiveClaudeFiveHourHtml.includes("Pace unavailable"),
   emptyUsageProjectionUnavailable:
     emptyUsageLimit === null,
   liveRateRisesFromSamples:
@@ -1656,6 +1663,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.riskLimitBarHasTachometerGauge, true);
   assert.equal(result.riskLimitBarHasProjectionBarMode, true);
   assert.equal(result.zeroUsageProjectionValid, true);
+  assert.equal(result.inactiveClaudeWindowShowsAvailability, true);
   assert.equal(result.emptyUsageProjectionUnavailable, true);
   assert.equal(result.liveRateRisesFromSamples, true);
   assert.equal(result.liveRateDecaysToZero, true);
