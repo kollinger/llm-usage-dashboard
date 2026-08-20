@@ -395,6 +395,34 @@ textarea {
   max-width: 100%;
 }
 
+.provider-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sync-device-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sync-device-filter span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.sync-device-filter select {
+  width: auto;
+  min-width: 170px;
+  min-height: 36px;
+  padding-block: 6px;
+}
+
 .diagnostics-panel {
   margin-bottom: 14px;
   padding: 16px;
@@ -3311,6 +3339,36 @@ textarea {
   color: var(--ink-muted);
 }
 
+.sync-settings-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+
+.sync-settings-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sync-pairing-output {
+  margin: 8px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--panel-soft);
+  color: var(--ink);
+  font: 800 1rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+.sync-status-list {
+  margin-top: 12px;
+}
+
+.danger-button {
+  color: var(--danger, #a43d48);
+}
+
 .subscription-grid {
   display: grid;
   gap: 14px;
@@ -3482,6 +3540,7 @@ textarea {
 .source-list {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .source-list-empty {
@@ -3495,6 +3554,17 @@ textarea {
 .source-card {
   display: grid;
   gap: 10px;
+  min-width: 0;
+}
+
+.source-card-head > div,
+.source-path-list li,
+.source-path-list span {
+  min-width: 0;
+}
+
+.source-path-list span {
+  overflow-wrap: anywhere;
 }
 
 .source-card-head {
@@ -3776,6 +3846,31 @@ textarea {
 
   .provider-section-toolbar .filter-button {
     width: 100%;
+  }
+
+  .provider-toolbar-actions,
+  .sync-device-filter,
+  .sync-settings-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sync-device-filter select,
+  .sync-settings-actions .text-button {
+    width: 100%;
+  }
+
+  .sync-settings-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-modal-body .diag-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-modal-body .diag-list dd {
+    margin-bottom: 4px;
   }
 
   .provider-grid,
