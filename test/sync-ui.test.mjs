@@ -29,6 +29,9 @@ assert.match(app, /state\.syncStatus\?\.connected && state\.syncUsage/u);
 assert.match(app, /loadSyncUsageView\(\{ renderAfter: false \}\)/u);
 assert.match(app, /device_id: state\.syncDeviceFilter/u);
 assert.match(app, /fallbackLocal/u);
+assert.match(app, /renderPricing\(local, chartRowsForCurrentRange\(local\), buildProviders\(state\.usage\)\)/u);
+assert.match(app, /const selectedRangeRows = usageRowsForSelectedRange\(local, chartRows\);/u);
+assert.match(app, /renderPricing\(local, chartRows, providers\);/u);
 assert.match(styles, /\.settings-modal-body \.diag-list\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/u);
 assert.match(styles, /\.source-path-list span\s*\{\s*overflow-wrap: anywhere;/u);
 
