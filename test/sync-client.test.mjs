@@ -116,6 +116,12 @@ try {
   }, { collectorVersion: "1.2.0" });
   assert.equal(scrubbedValues.model, null);
   assert.equal(scrubbedValues.lineage.projectId, null);
+  const scrubbedUncModel = buildSyncUploadEvent({
+    ...raw,
+    evidence: { ...raw.evidence, rawLineSha256: digest("unc-model") },
+    model: String.raw`\\server\share`
+  }, { collectorVersion: "1.2.0" });
+  assert.equal(scrubbedUncModel.model, null, "client and collector must reject UNC-style paths consistently");
 
   const capture = await client.captureUsageEvents([raw, raw]);
   assert.equal(capture.captured, 1);

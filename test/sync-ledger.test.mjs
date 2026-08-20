@@ -167,6 +167,64 @@ try {
   assert.equal(pathIndependent.events.length, 1);
   assert.equal(pathIndependent.duplicatesSkipped, 1);
 
+  const serializedRoot = path.join(root, "serialized-verification");
+  let serializedReadCount = 0;
+  let releaseUploadRead;
+  let markUploadReadStarted;
+  const uploadReadStarted = new Promise((resolve) => { markUploadReadStarted = resolve; });
+  const uploadReadGate = new Promise((resolve) => { releaseUploadRead = resolve; });
+  const serializedLedger = new SyncLedger({
+    dataDir: serializedRoot,
+    now: () => nowMs,
+    collectorVersion: "test",
+    readJsonLines: async (file) => {
+      serializedReadCount += 1;
+      if (serializedReadCount === 1) {
+        markUploadReadStarted();
+        await uploadReadGate;
+      }
+      return readJsonLinesFixture(file);
+    }
+  });
+  const serializedDevice = await serializedLedger.createSpace({ deviceName: "Serialization test" });
+  const serializedEvent = usageEvent({ digest: digest("serialized-event"), total: 1 });
+  const inFlightUpload = serializedLedger.upload(serializedDevice.deviceToken, { events: [serializedEvent] });
+  await uploadReadStarted;
+  const queuedVerification = serializedLedger.verify();
+  assert.equal(
+    serializedReadCount,
+    1,
+    "verification must not read or replace the index while an upload mutation is in flight"
+  );
+  releaseUploadRead();
+  assert.equal((await inFlightUpload).totals.accepted, 1);
+  assert.equal((await queuedVerification).valid, true);
+  assert.equal((await serializedLedger.upload(serializedDevice.deviceToken, { events: [serializedEvent] })).totals.duplicates, 1);
+  const serializedIntegrity = await serializedLedger.verify();
+  assert.equal(serializedIntegrity.valid, true);
+  assert.equal(serializedIntegrity.duplicateEventKeys, 0);
+  assert.equal(serializedIntegrity.chainErrors, 0);
+
+  let releaseStaleRead;
+  let markStaleReadStarted;
+  const staleReadStarted = new Promise((resolve) => { markStaleReadStarted = resolve; });
+  const staleReadGate = new Promise((resolve) => { releaseStaleRead = resolve; });
+  const firstLoadLedger = new SyncLedger({
+    dataDir: path.join(root, "first-load-guard"),
+    readJsonLines: async () => {
+      markStaleReadStarted();
+      await staleReadGate;
+      return { records: [], malformed: [] };
+    }
+  });
+  const staleLoad = firstLoadLedger._loadIndex();
+  await staleReadStarted;
+  const fresherIndex = { marker: "fresher-index" };
+  firstLoadLedger._index = fresherIndex;
+  releaseStaleRead();
+  assert.equal(await staleLoad, fresherIndex, "an awaited first load must not clobber a fresher index");
+  assert.equal(firstLoadLedger._index, fresherIndex);
+
   const ledgerFile = path.join(root, "events.jsonl");
   const lines = (await readFile(ledgerFile, "utf8")).trim().split("\n");
   const tamperedRows = lines.map(JSON.parse);
@@ -252,6 +310,28 @@ function usageEvent(options = {}) {
 
 function digest(value) {
   return require("node:crypto").createHash("sha256").update(value).digest("hex");
+}
+
+async function readJsonLinesFixture(file) {
+  let text;
+  try {
+    text = await readFile(file, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return { records: [], malformed: [] };
+    throw error;
+  }
+  const records = [];
+  const malformed = [];
+  for (const [index, raw] of text.split(/\r?\n/u).entries()) {
+    const line = raw.trim();
+    if (!line) continue;
+    try {
+      records.push(JSON.parse(line));
+    } catch {
+      malformed.push({ line: index + 1, rawSha256: digest(line) });
+    }
+  }
+  return { records, malformed };
 }
 
 function localUsageEvent(realpath) {

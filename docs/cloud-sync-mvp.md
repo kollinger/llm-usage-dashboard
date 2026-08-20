@@ -60,6 +60,11 @@ providerId + sourceEventSha256
 `sourceEventSha256` is calculated from the original source event or snapshot
 before device, file-path, ingestion-time, or pricing metadata is added. This
 makes copied archives and the same source observed by two devices idempotent.
+Byte-identical source objects intentionally keep the same identity even when a
+source file repeats them at different positions without a distinct timestamp,
+thread, run, or request marker. Sources that represent separate usage must
+include such a stable distinction in the original object, and therefore in its
+content digest.
 The first append wins. Re-uploading the same identity and payload is a benign
 duplicate; reusing the identity with a different normalized payload is a
 conflict and returns HTTP `409` without overwriting history.
