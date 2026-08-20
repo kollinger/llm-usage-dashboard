@@ -17,6 +17,7 @@ const weeklyResetSeconds = Math.floor(Date.parse("2026-07-24T18:00:00.000Z") / 1
 assertLegacyCodexWindows();
 assertCodexBinaryCandidates();
 assertWeeklyPrimaryCodexWindow();
+assertNewestCodexSampleWinsWithinResetJitter();
 assertWeeklyPrimarySparkWindow();
 assertUnknownCodexWindow();
 await assertCodexCardDomRendering();
@@ -105,6 +106,38 @@ function assertWeeklyPrimaryCodexWindow() {
   );
   assert.equal(alerts[0]?.windowKey, "weekly");
   assert.equal(alerts[0]?.windowMinutes, 10080);
+}
+
+function assertNewestCodexSampleWinsWithinResetJitter() {
+  const resetSeconds = Math.floor((Date.now() + 6 * 24 * 60 * 60 * 1000) / 1000);
+  const limits = _test.codexRateLimitsFromEvents(
+    [
+      {
+        timestamp: "2026-08-20T04:50:07.000Z",
+        rateLimits: {
+          primary: {
+            used_percent: 98,
+            window_minutes: 10080,
+            resets_at: resetSeconds
+          }
+        }
+      },
+      {
+        timestamp: "2026-08-15T06:01:56.075Z",
+        rateLimits: {
+          primary: {
+            used_percent: 38,
+            window_minutes: 10080,
+            resets_at: resetSeconds + 2
+          }
+        }
+      }
+    ],
+    null
+  );
+
+  assert.equal(limits.weekly.usedPercent, 98);
+  assert.equal(limits.weekly.resetsAt, new Date(resetSeconds * 1000).toISOString());
 }
 
 function assertWeeklyPrimarySparkWindow() {

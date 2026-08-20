@@ -8971,6 +8971,8 @@ function isCodexSparkSnapshot(snapshot) {
 
 const CODEX_FIVE_HOUR_WINDOW_MINUTES = 300;
 const CODEX_WEEKLY_WINDOW_MINUTES = 7 * 24 * 60;
+// Live and persisted Codex snapshots can describe the same reset a few seconds apart.
+const CODEX_RESET_TIME_JITTER_MS = 60 * 1000;
 const CODEX_RATE_LIMIT_SLOTS = ["primary", "secondary"];
 
 function codexRateLimitsFromLive(snapshot, labelPrefix) {
@@ -9109,7 +9111,9 @@ function preferCodexWindow(current, candidate) {
   if (Number.isFinite(candidateReset) || Number.isFinite(currentReset)) {
     if (!Number.isFinite(currentReset)) return candidate;
     if (!Number.isFinite(candidateReset)) return current;
-    if (candidateReset !== currentReset) return candidateReset > currentReset ? candidate : current;
+    if (Math.abs(candidateReset - currentReset) > CODEX_RESET_TIME_JITTER_MS) {
+      return candidateReset > currentReset ? candidate : current;
+    }
   }
   const candidateTime = Date.parse(candidate.timestamp || "");
   const currentTime = Date.parse(current.timestamp || "");
