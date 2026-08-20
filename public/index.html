@@ -85,9 +85,15 @@
       <section class="provider-section" data-dashboard-panel-id="providers" data-dashboard-panel-label-key="providers.gridAria">
         <div class="provider-section-toolbar">
           <p class="eyebrow" data-i18n="providers.gridAria">Anbieter</p>
-          <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false" data-i18n="filter.showAll">
-            Alle anzeigen
-          </button>
+          <div class="provider-toolbar-actions">
+            <label class="sync-device-filter" id="syncDeviceFilterWrap" hidden>
+              <span data-i18n="sync.deviceFilter">Geräte</span>
+              <select id="syncDeviceFilter" aria-label="Geräte" data-i18n-aria-label="sync.deviceFilter"></select>
+            </label>
+            <button class="text-button ghost filter-button" id="providerFilterBtn" type="button" aria-pressed="false" data-i18n="filter.showAll">
+              Alle anzeigen
+            </button>
+          </div>
         </div>
         <section class="provider-view-notice" id="providerViewNotice" role="status" aria-live="polite" aria-atomic="true" hidden></section>
         <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
@@ -241,6 +247,48 @@
           <p class="gpt-accounts-note" id="gptAccountsNote" data-i18n="gptAccounts.attributionNote">
             OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.
           </p>
+        </section>
+        <section class="settings-section sync-settings" id="syncSettingsSection" aria-label="Privater Geräte-Sync" data-i18n-aria-label="sync.title">
+          <h3 data-i18n="sync.title">Privater Geräte-Sync</h3>
+          <p class="settings-desc" data-i18n="sync.description">Normalisierte Usage automatisch und idempotent mit einem privaten Collector abgleichen.</p>
+          <p class="settings-state-note neutral-note" data-i18n="sync.privacy">Übertragen werden nur normalisierte Token-, Modell-, Zeit- und Zuordnungsdaten – keine Prompts, Transkripte, Rohlogs, Zugangsdaten oder lokalen Pfade.</p>
+          <label class="field toggle-field">
+            <input type="checkbox" id="syncEnabled" />
+            <span data-i18n="sync.enabled">Hintergrund-Sync aktivieren</span>
+          </label>
+          <div class="sync-settings-fields">
+            <label class="field">
+              <span data-i18n="sync.serverUrl">Private Collector-URL</span>
+              <input type="url" id="syncServerUrl" placeholder="http://100.64.0.5:4177" autocomplete="off" spellcheck="false" />
+            </label>
+            <label class="field">
+              <span data-i18n="sync.deviceName">Gerätename</span>
+              <input type="text" id="syncDeviceName" maxlength="80" autocomplete="off" />
+            </label>
+            <label class="field" id="syncPairingCodeField">
+              <span data-i18n="sync.pairingCode">Pairing-Code</span>
+              <input type="text" id="syncPairingCode" maxlength="9" autocomplete="one-time-code" spellcheck="false" />
+            </label>
+          </div>
+          <div class="settings-section-actions sync-settings-actions">
+            <button type="button" class="text-button ghost" id="syncSaveBtn" data-i18n="sync.save">Einstellungen speichern</button>
+            <button type="button" class="text-button ghost" id="syncCreateSpaceBtn" data-i18n="sync.createSpace">Sync-Space erstellen</button>
+            <button type="button" class="text-button" id="syncJoinBtn" data-i18n="sync.join">Mit Code verbinden</button>
+            <button type="button" class="text-button ghost" id="syncNewPairingCodeBtn" data-i18n="sync.newPairingCode" hidden>Neuen Pairing-Code erzeugen</button>
+            <button type="button" class="text-button ghost" id="syncNowBtn" data-i18n="sync.syncNow" hidden>Jetzt abgleichen</button>
+            <button type="button" class="text-button ghost danger-button" id="syncDisconnectBtn" data-i18n="sync.disconnect" hidden>Verbindung trennen</button>
+          </div>
+          <div class="sync-pairing-output" id="syncPairingOutput" hidden role="status" aria-live="polite"></div>
+          <dl class="diag-list sync-status-list">
+            <dt data-i18n="sync.connection">Verbindung</dt>
+            <dd id="syncConnectionStatus">--</dd>
+            <dt data-i18n="sync.pending">Offline-Puffer</dt>
+            <dd id="syncPendingStatus">--</dd>
+            <dt data-i18n="sync.lastSuccess">Letzter erfolgreicher Sync</dt>
+            <dd id="syncLastSuccess">--</dd>
+            <dt data-i18n="sync.lastError">Letzter Fehler</dt>
+            <dd id="syncLastError">--</dd>
+          </dl>
         </section>
         <div class="settings-section">
           <h3 data-i18n="settings.notifications.title">Limits & Warnungen</h3>
