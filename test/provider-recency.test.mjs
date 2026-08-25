@@ -1467,6 +1467,7 @@ JSON.stringify({
   riskLimitBarHasProjectionBarMode:
     riskLimitBarHtml.includes("limit-projection-bar") &&
     !riskLimitBarHtml.includes("limit-tachometer-gauge") &&
+    riskLimitBarHtml.includes("limit-gauge-projection-callout") &&
     riskLimitBarHtml.includes("100%") &&
     riskLimitBarHtml.includes("projected"),
   zeroUsageProjectionValid:

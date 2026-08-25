@@ -1364,10 +1364,36 @@ textarea {
 
 .limit-gauge-track {
   position: relative;
-  height: 12px;
+  height: 16px;
   overflow: hidden;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--gauge-ok) 0 62.5%, var(--gauge-risk) 62.5% 78%, var(--gauge-full) 78% 100%);
+}
+
+.limit-gauge-track-wrap {
+  position: relative;
+  padding-top: 28px;
+}
+
+.limit-gauge-projection-callout {
+  position: absolute;
+  top: 0;
+  left: calc(var(--gauge-left, 0) * 1%);
+  z-index: 1;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 920;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.limit-gauge-projection-callout-center {
+  transform: translateX(-50%);
+}
+
+.limit-gauge-projection-callout-end {
+  transform: translateX(-100%);
 }
 
 .limit-gauge-target {
@@ -1383,9 +1409,9 @@ textarea {
 .limit-gauge-needle {
   position: absolute;
   left: calc(var(--gauge-left, 0) * 1%);
-  top: -3px;
-  width: 4px;
-  height: 18px;
+  top: -6px;
+  width: 7px;
+  height: 28px;
   border-radius: 999px;
   background: var(--accent, var(--green));
   box-shadow: 0 0 0 2px var(--panel), 0 3px 8px rgba(0, 0, 0, 0.28);

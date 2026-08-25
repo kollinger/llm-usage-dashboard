@@ -5916,6 +5916,7 @@ function renderLimitProjectionBar(row, accent) {
   const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
   const gaugeLeft = (clamped / LIMIT_GAUGE_MAX_PERCENT) * 100;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
+  const calloutAlignment = clamped <= 12 ? "start" : clamped >= LIMIT_GAUGE_MAX_PERCENT - 12 ? "end" : "center";
   const value = inactive
     ? t("limits.leftValue", { percent: 100 })
     : hasProjection
@@ -5937,11 +5938,18 @@ function renderLimitProjectionBar(row, accent) {
     >
       <div class="limit-gauge-head">
         <span>${escapeHtml(row.label)}</span>
-        <strong>${escapeHtml(value)}</strong>
+        ${hasProjection ? "" : `<strong>${escapeHtml(value)}</strong>`}
       </div>
-      <div class="limit-gauge-track" aria-hidden="true">
-        <span class="limit-gauge-target"></span>
-        <span class="limit-gauge-needle"></span>
+      <div class="limit-gauge-track-wrap">
+        ${
+          hasProjection
+            ? `<strong class="limit-gauge-projection-callout limit-gauge-projection-callout-${calloutAlignment}">${escapeHtml(value)}</strong>`
+            : ""
+        }
+        <div class="limit-gauge-track" aria-hidden="true">
+          <span class="limit-gauge-target"></span>
+          <span class="limit-gauge-needle"></span>
+        </div>
       </div>
       <div class="limit-gauge-scale" aria-hidden="true">
         <span>0%</span>
