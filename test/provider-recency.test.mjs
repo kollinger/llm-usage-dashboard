@@ -987,11 +987,12 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
   },
   totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
 }));
-const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
+const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent, "tachometer");
 let storedProjectionMode = "";
 localStorage.setItem = (key, value) => {
   if (key === USAGE_PROJECTION_MODE_STORAGE_KEY) storedProjectionMode = value;
 };
+setUsageProjectionMode("tachometer");
 setUsageProjectionMode("bar");
 const projectionModeAfterToggle = state.usageProjectionMode;
 const codexLimitBarsHtml = renderLimitBars({
@@ -1378,14 +1379,14 @@ JSON.stringify({
   providerCardNoFableQuotaAudit:
     !providerCardHtml.includes("Fable quota source") &&
     !providerCardHtml.includes("no synthetic quota is shown") &&
-    providerCardHtml.includes("limit-tachometer-gauge") &&
+    providerCardHtml.includes("limit-projection-bar") &&
     !providerCardHtml.includes("ring-row"),
   claudeCodeUsesCurrentUsageComponent:
     providerCardHtml.includes("limit-bars") &&
     providerCardHtml.includes("usage-projection-toggle") &&
     providerCardHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
     providerCardHtml.includes("data-usage-projection-mode=\\"bar\\"") &&
-    providerCardHtml.includes("limit-tachometer-gauge") &&
+    providerCardHtml.includes("limit-projection-bar") &&
     !providerCardHtml.includes("ring-row") &&
     !providerCardHtml.includes("ring-box") &&
     !providerCardHtml.includes("ring-sub"),
@@ -1642,10 +1643,10 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
-  assert.equal(result.defaultUsageProjectionMode, "tachometer");
+  assert.equal(result.defaultUsageProjectionMode, "bar");
   assert.equal(result.projectionModeAfterToggle, "bar");
   assert.equal(result.storedProjectionMode, "bar");
-  assert.equal(result.invalidProjectionModeFallsBack, "tachometer");
+  assert.equal(result.invalidProjectionModeFallsBack, "bar");
   assert.equal(result.limitBarsHasProjectionToggle, true);
   assert.equal(result.providerProjectionModeGlobal, true);
   assert.equal(result.claudeLoginAction, true);

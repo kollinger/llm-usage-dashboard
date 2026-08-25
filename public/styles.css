@@ -1400,12 +1400,13 @@ textarea {
 }
 
 .limit-tachometer-gauge {
-  justify-items: stretch;
+  justify-items: center;
 }
 
 .limit-tachometer-shell {
   position: relative;
   width: 100%;
+  max-width: 32rem;
   min-height: clamp(136px, 16vw, 220px);
   padding: 0 2px;
 }

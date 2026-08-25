@@ -35,7 +35,7 @@ const state = {
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
-  usageProjectionMode: "tachometer",
+  usageProjectionMode: "bar",
   pricingView: "api",
   pricingSort: { key: "total", direction: "desc" },
   themePreference: "system",
@@ -2121,7 +2121,7 @@ function loadProviderOrderPreference() {
 }
 
 function normalizeUsageProjectionMode(mode) {
-  return USAGE_PROJECTION_MODES.includes(mode) ? mode : "tachometer";
+  return USAGE_PROJECTION_MODES.includes(mode) ? mode : "bar";
 }
 
 function loadUsageProjectionModePreference() {
@@ -2137,7 +2137,7 @@ function loadUsageProjectionModePreference() {
       : null;
     state.usageProjectionMode = normalizeUsageProjectionMode(legacyMode);
   } catch {
-    state.usageProjectionMode = "tachometer";
+    state.usageProjectionMode = "bar";
   }
 }
 
@@ -5790,7 +5790,7 @@ function renderUsageProjectionModeToggle(activeMode) {
   `;
 }
 
-function renderLimitBar(row, accent, mode = "tachometer") {
+function renderLimitBar(row, accent, mode = "bar") {
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
   const remaining = Math.round(row.remainingPercent ?? Math.max(0, 100 - used));
@@ -5848,7 +5848,7 @@ function appendResetTime(label, resetsAt, limit = null) {
   return `${text} (${time})`;
 }
 
-function renderLimitProjectionVisualization(row, accent, mode = "tachometer") {
+function renderLimitProjectionVisualization(row, accent, mode = "bar") {
   return normalizeUsageProjectionMode(mode) === "bar"
     ? renderLimitProjectionBar(row, accent)
     : renderLimitProjectionGauge(row, accent);
