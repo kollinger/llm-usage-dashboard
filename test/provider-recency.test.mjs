@@ -268,6 +268,16 @@ JSON.stringify({
     limitRows: [],
     creditRows: []
   }),
+  weeklyUsageWithoutCurrentActivity: providerHasUsage({
+    id: "claudeCode",
+    status: "empty",
+    todayTokens: 0,
+    weekTokens: 12345,
+    apiTokens: 0,
+    cost: 0,
+    limitRows: [],
+    creditRows: []
+  }),
   configuredGlmZero: providerHasUsage({
     id: "glm",
     status: "empty",
@@ -295,6 +305,7 @@ JSON.stringify({
   assert.equal(result.recentFullCopilot, true);
   assert.equal(result.neutralSpark, false);
   assert.equal(result.activeCodexLimit, true);
+  assert.equal(result.weeklyUsageWithoutCurrentActivity, true);
   assert.equal(result.configuredGlmZero, false);
   assert(result.activeIds.includes("codex"));
   assert(!result.activeIds.includes("copilot"));

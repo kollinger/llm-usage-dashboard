@@ -19,6 +19,8 @@ await assertClaudeOauthEndpointUsesTokenScopedUsagePath();
 assertClaudeApiPayloadIsSanitized();
 assertClaudeOauthApiLimitsOverrideStaleStatusline();
 assertClaudeFableScopedLimitsSupportMultipleBuckets();
+assertClaudeLastKnownUsageSurvivesTemporaryRefreshFailure();
+await assertClaudeUsageSnapshotSurvivesRestart();
 
 async function assertClaudeOauthSessionReadsTokenAndOrg() {
   const root = await mkdtemp(path.join(os.tmpdir(), "claude-oauth-"));
@@ -364,4 +366,68 @@ function assertClaudeFableScopedLimitsSupportMultipleBuckets() {
     { claudeCode: { limits: resolved.resolvedLimits } }
   );
   assert(alerts.some((alert) => alert.windowKey === "fable_2" && alert.usedPercent === 72));
+}
+
+function assertClaudeLastKnownUsageSurvivesTemporaryRefreshFailure() {
+  const now = Date.now();
+  const reset = new Date(now + 2 * 24 * 60 * 60 * 1000).toISOString();
+  const previous = _test.normalizeClaudeApiUsageProbe({
+    status: "available",
+    source: "claude_app_cookie",
+    usage: {
+      seven_day: { utilization: 76, resets_at: reset },
+      limits: [{
+        kind: "weekly_scoped",
+        percent: 100,
+        resets_at: reset,
+        scope: { model: { display_name: "Fable" } }
+      }]
+    }
+  });
+  const unavailable = _test.normalizeClaudeApiUsageProbe({
+    status: "unavailable",
+    reason: "claude_api_network_error",
+    source: "claude_app_cookie"
+  });
+  const retained = _test.retainLastKnownClaudeUsageProbe(previous, unavailable, now);
+
+  assert.equal(retained.status, "available");
+  assert.equal(retained.usage.seven_day.utilization, 76);
+  assert.equal(retained.usage.limits[0].percent, 100);
+  assert.equal(retained.fallback.reason, "claude_api_network_error");
+
+  const expired = _test.retainLastKnownClaudeUsageProbe(previous, unavailable, now + 9 * 24 * 60 * 60 * 1000);
+  assert.equal(expired.status, "unavailable");
+  assert.equal(expired.usage, null);
+}
+
+async function assertClaudeUsageSnapshotSurvivesRestart() {
+  const root = await mkdtemp(path.join(os.tmpdir(), "claude-usage-snapshot-"));
+  const snapshotFile = path.join(root, "claude-usage-snapshot.json");
+  const now = Date.now();
+  try {
+    const confirmed = _test.normalizeClaudeApiUsageProbe({
+      status: "available",
+      source: "claude_app_cookie",
+      usage: {
+        seven_day: { utilization: 76, resets_at: new Date(now + 2 * 24 * 60 * 60 * 1000).toISOString() }
+      }
+    });
+    await _test.saveClaudeUsageSnapshot(confirmed, snapshotFile);
+
+    const restored = await _test.readClaudeUsageSnapshot(snapshotFile, now);
+    assert.equal(restored.status, "available");
+    assert.equal(restored.usage.seven_day.utilization, 76);
+    assert.equal(restored.auth, null);
+
+    const unavailable = _test.normalizeClaudeApiUsageProbe({
+      status: "missing",
+      reason: "claude_app_cookie_missing",
+      source: "claude_app_cookie"
+    });
+    const retained = _test.retainLastKnownClaudeUsageProbe(restored, unavailable, now);
+    assert.equal(retained.usage.seven_day.utilization, 76);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 }

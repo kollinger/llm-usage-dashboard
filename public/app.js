@@ -4858,6 +4858,7 @@ function normalizeLocalProvider(id, provider) {
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
     todayTokens: provider?.totals?.last24h?.totalTokens,
+    weekTokens: provider?.totals?.last7d?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
     configuredSource,
@@ -5239,6 +5240,7 @@ function normalizeApiProvider(id, provider) {
 function providerHasUsage(provider) {
   const hasActiveUsage = [
     provider.todayTokens,
+    provider.weekTokens,
     provider.apiTokens,
     provider.cost
   ].some((value) => Number(value || 0) > 0);

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0-preview.17 - 2026-09-11
+
+### Fixed
+
+- Keep Claude visible in the standard provider view when the current week has
+  recorded usage, even without current-day token activity.
+- Retain an unexpired, last-confirmed Claude quota snapshot across app restarts
+  and temporary live refresh failures instead of hiding the provider card.
+
 ## 1.1.0-preview.16 - 2026-08-10
 
 ### Added

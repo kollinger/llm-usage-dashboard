@@ -43,6 +43,7 @@ const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json")
 const UPDATE_SETTINGS_FILE = path.join(DATA_DIR, "update-settings.json");
 const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
+const CLAUDE_USAGE_SNAPSHOT_FILE = path.join(DATA_DIR, "claude-usage-snapshot.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
@@ -151,6 +152,7 @@ const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("script
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const CLAUDE_AUTH_STATUS_CACHE_MS = envMs("CLAUDE_AUTH_STATUS_CACHE_SECONDS", 15 * 60);
 const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
+const CLAUDE_API_USAGE_FALLBACK_MAX_AGE_MS = 8 * 24 * 60 * 60 * 1000;
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
@@ -4893,16 +4895,22 @@ async function readClaudeUsageProbe() {
   if (claudeApiUsageCache.value && now < claudeApiUsageCache.expiresAt) return claudeApiUsageCache.value;
   if (claudeApiUsageCache.pending) return claudeApiUsageCache.pending;
 
+  const previous = claudeApiUsageCache.value || await readClaudeUsageSnapshot();
   claudeApiUsageCache.pending = Promise.resolve()
     .then(fetchClaudeUsageProbe)
     .then((probe) => {
-      const value = normalizeClaudeApiUsageProbe(probe);
+      const incoming = normalizeClaudeApiUsageProbe(probe);
+      const value = retainLastKnownClaudeUsageProbe(previous, incoming);
       claudeApiUsageCache.value = value;
       claudeApiUsageCache.expiresAt = Date.now() + (value.usage ? CLAUDE_API_USAGE_CACHE_MS : Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000));
+      if (incoming.usage) saveClaudeUsageSnapshot(incoming).catch(() => {});
       return value;
     })
     .catch((error) => {
-      const value = claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api");
+      const value = retainLastKnownClaudeUsageProbe(
+        previous,
+        claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api")
+      );
       claudeApiUsageCache.value = value;
       claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
       return value;
@@ -4912,6 +4920,30 @@ async function readClaudeUsageProbe() {
     });
 
   return claudeApiUsageCache.pending;
+}
+
+async function readClaudeUsageSnapshot(file = CLAUDE_USAGE_SNAPSHOT_FILE, nowMs = Date.now()) {
+  try {
+    const snapshot = normalizeClaudeApiUsageProbe(JSON.parse(await fsp.readFile(file, "utf8")));
+    return snapshot.usage && hasCurrentClaudeUsageSnapshot(snapshot.usage, nowMs) ? snapshot : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveClaudeUsageSnapshot(probe, file = CLAUDE_USAGE_SNAPSHOT_FILE) {
+  const snapshot = normalizeClaudeApiUsageProbe(probe);
+  if (!snapshot.usage) return null;
+  const persisted = {
+    version: 1,
+    status: "available",
+    source: snapshot.source,
+    updatedAt: snapshot.updatedAt,
+    usage: snapshot.usage
+  };
+  await fsp.mkdir(path.dirname(file), { recursive: true });
+  await fsp.writeFile(file, `${JSON.stringify(persisted, null, 2)}\n`, { mode: 0o600 });
+  return normalizeClaudeApiUsageProbe(persisted);
 }
 
 async function fetchClaudeUsageProbe(options = {}) {
@@ -5240,6 +5272,34 @@ function normalizeClaudeApiUsageProbe(probe) {
     auth: probe?.auth || null,
     fallback: probe?.fallback || null
   };
+}
+
+function retainLastKnownClaudeUsageProbe(previous, incoming, nowMs = Date.now()) {
+  if (incoming?.usage || !previous?.usage || !hasCurrentClaudeUsageSnapshot(previous.usage, nowMs)) return incoming;
+  return {
+    ...previous,
+    status: "available",
+    reason: null,
+    fallback: {
+      source: incoming?.source || null,
+      reason: incoming?.reason || null
+    }
+  };
+}
+
+function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
+  const updatedAtMs = Date.parse(usage?.updatedAt || "");
+  if (!Number.isFinite(updatedAtMs) || nowMs - updatedAtMs > CLAUDE_API_USAGE_FALLBACK_MAX_AGE_MS) return false;
+  const hasCurrentWindow = (window, label, windowMinutes) => {
+    const normalized = claudeApiWindowToLimitWindow(window, label, windowMinutes);
+    return Boolean(normalized && !normalized.expired);
+  };
+  return Boolean(
+    hasCurrentWindow(usage?.five_hour, "5h", 300) ||
+      hasCurrentWindow(usage?.seven_day, "Woche", 10080) ||
+      hasCurrentWindow(usage?.seven_day_sonnet, "Nur Sonnet", 10080) ||
+      claudeApiFableLimitRows(usage).length
+  );
 }
 
 function summarizeClaudeApiUsageProbe(probe) {
@@ -10654,6 +10714,9 @@ module.exports = {
     fetchClaudeUsageWithAuth,
     normalizeClaudeApiUsagePayload,
     normalizeClaudeApiUsageProbe,
+    readClaudeUsageSnapshot,
+    saveClaudeUsageSnapshot,
+    retainLastKnownClaudeUsageProbe,
     summarizeClaudeApiUsageProbe,
     resolveClaudeUsageLimits,
     buildNotificationAlerts,
