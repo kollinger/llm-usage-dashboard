@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0-preview.18 - 2026-09-12
+
+### Fixed
+
+- Refresh the API pricing catalog with current official provider data, including
+  the revised GPT-5.6 Sol and Claude Sonnet 5 rates.
+
+### Added
+
+- Add current Gemini, Grok, Qwen, and Mistral model rows while preserving
+  retired Mistral aliases as explicitly unpriced historical mappings.
+
 ## 1.1.0-preview.17 - 2026-09-11
 
 ### Fixed
