@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API-kustannukset",
     "heading": "Mitä tokenisi olisivat maksaneet API:n kautta",
-    "meta": "Luettelo {catalogVersion} · {modelCount} mallia · EUR ECB:n kautta {fxDate} · API-hinnat {pricingDate} · sisäinen pisteytys {scoreDate}",
-    "qualityScoreTitle": "Sisäinen heuristinen pisteytys {scoreDate}: {score}/100",
+    "meta": "Luettelo {catalogVersion} · {modelCount} mallia · EUR ECB:n kautta {fxDate} · API-hinnat {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kiina",
     "unknown": "Tuntematon",
     "notPriced": "Ei hinnoiteltu",

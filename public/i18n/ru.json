@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Расходы API",
     "heading": "Сколько стоили бы ваши токены через API",
-    "meta": "Каталог {catalogVersion} · {modelCount} моделей · EUR через ECB {fxDate} · цены API {pricingDate} · внутренний балл {scoreDate}",
-    "qualityScoreTitle": "Внутренний эвристический балл {scoreDate}: {score}/100",
+    "meta": "Каталог {catalogVersion} · {modelCount} моделей · EUR через ECB {fxDate} · цены API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Китай",
     "unknown": "Неизвестно",
     "notPriced": "Без цены",

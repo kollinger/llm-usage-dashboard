@@ -8,7 +8,7 @@ const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-d
 const PRICING_CATALOG_VERSION = "2026.09.12.1";
 const PRICING_REVIEW_DATE = "2026-09-12";
 const BASELINE_SOURCE_REVIEW_DATE = "2026-09-12";
-const SCORE_REVIEW_DATE = "2026-07-09";
+const BENCHMARK_REVIEW_DATE = "2026-09-11";
 const PRICING_MAX_AGE_DAYS = 45;
 
 const REQUIRED_PROVIDER_COVERAGE = [
@@ -860,63 +860,64 @@ const rawPricingModels = [
   }
 ];
 
-const modelQualityScores = {
-  "GPT-6 Astra": null,
-  "GPT-5.6 Sol": null,
-  "GPT-5.6 Terra": null,
-  "GPT-5.6 Luna": null,
-  "Claude Fable 5": 100,
-  "Claude Mythos 5": 99,
-  "GPT-5.5 Pro": 99,
-  "Claude Opus 4.8": 98,
-  "GPT-5.5": 97,
-  "Claude Sonnet 5": 96,
-  "GLM-5.2": 95,
-  "Gemini 3.1 Pro Preview": 94,
-  "Gemini 3.8 Flash": null,
-  "Gemini 3.7 Flash": null,
-  "GLM-5.1": 93,
-  "DeepSeek V4 Pro": 92,
-  "Qwen3.7-Max": 90,
-  "Qwen3.8-Max": null,
-  "GPT-5.4 Pro": 89,
-  "MiniMax M3": 88,
-  "GPT-5.4": 87,
-  "GPT-5.3-Codex": 86,
-  "GPT-5.3-Codex-Spark": 85,
-  "Claude Sonnet 4.6": 84,
-  "Gemini 3.5 Flash": 83,
-  "GLM-5-Turbo": 82,
-  "GLM-5": 81,
-  "Grok 4.3": 81,
-  "Grok 4.6": null,
-  "GPT-5.2": 80,
-  "Qwen3-Max": 79,
-  "GPT-5.4 Mini": 77,
-  "Grok Build 0.1": 76,
-  "Mistral Large 2": 75,
-  "Mistral Large 3": null,
-  "Mistral Medium 3.5": null,
-  "Mistral Small 4": null,
-  "GLM-4.6": 74,
-  "GLM-4.7": 73,
-  "GLM-4.5-X": 72,
-  "GLM-4.5-AirX": 71,
-  "Qwen3.5-Plus": 70,
-  "GLM-4.5": 69,
-  "step-3.7-flash": 68,
-  "DeepSeek V4 Flash": 67,
-  "GLM-4.5-Air": 66,
-  "Mistral Small 3.2": 65,
-  "Claude Haiku 4.5": 64,
-  "GPT-5.4 Nano": 63,
-  "Gemini 3.1 Flash-Lite": 62,
-  "GLM-4.7-FlashX": 61,
-  "step-3.5-flash": 58,
-  "GLM-4-32B-0414-128K": 56,
-  "GLM-4.7-Flash": 55,
-  "GLM-4.5-Flash": 55
+// Arena Text is an independent, human-preference benchmark. Keep the exact
+// tested deployment instead of projecting a nearby model's result onto a
+// catalog row. Scores from other benchmarks are intentionally not mixed into
+// this Elo scale.
+const ARENA_TEXT_SOURCE = "Arena Text";
+const ARENA_TEXT_SOURCE_URL = "https://arena.ai/leaderboard/";
+const arenaTextSnapshot = {
+  "GPT-6 Astra": { score: 1442, rank: 61, votes: 2059, testedModel: "gpt-6-astra-max" },
+  "GPT-5.6 Sol": { score: 1454, rank: 38, votes: 26611, testedModel: "gpt-5.6-sol-xhigh" },
+  "GPT-5.6 Terra": { score: 1446, rank: 51, votes: 27655, testedModel: "gpt-5.6-terra-xhigh" },
+  "GPT-5.6 Luna": { score: 1431, rank: 83, votes: 28112, testedModel: "gpt-5.6-luna-xhigh" },
+  "GPT-5.5": { score: 1466, rank: 30, votes: 66349, testedModel: "gpt-5.5" },
+  "GPT-5.4": { score: 1453, rank: 39, votes: 63529, testedModel: "gpt-5.4" },
+  "GPT-5.4 Mini": { score: 1412, rank: 125, votes: 59376, testedModel: "gpt-5.4-mini-high" },
+  "GPT-5.4 Nano": { score: 1373, rank: 166, votes: 58427, testedModel: "gpt-5.4-nano-high" },
+  "GPT-5.2": { score: 1412, rank: 124, votes: 78963, testedModel: "gpt-5.2" },
+  "Claude Fable 5": { score: 1492, rank: 7, votes: 29683, testedModel: "claude-fable-5" },
+  "Claude Opus 4.8": { score: 1452, rank: 40, votes: 52970, testedModel: "claude-opus-4-8" },
+  "Claude Sonnet 5": { score: 1442, rank: 60, votes: 34889, testedModel: "claude-sonnet-5-high" },
+  "Claude Sonnet 4.6": { score: 1458, rank: 34, votes: 66208, testedModel: "claude-sonnet-4-6" },
+  "Claude Haiku 4.5": { score: 1396, rank: 146, votes: 128838, testedModel: "claude-haiku-4-5-20251001" },
+  "MiniMax M3": { score: 1434, rank: 80, votes: 48130, testedModel: "minimax-m3" },
+  "Gemini 3.8 Flash": { score: 1494, rank: 6, votes: 5094, testedModel: "gemini-3.8-flash-high" },
+  "Gemini 3.7 Flash": { score: 1491, rank: 8, votes: 5645, testedModel: "gemini-3.7-flash-high" },
+  "Gemini 3.5 Flash": { score: 1483, rank: 12, votes: 37808, testedModel: "gemini-3.5-flash-high" },
+  "Gemini 3.1 Pro Preview": { score: 1480, rank: 15, votes: 106483, testedModel: "gemini-3.1-pro-preview" },
+  "Gemini 3.1 Flash-Lite": { score: 1415, rank: 120, votes: 60409, testedModel: "gemini-3.1-flash-lite-preview" },
+  "DeepSeek V4 Pro": { score: 1451, rank: 42, votes: 54142, testedModel: "deepseek-v4-pro" },
+  "DeepSeek V4 Flash": { score: 1432, rank: 82, votes: 48890, testedModel: "deepseek-v4-flash" },
+  "Qwen3.8-Max": { score: 1481, rank: 14, votes: 16263, testedModel: "qwen3.8-max" },
+  "Qwen3.7-Max": { score: 1474, rank: 20, votes: 3705, testedModel: "qwen3.7-max-preview" },
+  "Qwen3-Max": { score: 1439, rank: 67, votes: 27194, testedModel: "qwen3-max-preview" },
+  "GLM-5.2": { score: 1467, rank: 28, votes: 36471, testedModel: "glm-5.2-max" },
+  "GLM-5.1": { score: 1462, rank: 32, votes: 48503, testedModel: "glm-5.1" },
+  "GLM-5": { score: 1446, rank: 50, votes: 27600, testedModel: "glm-5" },
+  "GLM-4.7": { score: 1436, rank: 78, votes: 11892, testedModel: "glm-4.7" },
+  "GLM-4.7-Flash": { score: 1352, rank: 191, votes: 11495, testedModel: "glm-4.7-flash" },
+  "GLM-4.6": { score: 1440, rank: 65, votes: 35065, testedModel: "glm-4.6" },
+  "GLM-4.5": { score: 1430, rank: 85, votes: 23707, testedModel: "glm-4.5" },
+  "GLM-4.5-Air": { score: 1384, rank: 155, votes: 30367, testedModel: "glm-4.5-air" },
+  "step-3.5-flash": { score: 1404, rank: 138, votes: 57129, testedModel: "step-3.5-flash" },
+  "Grok 4.6": { score: 1430, rank: 86, votes: 15017, testedModel: "grok-4.6-high" },
+  "Grok 4.3": { score: 1398, rank: 145, votes: 66842, testedModel: "grok-4.3" },
+  "Mistral Large 3": { score: 1427, rank: 89, votes: 68591, testedModel: "mistral-large-3" },
+  "Mistral Medium 3.5": { score: 1421, rank: 102, votes: 10998, testedModel: "mistral-medium-3.5" }
 };
+
+const modelBenchmarkScores = Object.fromEntries(
+  rawPricingModels.map(({ model }) => {
+    const score = arenaTextSnapshot[model];
+    return [
+      model,
+      score
+        ? { source: ARENA_TEXT_SOURCE, sourceUrl: ARENA_TEXT_SOURCE_URL, measuredOn: BENCHMARK_REVIEW_DATE, ...score }
+        : null
+    ];
+  })
+);
 
 const args = new Set(process.argv.slice(2));
 const pricingModels = enrichPricingModels(rawPricingModels);
@@ -925,7 +926,7 @@ await validatePricingData();
 
 if (args.has("--validate")) {
   console.log(
-    `Pricing catalog ${PRICING_CATALOG_VERSION} is valid: ${pricingModels.length} models, ${REQUIRED_PROVIDER_COVERAGE.length} required providers.`
+    `Pricing catalog ${PRICING_CATALOG_VERSION} is valid: ${pricingModels.length} models, ${benchmarkCoverageCount()} independently benchmarked, ${REQUIRED_PROVIDER_COVERAGE.length} required providers.`
   );
   process.exit(0);
 }
@@ -996,19 +997,19 @@ async function fetchUsdPerEur() {
 
 function updateAppJs(source, { rate, date }) {
   const metaPattern =
-    /const USD_PER_EUR = [\d.]+;\nconst FX_DATE = "[^"]+";\nconst PRICING_DATE = "[^"]+";\nconst SCORE_DATE = "[^"]+";(?:\nconst PRICING_CATALOG_VERSION = "[^"]+";\nconst PRICING_MAX_AGE_DAYS = \d+;)?/;
+    /const USD_PER_EUR = [\d.]+;\nconst FX_DATE = "[^"]+";\nconst PRICING_DATE = "[^"]+";\nconst (?:SCORE_DATE|BENCHMARK_DATE) = "[^"]+";(?:\nconst PRICING_CATALOG_VERSION = "[^"]+";\nconst PRICING_MAX_AGE_DAYS = \d+;)?/;
   const pricingPattern = /const pricingModels = \[[\s\S]*?\];/;
-  const scoresPattern = /const modelQualityScores = \{[\s\S]*?\};/;
+  const benchmarkPattern = /const model(?:Quality|Benchmark)Scores = \{[\s\S]*?\};/;
 
   const metaReplacement =
     `const USD_PER_EUR = ${rate};\n` +
     `const FX_DATE = "${date}";\n` +
     `const PRICING_DATE = "${PRICING_REVIEW_DATE}";\n` +
-    `const SCORE_DATE = "${SCORE_REVIEW_DATE}";\n` +
+    `const BENCHMARK_DATE = "${BENCHMARK_REVIEW_DATE}";\n` +
     `const PRICING_CATALOG_VERSION = "${PRICING_CATALOG_VERSION}";\n` +
     `const PRICING_MAX_AGE_DAYS = ${PRICING_MAX_AGE_DAYS};`;
   const pricingReplacement = `const pricingModels = ${formatValue(pricingModels, 0)};`;
-  const scoresReplacement = `const modelQualityScores = ${formatValue(modelQualityScores, 0)};`;
+  const benchmarkReplacement = `const modelBenchmarkScores = ${formatValue(modelBenchmarkScores, 0)};`;
 
   if (!metaPattern.test(source)) {
     throw new Error("Could not find pricing metadata in public/app.js.");
@@ -1020,10 +1021,10 @@ function updateAppJs(source, { rate, date }) {
   }
   const withPricing = withMeta.replace(pricingPattern, pricingReplacement);
 
-  if (!scoresPattern.test(withPricing)) {
-    throw new Error("Could not find model quality scores in public/app.js.");
+  if (!benchmarkPattern.test(withPricing)) {
+    throw new Error("Could not find model benchmark scores in public/app.js.");
   }
-  return withPricing.replace(scoresPattern, scoresReplacement);
+  return withPricing.replace(benchmarkPattern, benchmarkReplacement);
 }
 
 async function validatePricingData() {
@@ -1048,21 +1049,41 @@ function validateFreshReviewDate() {
 function validateCatalogRows() {
   const models = new Set(pricingModels.map((row) => row.model));
   const providers = new Set(pricingModels.map((row) => row.provider));
-  const missingScores = pricingModels.filter((row) => !Object.hasOwn(modelQualityScores, row.model)).map((row) => row.model);
-  const staleScores = Object.keys(modelQualityScores).filter((model) => !models.has(model));
+  const missingScores = pricingModels.filter((row) => !Object.hasOwn(modelBenchmarkScores, row.model)).map((row) => row.model);
+  const staleScores = Object.keys(modelBenchmarkScores).filter((model) => !models.has(model));
   const missingProviders = REQUIRED_PROVIDER_COVERAGE.filter((provider) => !providers.has(provider));
   const missingRequiredModels = REQUIRED_MODEL_COVERAGE.filter((model) => !models.has(model));
 
-  if (missingScores.length) throw new Error(`Missing quality scores: ${missingScores.join(", ")}`);
-  if (staleScores.length) throw new Error(`Scores without pricing rows: ${staleScores.join(", ")}`);
+  if (missingScores.length) throw new Error(`Missing benchmark coverage entries: ${missingScores.join(", ")}`);
+  if (staleScores.length) throw new Error(`Benchmark entries without pricing rows: ${staleScores.join(", ")}`);
   if (missingProviders.length) throw new Error(`Missing required providers: ${missingProviders.join(", ")}`);
   if (missingRequiredModels.length) throw new Error(`Missing required models: ${missingRequiredModels.join(", ")}`);
 
   const canonicalNames = new Map();
   for (const row of pricingModels) {
     validateCatalogRow(row);
+    validateBenchmarkScore(row.model, modelBenchmarkScores[row.model]);
     addCanonicalName(canonicalNames, row.model, row.model);
     for (const alias of row.aliases) addCanonicalName(canonicalNames, alias, row.model);
+  }
+}
+
+function benchmarkCoverageCount() {
+  return Object.values(modelBenchmarkScores).filter(Boolean).length;
+}
+
+function validateBenchmarkScore(model, benchmark) {
+  if (benchmark == null) return;
+  for (const key of ["source", "sourceUrl", "measuredOn", "testedModel"]) {
+    if (!benchmark[key]) throw new Error(`Benchmark entry for ${model} misses ${key}.`);
+  }
+  for (const key of ["score", "rank", "votes"]) {
+    if (!Number.isFinite(benchmark[key]) || benchmark[key] < 0) {
+      throw new Error(`Benchmark entry for ${model} has invalid ${key}.`);
+    }
+  }
+  if (!Number.isInteger(benchmark.rank) || !Number.isInteger(benchmark.votes)) {
+    throw new Error(`Benchmark entry for ${model} has a non-integer rank or vote count.`);
   }
 }
 

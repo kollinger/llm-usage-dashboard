@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Náklady API",
     "heading": "Kolik by tvoje tokeny stály přes API",
-    "meta": "Katalog {catalogVersion} · {modelCount} modelů · EUR přes ECB {fxDate} · ceny API {pricingDate} · interní skóre {scoreDate}",
-    "qualityScoreTitle": "Interní heuristické skóre {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modelů · EUR přes ECB {fxDate} · ceny API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Čína",
     "unknown": "Neznámé",
     "notPriced": "Bez ceny",

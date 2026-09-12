@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Coûts API",
     "heading": "Ce que tes tokens auraient coûté via l’API",
-    "meta": "Catalogue {catalogVersion} · {modelCount} modèles · EUR via BCE {fxDate} · prix API {pricingDate} · score interne {scoreDate}",
-    "qualityScoreTitle": "Score heuristique interne {scoreDate} : {score}/100",
+    "meta": "Catalogue {catalogVersion} · {modelCount} modèles · EUR via BCE {fxDate} · prix API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Chine",
     "unknown": "Inconnu",
     "notPriced": "Non tarifé",

@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Costais API",
     "heading": "Cad a chosnódh do chuid token tríd an API",
-    "meta": "Catalóg {catalogVersion} · {modelCount} samhail · EUR trí ECB {fxDate} · praghsanna API {pricingDate} · scór inmheánach {scoreDate}",
-    "qualityScoreTitle": "Scór heorastúil inmheánach {scoreDate}: {score}/100",
+    "meta": "Catalóg {catalogVersion} · {modelCount} samhail · EUR trí ECB {fxDate} · praghsanna API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "An tSín",
     "unknown": "Anaithnid",
     "notPriced": "Gan phraghas",

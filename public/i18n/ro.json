@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Costuri API",
     "heading": "Cât ar fi costat tokenurile tale prin API",
-    "meta": "Catalog {catalogVersion} · {modelCount} modele · EUR prin BCE {fxDate} · prețuri API {pricingDate} · scor intern {scoreDate}",
-    "qualityScoreTitle": "Scor euristic intern {scoreDate}: {score}/100",
+    "meta": "Catalog {catalogVersion} · {modelCount} modele · EUR prin BCE {fxDate} · prețuri API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "China",
     "unknown": "Necunoscut",
     "notPriced": "Fără preț",

@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Κόστος API",
     "heading": "Τι θα κόστιζαν τα token σου μέσω API",
-    "meta": "Κατάλογος {catalogVersion} · {modelCount} μοντέλα · EUR μέσω ECB {fxDate} · τιμές API {pricingDate} · εσωτερική βαθμολογία {scoreDate}",
-    "qualityScoreTitle": "Εσωτερική ευρετική βαθμολογία {scoreDate}: {score}/100",
+    "meta": "Κατάλογος {catalogVersion} · {modelCount} μοντέλα · EUR μέσω ECB {fxDate} · τιμές API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Κίνα",
     "unknown": "Άγνωστο",
     "notPriced": "Χωρίς τιμή",

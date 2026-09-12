@@ -262,8 +262,8 @@
   "pricing": {
     "eyebrow": "API Costs",
     "heading": "What your tokens would have cost through the API",
-    "meta": "Catalog {catalogVersion} · {modelCount} models · EUR via ECB {fxDate} · API prices {pricingDate} · internal score {scoreDate}",
-    "qualityScoreTitle": "Internal heuristic score {scoreDate}: {score}/100",
+    "meta": "Catalog {catalogVersion} · {modelCount} models · EUR via ECB {fxDate} · API prices {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "China",
     "unknown": "Unknown",
     "notPriced": "Not priced",

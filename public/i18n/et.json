@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API kulud",
     "heading": "Mida sinu tokenid API kaudu maksnuksid",
-    "meta": "Kataloog {catalogVersion} · {modelCount} mudelit · EUR ECB järgi {fxDate} · API hinnad {pricingDate} · sisemine skoor {scoreDate}",
-    "qualityScoreTitle": "Sisemine heuristiline skoor {scoreDate}: {score}/100",
+    "meta": "Kataloog {catalogVersion} · {modelCount} mudelit · EUR ECB järgi {fxDate} · API hinnad {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Hiina",
     "unknown": "Teadmata",
     "notPriced": "Hinnata",

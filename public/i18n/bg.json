@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API разходи",
     "heading": "Колко биха стрували токените ти през API",
-    "meta": "Каталог {catalogVersion} · {modelCount} модела · EUR чрез ECB {fxDate} · API цени {pricingDate} · вътрешен резултат {scoreDate}",
-    "qualityScoreTitle": "Вътрешен евристичен резултат {scoreDate}: {score}/100",
+    "meta": "Каталог {catalogVersion} · {modelCount} модела · EUR чрез ECB {fxDate} · API цени {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Китай",
     "unknown": "Неизвестно",
     "notPriced": "Без цена",

@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Spejjeż API",
     "heading": "Kemm kienu jiswew it-tokens tiegħek permezz tal-API",
-    "meta": "Katalgu {catalogVersion} · {modelCount} mudelli · EUR permezz tal-ECB {fxDate} · prezzijiet API {pricingDate} · punteġġ intern {scoreDate}",
-    "qualityScoreTitle": "Punteġġ euristiku intern {scoreDate}: {score}/100",
+    "meta": "Katalgu {catalogVersion} · {modelCount} mudelli · EUR permezz tal-ECB {fxDate} · prezzijiet API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Iċ-Ċina",
     "unknown": "Mhux magħruf",
     "notPriced": "Mhux ipprezzat",

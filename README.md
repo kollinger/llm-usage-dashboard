@@ -370,7 +370,7 @@ Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not gene
 
 The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs. Provider subscription counters, such as Copilot premium requests or AI credits, are kept out of the API-cost estimate. When local usage includes model names, known API model IDs such as `claude-fable-5` are matched to the curated price table; unknown model IDs stay unpriced instead of being silently folded into a different model's price.
 
-Model quality scores in the pricing table are an internal heuristic for quick sorting and visual comparison. They are not an official benchmark, not a provider claim, and should be recalibrated or removed when a better documented scoring method is adopted.
+Model quality results in the pricing table use a dated snapshot of the independent human-preference [Arena Text leaderboard](https://arena.ai/leaderboard/). Each displayed Elo value links to the source and retains its tested deployment and rank in the tooltip. Models without an exact match in that snapshot stay unscored; the dashboard never projects a nearby model's result onto them or mixes incompatible benchmark scales.
 
 Refresh the curated API price table and latest ECB USD/EUR reference rate with:
 
@@ -390,7 +390,7 @@ npm run pricing:validate
 npm run pricing:check
 ```
 
-The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing, model limits, availability, aliases, and model-quality signals before changing the review dates in that script. The catalog records a version, review date, source URL, source review date, price quality, availability, context/output limits, and explicit unknown values where an official source does not publish a price. The 2026-09-12 catalog corrects the current GPT-5.6 Sol and Claude Sonnet 5 rates, adds GPT-6 Astra plus current Google, xAI, Alibaba, and Mistral models, and retains retired Mistral rows as explicitly unpriced historical mappings. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
+The script rewrites the pricing metadata, model rows, and Arena Text benchmark snapshot in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing, model limits, availability, aliases, and benchmark coverage before changing the review dates in that script. The catalog records a version, review date, source URL, source review date, price quality, availability, context/output limits, benchmark source data, and explicit unknown values where an official source does not publish a price or an exact benchmark match is unavailable. The 2026-09-12 catalog corrects the current GPT-5.6 Sol and Claude Sonnet 5 rates, adds GPT-6 Astra plus current Google, xAI, Alibaba, and Mistral models, and retains retired Mistral rows as explicitly unpriced historical mappings. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
 
 ## Implementation Status
 
@@ -402,7 +402,7 @@ The script rewrites the pricing metadata, model rows, and internal heuristic sco
 - Gemini local usage: known telemetry and chat metadata paths are scanned when present.
 - Ollama local usage: the optional proxy logger can capture Ollama-compatible usage into `data/ollama-usage.jsonl`.
 - OpenAI and Anthropic API reporting: minimal admin-key aggregation is available for usage, cost, and configured Anthropic organization/workspace rate limits.
-- Pricing comparison and model scores: public API price rows can be compared against local usage, and model quality scores are displayed as an internal heuristic.
+- Pricing comparison and model benchmarks: public API price rows can be compared against local usage, and exact-match Arena Text Elo results are displayed where independently measured.
 
 ### Known Limits
 
@@ -414,7 +414,7 @@ The script rewrites the pricing metadata, model rows, and internal heuristic sco
 ### Open To-Dos
 
 - Copilot quota windows: map returned Copilot SDK quota snapshot keys or response headers to exact session/5-hour, 7-day/weekly, premium-request, chat, and completion semantics before labeling them as those windows in the UI.
-- Model quality scores: review every model score against current model capabilities, public benchmark signals, real-world usefulness, context/window limits, multimodal/tool strengths, and price/performance tradeoffs; update or remove scores that do not make sense.
+- Model benchmark coverage: refresh the dated Arena Text snapshot and add clearly labelled, separate benchmark dimensions only where they are independently sourced and comparable.
 - Desktop signing: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
 - API customer reporting: expand OpenAI and Anthropic admin reporting with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.
 - Provider data gaps: keep new provider-specific local sources documented as they become stable enough to trust.

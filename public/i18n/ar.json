@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "تكاليف API",
     "heading": "ما كانت ستكلفه رموزك عبر API",
-    "meta": "الكتالوج {catalogVersion} · {modelCount} نماذج · اليورو عبر ECB {fxDate} · أسعار API {pricingDate} · الدرجة الداخلية {scoreDate}",
-    "qualityScoreTitle": "درجة استدلالية داخلية {scoreDate}: {score}/100",
+    "meta": "الكتالوج {catalogVersion} · {modelCount} نماذج · اليورو عبر ECB {fxDate} · أسعار API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "الصين",
     "unknown": "غير معروف",
     "notPriced": "غير مسعر",

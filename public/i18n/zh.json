@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API 成本",
     "heading": "你的 token 通过 API 会花费多少",
-    "meta": "目录 {catalogVersion} · {modelCount} 个模型 · EUR via ECB {fxDate} · API 价格 {pricingDate} · 内部评分 {scoreDate}",
-    "qualityScoreTitle": "内部启发式评分 {scoreDate}: {score}/100",
+    "meta": "目录 {catalogVersion} · {modelCount} 个模型 · EUR via ECB {fxDate} · API 价格 {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "中国",
     "unknown": "未知",
     "notPriced": "未定价",

@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API izmaksas",
     "heading": "Cik tavi tokeni maksātu caur API",
-    "meta": "Katalogs {catalogVersion} · {modelCount} modeļi · EUR pēc ECB {fxDate} · API cenas {pricingDate} · iekšējais vērtējums {scoreDate}",
-    "qualityScoreTitle": "Iekšējais heiristiskais vērtējums {scoreDate}: {score}/100",
+    "meta": "Katalogs {catalogVersion} · {modelCount} modeļi · EUR pēc ECB {fxDate} · API cenas {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Ķīna",
     "unknown": "Nezināms",
     "notPriced": "Bez cenas",

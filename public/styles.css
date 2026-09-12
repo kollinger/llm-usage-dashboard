@@ -2888,35 +2888,30 @@ button.subscription-connection-action {
 }
 
 .score-cell {
-  min-width: 110px;
+  min-width: 94px;
 }
 
 .score-meter {
-  display: grid;
-  grid-template-columns: minmax(58px, 1fr) 34px;
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .score-meter strong {
   font-size: 0.86rem;
   font-weight: 900;
-  text-align: right;
 }
 
-.score-track {
-  display: block;
-  overflow: hidden;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--track);
+.score-meter small {
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
-.score-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #2e6ea6, #78a7cf);
+.score-meter > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .price-table a {

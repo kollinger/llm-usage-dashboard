@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API-kostnader",
     "heading": "Vad dina tokens skulle ha kostat via API",
-    "meta": "Katalog {catalogVersion} · {modelCount} modeller · EUR via ECB {fxDate} · API-priser {pricingDate} · intern poäng {scoreDate}",
-    "qualityScoreTitle": "Intern heuristisk poäng {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modeller · EUR via ECB {fxDate} · API-priser {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kina",
     "unknown": "Okänt",
     "notPriced": "Ej prissatt",

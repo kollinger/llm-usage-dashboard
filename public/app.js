@@ -258,7 +258,7 @@ const providerBrandAliases = new Map([
 const USD_PER_EUR = 1.1592;
 const FX_DATE = "2026-09-11";
 const PRICING_DATE = "2026-09-12";
-const SCORE_DATE = "2026-07-09";
+const BENCHMARK_DATE = "2026-09-11";
 const PRICING_CATALOG_VERSION = "2026.09.12.1";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
@@ -1905,62 +1905,366 @@ const pricingModelAliasByCanonicalName = new Map(
   )
 );
 
-const modelQualityScores = {
-  "GPT-6 Astra": null,
-  "GPT-5.6 Sol": null,
-  "GPT-5.6 Terra": null,
-  "GPT-5.6 Luna": null,
-  "Claude Fable 5": 100,
-  "Claude Mythos 5": 99,
-  "GPT-5.5 Pro": 99,
-  "Claude Opus 4.8": 98,
-  "GPT-5.5": 97,
-  "Claude Sonnet 5": 96,
-  "GLM-5.2": 95,
-  "Gemini 3.1 Pro Preview": 94,
-  "Gemini 3.8 Flash": null,
-  "Gemini 3.7 Flash": null,
-  "GLM-5.1": 93,
-  "DeepSeek V4 Pro": 92,
-  "Qwen3.7-Max": 90,
-  "Qwen3.8-Max": null,
-  "GPT-5.4 Pro": 89,
-  "MiniMax M3": 88,
-  "GPT-5.4": 87,
-  "GPT-5.3-Codex": 86,
-  "GPT-5.3-Codex-Spark": 85,
-  "Claude Sonnet 4.6": 84,
-  "Gemini 3.5 Flash": 83,
-  "GLM-5-Turbo": 82,
-  "GLM-5": 81,
-  "Grok 4.3": 81,
-  "Grok 4.6": null,
-  "GPT-5.2": 80,
-  "Qwen3-Max": 79,
-  "GPT-5.4 Mini": 77,
-  "Grok Build 0.1": 76,
-  "Mistral Large 2": 75,
-  "Mistral Large 3": null,
-  "Mistral Medium 3.5": null,
+const modelBenchmarkScores = {
+  "GPT-6 Astra": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1442,
+    rank: 61,
+    votes: 2059,
+    testedModel: "gpt-6-astra-max"
+  },
+  "GPT-5.6 Sol": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1454,
+    rank: 38,
+    votes: 26611,
+    testedModel: "gpt-5.6-sol-xhigh"
+  },
+  "GPT-5.6 Terra": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1446,
+    rank: 51,
+    votes: 27655,
+    testedModel: "gpt-5.6-terra-xhigh"
+  },
+  "GPT-5.6 Luna": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1431,
+    rank: 83,
+    votes: 28112,
+    testedModel: "gpt-5.6-luna-xhigh"
+  },
+  "GPT-5.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1466,
+    rank: 30,
+    votes: 66349,
+    testedModel: "gpt-5.5"
+  },
+  "GPT-5.5 Pro": null,
+  "GPT-5.4": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1453,
+    rank: 39,
+    votes: 63529,
+    testedModel: "gpt-5.4"
+  },
+  "GPT-5.4 Pro": null,
+  "GPT-5.4 Mini": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1412,
+    rank: 125,
+    votes: 59376,
+    testedModel: "gpt-5.4-mini-high"
+  },
+  "GPT-5.4 Nano": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1373,
+    rank: 166,
+    votes: 58427,
+    testedModel: "gpt-5.4-nano-high"
+  },
+  "GPT-5.3-Codex": null,
+  "GPT-5.3-Codex-Spark": null,
+  "GPT-5.2": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1412,
+    rank: 124,
+    votes: 78963,
+    testedModel: "gpt-5.2"
+  },
+  "Claude Fable 5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1492,
+    rank: 7,
+    votes: 29683,
+    testedModel: "claude-fable-5"
+  },
+  "Claude Mythos 5": null,
+  "Claude Opus 4.8": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1452,
+    rank: 40,
+    votes: 52970,
+    testedModel: "claude-opus-4-8"
+  },
+  "Claude Sonnet 5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1442,
+    rank: 60,
+    votes: 34889,
+    testedModel: "claude-sonnet-5-high"
+  },
+  "Claude Sonnet 4.6": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1458,
+    rank: 34,
+    votes: 66208,
+    testedModel: "claude-sonnet-4-6"
+  },
+  "Claude Haiku 4.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1396,
+    rank: 146,
+    votes: 128838,
+    testedModel: "claude-haiku-4-5-20251001"
+  },
+  "MiniMax M3": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1434,
+    rank: 80,
+    votes: 48130,
+    testedModel: "minimax-m3"
+  },
+  "Gemini 3.8 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1494,
+    rank: 6,
+    votes: 5094,
+    testedModel: "gemini-3.8-flash-high"
+  },
+  "Gemini 3.7 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1491,
+    rank: 8,
+    votes: 5645,
+    testedModel: "gemini-3.7-flash-high"
+  },
+  "Gemini 3.1 Pro Preview": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1480,
+    rank: 15,
+    votes: 106483,
+    testedModel: "gemini-3.1-pro-preview"
+  },
+  "Gemini 3.5 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1483,
+    rank: 12,
+    votes: 37808,
+    testedModel: "gemini-3.5-flash-high"
+  },
+  "Gemini 3.1 Flash-Lite": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1415,
+    rank: 120,
+    votes: 60409,
+    testedModel: "gemini-3.1-flash-lite-preview"
+  },
+  "DeepSeek V4 Pro": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1451,
+    rank: 42,
+    votes: 54142,
+    testedModel: "deepseek-v4-pro"
+  },
+  "DeepSeek V4 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1432,
+    rank: 82,
+    votes: 48890,
+    testedModel: "deepseek-v4-flash"
+  },
+  "Qwen3.8-Max": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1481,
+    rank: 14,
+    votes: 16263,
+    testedModel: "qwen3.8-max"
+  },
+  "Qwen3.7-Max": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1474,
+    rank: 20,
+    votes: 3705,
+    testedModel: "qwen3.7-max-preview"
+  },
+  "Qwen3-Max": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1439,
+    rank: 67,
+    votes: 27194,
+    testedModel: "qwen3-max-preview"
+  },
+  "Qwen3.5-Plus": null,
+  "GLM-5.2": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1467,
+    rank: 28,
+    votes: 36471,
+    testedModel: "glm-5.2-max"
+  },
+  "GLM-5.1": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1462,
+    rank: 32,
+    votes: 48503,
+    testedModel: "glm-5.1"
+  },
+  "GLM-5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1446,
+    rank: 50,
+    votes: 27600,
+    testedModel: "glm-5"
+  },
+  "GLM-5-Turbo": null,
+  "GLM-4.7": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1436,
+    rank: 78,
+    votes: 11892,
+    testedModel: "glm-4.7"
+  },
+  "GLM-4.7-FlashX": null,
+  "GLM-4.7-Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1352,
+    rank: 191,
+    votes: 11495,
+    testedModel: "glm-4.7-flash"
+  },
+  "GLM-4.6": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1440,
+    rank: 65,
+    votes: 35065,
+    testedModel: "glm-4.6"
+  },
+  "GLM-4.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1430,
+    rank: 85,
+    votes: 23707,
+    testedModel: "glm-4.5"
+  },
+  "GLM-4.5-X": null,
+  "GLM-4.5-Air": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1384,
+    rank: 155,
+    votes: 30367,
+    testedModel: "glm-4.5-air"
+  },
+  "GLM-4.5-AirX": null,
+  "GLM-4.5-Flash": null,
+  "GLM-4-32B-0414-128K": null,
+  "step-3.7-flash": null,
+  "step-3.5-flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1404,
+    rank: 138,
+    votes: 57129,
+    testedModel: "step-3.5-flash"
+  },
+  "Grok 4.6": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1430,
+    rank: 86,
+    votes: 15017,
+    testedModel: "grok-4.6-high"
+  },
+  "Grok 4.3": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1398,
+    rank: 145,
+    votes: 66842,
+    testedModel: "grok-4.3"
+  },
+  "Grok Build 0.1": null,
+  "Mistral Large 3": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1427,
+    rank: 89,
+    votes: 68591,
+    testedModel: "mistral-large-3"
+  },
+  "Mistral Medium 3.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-11",
+    score: 1421,
+    rank: 102,
+    votes: 10998,
+    testedModel: "mistral-medium-3.5"
+  },
   "Mistral Small 4": null,
-  "GLM-4.6": 74,
-  "GLM-4.7": 73,
-  "GLM-4.5-X": 72,
-  "GLM-4.5-AirX": 71,
-  "Qwen3.5-Plus": 70,
-  "GLM-4.5": 69,
-  "step-3.7-flash": 68,
-  "DeepSeek V4 Flash": 67,
-  "GLM-4.5-Air": 66,
-  "Mistral Small 3.2": 65,
-  "Claude Haiku 4.5": 64,
-  "GPT-5.4 Nano": 63,
-  "Gemini 3.1 Flash-Lite": 62,
-  "GLM-4.7-FlashX": 61,
-  "step-3.5-flash": 58,
-  "GLM-4-32B-0414-128K": 56,
-  "GLM-4.7-Flash": 55,
-  "GLM-4.5-Flash": 55
+  "Mistral Large 2": null,
+  "Mistral Small 3.2": null
 };
 
 init();
@@ -7050,7 +7354,7 @@ function renderPricing(local, rangeRows = [], providers = []) {
               </div>
             </div>
           </td>
-          <td class="score-cell">${renderQualityScore(price)}</td>
+          <td class="score-cell">${renderBenchmarkScore(price)}</td>
           <td>${renderLimitCell(price)}</td>
           <td class="numeric">${formatUsdPerM(price.inputUsd)}</td>
           <td class="numeric">${formatCacheRate(price)}</td>
@@ -7069,7 +7373,7 @@ function renderPricing(local, rangeRows = [], providers = []) {
     modelCount: formatNumber(pricingModels.length),
     fxDate: FX_DATE,
     pricingDate: PRICING_DATE,
-    scoreDate: SCORE_DATE
+    scoreDate: BENCHMARK_DATE
   });
 }
 
@@ -7361,7 +7665,7 @@ function pricingSortValue(row, key) {
   return (
     {
       model: `${price.provider} ${price.model}`,
-      score: sortNumber(modelQualityScores[price.model]),
+      score: sortNumber(modelBenchmarkScores[price.model]?.score),
       region: priceRegion(price),
       limits: sortNumber(price.contextTokens ?? price.maxOutputTokens),
       input: sortNumber(price.inputUsd),
@@ -7452,14 +7756,15 @@ function updatePricingSortButtons() {
   }
 }
 
-function renderQualityScore(price) {
-  const score = modelQualityScores[price.model];
-  if (!score) return "--";
+function renderBenchmarkScore(price) {
+  const benchmark = modelBenchmarkScores[price.model];
+  if (!benchmark) return "--";
   return `
-    <div class="score-meter" title="${escapeHtml(t("pricing.qualityScoreTitle", { scoreDate: SCORE_DATE, score }))}">
-      <span class="score-track"><span class="score-fill" style="width: ${score}%"></span></span>
-      <strong>${score}</strong>
-    </div>
+    <a class="score-meter" href="${benchmark.sourceUrl}" target="_blank" rel="noreferrer"
+      title="${escapeHtml(t("pricing.qualityScoreTitle", { scoreDate: benchmark.measuredOn, score: benchmark.score }))} · ${escapeHtml(benchmark.testedModel)} · #${formatNumber(benchmark.rank)}">
+      <strong>${formatNumber(benchmark.score)} <small>Elo</small></strong>
+      <span>#${formatNumber(benchmark.rank)}</span>
+    </a>
   `;
 }
 

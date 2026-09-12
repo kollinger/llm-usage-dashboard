@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API troškovi",
     "heading": "Koliko bi tvoji tokeni koštali putem API-ja",
-    "meta": "Katalog {catalogVersion} · {modelCount} modela · EUR preko ECB-a {fxDate} · API cijene {pricingDate} · interni rezultat {scoreDate}",
-    "qualityScoreTitle": "Interni heuristički rezultat {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modela · EUR preko ECB-a {fxDate} · API cijene {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kina",
     "unknown": "Nepoznato",
     "notPriced": "Bez cijene",

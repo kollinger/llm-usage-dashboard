@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "Stroški API",
     "heading": "Koliko bi tvoji žetoni stali prek API-ja",
-    "meta": "Katalog {catalogVersion} · {modelCount} modelov · EUR prek ECB {fxDate} · cene API {pricingDate} · interna ocena {scoreDate}",
-    "qualityScoreTitle": "Interna hevristična ocena {scoreDate}: {score}/100",
+    "meta": "Katalog {catalogVersion} · {modelCount} modelov · EUR prek ECB {fxDate} · cene API {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kitajska",
     "unknown": "Neznano",
     "notPriced": "Brez cene",

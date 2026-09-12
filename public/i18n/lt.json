@@ -236,8 +236,8 @@
   "pricing": {
     "eyebrow": "API išlaidos",
     "heading": "Kiek tavo žetonai būtų kainavę per API",
-    "meta": "Katalogas {catalogVersion} · {modelCount} modelių · EUR pagal ECB {fxDate} · API kainos {pricingDate} · vidinis balas {scoreDate}",
-    "qualityScoreTitle": "Vidinis euristinis balas {scoreDate}: {score}/100",
+    "meta": "Katalogas {catalogVersion} · {modelCount} modelių · EUR pagal ECB {fxDate} · API kainos {pricingDate} · Arena Text {scoreDate}",
+    "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kinija",
     "unknown": "Nežinoma",
     "notPriced": "Be kainos",
