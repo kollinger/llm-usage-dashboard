@@ -259,7 +259,7 @@ const USD_PER_EUR = 1.1592;
 const FX_DATE = "2026-09-11";
 const PRICING_DATE = "2026-09-12";
 const SCORE_DATE = "2026-07-09";
-const PRICING_CATALOG_VERSION = "2026.09.12";
+const PRICING_CATALOG_VERSION = "2026.09.12.1";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -621,6 +621,29 @@ const DIAGNOSTIC_ISSUE_STATUSES = new Set([
 ]);
 
 const pricingModels = [
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Astra",
+    aliases: [
+      "gpt-6-astra"
+    ],
+    region: "API/Codex",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    sourceReviewDate: "2026-09-12",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request."
+  },
   {
     provider: "OpenAI",
     model: "GPT-5.6 Sol",
@@ -1883,6 +1906,7 @@ const pricingModelAliasByCanonicalName = new Map(
 );
 
 const modelQualityScores = {
+  "GPT-6 Astra": null,
   "GPT-5.6 Sol": null,
   "GPT-5.6 Terra": null,
   "GPT-5.6 Luna": null,

@@ -5,7 +5,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const I18N_DIR = new URL("../public/i18n/", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_CATALOG_VERSION = "2026.09.12";
+const PRICING_CATALOG_VERSION = "2026.09.12.1";
 const PRICING_REVIEW_DATE = "2026-09-12";
 const BASELINE_SOURCE_REVIEW_DATE = "2026-09-12";
 const SCORE_REVIEW_DATE = "2026-07-09";
@@ -31,6 +31,7 @@ const REQUIRED_MODEL_COVERAGE = [
   "Claude Opus 4.8",
   "Claude Sonnet 5",
   "Claude Sonnet 4.6",
+  "GPT-6 Astra",
   "GPT-5.6 Sol",
   "GPT-5.6 Terra",
   "GPT-5.6 Luna",
@@ -57,6 +58,22 @@ const REQUIRED_MODEL_COVERAGE = [
 // Pricing reviewed from official provider pricing/model pages. Unknown values are
 // kept as null so the UI can expose gaps instead of treating them as zero-cost.
 const rawPricingModels = [
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Astra",
+    aliases: ["gpt-6-astra"],
+    region: "API/Codex",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request."
+  },
   {
     provider: "OpenAI",
     model: "GPT-5.6 Sol",
@@ -844,6 +861,7 @@ const rawPricingModels = [
 ];
 
 const modelQualityScores = {
+  "GPT-6 Astra": null,
   "GPT-5.6 Sol": null,
   "GPT-5.6 Terra": null,
   "GPT-5.6 Luna": null,

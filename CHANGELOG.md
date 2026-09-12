@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0-preview.19 - 2026-09-12
+
+### Added
+
+- Add the missing OpenAI GPT-6 Astra provider model with its official API token
+  rates, cache-write rate, and context/output limits.
+
 ## 1.1.0-preview.18 - 2026-09-12
 
 ### Fixed
