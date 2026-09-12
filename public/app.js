@@ -255,11 +255,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1567;
-const FX_DATE = "2026-08-14";
-const PRICING_DATE = "2026-08-15";
+const USD_PER_EUR = 1.1592;
+const FX_DATE = "2026-09-11";
+const PRICING_DATE = "2026-09-12";
 const SCORE_DATE = "2026-07-09";
-const PRICING_CATALOG_VERSION = "2026.08.15";
+const PRICING_CATALOG_VERSION = "2026.09.12";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -631,10 +631,10 @@ const pricingModels = [
       "gpt-5-6"
     ],
     region: "API/Codex",
-    inputUsd: 5,
-    cacheWriteUsd: 6.25,
-    cachedInputUsd: 0.5,
-    outputUsd: 30,
+    inputUsd: 4,
+    cacheWriteUsd: 5,
+    cachedInputUsd: 0.4,
+    outputUsd: 20,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
@@ -644,7 +644,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-08-15"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -667,7 +667,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-08-15"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -690,7 +690,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-08-15"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -712,7 +712,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -734,7 +734,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -756,7 +756,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -778,7 +778,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -800,7 +800,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -822,7 +822,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -845,7 +845,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -868,7 +868,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "OpenAI",
@@ -890,7 +890,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Anthropic",
@@ -913,7 +913,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Anthropic",
@@ -936,7 +936,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     sourceNotes: "Invitation-only Project Glasswing model with Fable 5 specs and pricing."
   },
   {
@@ -963,7 +963,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Anthropic",
@@ -973,11 +973,11 @@ const pricingModels = [
       "anthropic.claude-sonnet-5",
       "claude-sonnet-5-0"
     ],
-    region: "Intro pricing through 2026-08-31",
-    inputUsd: 2,
-    cacheWriteUsd: 2.5,
-    cachedInputUsd: 0.2,
-    outputUsd: 10,
+    region: "Global",
+    inputUsd: 3,
+    cacheWriteUsd: 3.75,
+    cachedInputUsd: 0.3,
+    outputUsd: 15,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
@@ -987,8 +987,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing",
-    sourceReviewDate: "2026-07-09",
-    sourceNotes: "Introductory pricing applies through August 31, 2026; standard pricing starts September 1, 2026."
+    sourceReviewDate: "2026-09-12",
+    sourceNotes: "Standard pricing effective September 1, 2026; introductory pricing ended August 31, 2026."
   },
   {
     provider: "Anthropic",
@@ -1014,7 +1014,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Anthropic",
@@ -1038,7 +1038,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "MiniMax",
@@ -1046,7 +1046,7 @@ const pricingModels = [
     aliases: [
       "minimax-m3"
     ],
-    region: "<=512k 7d promo",
+    region: "<=512k permanent 50% off",
     inputUsd: 0.3,
     cachedInputUsd: 0.06,
     outputUsd: 1.2,
@@ -1059,8 +1059,54 @@ const pricingModels = [
     limitStatus: "official",
     source: "MiniMax",
     sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.8 Flash",
+    aliases: [
+      "gemini-3.8-flash",
+      "models/gemini-3.8-flash"
+    ],
+    region: "Standard through 2026-12-31",
+    inputUsd: 0.75,
+    cachedInputUsd: 0.075,
+    outputUsd: 3.75,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-09-12",
+    sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.7 Flash",
+    aliases: [
+      "gemini-3.7-flash",
+      "models/gemini-3.7-flash"
+    ],
+    region: "Standard through 2026-12-31",
+    inputUsd: 0.75,
+    cachedInputUsd: 0.075,
+    outputUsd: 3.75,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-09-12",
+    sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
   },
   {
     provider: "Google",
@@ -1082,7 +1128,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Google",
@@ -1105,7 +1151,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Google",
@@ -1127,7 +1173,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "DeepSeek",
@@ -1143,12 +1189,12 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 8000,
+    contextTokens: 1000000,
+    maxOutputTokens: 384000,
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1165,25 +1211,26 @@ const pricingModels = [
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 8000,
+    contextTokens: 1000000,
+    maxOutputTokens: 384000,
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
     provider: "Alibaba",
-    model: "Qwen3.7-Max",
+    model: "Qwen3.8-Max",
     aliases: [
-      "qwen3.7-max",
-      "qwen3-7-max",
-      "qwen3.7-max-2026-06-08"
+      "qwen3.8-max",
+      "qwen3-8-max",
+      "qwen3.8-max-0902"
     ],
     region: "Global <=1M",
     inputUsd: 1.65,
-    cachedInputUsd: null,
+    cacheWriteUsd: 2.063,
+    cachedInputUsd: 0.165,
     outputUsd: 4.951,
     currency: "USD",
     unit: "1M tokens",
@@ -1194,7 +1241,33 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
+    china: true
+  },
+  {
+    provider: "Alibaba",
+    model: "Qwen3.7-Max",
+    aliases: [
+      "qwen3.7-max",
+      "qwen3-7-max",
+      "qwen3.7-max-2026-06-08",
+      "qwen3.7-max-2026-05-20"
+    ],
+    region: "Global <=1M",
+    inputUsd: 1.65,
+    cacheWriteUsd: 2.063,
+    cachedInputUsd: 0.165,
+    outputUsd: 4.951,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Alibaba",
+    sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1217,7 +1290,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1241,7 +1314,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1264,7 +1337,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1287,7 +1360,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1309,7 +1382,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1331,7 +1404,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1354,7 +1427,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1377,7 +1450,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1400,7 +1473,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1423,7 +1496,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1446,7 +1519,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1469,7 +1542,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1492,7 +1565,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1515,7 +1588,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1538,7 +1611,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1560,7 +1633,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1583,7 +1656,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
   },
   {
@@ -1606,8 +1679,31 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     china: true
+  },
+  {
+    provider: "xAI",
+    model: "Grok 4.6",
+    aliases: [
+      "grok-4.6",
+      "grok-4-6"
+    ],
+    region: "Text API, <200k prompt",
+    inputUsd: 2,
+    cachedInputUsd: 0.5,
+    outputUsd: 6,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 500000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "xAI",
+    sourceUrl: "https://docs.x.ai/developers/pricing",
+    sourceReviewDate: "2026-09-12",
+    sourceNotes: "For prompts of 200k tokens or more, xAI bills the full request at $4 input, $1 cached input, and $12 output per 1M tokens."
   },
   {
     provider: "xAI",
@@ -1629,7 +1725,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     sourceNotes: "Chat API table lists Cached input at $0.20 per 1M tokens."
   },
   {
@@ -1652,15 +1748,80 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-12",
     sourceNotes: "Code API table lists Cached input at $0.20 per 1M tokens."
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Large 3",
+    aliases: [
+      "mistral-large-3",
+      "mistral-large-latest"
+    ],
+    region: "API",
+    inputUsd: 0.5,
+    cachedInputUsd: 0.05,
+    outputUsd: 1.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing",
+    sourceReviewDate: "2026-09-12"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Medium 3.5",
+    aliases: [
+      "mistral-medium-3.5",
+      "mistral-medium-latest"
+    ],
+    region: "API",
+    inputUsd: 1.5,
+    cachedInputUsd: 0.15,
+    outputUsd: 7.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing",
+    sourceReviewDate: "2026-09-12"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Small 4",
+    aliases: [
+      "mistral-small-4",
+      "mistral-small-latest"
+    ],
+    region: "API",
+    inputUsd: 0.15,
+    cachedInputUsd: 0.015,
+    outputUsd: 0.6,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing",
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Mistral",
     model: "Mistral Large 2",
     aliases: [
-      "mistral-large-2",
-      "mistral-large-latest"
+      "mistral-large-2"
     ],
     region: "API",
     inputUsd: null,
@@ -1669,20 +1830,19 @@ const pricingModels = [
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "unknown",
-    availability: "ga",
+    availability: "deprecated",
     contextTokens: 128000,
     maxOutputTokens: null,
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   },
   {
     provider: "Mistral",
     model: "Mistral Small 3.2",
     aliases: [
-      "mistral-small-3.2",
-      "mistral-small-latest"
+      "mistral-small-3.2"
     ],
     region: "API",
     inputUsd: null,
@@ -1691,13 +1851,13 @@ const pricingModels = [
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "unknown",
-    availability: "ga",
+    availability: "deprecated",
     contextTokens: 128000,
     maxOutputTokens: null,
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-12"
   }
 ];
 
@@ -1734,9 +1894,12 @@ const modelQualityScores = {
   "Claude Sonnet 5": 96,
   "GLM-5.2": 95,
   "Gemini 3.1 Pro Preview": 94,
+  "Gemini 3.8 Flash": null,
+  "Gemini 3.7 Flash": null,
   "GLM-5.1": 93,
   "DeepSeek V4 Pro": 92,
   "Qwen3.7-Max": 90,
+  "Qwen3.8-Max": null,
   "GPT-5.4 Pro": 89,
   "MiniMax M3": 88,
   "GPT-5.4": 87,
@@ -1747,11 +1910,15 @@ const modelQualityScores = {
   "GLM-5-Turbo": 82,
   "GLM-5": 81,
   "Grok 4.3": 81,
+  "Grok 4.6": null,
   "GPT-5.2": 80,
   "Qwen3-Max": 79,
   "GPT-5.4 Mini": 77,
   "Grok Build 0.1": 76,
   "Mistral Large 2": 75,
+  "Mistral Large 3": null,
+  "Mistral Medium 3.5": null,
+  "Mistral Small 4": null,
   "GLM-4.6": 74,
   "GLM-4.7": 73,
   "GLM-4.5-X": 72,

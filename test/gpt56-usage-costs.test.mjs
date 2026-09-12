@@ -106,11 +106,11 @@ JSON.stringify({
   { filename: appPath }
 ));
 
-assert.deepEqual(uiResult.sol, { model: "GPT-5.6 Sol", input: 5, cacheWrite: 6.25, cached: 0.5, output: 30 });
+assert.deepEqual(uiResult.sol, { model: "GPT-5.6 Sol", input: 4, cacheWrite: 5, cached: 0.4, output: 20 });
 assert.deepEqual(uiResult.terra, { model: "GPT-5.6 Terra", input: 2, cacheWrite: 2.5, cached: 0.2, output: 12 });
 assert.deepEqual(uiResult.luna, { model: "GPT-5.6 Luna", input: 0.2, cacheWrite: 0.25, cached: 0.02, output: 1.2 });
 assert.equal(uiResult.solAlias, "GPT-5.6 Sol");
-assert.equal(uiResult.solBucketUsd, 41.75);
+assert.equal(uiResult.solBucketUsd, 29.4);
 assert.equal(uiResult.usedModelCostStatus, "complete");
 assert.deepEqual(uiResult.modelEfforts, [
   { model: "gpt-5.6-sol", efforts: ["xhigh", "max"] },
