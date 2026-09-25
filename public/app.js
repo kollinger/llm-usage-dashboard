@@ -255,11 +255,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1592;
-const FX_DATE = "2026-09-11";
-const PRICING_DATE = "2026-09-12";
-const BENCHMARK_DATE = "2026-09-11";
-const PRICING_CATALOG_VERSION = "2026.09.12.1";
+const USD_PER_EUR = 1.1367;
+const FX_DATE = "2026-09-24";
+const PRICING_DATE = "2026-09-25";
+const BENCHMARK_DATE = "2026-09-13";
+const PRICING_CATALOG_VERSION = "2026.09.25.1";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -641,7 +641,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-astra",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request."
   },
   {
@@ -667,7 +667,57 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Sol",
+    aliases: [
+      "gpt-6-sol",
+      "gpt-6.0-sol",
+      "gpt-6-0-sol"
+    ],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 10,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-sol",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Luna",
+    aliases: [
+      "gpt-6-luna",
+      "gpt-6.0-luna",
+      "gpt-6-0-luna"
+    ],
+    region: "API/Codex",
+    inputUsd: 0.1,
+    cacheWriteUsd: 0.125,
+    cachedInputUsd: 0.01,
+    outputUsd: 0.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
   },
   {
     provider: "OpenAI",
@@ -690,7 +740,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -713,7 +763,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -735,7 +785,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -757,7 +807,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -779,7 +829,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -801,7 +851,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -823,7 +873,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -845,7 +895,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -868,7 +918,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -891,7 +941,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -913,7 +963,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -936,7 +986,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -959,7 +1009,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Invitation-only Project Glasswing model with Fable 5 specs and pricing."
   },
   {
@@ -986,7 +1036,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -997,10 +1047,10 @@ const pricingModels = [
       "claude-sonnet-5-0"
     ],
     region: "Global",
-    inputUsd: 3,
-    cacheWriteUsd: 3.75,
-    cachedInputUsd: 0.3,
-    outputUsd: 15,
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 10,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
@@ -1010,8 +1060,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing",
-    sourceReviewDate: "2026-09-12",
-    sourceNotes: "Standard pricing effective September 1, 2026; introductory pricing ended August 31, 2026."
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Current first-party global API rates. US-only inference carries a 1.1x multiplier."
   },
   {
     provider: "Anthropic",
@@ -1037,7 +1087,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -1061,7 +1111,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "MiniMax",
@@ -1082,7 +1132,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "MiniMax",
     sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1105,7 +1155,7 @@ const pricingModels = [
     limitStatus: "unknown",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
   },
   {
@@ -1128,7 +1178,7 @@ const pricingModels = [
     limitStatus: "unknown",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
   },
   {
@@ -1151,7 +1201,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Google",
@@ -1174,7 +1224,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Google",
@@ -1196,7 +1246,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "DeepSeek",
@@ -1205,9 +1255,9 @@ const pricingModels = [
       "deepseek-v4-pro"
     ],
     region: "API",
-    inputUsd: 0.435,
-    cachedInputUsd: 0.003625,
-    outputUsd: 0.87,
+    inputUsd: 1.32,
+    cachedInputUsd: 0.044,
+    outputUsd: 3.96,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
@@ -1217,19 +1267,24 @@ const pricingModels = [
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Peak rates. DeepSeek documents half-price off-peak billing outside weekday 01:00–04:00 and 06:00–10:00 UTC.",
     china: true
   },
   {
     provider: "DeepSeek",
-    model: "DeepSeek V4 Flash",
+    model: "DeepSeek V4.1 Flash",
     aliases: [
-      "deepseek-v4-flash"
+      "deepseek-flash",
+      "deepseek-v4.1-flash",
+      "deepseek-v4-1-flash",
+      "deepseek-v4-flash",
+      "deepseek-v4-flash-vision-exp"
     ],
     region: "API",
-    inputUsd: 0.14,
-    cachedInputUsd: 0.0028,
-    outputUsd: 0.28,
+    inputUsd: 0.3,
+    cachedInputUsd: 0.006,
+    outputUsd: 1.2,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
@@ -1239,7 +1294,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Peak rates. Legacy DeepSeek V4 Flash requests are served and billed as V4.1 Flash; off-peak rates are 50% lower.",
     china: true
   },
   {
@@ -1264,7 +1320,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1290,7 +1346,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1313,7 +1369,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1337,7 +1393,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1360,7 +1416,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1383,7 +1439,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1405,7 +1461,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1427,7 +1483,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1450,7 +1506,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1473,7 +1529,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1496,7 +1552,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1519,7 +1575,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1542,7 +1598,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1565,7 +1621,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1588,7 +1644,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1611,7 +1667,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1634,7 +1690,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1656,7 +1712,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1679,7 +1735,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1702,7 +1758,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1725,7 +1781,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "For prompts of 200k tokens or more, xAI bills the full request at $4 input, $1 cached input, and $12 output per 1M tokens."
   },
   {
@@ -1748,7 +1804,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Chat API table lists Cached input at $0.20 per 1M tokens."
   },
   {
@@ -1771,7 +1827,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-09-12",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Code API table lists Cached input at $0.20 per 1M tokens."
   },
   {
@@ -1794,7 +1850,7 @@ const pricingModels = [
     limitStatus: "unknown",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/inference/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Mistral",
@@ -1816,7 +1872,7 @@ const pricingModels = [
     limitStatus: "unknown",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/inference/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Mistral",
@@ -1838,7 +1894,7 @@ const pricingModels = [
     limitStatus: "unknown",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/inference/pricing",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Mistral",
@@ -1859,7 +1915,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Mistral",
@@ -1880,7 +1936,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-09-12"
+    sourceReviewDate: "2026-09-25"
   }
 ];
 
@@ -1909,75 +1965,77 @@ const modelBenchmarkScores = {
   "GPT-6 Astra": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1442,
-    rank: 61,
-    votes: 2059,
+    measuredOn: "2026-09-13",
+    score: 1480,
+    rank: 24,
+    votes: 2693,
     testedModel: "gpt-6-astra-max"
   },
   "GPT-5.6 Sol": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1454,
-    rank: 38,
-    votes: 26611,
+    measuredOn: "2026-09-13",
+    score: 1483,
+    rank: 18,
+    votes: 27069,
     testedModel: "gpt-5.6-sol-xhigh"
   },
+  "GPT-6 Sol": null,
+  "GPT-6 Luna": null,
   "GPT-5.6 Terra": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1446,
-    rank: 51,
-    votes: 27655,
+    measuredOn: "2026-09-13",
+    score: 1466,
+    rank: 45,
+    votes: 28119,
     testedModel: "gpt-5.6-terra-xhigh"
   },
   "GPT-5.6 Luna": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1431,
-    rank: 83,
-    votes: 28112,
+    measuredOn: "2026-09-13",
+    score: 1452,
+    rank: 67,
+    votes: 28547,
     testedModel: "gpt-5.6-luna-xhigh"
   },
   "GPT-5.5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1466,
-    rank: 30,
-    votes: 66349,
+    measuredOn: "2026-09-13",
+    score: 1476,
+    rank: 28,
+    votes: 66317,
     testedModel: "gpt-5.5"
   },
   "GPT-5.5 Pro": null,
   "GPT-5.4": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1453,
-    rank: 39,
-    votes: 63529,
+    measuredOn: "2026-09-13",
+    score: 1466,
+    rank: 46,
+    votes: 63526,
     testedModel: "gpt-5.4"
   },
   "GPT-5.4 Pro": null,
   "GPT-5.4 Mini": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1412,
-    rank: 125,
-    votes: 59376,
+    measuredOn: "2026-09-13",
+    score: 1448,
+    rank: 74,
+    votes: 59387,
     testedModel: "gpt-5.4-mini-high"
   },
   "GPT-5.4 Nano": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1373,
-    rank: 166,
-    votes: 58427,
+    measuredOn: "2026-09-13",
+    score: 1402,
+    rank: 146,
+    votes: 58424,
     testedModel: "gpt-5.4-nano-high"
   },
   "GPT-5.3-Codex": null,
@@ -1985,154 +2043,154 @@ const modelBenchmarkScores = {
   "GPT-5.2": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1412,
-    rank: 124,
-    votes: 78963,
+    measuredOn: "2026-09-13",
+    score: 1436,
+    rank: 91,
+    votes: 78967,
     testedModel: "gpt-5.2"
   },
   "Claude Fable 5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1492,
-    rank: 7,
-    votes: 29683,
-    testedModel: "claude-fable-5"
+    measuredOn: "2026-09-13",
+    score: 1506,
+    rank: 1,
+    votes: 30057,
+    testedModel: "claude-fable-5-high"
   },
   "Claude Mythos 5": null,
   "Claude Opus 4.8": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1452,
-    rank: 40,
-    votes: 52970,
+    measuredOn: "2026-09-13",
+    score: 1473,
+    rank: 35,
+    votes: 53446,
     testedModel: "claude-opus-4-8"
   },
   "Claude Sonnet 5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1442,
-    rank: 60,
-    votes: 34889,
+    measuredOn: "2026-09-13",
+    score: 1461,
+    rank: 51,
+    votes: 35301,
     testedModel: "claude-sonnet-5-high"
   },
   "Claude Sonnet 4.6": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1458,
-    rank: 34,
+    measuredOn: "2026-09-13",
+    score: 1473,
+    rank: 37,
     votes: 66208,
     testedModel: "claude-sonnet-4-6"
   },
   "Claude Haiku 4.5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1396,
-    rank: 146,
-    votes: 128838,
+    measuredOn: "2026-09-13",
+    score: 1415,
+    rank: 129,
+    votes: 129278,
     testedModel: "claude-haiku-4-5-20251001"
   },
   "MiniMax M3": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1434,
-    rank: 80,
-    votes: 48130,
+    measuredOn: "2026-09-13",
+    score: 1441,
+    rank: 84,
+    votes: 48540,
     testedModel: "minimax-m3"
   },
   "Gemini 3.8 Flash": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1494,
-    rank: 6,
-    votes: 5094,
+    measuredOn: "2026-09-13",
+    score: 1493,
+    rank: 9,
+    votes: 5076,
     testedModel: "gemini-3.8-flash-high"
   },
   "Gemini 3.7 Flash": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1491,
-    rank: 8,
-    votes: 5645,
+    measuredOn: "2026-09-13",
+    score: 1490,
+    rank: 12,
+    votes: 5640,
     testedModel: "gemini-3.7-flash-high"
   },
   "Gemini 3.1 Pro Preview": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1480,
+    measuredOn: "2026-09-13",
+    score: 1487,
     rank: 15,
-    votes: 106483,
+    votes: 106951,
     testedModel: "gemini-3.1-pro-preview"
   },
   "Gemini 3.5 Flash": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1483,
-    rank: 12,
-    votes: 37808,
+    measuredOn: "2026-09-13",
+    score: 1478,
+    rank: 25,
+    votes: 38257,
     testedModel: "gemini-3.5-flash-high"
   },
   "Gemini 3.1 Flash-Lite": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1415,
-    rank: 120,
-    votes: 60409,
+    measuredOn: "2026-09-13",
+    score: 1432,
+    rank: 98,
+    votes: 60405,
     testedModel: "gemini-3.1-flash-lite-preview"
   },
   "DeepSeek V4 Pro": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1451,
-    rank: 42,
-    votes: 54142,
+    measuredOn: "2026-09-13",
+    score: 1457,
+    rank: 57,
+    votes: 54130,
     testedModel: "deepseek-v4-pro"
   },
-  "DeepSeek V4 Flash": {
+  "DeepSeek V4.1 Flash": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1432,
-    rank: 82,
-    votes: 48890,
+    measuredOn: "2026-09-13",
+    score: 1436,
+    rank: 92,
+    votes: 48887,
     testedModel: "deepseek-v4-flash"
   },
   "Qwen3.8-Max": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
+    measuredOn: "2026-09-13",
     score: 1481,
-    rank: 14,
-    votes: 16263,
+    rank: 22,
+    votes: 16670,
     testedModel: "qwen3.8-max"
   },
   "Qwen3.7-Max": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1474,
-    rank: 20,
+    measuredOn: "2026-09-13",
+    score: 1473,
+    rank: 34,
     votes: 3705,
     testedModel: "qwen3.7-max-preview"
   },
   "Qwen3-Max": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1439,
-    rank: 67,
+    measuredOn: "2026-09-13",
+    score: 1435,
+    rank: 94,
     votes: 27194,
     testedModel: "qwen3-max-preview"
   },
@@ -2140,75 +2198,75 @@ const modelBenchmarkScores = {
   "GLM-5.2": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1467,
-    rank: 28,
-    votes: 36471,
+    measuredOn: "2026-09-13",
+    score: 1472,
+    rank: 38,
+    votes: 36798,
     testedModel: "glm-5.2-max"
   },
   "GLM-5.1": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1462,
-    rank: 32,
-    votes: 48503,
+    measuredOn: "2026-09-13",
+    score: 1466,
+    rank: 47,
+    votes: 48901,
     testedModel: "glm-5.1"
   },
   "GLM-5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1446,
-    rank: 50,
-    votes: 27600,
+    measuredOn: "2026-09-13",
+    score: 1458,
+    rank: 56,
+    votes: 27605,
     testedModel: "glm-5"
   },
   "GLM-5-Turbo": null,
   "GLM-4.7": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1436,
-    rank: 78,
-    votes: 11892,
+    measuredOn: "2026-09-13",
+    score: 1442,
+    rank: 83,
+    votes: 11893,
     testedModel: "glm-4.7"
   },
   "GLM-4.7-FlashX": null,
   "GLM-4.7-Flash": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1352,
-    rank: 191,
-    votes: 11495,
+    measuredOn: "2026-09-13",
+    score: 1366,
+    rank: 186,
+    votes: 11491,
     testedModel: "glm-4.7-flash"
   },
   "GLM-4.6": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1440,
-    rank: 65,
-    votes: 35065,
+    measuredOn: "2026-09-13",
+    score: 1425,
+    rank: 112,
+    votes: 35061,
     testedModel: "glm-4.6"
   },
   "GLM-4.5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1430,
-    rank: 85,
-    votes: 23707,
+    measuredOn: "2026-09-13",
+    score: 1411,
+    rank: 136,
+    votes: 23712,
     testedModel: "glm-4.5"
   },
   "GLM-4.5-X": null,
   "GLM-4.5-Air": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1384,
-    rank: 155,
+    measuredOn: "2026-09-13",
+    score: 1373,
+    rank: 182,
     votes: 30367,
     testedModel: "glm-4.5-air"
   },
@@ -2219,47 +2277,47 @@ const modelBenchmarkScores = {
   "step-3.5-flash": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1404,
-    rank: 138,
-    votes: 57129,
+    measuredOn: "2026-09-13",
+    score: 1394,
+    rank: 158,
+    votes: 57137,
     testedModel: "step-3.5-flash"
   },
   "Grok 4.6": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1430,
-    rank: 86,
-    votes: 15017,
+    measuredOn: "2026-09-13",
+    score: 1456,
+    rank: 63,
+    votes: 15521,
     testedModel: "grok-4.6-high"
   },
   "Grok 4.3": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1398,
-    rank: 145,
-    votes: 66842,
+    measuredOn: "2026-09-13",
+    score: 1443,
+    rank: 81,
+    votes: 66801,
     testedModel: "grok-4.3"
   },
   "Grok Build 0.1": null,
   "Mistral Large 3": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1427,
-    rank: 89,
-    votes: 68591,
+    measuredOn: "2026-09-13",
+    score: 1413,
+    rank: 133,
+    votes: 69028,
     testedModel: "mistral-large-3"
   },
   "Mistral Medium 3.5": {
     source: "Arena Text",
     sourceUrl: "https://arena.ai/leaderboard/",
-    measuredOn: "2026-09-11",
-    score: 1421,
-    rank: 102,
-    votes: 10998,
+    measuredOn: "2026-09-13",
+    score: 1426,
+    rank: 106,
+    votes: 10996,
     testedModel: "mistral-medium-3.5"
   },
   "Mistral Small 4": null,

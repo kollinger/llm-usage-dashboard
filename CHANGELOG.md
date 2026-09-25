@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Updated
+
+- Add GPT-6 Sol and GPT-6 Luna with official API token prices, cache-write
+  prices, API/Codex aliases, and token limits. GPT-6 Terra is not listed
+  because OpenAI has not published or exposed that model.
+- Refresh the supported provider-price catalog, including current Claude Sonnet
+  5 and DeepSeek V4.1 rates, plus the complete Arena Text score snapshot from
+  September 13, 2026. Newly released GPT-6 Sol and Luna intentionally show no
+  Arena Text score until that leaderboard publishes comparable results.
+
 ## 1.1.0-preview.19 - 2026-09-12
 
 ### Added
