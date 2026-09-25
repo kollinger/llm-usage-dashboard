@@ -21,6 +21,8 @@ state.fallbackTranslations = {};
 const sol = pricingModelForUsageModel("gpt-5.6-sol");
 const terra = pricingModelForUsageModel("gpt-5.6-terra");
 const luna = pricingModelForUsageModel("gpt-5.6-luna");
+const gpt6Sol = pricingModelForUsageModel("gpt-6-sol");
+const gpt6Luna = pricingModelForUsageModel("gpt-6-luna");
 const solAlias = pricingModelForUsageModel("gpt-5.6");
 const solBucketCost = estimateCost({
   inputTokens: 1_000_000,
@@ -91,6 +93,9 @@ JSON.stringify({
   sol: { model: sol?.model, input: sol?.inputUsd, cacheWrite: sol?.cacheWriteUsd, cached: sol?.cachedInputUsd, output: sol?.outputUsd },
   terra: { model: terra?.model, input: terra?.inputUsd, cacheWrite: terra?.cacheWriteUsd, cached: terra?.cachedInputUsd, output: terra?.outputUsd },
   luna: { model: luna?.model, input: luna?.inputUsd, cacheWrite: luna?.cacheWriteUsd, cached: luna?.cachedInputUsd, output: luna?.outputUsd },
+  gpt6Sol: { model: gpt6Sol?.model, input: gpt6Sol?.inputUsd, cacheWrite: gpt6Sol?.cacheWriteUsd, cached: gpt6Sol?.cachedInputUsd, output: gpt6Sol?.outputUsd },
+  gpt6Luna: { model: gpt6Luna?.model, input: gpt6Luna?.inputUsd, cacheWrite: gpt6Luna?.cacheWriteUsd, cached: gpt6Luna?.cachedInputUsd, output: gpt6Luna?.outputUsd },
+  gpt6Scores: { sol: modelBenchmarkScores["GPT-6 Sol"], luna: modelBenchmarkScores["GPT-6 Luna"] },
   solAlias: solAlias?.model,
   solBucketUsd: solBucketCost.usd,
   usedModelCostStatus: usedModelCost.status,
@@ -109,6 +114,9 @@ JSON.stringify({
 assert.deepEqual(uiResult.sol, { model: "GPT-5.6 Sol", input: 4, cacheWrite: 5, cached: 0.4, output: 20 });
 assert.deepEqual(uiResult.terra, { model: "GPT-5.6 Terra", input: 2, cacheWrite: 2.5, cached: 0.2, output: 12 });
 assert.deepEqual(uiResult.luna, { model: "GPT-5.6 Luna", input: 0.2, cacheWrite: 0.25, cached: 0.02, output: 1.2 });
+assert.deepEqual(uiResult.gpt6Sol, { model: "GPT-6 Sol", input: 2, cacheWrite: 2.5, cached: 0.2, output: 10 });
+assert.deepEqual(uiResult.gpt6Luna, { model: "GPT-6 Luna", input: 0.1, cacheWrite: 0.125, cached: 0.01, output: 0.5 });
+assert.deepEqual(uiResult.gpt6Scores, { sol: null, luna: null });
 assert.equal(uiResult.solAlias, "GPT-5.6 Sol");
 assert.equal(uiResult.solBucketUsd, 29.4);
 assert.equal(uiResult.usedModelCostStatus, "complete");
