@@ -237,6 +237,11 @@
     "eyebrow": "API-omkostninger",
     "heading": "Hvad dine tokens ville have kostet via API",
     "meta": "Katalog {catalogVersion} · {modelCount} modeller · EUR via ECB {fxDate} · API-priser {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtrer efter modelnavn",
+      "placeholder": "For eksempel Sol, 6.1 eller Claude",
+      "empty": "Ingen modeller fundet med dette navn."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kina",
     "unknown": "Ukendt",

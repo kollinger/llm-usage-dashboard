@@ -237,6 +237,11 @@
     "eyebrow": "API-kustannukset",
     "heading": "Mitä tokenisi olisivat maksaneet API:n kautta",
     "meta": "Luettelo {catalogVersion} · {modelCount} mallia · EUR ECB:n kautta {fxDate} · API-hinnat {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Suodata mallin nimellä",
+      "placeholder": "Esimerkiksi Sol, 6.1 tai Claude",
+      "empty": "Tällä nimellä ei löytynyt malleja."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kiina",
     "unknown": "Tuntematon",

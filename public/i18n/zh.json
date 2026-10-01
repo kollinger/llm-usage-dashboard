@@ -237,6 +237,11 @@
     "eyebrow": "API 成本",
     "heading": "你的 token 通过 API 会花费多少",
     "meta": "目录 {catalogVersion} · {modelCount} 个模型 · EUR via ECB {fxDate} · API 价格 {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "按模型名称筛选",
+      "placeholder": "例如 Sol、6.1 或 Claude",
+      "empty": "未找到此名称的模型。"
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "中国",
     "unknown": "未知",

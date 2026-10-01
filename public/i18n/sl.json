@@ -237,6 +237,11 @@
     "eyebrow": "Stroški API",
     "heading": "Koliko bi tvoji žetoni stali prek API-ja",
     "meta": "Katalog {catalogVersion} · {modelCount} modelov · EUR prek ECB {fxDate} · cene API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtriraj po imenu modela",
+      "placeholder": "Na primer Sol, 6.1 ali Claude",
+      "empty": "Modelov s tem imenom ni bilo mogoče najti."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kitajska",
     "unknown": "Neznano",

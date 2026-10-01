@@ -263,6 +263,11 @@
     "eyebrow": "API-Kosten",
     "heading": "Was deine Tokens über die API gekostet hätten",
     "meta": "Katalog {catalogVersion} · {modelCount} Modelle · EUR via EZB {fxDate} · API-Preise {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Modellname filtern",
+      "placeholder": "Zum Beispiel Sol, 6.1 oder Claude",
+      "empty": "Keine Modelle mit diesem Namen gefunden."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "China",
     "unknown": "Unbekannt",

@@ -237,6 +237,11 @@
     "eyebrow": "Náklady API",
     "heading": "Koľko by tvoje tokeny stáli cez API",
     "meta": "Katalóg {catalogVersion} · {modelCount} modelov · EUR cez ECB {fxDate} · ceny API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtrovať podľa názvu modelu",
+      "placeholder": "Napríklad Sol, 6.1 alebo Claude",
+      "empty": "Nenašli sa žiadne modely s týmto názvom."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Čína",
     "unknown": "Neznáme",

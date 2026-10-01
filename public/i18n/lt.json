@@ -237,6 +237,11 @@
     "eyebrow": "API išlaidos",
     "heading": "Kiek tavo žetonai būtų kainavę per API",
     "meta": "Katalogas {catalogVersion} · {modelCount} modelių · EUR pagal ECB {fxDate} · API kainos {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtruoti pagal modelio pavadinimą",
+      "placeholder": "Pavyzdžiui, Sol, 6.1 arba Claude",
+      "empty": "Modelių tokiu pavadinimu nerasta."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kinija",
     "unknown": "Nežinoma",

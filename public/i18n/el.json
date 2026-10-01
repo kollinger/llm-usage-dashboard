@@ -237,6 +237,11 @@
     "eyebrow": "Κόστος API",
     "heading": "Τι θα κόστιζαν τα token σου μέσω API",
     "meta": "Κατάλογος {catalogVersion} · {modelCount} μοντέλα · EUR μέσω ECB {fxDate} · τιμές API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Φιλτράρισμα κατά όνομα μοντέλου",
+      "placeholder": "Για παράδειγμα Sol, 6.1 ή Claude",
+      "empty": "Δεν βρέθηκαν μοντέλα με αυτό το όνομα."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Κίνα",
     "unknown": "Άγνωστο",

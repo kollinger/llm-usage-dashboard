@@ -37,6 +37,7 @@ const state = {
   chartTimeFilter: "all",
   usageProjectionMode: "bar",
   pricingView: "api",
+  pricingModelFilter: "",
   pricingSort: { key: "total", direction: "desc" },
   themePreference: "system",
   language: "en",
@@ -182,6 +183,7 @@ const els = {
   pricingUsedModels: document.getElementById("pricingUsedModels"),
   pricingSubscriptionCosts: document.getElementById("pricingSubscriptionCosts"),
   priceRows: document.getElementById("priceRows"),
+  pricingModelFilter: document.getElementById("pricingModelFilter"),
   pricingMeta: document.getElementById("pricingMeta"),
   priceSortButtons: Array.from(document.querySelectorAll("[data-price-sort]"))
 };
@@ -2459,6 +2461,12 @@ function bindEvents() {
   });
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
+  });
+  els.pricingModelFilter?.addEventListener("input", () => {
+    state.pricingModelFilter = els.pricingModelFilter.value;
+    if (state.usage) {
+      renderPricing(state.usage.local, chartRowsForCurrentRange(state.usage.local), buildProviders(state.usage));
+    }
   });
   els.pricingViewToggle?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-pricing-view]");
@@ -7416,7 +7424,10 @@ function renderPricing(local, rangeRows = [], providers = []) {
 
   const todayUsage = billingTotalsForDaily(dailyRowsForToday(local));
   const totalUsage = billingTotalsForWindow(local, "allTime");
-  const rows = pricingModels.map((price) => ({
+  const query = state.pricingModelFilter.trim().toLowerCase();
+  const rows = pricingModels.filter((price) =>
+    [price.model, ...(price.aliases || [])].some((name) => name.toLowerCase().includes(query))
+  ).map((price) => ({
     price,
     today: estimateCost(todayUsage, price),
     total: estimateCost(totalUsage, price)
@@ -7449,7 +7460,7 @@ function renderPricing(local, rangeRows = [], providers = []) {
         </tr>
       `;
     })
-    .join("");
+    .join("") || `<tr><td colspan="10" class="pricing-empty" role="status">${escapeHtml(t("pricing.modelFilter.empty"))}</td></tr>`;
 
   els.pricingMeta.textContent = t("pricing.meta", {
     catalogVersion: PRICING_CATALOG_VERSION,

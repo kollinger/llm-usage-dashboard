@@ -237,6 +237,11 @@
     "eyebrow": "API troškovi",
     "heading": "Koliko bi tvoji tokeni koštali putem API-ja",
     "meta": "Katalog {catalogVersion} · {modelCount} modela · EUR preko ECB-a {fxDate} · API cijene {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtriraj prema nazivu modela",
+      "placeholder": "Na primjer Sol, 6.1 ili Claude",
+      "empty": "Nisu pronađeni modeli s ovim nazivom."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kina",
     "unknown": "Nepoznato",

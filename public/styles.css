@@ -2797,6 +2797,10 @@ button.subscription-connection-action {
   display: none;
 }
 
+.pricing-model-filter {
+  max-width: 420px;
+}
+
 .pricing-view-heading {
   display: grid;
   gap: 4px;

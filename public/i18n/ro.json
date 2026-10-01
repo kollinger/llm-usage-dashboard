@@ -237,6 +237,11 @@
     "eyebrow": "Costuri API",
     "heading": "Cât ar fi costat tokenurile tale prin API",
     "meta": "Catalog {catalogVersion} · {modelCount} modele · EUR prin BCE {fxDate} · prețuri API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtrează după numele modelului",
+      "placeholder": "De exemplu Sol, 6.1 sau Claude",
+      "empty": "Nu s-au găsit modele cu acest nume."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "China",
     "unknown": "Necunoscut",

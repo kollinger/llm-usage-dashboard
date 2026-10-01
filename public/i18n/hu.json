@@ -237,6 +237,11 @@
     "eyebrow": "API-költségek",
     "heading": "Mennyibe kerültek volna a tokenjeid az API-n keresztül",
     "meta": "Katalógus {catalogVersion} · {modelCount} modell · EUR az ECB alapján {fxDate} · API-árak {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Szűrés modellnév szerint",
+      "placeholder": "Például Sol, 6.1 vagy Claude",
+      "empty": "Nem található modell ezzel a névvel."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Kína",
     "unknown": "Ismeretlen",

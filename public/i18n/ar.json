@@ -237,6 +237,11 @@
     "eyebrow": "تكاليف API",
     "heading": "ما كانت ستكلفه رموزك عبر API",
     "meta": "الكتالوج {catalogVersion} · {modelCount} نماذج · اليورو عبر ECB {fxDate} · أسعار API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "التصفية حسب اسم النموذج",
+      "placeholder": "مثل Sol أو 6.1 أو Claude",
+      "empty": "لم يتم العثور على نماذج بهذا الاسم."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "الصين",
     "unknown": "غير معروف",

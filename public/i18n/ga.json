@@ -237,6 +237,11 @@
     "eyebrow": "Costais API",
     "heading": "Cad a chosnódh do chuid token tríd an API",
     "meta": "Catalóg {catalogVersion} · {modelCount} samhail · EUR trí ECB {fxDate} · praghsanna API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Scag de réir ainm an mhúnla",
+      "placeholder": "Mar shampla Sol, 6.1 nó Claude",
+      "empty": "Níor aimsíodh aon mhúnla leis an ainm seo."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "An tSín",
     "unknown": "Anaithnid",

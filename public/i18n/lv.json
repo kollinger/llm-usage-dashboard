@@ -237,6 +237,11 @@
     "eyebrow": "API izmaksas",
     "heading": "Cik tavi tokeni maksātu caur API",
     "meta": "Katalogs {catalogVersion} · {modelCount} modeļi · EUR pēc ECB {fxDate} · API cenas {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtrēt pēc modeļa nosaukuma",
+      "placeholder": "Piemēram, Sol, 6.1 vai Claude",
+      "empty": "Modeļi ar šo nosaukumu nav atrasti."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Ķīna",
     "unknown": "Nezināms",

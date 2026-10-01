@@ -237,6 +237,11 @@
     "eyebrow": "API kulud",
     "heading": "Mida sinu tokenid API kaudu maksnuksid",
     "meta": "Kataloog {catalogVersion} · {modelCount} mudelit · EUR ECB järgi {fxDate} · API hinnad {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Filtreeri mudeli nime järgi",
+      "placeholder": "Näiteks Sol, 6.1 või Claude",
+      "empty": "Selle nimega mudeleid ei leitud."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Hiina",
     "unknown": "Teadmata",

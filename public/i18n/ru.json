@@ -237,6 +237,11 @@
     "eyebrow": "Расходы API",
     "heading": "Сколько стоили бы ваши токены через API",
     "meta": "Каталог {catalogVersion} · {modelCount} моделей · EUR через ECB {fxDate} · цены API {pricingDate} · Arena Text {scoreDate}",
+    "modelFilter": {
+      "label": "Фильтр по названию модели",
+      "placeholder": "Например Sol, 6.1 или Claude",
+      "empty": "Модели с таким названием не найдены."
+    },
     "qualityScoreTitle": "Arena Text {scoreDate}: {score} Elo",
     "chinaBadge": "Китай",
     "unknown": "Неизвестно",
