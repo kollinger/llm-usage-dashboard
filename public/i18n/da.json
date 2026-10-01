@@ -434,6 +434,16 @@
     "off": "Fra"
   },
   "limits": {
+    "recentPace": {
+      "title": "Seneste tempo",
+      "measured": "+{percent} procentpoint på {duration}",
+      "collecting": "Endnu ikke nok målinger for denne periode.",
+      "flat": "Ingen målbar stigning i denne periode.",
+      "stale": "Den seneste kvotemåling er for gammel.",
+      "changed": "Målingerne ændrede sig; intet estimat.",
+      "possible": "Grænsen kan nås før nulstilling; estimatet er usikkert.",
+      "note": "Estimat fra afrundede procenter ved uændret tempo."
+    },
     "fiveHour": "5h",
     "weekly": "Uge",
     "currentSession": "Aktuel session",

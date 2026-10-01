@@ -1187,6 +1187,68 @@ textarea {
   text-transform: uppercase;
 }
 
+.quota-pace-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent, var(--green));
+  border-radius: 9px;
+  background: var(--panel-subtle);
+}
+
+.quota-pace-risk { border-left-color: var(--rose); }
+.quota-pace-possible { border-left-color: var(--amber); }
+.quota-pace-safe { border-left-color: var(--green); }
+
+.quota-pace-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quota-pace-head strong {
+  color: var(--ink);
+  font-size: 0.78rem;
+}
+
+.quota-pace-windows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.quota-pace-windows .chart-mode-btn {
+  min-height: 26px;
+  padding: 4px 8px;
+  font-size: 0.69rem;
+}
+
+.quota-pace-card p {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.quota-pace-measured {
+  color: var(--muted);
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.quota-pace-result {
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.quota-pace-note {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
 .usage-projection-toggle {
   display: inline-flex;
   flex-wrap: wrap;

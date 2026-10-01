@@ -434,6 +434,16 @@
     "off": "Uit"
   },
   "limits": {
+    "recentPace": {
+      "title": "Recent tempo",
+      "measured": "+{percent} procentpunt in {duration}",
+      "collecting": "Nog niet genoeg metingen voor deze periode.",
+      "flat": "Geen meetbare stijging in deze periode.",
+      "stale": "De laatste quotameting is te oud.",
+      "changed": "De metingen zijn veranderd; geen voorspelling.",
+      "possible": "De limiet kan vóór de reset worden bereikt; de schatting is onzeker.",
+      "note": "Schatting op basis van afgeronde percentages bij gelijkblijvend tempo."
+    },
     "fiveHour": "5h",
     "weekly": "Week",
     "currentSession": "Huidige sessie",

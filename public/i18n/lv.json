@@ -434,6 +434,16 @@
     "off": "Izslēgts"
   },
   "limits": {
+    "recentPace": {
+      "title": "Nesenais temps",
+      "measured": "+{percent} procentpunkti {duration} laikā",
+      "collecting": "Šim periodam vēl nav pietiekami daudz mērījumu.",
+      "flat": "Šajā periodā nav izmērāma pieauguma.",
+      "stale": "Pēdējais kvotas mērījums ir pārāk vecs.",
+      "changed": "Mērījumi mainījās; prognoze nav pieejama.",
+      "possible": "Limits var tikt sasniegts pirms atiestatīšanas; aplēse ir neskaidra.",
+      "note": "Aplēse no noapaļotiem procentiem pie nemainīga tempa."
+    },
     "fiveHour": "5h",
     "weekly": "Nedēļa",
     "currentSession": "Pašreizējā sesija",

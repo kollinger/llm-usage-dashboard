@@ -434,6 +434,16 @@
     "off": "关"
   },
   "limits": {
+    "recentPace": {
+      "title": "近期速率",
+      "measured": "{duration} 内增加 {percent} 个百分点",
+      "collecting": "这一时段的读数还不够。",
+      "flat": "这一时段没有可测量的增长。",
+      "stale": "最新额度读数已过期。",
+      "changed": "读数发生变化，无法预测。",
+      "possible": "可能在重置前达到限额；目前读数不足以确定。",
+      "note": "基于四舍五入的百分比估算，假设速率保持不变。"
+    },
     "fiveHour": "5h",
     "weekly": "周",
     "currentSession": "当前会话",

@@ -460,6 +460,16 @@
     "off": "Off"
   },
   "limits": {
+    "recentPace": {
+      "title": "Recent pace",
+      "measured": "+{percent} percentage points in {duration}",
+      "collecting": "Not enough readings for this period yet.",
+      "flat": "No measurable increase in this period.",
+      "stale": "The latest quota reading is too old.",
+      "changed": "Quota readings changed unexpectedly; no forecast.",
+      "possible": "The limit may be reached before reset; the readings are too coarse to be certain.",
+      "note": "Estimate from rounded percentages, assuming the same pace continues."
+    },
     "fiveHour": "5h",
     "weekly": "Week",
     "glmFiveHourTokens": "5h tokens",

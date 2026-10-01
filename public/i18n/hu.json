@@ -434,6 +434,16 @@
     "off": "Ki"
   },
   "limits": {
+    "recentPace": {
+      "title": "Közelmúltbeli ütem",
+      "measured": "+{percent} százalékpont {duration} alatt",
+      "collecting": "Ehhez az időszakhoz még nincs elég mérés.",
+      "flat": "Nincs mérhető növekedés ebben az időszakban.",
+      "stale": "A legutóbbi kvótaadat túl régi.",
+      "changed": "Az értékek megváltoztak; nincs előrejelzés.",
+      "possible": "A limit a visszaállítás előtt elfogyhat; a becslés bizonytalan.",
+      "note": "Becslés kerekített százalékokból, változatlan ütemmel."
+    },
     "fiveHour": "5h",
     "weekly": "Hét",
     "currentSession": "Aktuális munkamenet",

@@ -434,6 +434,16 @@
     "off": "Oprit"
   },
   "limits": {
+    "recentPace": {
+      "title": "Ritm recent",
+      "measured": "+{percent} puncte procentuale în {duration}",
+      "collecting": "Nu sunt încă suficiente măsurători pentru această perioadă.",
+      "flat": "Nicio creștere măsurabilă în această perioadă.",
+      "stale": "Ultima citire a cotei este prea veche.",
+      "changed": "Citirile s-au schimbat; nu există prognoză.",
+      "possible": "Limita ar putea fi atinsă înainte de resetare; estimarea este incertă.",
+      "note": "Estimare din procente rotunjite, presupunând un ritm constant."
+    },
     "fiveHour": "5h",
     "weekly": "Săptămână",
     "currentSession": "Sesiune curentă",

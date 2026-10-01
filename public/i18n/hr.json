@@ -434,6 +434,16 @@
     "off": "Isključeno"
   },
   "limits": {
+    "recentPace": {
+      "title": "Nedavni tempo",
+      "measured": "+{percent} postotnih bodova u {duration}",
+      "collecting": "Još nema dovoljno mjerenja za ovo razdoblje.",
+      "flat": "Nema mjerljivog porasta u ovom razdoblju.",
+      "stale": "Posljednje očitanje kvote je prestaro.",
+      "changed": "Očitanja su se promijenila; nema prognoze.",
+      "possible": "Limit se možda dosegne prije resetiranja; procjena je nesigurna.",
+      "note": "Procjena iz zaokruženih postotaka uz stalan tempo."
+    },
     "fiveHour": "5h",
     "weekly": "Tjedan",
     "currentSession": "Trenutačna sesija",

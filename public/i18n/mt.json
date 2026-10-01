@@ -434,6 +434,16 @@
     "off": "Mitfi"
   },
   "limits": {
+    "recentPace": {
+      "title": "Pass riċenti",
+      "measured": "+{percent} punti perċentwali f’{duration}",
+      "collecting": "Għad m’hemmx biżżejjed kejl għal dan il-perjodu.",
+      "flat": "Ebda żieda li tista’ titkejjel f’dan il-perjodu.",
+      "stale": "L-aħħar qari tal-kwota huwa antik wisq.",
+      "changed": "Il-qari nbidel; m’hemmx tbassir.",
+      "possible": "Il-limitu jista’ jintlaħaq qabel ir-reset; l-istima mhix ċerta.",
+      "note": "Stima minn perċentwali mqarrba b’pass kostanti."
+    },
     "fiveHour": "5h",
     "weekly": "Ġimgħa",
     "currentSession": "Sessjoni attwali",

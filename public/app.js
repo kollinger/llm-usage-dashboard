@@ -36,6 +36,7 @@ const state = {
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
   usageProjectionMode: "bar",
+  quotaPaceWindowMinutes: 120,
   pricingView: "api",
   pricingModelFilter: "",
   pricingSort: { key: "total", direction: "desc" },
@@ -2482,6 +2483,15 @@ function bindEvents() {
   });
   els.loginForm.addEventListener("submit", login);
   els.appShell.addEventListener("click", (e) => {
+    const quotaPaceBtn = e.target.closest("[data-quota-pace-window]");
+    if (quotaPaceBtn) {
+      const minutes = Number(quotaPaceBtn.dataset.quotaPaceWindow);
+      if ([30, 60, 120, 300].includes(minutes) && minutes !== state.quotaPaceWindowMinutes) {
+        state.quotaPaceWindowMinutes = minutes;
+        if (state.usage) preservePageScrollDuring(render);
+      }
+      return;
+    }
     const projectionModeBtn = e.target.closest("[data-usage-projection-mode]");
     if (projectionModeBtn) {
       setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode);
@@ -6352,7 +6362,56 @@ function renderLimitBars(provider) {
   return `
     <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
       ${renderUsageProjectionModeToggle(mode)}
-      ${rows.map((row) => renderLimitBar(row, provider.accent, mode)).join("")}
+      ${rows.map((row) => `${renderLimitBar(row, provider.accent, mode)}${renderQuotaPaceCard(provider, row)}`).join("")}
+    </div>
+  `;
+}
+
+function renderQuotaPaceCard(provider, row) {
+  if (!isWeeklyLimit(row) || !["codex", "claudeCode"].includes(provider.id)) return "";
+  const rawKey = String(row.key || "").replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase();
+  const key = rawKey.startsWith("fable") ? rawKey : "weekly";
+  const minutes = state.quotaPaceWindowMinutes;
+  const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
+  const label = row.label;
+  let result = t("limits.recentPace.collecting");
+  if (pace?.status === "flat") result = t("limits.recentPace.flat");
+  if (pace?.status === "stale") result = t("limits.recentPace.stale");
+  if (pace?.status === "changed") result = t("limits.recentPace.changed");
+  if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
+    result = t("limits.pace.hitBeforeReset", {
+      time: formatDateTime(pace.hitAt),
+      duration: formatDurationCompact(Date.parse(pace.resetsAt) - Date.parse(pace.hitAt))
+    });
+  }
+  if (pace?.status === "safe" && pace.resetsAt && pace.observedMinutes) {
+    const remaining = Math.max(0, 100 - row.usedPercent - pace.deltaPercent *
+      ((Date.parse(pace.resetsAt) - Date.now()) / 60_000 / pace.observedMinutes));
+    result = t("limits.pace.remaining", { percent: formatPacePercent(remaining) });
+  }
+  if (pace?.status === "possible") result = t("limits.recentPace.possible");
+  const measured = pace?.deltaPercent !== undefined && pace?.observedMinutes
+    ? t("limits.recentPace.measured", {
+        percent: new Intl.NumberFormat(state.language || "en", { maximumFractionDigits: 1 }).format(pace.deltaPercent),
+        duration: formatDurationCompact(pace.observedMinutes * 60_000)
+      })
+    : "";
+  return `
+    <div class="quota-pace-card quota-pace-${escapeHtml(pace?.status || "collecting")}">
+      <div class="quota-pace-head">
+        <strong>${escapeHtml(t("limits.recentPace.title"))} · ${escapeHtml(label)}</strong>
+        <div class="quota-pace-windows" role="group" aria-label="${escapeHtml(t("limits.recentPace.title"))}">
+          ${[[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]].map(([value, text]) => `
+            <button type="button" class="chart-mode-btn${minutes === value ? " active" : ""}"
+              data-quota-pace-window="${value}" aria-pressed="${minutes === value}">${text}</button>
+          `).join("")}
+        </div>
+      </div>
+      ${measured ? `<p class="quota-pace-measured">${escapeHtml(measured)}</p>` : ""}
+      <p class="quota-pace-result">${escapeHtml(result)}</p>
+      ${["risk", "safe", "possible"].includes(pace?.status)
+        ? `<p class="quota-pace-note">${escapeHtml(t("limits.recentPace.note"))}</p>`
+        : ""}
     </div>
   `;
 }

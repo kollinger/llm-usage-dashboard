@@ -434,6 +434,16 @@
     "off": "Pois"
   },
   "limits": {
+    "recentPace": {
+      "title": "Viimeaikainen tahti",
+      "measured": "+{percent} prosenttiyksikköä ajassa {duration}",
+      "collecting": "Tälle ajanjaksolle ei ole vielä riittävästi mittauksia.",
+      "flat": "Ei mitattavaa kasvua tällä ajanjaksolla.",
+      "stale": "Viimeisin kiintiötieto on liian vanha.",
+      "changed": "Lukemat muuttuivat; ennustetta ei ole.",
+      "possible": "Raja voi täyttyä ennen nollausta; arvio on epävarma.",
+      "note": "Arvio pyöristetyistä prosenteista tasaisen tahdin oletuksella."
+    },
     "fiveHour": "5h",
     "weekly": "Viikko",
     "currentSession": "Nykyinen istunto",

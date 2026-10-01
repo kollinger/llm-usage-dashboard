@@ -434,6 +434,16 @@
     "off": "Desligado"
   },
   "limits": {
+    "recentPace": {
+      "title": "Ritmo recente",
+      "measured": "+{percent} pontos percentuais em {duration}",
+      "collecting": "Ainda não há medições suficientes para este período.",
+      "flat": "Sem aumento mensurável neste período.",
+      "stale": "A última leitura da quota é demasiado antiga.",
+      "changed": "As leituras mudaram; não há previsão.",
+      "possible": "O limite pode ser atingido antes da reposição; a estimativa é incerta.",
+      "note": "Estimativa com percentagens arredondadas e ritmo constante."
+    },
     "fiveHour": "5h",
     "weekly": "Semana",
     "currentSession": "Sessão atual",

@@ -434,6 +434,16 @@
     "off": "Izklopljeno"
   },
   "limits": {
+    "recentPace": {
+      "title": "Nedavni tempo",
+      "measured": "+{percent} odstotnih točk v {duration}",
+      "collecting": "Za to obdobje še ni dovolj meritev.",
+      "flat": "V tem obdobju ni merljivega povečanja.",
+      "stale": "Zadnja meritev kvote je prestara.",
+      "changed": "Meritve so se spremenile; napoved ni na voljo.",
+      "possible": "Omejitev je mogoče doseči pred ponastavitvijo; ocena je negotova.",
+      "note": "Ocena iz zaokroženih odstotkov ob stalnem tempu."
+    },
     "fiveHour": "5h",
     "weekly": "Teden",
     "currentSession": "Trenutna seja",

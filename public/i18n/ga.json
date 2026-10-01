@@ -434,6 +434,16 @@
     "off": "As"
   },
   "limits": {
+    "recentPace": {
+      "title": "Luas le déanaí",
+      "measured": "+{percent} pointe céatadáin i {duration}",
+      "collecting": "Níl dóthain tomhas ann don tréimhse seo fós.",
+      "flat": "Níl aon mhéadú intomhaiste sa tréimhse seo.",
+      "stale": "Tá an léamh cuóta is déanaí ró-shean.",
+      "changed": "D’athraigh na léamha; níl réamhaisnéis ar fáil.",
+      "possible": "D’fhéadfaí an teorainn a bhaint amach roimh athshocrú; tá an meastachán éiginnte.",
+      "note": "Meastachán ó chéatadáin chothromaithe le luas seasta."
+    },
     "fiveHour": "5h",
     "weekly": "Seachtain",
     "currentSession": "Seisiún reatha",

@@ -434,6 +434,16 @@
     "off": "Väljas"
   },
   "limits": {
+    "recentPace": {
+      "title": "Hiljutine tempo",
+      "measured": "+{percent} protsendipunkti ajaga {duration}",
+      "collecting": "Selle perioodi kohta pole veel piisavalt mõõtmisi.",
+      "flat": "Sel perioodil pole mõõdetavat kasvu.",
+      "stale": "Viimane kvoodinäit on liiga vana.",
+      "changed": "Näidud muutusid; prognoos puudub.",
+      "possible": "Limiit võib täituda enne lähtestamist; hinnang on ebakindel.",
+      "note": "Hinnang ümardatud protsentide ja püsiva tempo põhjal."
+    },
     "fiveHour": "5h",
     "weekly": "Nädal",
     "currentSession": "Praegune seanss",

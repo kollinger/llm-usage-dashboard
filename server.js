@@ -22,6 +22,7 @@ const {
   readSourceSettings
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath } = require("./lib/usage-events");
+const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
   codexAccountObservationsFromAuth,
@@ -45,6 +46,7 @@ const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const CLAUDE_USAGE_SNAPSHOT_FILE = path.join(DATA_DIR, "claude-usage-snapshot.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
+const QUOTA_PACE_SAMPLES_FILE = path.join(DATA_DIR, "quota-pace-samples.json");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
@@ -954,12 +956,14 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       officialPricing,
       accountBilling
     );
-    await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, openai, anthropic]).catch(() => {});
+    const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, openai, anthropic]).catch(() => []);
+    const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
     const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, ollama]);
 
     const now = new Date().toISOString();
     return {
       generatedAt: now,
+      quotaPace,
       codex: stripProviderUsageEvents(codex),
       openCode: stripProviderUsageEvents(openCode),
       copilot: stripProviderUsageEvents(copilot),
@@ -9151,7 +9155,7 @@ function buildCodexRateLimitBuckets(windows, extras = {}) {
 
 function codexWindowOutputRow(window) {
   const { canonicalKey, timestamp, ...row } = window;
-  return row;
+  return timestamp ? { ...row, observedAt: timestamp } : row;
 }
 
 function selectBestCodexWindows(windows) {
@@ -10148,11 +10152,32 @@ async function recordProviderQuotaSnapshots(providers) {
     events.push(...buildProviderQuotaEvents(provider));
   }
   if (events.length) await appendChangedQuotaEvents(events);
+  return events;
+}
+
+async function updateQuotaPace(events) {
+  const nowMs = Date.now();
+  let previous;
+  try {
+    previous = JSON.parse(await fsp.readFile(QUOTA_PACE_SAMPLES_FILE, "utf8"));
+    if (!Array.isArray(previous)) throw new Error("Invalid quota pace samples");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    previous = await readQuotaPaceTail(QUOTA_EVENTS_FILE, nowMs);
+  }
+  const samples = mergeQuotaPaceSamples(previous, events, nowMs);
+  if (JSON.stringify(samples) !== JSON.stringify(previous)) {
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    const tempFile = `${QUOTA_PACE_SAMPLES_FILE}.${process.pid}.tmp`;
+    await fsp.writeFile(tempFile, JSON.stringify(samples), { mode: 0o600 });
+    await fsp.rename(tempFile, QUOTA_PACE_SAMPLES_FILE);
+  }
+  return assessQuotaPace(samples, nowMs);
 }
 
 function buildProviderQuotaEvents(provider) {
   if (!provider || typeof provider !== "object" || !provider.id) return [];
-  const capturedAt = provider.limitsUpdatedAt || provider.updatedAt || new Date().toISOString();
+  const capturedAt = provider.limitsUpdatedAt || provider.liveRateLimits?.updatedAt || provider.updatedAt || new Date().toISOString();
   const source =
     provider.limitSource ||
     provider.liveRateLimits?.name ||
@@ -10287,7 +10312,7 @@ function quotaWindowEventFromLimitRow(provider, row, capturedAt, source) {
     provider,
     windowKey: quotaWindowKeyForWindow(rawWindowKey, windowMinutes),
     label: String(row.label || row.limitLabel || row.name || row.limitName || rawWindowKey),
-    capturedAt,
+    capturedAt: row.observedAt || capturedAt,
     source: source || null,
     usedPercent: clampPercent(usedPercent),
     remainingPercent: clampPercent(row.remainingPercent ?? row.remaining_percentage ?? 100 - usedPercent),

@@ -460,6 +460,16 @@
     "off": "Aus"
   },
   "limits": {
+    "recentPace": {
+      "title": "Letztes Tempo",
+      "measured": "+{percent} Prozentpunkte in {duration}",
+      "collecting": "Für diesen Zeitraum fehlen noch Messpunkte.",
+      "flat": "In diesem Zeitraum kein messbarer Anstieg.",
+      "stale": "Der letzte Quotenwert ist zu alt.",
+      "changed": "Die Quotenwerte haben sich unerwartet geändert; keine Prognose.",
+      "possible": "Das Limit könnte vor dem Reset erreicht werden; die Messung ist dafür noch zu ungenau.",
+      "note": "Schätzung aus gerundeten Prozentwerten bei gleichbleibendem Tempo."
+    },
     "fiveHour": "5h",
     "weekly": "Woche",
     "glmFiveHourTokens": "5h-Tokens",

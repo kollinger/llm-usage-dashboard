@@ -434,6 +434,16 @@
     "off": "Av"
   },
   "limits": {
+    "recentPace": {
+      "title": "Senaste takt",
+      "measured": "+{percent} procentenheter på {duration}",
+      "collecting": "Det finns ännu inte tillräckligt med mätningar för perioden.",
+      "flat": "Ingen mätbar ökning under perioden.",
+      "stale": "Den senaste kvotmätningen är för gammal.",
+      "changed": "Mätningarna ändrades; ingen prognos.",
+      "possible": "Gränsen kan nås före återställningen; uppskattningen är osäker.",
+      "note": "Uppskattning från avrundade procenttal med oförändrad takt."
+    },
     "fiveHour": "5h",
     "weekly": "Vecka",
     "currentSession": "Aktuell session",

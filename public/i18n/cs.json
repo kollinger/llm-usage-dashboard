@@ -434,6 +434,16 @@
     "off": "Vyp."
   },
   "limits": {
+    "recentPace": {
+      "title": "Nedávné tempo",
+      "measured": "+{percent} procentních bodů za {duration}",
+      "collecting": "Pro toto období zatím není dost měření.",
+      "flat": "V tomto období není měřitelný nárůst.",
+      "stale": "Poslední údaj o limitu je zastaralý.",
+      "changed": "Údaje se změnily; odhad není k dispozici.",
+      "possible": "Limit může být dosažen před obnovením; odhad je nejistý.",
+      "note": "Odhad ze zaokrouhlených procent při stálém tempu."
+    },
     "fiveHour": "5h",
     "weekly": "Týden",
     "currentSession": "Aktuální relace",

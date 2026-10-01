@@ -138,6 +138,7 @@ function assertNewestCodexSampleWinsWithinResetJitter() {
 
   assert.equal(limits.weekly.usedPercent, 98);
   assert.equal(limits.weekly.resetsAt, new Date(resetSeconds * 1000).toISOString());
+  assert.equal(limits.weekly.observedAt, "2026-08-20T04:50:07.000Z");
 }
 
 function assertWeeklyPrimarySparkWindow() {

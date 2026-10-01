@@ -434,6 +434,16 @@
     "off": "Išjungta"
   },
   "limits": {
+    "recentPace": {
+      "title": "Pastarasis tempas",
+      "measured": "+{percent} procentinio punkto per {duration}",
+      "collecting": "Šiam laikotarpiui dar nepakanka matavimų.",
+      "flat": "Šiuo laikotarpiu nėra išmatuojamo augimo.",
+      "stale": "Paskutinis kvotos rodmuo per senas.",
+      "changed": "Rodmenys pasikeitė; prognozės nėra.",
+      "possible": "Limitas gali būti pasiektas iki atnaujinimo; įvertis nepatikimas.",
+      "note": "Įvertis pagal suapvalintus procentus, darant pastovaus tempo prielaidą."
+    },
     "fiveHour": "5h",
     "weekly": "Savaitė",
     "currentSession": "Dabartinė sesija",
