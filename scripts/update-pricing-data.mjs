@@ -5,7 +5,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const I18N_DIR = new URL("../public/i18n/", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_CATALOG_VERSION = "2026.10.01.1";
+const PRICING_CATALOG_VERSION = "2026.10.01.2";
 const PRICING_REVIEW_DATE = "2026-10-01";
 const BASELINE_SOURCE_REVIEW_DATE = "2026-09-25";
 const BENCHMARK_REVIEW_DATE = "2026-09-13";
@@ -189,12 +189,14 @@ const rawPricingModels = [
     aliases: ["gpt-5.5-pro", "gpt-5-5-pro"],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     contextTokens: 1_000_000,
     maxOutputTokens: 128_000,
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -215,12 +217,14 @@ const rawPricingModels = [
     aliases: ["gpt-5.4-pro", "gpt-5-4-pro"],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     contextTokens: 1_000_000,
     maxOutputTokens: 128_000,
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",

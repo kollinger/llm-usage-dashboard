@@ -140,6 +140,58 @@ assert.deepEqual(uiResult.todayBilling, {
 assert.equal(uiResult.allTimeTotal, 1_098);
 assert.equal(uiResult.allTimeModel, "gpt-5.6-sol");
 
+const cachePricing = JSON.parse(vm.runInNewContext(
+  `${code}
+state.translations = ${JSON.stringify(translations)};
+state.fallbackTranslations = {};
+const cacheOnlyUsage = { cachedInputTokens: 1_000_000 };
+const proModels = ["gpt-5.4-pro", "gpt-5.5-pro"].map(pricingModelForUsageModel);
+const unknown = pricingModelForUsageModel("mistral-large-2");
+const rows = [...proModels, unknown, pricingModelForUsageModel("gpt-5.4"),
+  pricingModelForUsageModel("glm-4.7-flash")].map((price) => ({
+    price, today: estimateCost(cacheOnlyUsage, price), total: estimateCost(cacheOnlyUsage, price)
+  }));
+state.pricingSort = { key: "cache", direction: "asc" };
+const ascending = sortPricingRows(rows).map((row) => row.price.model);
+state.pricingSort.direction = "desc";
+const descending = sortPricingRows(rows).map((row) => row.price.model);
+JSON.stringify({
+  proModels: proModels.map((price) => ({
+    model: price.model,
+    cacheRate: price.cachedInputUsd,
+    displayedRate: formatCacheRate(price),
+    cost: estimateCost(cacheOnlyUsage, price)
+  })),
+  unknownCost: estimateCost(cacheOnlyUsage, unknown),
+  unknownRate: formatCacheRate(unknown),
+  missingBuckets: [null, undefined, NaN].map((rate) => estimateTokenBucket(1_000_000, rate)),
+  zeroBucket: estimateTokenBucket(1_000_000, 0),
+  emptyUnknownBucket: estimateTokenBucket(0, null),
+  ascending,
+  descending
+});`,
+  createAppContext(),
+  { filename: appPath }
+));
+for (const model of cachePricing.proModels) {
+  assert.equal(model.cacheRate, 30, `${model.model} cache inputs have no discount`);
+  assert.equal(model.displayedRate, "$30/M");
+  assert.equal(model.cost.usd, 30);
+  assert.equal(model.cost.costed, true);
+}
+assert.equal(cachePricing.unknownCost.costed, false);
+assert.equal(cachePricing.unknownCost.eur, null);
+assert.equal(cachePricing.unknownRate, "Unknown");
+assert.deepEqual(cachePricing.missingBuckets, Array(3).fill({ usd: 0, costed: false }));
+assert.deepEqual(cachePricing.zeroBucket, { usd: 0, costed: true });
+assert.deepEqual(cachePricing.emptyUnknownBucket, { usd: 0, costed: true });
+assert.deepEqual(cachePricing.ascending, [
+  "GLM-4.7-Flash", "GPT-5.4", "GPT-5.4 Pro", "GPT-5.5 Pro", "Mistral Large 2"
+]);
+assert.deepEqual(cachePricing.descending, [
+  "GPT-5.4 Pro", "GPT-5.5 Pro", "GPT-5.4", "GLM-4.7-Flash", "Mistral Large 2"
+]);
+
 const now = Date.parse("2026-08-15T12:00:00Z");
 const aggregate = aggregateUsageEvents([
   {

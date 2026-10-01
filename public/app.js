@@ -257,11 +257,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1355;
-const FX_DATE = "2026-09-30";
+const USD_PER_EUR = 1.1298;
+const FX_DATE = "2026-10-01";
 const PRICING_DATE = "2026-10-01";
 const BENCHMARK_DATE = "2026-09-13";
-const PRICING_CATALOG_VERSION = "2026.10.01.1";
+const PRICING_CATALOG_VERSION = "2026.10.01.2";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -822,7 +822,7 @@ const pricingModels = [
     ],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     currency: "USD",
     unit: "1M tokens",
@@ -833,7 +833,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-25"
+    sourceReviewDate: "2026-10-01",
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -866,7 +867,7 @@ const pricingModels = [
     ],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     currency: "USD",
     unit: "1M tokens",
@@ -877,7 +878,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-09-25"
+    sourceReviewDate: "2026-10-01",
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -7778,6 +7780,7 @@ function priceRegion(price) {
 }
 
 function sortNumber(value) {
+  if (value == null) return sortMissing();
   const number = Number(value);
   return Number.isFinite(number) ? { value: number, missing: false } : sortMissing();
 }
@@ -7941,6 +7944,7 @@ function estimateCost(usage, price) {
 function estimateTokenBucket(tokens, rateUsdPerMillion) {
   const count = Number(tokens || 0);
   if (!count) return { usd: 0, costed: true };
+  if (rateUsdPerMillion == null) return { usd: 0, costed: false };
   const rate = Number(rateUsdPerMillion);
   if (!Number.isFinite(rate)) return { usd: 0, costed: false };
   return { usd: (count * rate) / MILLION, costed: true };
