@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Add GPT-6.1 Sol to the API model catalog with official input, cached-input,
+  cache-write, and output rates. Keep GPT-6 Sol as a separate historical model.
+
 ### Updated
 
 - Add GPT-6 Sol and GPT-6 Luna with official API token prices, cache-write

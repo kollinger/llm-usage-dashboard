@@ -255,11 +255,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1367;
-const FX_DATE = "2026-09-24";
-const PRICING_DATE = "2026-09-25";
+const USD_PER_EUR = 1.1355;
+const FX_DATE = "2026-09-30";
+const PRICING_DATE = "2026-10-01";
 const BENCHMARK_DATE = "2026-09-13";
-const PRICING_CATALOG_VERSION = "2026.09.25.1";
+const PRICING_CATALOG_VERSION = "2026.10.01.1";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -693,6 +693,30 @@ const pricingModels = [
     sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-sol",
     sourceReviewDate: "2026-09-25",
     sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6.1 Sol",
+    aliases: [
+      "gpt-6.1-sol",
+      "gpt-6-1-sol"
+    ],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.1,
+    outputUsd: 10,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    sourceReviewDate: "2026-10-01",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Fast is 2x Standard; Batch and Flex are 50% of Standard rates."
   },
   {
     provider: "OpenAI",
@@ -1981,6 +2005,7 @@ const modelBenchmarkScores = {
     testedModel: "gpt-5.6-sol-xhigh"
   },
   "GPT-6 Sol": null,
+  "GPT-6.1 Sol": null,
   "GPT-6 Luna": null,
   "GPT-5.6 Terra": {
     source: "Arena Text",
