@@ -5,8 +5,8 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const I18N_DIR = new URL("../public/i18n/", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_CATALOG_VERSION = "2026.09.25.1";
-const PRICING_REVIEW_DATE = "2026-09-25";
+const PRICING_CATALOG_VERSION = "2026.10.01.1";
+const PRICING_REVIEW_DATE = "2026-10-01";
 const BASELINE_SOURCE_REVIEW_DATE = "2026-09-25";
 const BENCHMARK_REVIEW_DATE = "2026-09-13";
 const PRICING_MAX_AGE_DAYS = 45;
@@ -33,6 +33,7 @@ const REQUIRED_MODEL_COVERAGE = [
   "Claude Sonnet 4.6",
   "GPT-6 Astra",
   "GPT-6 Sol",
+  "GPT-6.1 Sol",
   "GPT-6 Luna",
   "GPT-5.6 Sol",
   "GPT-5.6 Terra",
@@ -73,7 +74,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-astra",
-    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE,
     sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request."
   },
   {
@@ -89,7 +90,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: PRICING_REVIEW_DATE
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE
   },
   {
     provider: "OpenAI",
@@ -104,8 +105,24 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-sol",
-    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE,
     sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6.1 Sol",
+    aliases: ["gpt-6.1-sol", "gpt-6-1-sol"],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.1,
+    outputUsd: 10,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Fast is 2x Standard; Batch and Flex are 50% of Standard rates."
   },
   {
     provider: "OpenAI",
@@ -120,7 +137,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-luna",
-    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE,
     sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
   },
   {
@@ -136,7 +153,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: PRICING_REVIEW_DATE
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE
   },
   {
     provider: "OpenAI",
@@ -151,7 +168,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: PRICING_REVIEW_DATE
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE
   },
   {
     provider: "OpenAI",
