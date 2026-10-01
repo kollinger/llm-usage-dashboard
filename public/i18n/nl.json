@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Tijd tot de limiet: {duration}",
       "title": "Recent tempo",
       "measured": "+{percent} procentpunt in {duration}",
       "collecting": "Nog niet genoeg metingen voor deze periode.",

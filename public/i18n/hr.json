@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Vrijeme do limita: {duration}",
       "title": "Nedavni tempo",
       "measured": "+{percent} postotnih bodova u {duration}",
       "collecting": "Još nema dovoljno mjerenja za ovo razdoblje.",

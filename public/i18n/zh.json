@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "距离达到限额还有：{duration}",
       "title": "近期速率",
       "measured": "{duration} 内增加 {percent} 个百分点",
       "collecting": "这一时段的读数还不够。",

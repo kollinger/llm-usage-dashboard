@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Temps avant la limite : {duration}",
       "title": "Rythme récent",
       "measured": "+{percent} points de pourcentage en {duration}",
       "collecting": "Pas encore assez de mesures pour cette période.",

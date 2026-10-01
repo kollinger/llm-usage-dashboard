@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Laiks līdz limitam: {duration}",
       "title": "Nesenais temps",
       "measured": "+{percent} procentpunkti {duration} laikā",
       "collecting": "Šim periodam vēl nav pietiekami daudz mērījumu.",

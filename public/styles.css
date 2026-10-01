@@ -2462,6 +2462,23 @@ button.subscription-connection-action {
   color: var(--muted);
 }
 
+.history-bar-tooltip-segment {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-bar-tooltip-segment[hidden] {
+  display: none;
+}
+
+.history-bar-tooltip-swatch {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 2px;
+}
+
 .history-slot-area {
   opacity: 0.14;
   pointer-events: none;

@@ -461,6 +461,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Zeit bis zum Limit: {duration}",
       "title": "Letztes Tempo",
       "measured": "+{percent} Prozentpunkte in {duration}",
       "collecting": "Für diesen Zeitraum fehlen noch Messpunkte.",

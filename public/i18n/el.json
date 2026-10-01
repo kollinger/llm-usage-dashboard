@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Χρόνος μέχρι το όριο: {duration}",
       "title": "Πρόσφατος ρυθμός",
       "measured": "+{percent} ποσοστιαίες μονάδες σε {duration}",
       "collecting": "Δεν υπάρχουν ακόμη αρκετές μετρήσεις για αυτή την περίοδο.",

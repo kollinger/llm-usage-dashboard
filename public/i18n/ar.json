@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "الوقت المتبقي حتى بلوغ الحد: {duration}",
       "title": "الوتيرة الأخيرة",
       "measured": "+{percent} نقطة مئوية خلال {duration}",
       "collecting": "لا توجد قراءات كافية لهذه الفترة بعد.",

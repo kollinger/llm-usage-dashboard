@@ -5041,7 +5041,7 @@ function renderOverviewHistory(daily) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}" aria-label="${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatNumber(segment.totalTokens)}`)}"></rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}" data-history-segment-label="${escapeHtml(segment.label)}" data-history-segment-value="${escapeHtml(historyBarValue(mode, mode === "costs" ? segment.totalEur : segment.totalTokens))}" aria-label="${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatNumber(segment.totalTokens)}`)}"></rect>
           `;
         })
         .join("");
@@ -6383,10 +6383,14 @@ function renderQuotaPaceCard(provider, row) {
   const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
   const label = row.label;
   let result = t("limits.recentPace.collecting");
+  let timeToLimit = "";
   if (pace?.status === "flat") result = t("limits.recentPace.flat");
   if (pace?.status === "stale") result = t("limits.recentPace.stale");
   if (pace?.status === "changed") result = t("limits.recentPace.changed");
   if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
+    timeToLimit = t("limits.recentPace.timeToLimit", {
+      duration: formatDurationCompact(Date.parse(pace.hitAt) - Date.now())
+    });
     result = t("limits.pace.hitBeforeReset", {
       time: formatDateTime(pace.hitAt),
       duration: formatDurationCompact(Date.parse(pace.resetsAt) - Date.parse(pace.hitAt))
@@ -6416,7 +6420,8 @@ function renderQuotaPaceCard(provider, row) {
         </div>
       </div>
       ${measured ? `<p class="quota-pace-measured">${escapeHtml(measured)}</p>` : ""}
-      <p class="quota-pace-result">${escapeHtml(result)}</p>
+      ${timeToLimit ? `<p class="quota-pace-result">${escapeHtml(timeToLimit)}</p>` : ""}
+      <p class="${timeToLimit ? "quota-pace-note" : "quota-pace-result"}">${escapeHtml(result)}</p>
       ${["risk", "safe", "possible"].includes(pace?.status)
         ? `<p class="quota-pace-note">${escapeHtml(t("limits.recentPace.note"))}</p>`
         : ""}
@@ -8573,11 +8578,18 @@ function showHistoryBarTooltip(event) {
     historyBarTooltip = document.createElement("div");
     historyBarTooltip.className = "history-bar-tooltip";
     historyBarTooltip.setAttribute("aria-hidden", "true");
-    historyBarTooltip.innerHTML = '<strong class="history-bar-tooltip-date"></strong><span class="history-bar-tooltip-value"></span>';
+    historyBarTooltip.innerHTML = '<strong class="history-bar-tooltip-date"></strong><span class="history-bar-tooltip-value"></span><span class="history-bar-tooltip-segment" hidden><span class="history-bar-tooltip-swatch"></span><span class="history-bar-tooltip-segment-value"></span></span>';
     document.body.appendChild(historyBarTooltip);
   }
   historyBarTooltip.querySelector(".history-bar-tooltip-date").textContent = bar.dataset.historyLabel;
-  historyBarTooltip.querySelector(".history-bar-tooltip-value").textContent = bar.dataset.historyValue;
+  historyBarTooltip.querySelector(".history-bar-tooltip-value").textContent = `${t("chart.breakdown.total")} · ${bar.dataset.historyValue}`;
+  const segment = event.target.closest?.("[data-history-segment-label]");
+  const segmentLine = historyBarTooltip.querySelector(".history-bar-tooltip-segment");
+  segmentLine.hidden = !segment;
+  if (segment) {
+    historyBarTooltip.querySelector(".history-bar-tooltip-swatch").style.backgroundColor = segment.getAttribute("fill");
+    historyBarTooltip.querySelector(".history-bar-tooltip-segment-value").textContent = `${segment.dataset.historySegmentLabel} · ${segment.dataset.historySegmentValue}`;
+  }
   historyBarTooltip.hidden = false;
   const bounds = bar.getBoundingClientRect();
   const x = event.type === "focusin" ? bounds.left + bounds.width / 2 : event.clientX;
@@ -8743,7 +8755,7 @@ function renderStackedHistoryChart({
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}" aria-label="${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}"></rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}" data-history-segment-label="${escapeHtml(segmentLabel(segment))}" data-history-segment-value="${escapeHtml(historyBarValue(mode, segmentValue(segment)))}" aria-label="${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}"></rect>
           `;
         })
         .join("");

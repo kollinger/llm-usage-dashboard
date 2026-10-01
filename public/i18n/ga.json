@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Am go dtí an teorainn: {duration}",
       "title": "Luas le déanaí",
       "measured": "+{percent} pointe céatadáin i {duration}",
       "collecting": "Níl dóthain tomhas ann don tréimhse seo fós.",

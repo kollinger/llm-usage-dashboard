@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Време до достигане на лимита: {duration}",
       "title": "Скорошно темпо",
       "measured": "+{percent} процентни пункта за {duration}",
       "collecting": "Все още няма достатъчно измервания за този период.",

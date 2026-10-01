@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Tid till gränsen: {duration}",
       "title": "Senaste takt",
       "measured": "+{percent} procentenheter på {duration}",
       "collecting": "Det finns ännu inte tillräckligt med mätningar för perioden.",

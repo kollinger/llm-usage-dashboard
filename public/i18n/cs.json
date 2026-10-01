@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Čas do dosažení limitu: {duration}",
       "title": "Nedávné tempo",
       "measured": "+{percent} procentních bodů za {duration}",
       "collecting": "Pro toto období zatím není dost měření.",

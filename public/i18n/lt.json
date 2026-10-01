@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Laikas iki limito: {duration}",
       "title": "Pastarasis tempas",
       "measured": "+{percent} procentinio punkto per {duration}",
       "collecting": "Šiam laikotarpiui dar nepakanka matavimų.",

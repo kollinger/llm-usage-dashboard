@@ -461,6 +461,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Time until limit: {duration}",
       "title": "Recent pace",
       "measured": "+{percent} percentage points in {duration}",
       "collecting": "Not enough readings for this period yet.",

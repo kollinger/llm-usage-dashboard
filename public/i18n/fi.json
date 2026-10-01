@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Aikaa rajaan: {duration}",
       "title": "Viimeaikainen tahti",
       "measured": "+{percent} prosenttiyksikköä ajassa {duration}",
       "collecting": "Tälle ajanjaksolle ei ole vielä riittävästi mittauksia.",

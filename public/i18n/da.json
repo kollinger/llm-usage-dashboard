@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Tid til grænsen nås: {duration}",
       "title": "Seneste tempo",
       "measured": "+{percent} procentpoint på {duration}",
       "collecting": "Endnu ikke nok målinger for denne periode.",

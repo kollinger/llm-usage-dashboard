@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Ħin sal-limitu: {duration}",
       "title": "Pass riċenti",
       "measured": "+{percent} punti perċentwali f’{duration}",
       "collecting": "Għad m’hemmx biżżejjed kejl għal dan il-perjodu.",

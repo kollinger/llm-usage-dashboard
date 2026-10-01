@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "A korlát eléréséig: {duration}",
       "title": "Közelmúltbeli ütem",
       "measured": "+{percent} százalékpont {duration} alatt",
       "collecting": "Ehhez az időszakhoz még nincs elég mérés.",

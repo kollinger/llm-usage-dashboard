@@ -435,6 +435,7 @@
   },
   "limits": {
     "recentPace": {
+      "timeToLimit": "Aeg limiidini: {duration}",
       "title": "Hiljutine tempo",
       "measured": "+{percent} protsendipunkti ajaga {duration}",
       "collecting": "Selle perioodi kohta pole veel piisavalt mõõtmisi.",
