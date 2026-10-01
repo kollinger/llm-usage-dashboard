@@ -1010,5 +1010,38 @@
       "claudeConflict": "Claude Max: widersprüchliche Quellen ({details})"
     },
     "connectionHelp": "Öffne die Provider-Seite, logge dich bei Bedarf ein und kehre hierher zurück. Die App liest den Plan beim Fokus automatisch neu aus, oder nutze den Button."
+  },
+  "sync": {
+    "title": "Privater Geräte-Sync",
+    "description": "Normalisierte Usage automatisch und idempotent mit einem privaten Collector abgleichen.",
+    "privacy": "Übertragen werden nur normalisierte Token-, Modell-, Zeit- und Zuordnungsdaten – keine Prompts, Transkripte, Rohlogs, Zugangsdaten oder lokalen Pfade.",
+    "enabled": "Hintergrund-Sync aktivieren",
+    "serverUrl": "Private Collector-URL",
+    "deviceName": "Gerätename",
+    "pairingCode": "Pairing-Code",
+    "save": "Sync-Einstellungen speichern",
+    "createSpace": "Sync-Space erstellen",
+    "join": "Mit Code verbinden",
+    "newPairingCode": "Neuen Pairing-Code erzeugen",
+    "syncNow": "Jetzt abgleichen",
+    "disconnect": "Verbindung trennen",
+    "connection": "Verbindung",
+    "pending": "Offline-Puffer",
+    "lastSuccess": "Letzter erfolgreicher Sync",
+    "lastError": "Letzter Fehler",
+    "deviceFilter": "Geräte",
+    "allDevices": "Alle Geräte",
+    "thisDevice": "Dieses Gerät",
+    "unknownDevice": "Gerät unbekannt",
+    "connected": "Verbunden als {device}",
+    "notConnected": "Nicht verbunden",
+    "queued": "{count} Ereignisse vorgemerkt",
+    "saved": "Sync-Einstellungen gespeichert.",
+    "pairingCreated": "Pairing-Code erzeugt.",
+    "synced": "Sync abgeschlossen.",
+    "disconnected": "Sync-Verbindung und lokale Zugangsdaten wurden gelöscht.",
+    "disconnectConfirm": "Dieses Gerät trennen und seine lokalen Sync-Zugangsdaten sowie den Puffer löschen?",
+    "actionFailed": "Sync-Aktion fehlgeschlagen: {message}",
+    "fallbackLocal": "Privater Sync ist nicht erreichbar; lokale Daten werden angezeigt. {message}"
   }
 }
