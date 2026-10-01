@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.2.0-preview.1 - 2026-10-01
 
 ### Added
 
+- Filter the API model catalog while typing a model name or API alias, with
+  case-insensitive partial matches and translated empty-result feedback.
 - Add GPT-6.1 Sol to the API model catalog with official input, cached-input,
   cache-write, and output rates. Keep GPT-6 Sol as a separate historical model.
 
