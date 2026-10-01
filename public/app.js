@@ -6380,6 +6380,8 @@ function renderQuotaPaceCard(provider, row) {
   const rawKey = String(row.key || "").replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase();
   const key = rawKey.startsWith("fable") ? rawKey : "weekly";
   const minutes = state.quotaPaceWindowMinutes;
+  const windows = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]];
+  const windowLabel = windows.find(([value]) => value === minutes)?.[1] || "";
   const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
   const label = row.label;
   let result = t("limits.recentPace.collecting");
@@ -6405,7 +6407,7 @@ function renderQuotaPaceCard(provider, row) {
   const measured = pace?.deltaPercent !== undefined && pace?.observedMinutes
     ? t("limits.recentPace.measured", {
         percent: new Intl.NumberFormat(state.language || "en", { maximumFractionDigits: 1 }).format(pace.deltaPercent),
-        duration: formatDurationCompact(pace.observedMinutes * 60_000)
+        duration: windowLabel
       })
     : "";
   return `
@@ -6413,7 +6415,7 @@ function renderQuotaPaceCard(provider, row) {
       <div class="quota-pace-head">
         <strong>${escapeHtml(t("limits.recentPace.title"))} · ${escapeHtml(label)}</strong>
         <div class="quota-pace-windows" role="group" aria-label="${escapeHtml(t("limits.recentPace.title"))}">
-          ${[[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]].map(([value, text]) => `
+          ${windows.map(([value, text]) => `
             <button type="button" class="chart-mode-btn${minutes === value ? " active" : ""}"
               data-quota-pace-window="${value}" aria-pressed="${minutes === value}">${text}</button>
           `).join("")}
