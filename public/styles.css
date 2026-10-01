@@ -2437,6 +2437,31 @@ button.subscription-connection-action {
   shape-rendering: crispEdges;
 }
 
+.history-bar-tooltip {
+  position: fixed;
+  z-index: 1000;
+  display: grid;
+  gap: 2px;
+  max-width: min(280px, calc(100vw - 16px));
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.history-bar-tooltip[hidden] {
+  display: none;
+}
+
+.history-bar-tooltip-value {
+  color: var(--muted);
+}
+
 .history-slot-area {
   opacity: 0.14;
   pointer-events: none;

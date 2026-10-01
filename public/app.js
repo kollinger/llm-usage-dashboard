@@ -2432,6 +2432,13 @@ function bindEvents() {
   els.providerGrid?.addEventListener("click", handleSubscriptionConnectionClick);
   els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
   els.chart?.addEventListener("scroll", handleChartScroll, { passive: true });
+  [els.chart, els.overviewHistoryChart].forEach((chart) => {
+    chart?.addEventListener("pointermove", showHistoryBarTooltip);
+    chart?.addEventListener("pointerleave", hideHistoryBarTooltip);
+    chart?.addEventListener("focusin", showHistoryBarTooltip);
+    chart?.addEventListener("focusout", hideHistoryBarTooltip);
+    chart?.addEventListener("scroll", hideHistoryBarTooltip, true);
+  });
   els.liveHistoryLegend?.addEventListener("click", handleLiveHistoryLegendToggle);
   els.liveHistoryLegend?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -4915,6 +4922,7 @@ function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, r
 }
 
 function renderOverviewHistory(daily) {
+  hideHistoryBarTooltip();
   if (!els.overviewHistoryPanel || !els.overviewHistoryFilterBar || !els.overviewHistoryModeToggle || !els.overviewHistoryChart || !els.overviewHistoryLegend) return;
   const renderVersion = state.overviewChartRenderVersion + 1;
   state.overviewChartRenderVersion = renderVersion;
@@ -4985,7 +4993,7 @@ function renderOverviewHistory(daily) {
       chartHeight,
       xForRow: (index) => barX(index) + barWidth / 2,
       valueForRow: (row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0),
-      valueFormatter: (value) => mode === "costs" ? formatEuro(value) : formatTokens(value),
+      valueFormatter: (value) => historyBarValue(mode, value),
       lineColor: typeof segmentEntries[0] === "string" ? chartSourceColor(segmentEntries[0]) : chartSegmentColor(segmentEntries[0]),
       pointRadius: 2.3
     })
@@ -4996,6 +5004,7 @@ function renderOverviewHistory(daily) {
       if (isSlotSeries) return "";
       const x = barX(index);
       const fullLabel = formatHistoryRowFullLabel(row);
+      const total = historyBarValue(mode, mode === "costs" ? row.totalEur : row.totalTokens);
       const rawSegments = mode === "costs"
         ? segmentEntries
           .map((id) => ({
@@ -5011,7 +5020,7 @@ function renderOverviewHistory(daily) {
       }));
       const visibleSegments = chartVisibleSegments(normalizedSegments, scale.max, chartHeight);
       let yCursor = axisY;
-      return visibleSegments
+      const segmentRects = visibleSegments
         .map((segment, segmentIndex) => {
           const h = segment.height;
           if (h <= 0) return "";
@@ -5032,12 +5041,11 @@ function renderOverviewHistory(daily) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}">
-              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatTokens(segment.totalTokens)}`)}</title>
-            </rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}" aria-label="${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatNumber(segment.totalTokens)}`)}"></rect>
           `;
         })
         .join("");
+      return `<g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" aria-label="${escapeHtml(`${fullLabel} · ${total}`)}">${segmentRects}</g>`;
     })
     .join("");
   const tickFormatter = mode === "costs" ? formatChartEuro : formatTokens;
@@ -8478,6 +8486,7 @@ function formatInsightValue(value, mode) {
 }
 
 function renderChart(daily, scrollState = captureChartScrollState()) {
+  hideHistoryBarTooltip();
   if (!daily.length) {
     els.chart.innerHTML = "";
     els.chartLegend.innerHTML = "";
@@ -8495,16 +8504,18 @@ function renderChart(daily, scrollState = captureChartScrollState()) {
     clipPrefix: "barClip",
     scrollState,
     tickFormatter: formatTokens,
+    mode: "tokens",
     segmentsForRow: (row) => chartSegmentsForDay(row, segmentEntries),
     segmentValue: (segment) => segment.totalTokens,
     segmentLabel: (segment) => segment.label,
-    segmentTitleValue: (segment) => formatTokens(segment.totalTokens),
+    segmentTitleValue: (segment) => formatNumber(segment.totalTokens),
     segmentColor: chartSegmentColor
   });
   els.chartLegend.innerHTML = renderChartLegend(segmentEntries);
 }
 
 function renderCostChart(daily, scrollState = captureChartScrollState()) {
+  hideHistoryBarTooltip();
   const costDaily = buildCostDaily(daily);
   const rowsWithCost = costDaily.filter((row) => row.totalEur > 0);
   if (!rowsWithCost.length) {
@@ -8525,6 +8536,7 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
     clipPrefix: "costBarClip",
     scrollState,
     tickFormatter: formatChartEuro,
+    mode: "costs",
     segmentsForRow: (day) =>
       sourceIds
         .map((id) => ({
@@ -8543,6 +8555,40 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
 
 function normalizedHistoryRowValue(row, segmentValue, segmentsForRow) {
   return (segmentsForRow(row) || []).reduce((sum, segment) => sum + Number(segmentValue(segment) || 0), 0);
+}
+
+function historyBarValue(mode, value) {
+  return `${t(`chart.mode.${mode}`)}: ${mode === "costs" ? formatEuro(value) : formatNumber(value)}`;
+}
+
+let historyBarTooltip;
+
+function showHistoryBarTooltip(event) {
+  const bar = event.target.closest?.("[data-history-label]");
+  if (!bar) {
+    hideHistoryBarTooltip();
+    return;
+  }
+  if (!historyBarTooltip) {
+    historyBarTooltip = document.createElement("div");
+    historyBarTooltip.className = "history-bar-tooltip";
+    historyBarTooltip.setAttribute("aria-hidden", "true");
+    historyBarTooltip.innerHTML = '<strong class="history-bar-tooltip-date"></strong><span class="history-bar-tooltip-value"></span>';
+    document.body.appendChild(historyBarTooltip);
+  }
+  historyBarTooltip.querySelector(".history-bar-tooltip-date").textContent = bar.dataset.historyLabel;
+  historyBarTooltip.querySelector(".history-bar-tooltip-value").textContent = bar.dataset.historyValue;
+  historyBarTooltip.hidden = false;
+  const bounds = bar.getBoundingClientRect();
+  const x = event.type === "focusin" ? bounds.left + bounds.width / 2 : event.clientX;
+  const y = event.type === "focusin" ? bounds.top : event.clientY;
+  const tooltipBounds = historyBarTooltip.getBoundingClientRect();
+  historyBarTooltip.style.left = `${Math.max(8, Math.min(x + 12, window.innerWidth - tooltipBounds.width - 8))}px`;
+  historyBarTooltip.style.top = `${y >= tooltipBounds.height + 18 ? y - tooltipBounds.height - 12 : y + 16}px`;
+}
+
+function hideHistoryBarTooltip() {
+  if (historyBarTooltip) historyBarTooltip.hidden = true;
 }
 
 function svgNumber(value) {
@@ -8585,9 +8631,10 @@ function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, val
   const safeLineColor = escapeHtml(lineColor || chartSourceColor("local"));
   const dots = points
     .map((point) => {
-      const title = `${formatHistoryRowFullLabel(point.row)} · ${valueFormatter(point.value)}`;
+      const label = formatHistoryRowFullLabel(point.row);
+      const value = valueFormatter(point.value);
       const radius = point.value > 0 ? pointRadius : Math.max(1.4, pointRadius * 0.58);
-      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}"><title>${escapeHtml(title)}</title></circle>`;
+      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}" tabindex="0" data-history-label="${escapeHtml(label)}" data-history-value="${escapeHtml(value)}" aria-label="${escapeHtml(`${label} · ${value}`)}"></circle>`;
     })
     .join("");
   return `
@@ -8604,6 +8651,7 @@ function renderStackedHistoryChart({
   clipPrefix,
   scrollState,
   tickFormatter,
+  mode,
   segmentsForRow,
   segmentValue,
   segmentLabel,
@@ -8645,7 +8693,7 @@ function renderStackedHistoryChart({
       chartHeight,
       xForRow: rowCenterX,
       valueForRow: (row) => normalizedHistoryRowValue(row, segmentValue, segmentsForRow),
-      valueFormatter: (value) => segmentTitleValue({ totalTokens: value, totalEur: value }),
+      valueFormatter: (value) => historyBarValue(mode, value),
       lineColor: timelineSegment ? segmentColor(timelineSegment) : chartSourceColor("local"),
       pointRadius: 3
     })
@@ -8666,6 +8714,7 @@ function renderStackedHistoryChart({
       const x = barX(index);
       const label = formatHistoryRowTick(row);
       const fullLabel = formatHistoryRowFullLabel(row);
+      const total = historyBarValue(mode, mode === "costs" ? row.totalEur : row.totalTokens);
       const rawSegments = segmentsForRow(row);
       const normalizedSegments = rawSegments.map((segment) => ({
         ...segment,
@@ -8694,14 +8743,12 @@ function renderStackedHistoryChart({
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}">
-              <title>${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}</title>
-            </rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}" aria-label="${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}"></rect>
           `;
         })
         .join("");
       return `
-        ${segmentRects}
+        <g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" aria-label="${escapeHtml(`${fullLabel} · ${total}`)}">${segmentRects}</g>
         <text x="${x + barWidth / 2}" y="${dateLabelY}" text-anchor="middle" class="axis-label">${label}</text>
       `;
     })
