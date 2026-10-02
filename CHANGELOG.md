@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0-preview.4 - 2026-10-02
+
+### Fixed
+
+- Keep recent-pace estimates visible through short quota refresh delays,
+  while treating older samples as stale according to the selected time window.
+
 ## 1.2.0-preview.3 - 2026-10-02
 
 ### Fixed

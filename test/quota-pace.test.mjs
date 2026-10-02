@@ -36,8 +36,14 @@ assert.equal(assessQuotaPace(wrongReset, now).codex.weekly[120].status, "collect
 const sameResetWithClockJitter = mergeQuotaPaceSamples([], [event(30, 120, new Date(Date.parse(reset) - 30_000).toISOString()), event(50, 0)], now);
 assert.equal(assessQuotaPace(sameResetWithClockJitter, now).codex.weekly[120].status, "risk");
 
-const stale = mergeQuotaPaceSamples([], [event(30, 126), event(50, 6)], now);
-assert.equal(assessQuotaPace(stale, now).codex.weekly[120].status, "stale");
+const shortRefreshDelay = mergeQuotaPaceSamples([], [event(30, 126), event(50, 6)], now);
+assert.equal(assessQuotaPace(shortRefreshDelay, now).codex.weekly[120].status, "risk");
+
+const staleShortWindow = mergeQuotaPaceSamples([], [event(30, 38), event(50, 8)], now);
+assert.equal(assessQuotaPace(staleShortWindow, now).codex.weekly[30].status, "stale");
+
+const staleLongWindow = mergeQuotaPaceSamples([], [event(30, 136), event(50, 16)], now);
+assert.equal(assessQuotaPace(staleLongWindow, now).codex.weekly[120].status, "stale");
 
 assert.equal(mergeQuotaPaceSamples([], [event(20, 0, reset, 300)], now).length, 0);
 console.log("quota pace scenarios passed");
