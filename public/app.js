@@ -5092,7 +5092,10 @@ function normalizeCodexProvider(codex) {
   const last24hTokens = subtractTokenTotals(codex?.totals?.last24h, codex?.spark?.totals?.last24h);
   const allTimeTokens = subtractTokenTotals(codex?.totals?.allTime, codex?.spark?.totals?.allTime);
   const limitRows = normalizeLimitRows(codex?.limits);
-  const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
+  const observedLimitTimes = limitRows.map((row) => row.observedAt).filter((value) => Number.isFinite(Date.parse(value)));
+  const limitUpdatedAt = observedLimitTimes.length
+    ? observedLimitTimes.reduce((latest, value) => Date.parse(value) > Date.parse(latest) ? value : latest)
+    : codex?.liveRateLimits?.status === "live" ? codex.liveRateLimits.updatedAt : null;
   const creditRows = normalizeCreditRows(codex?.creditRows, codex?.credits);
   const rawPlanType = codex?.planType || codex?.latest?.planType || null;
   const subscription = normalizeSubscription(codex?.subscription, {
@@ -5642,6 +5645,7 @@ function normalizeLimitRow(row) {
           : Math.max(0, 100 - usedPercent),
     valueLabel: valueIsDetail ? statusValueLabel : rawValueLabel || statusValueLabel,
     windowMinutes,
+    observedAt: row.observedAt || null,
     resetsAt,
     resetLabel
   };

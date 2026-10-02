@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0-preview.3 - 2026-10-02
+
+### Fixed
+
+- Find the Codex CLI in its current macOS app location so installed desktop
+  builds can read live quota limits instead of falling back to old session logs.
+- Date Codex limit badges from the quota reading itself, not from a failed
+  refresh attempt or an unrelated token event.
+- Keep recent-pace history together when two sources report the same weekly
+  reset a few seconds apart.
+
 ## 1.2.0-preview.2 - 2026-10-02
 
 ### Added

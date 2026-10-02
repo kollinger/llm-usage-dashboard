@@ -9336,6 +9336,8 @@ function codexBinaryCandidates({
 
   if (platform === "darwin") {
     candidates.push(
+      "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+      platformPath.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex-cli", "CodexCLI.app", "Contents", "MacOS", "codex"),
       "/Applications/ChatGPT.app/Contents/Resources/codex",
       platformPath.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex"),
       "/Applications/Codex.app/Contents/Resources/codex",

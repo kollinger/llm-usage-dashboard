@@ -938,6 +938,18 @@ const normalizedCodexConnectionCardHtml = renderProvider(normalizeCodexProvider(
     statusKey: "subscriptions.connectionStatus.chatgptLoginRequired"
   }
 }));
+const codexFallbackLimitTime = "${today}T09:00:00Z";
+const codexFallbackProvider = normalizeCodexProvider({
+  status: "live",
+  latest: { timestamp: "${today}T10:15:00Z" },
+  liveRateLimits: { status: "error", updatedAt: "${today}T10:14:00Z" },
+  limits: {
+    weekly: {
+      key: "weekly", label: "Week", windowMinutes: 10080,
+      usedPercent: 47, observedAt: codexFallbackLimitTime, resetsAt: earlyWeekReset
+    }
+  }
+});
 const normalizedCodexRefreshCardHtml = renderProvider({
   id: "codex",
   name: "Codex",
@@ -1370,6 +1382,7 @@ JSON.stringify({
     /12 minutes ago/.test(relativeFreshnessText) &&
     /2 hours ago/.test(relativeFreshnessText) &&
     /3 days ago/.test(relativeFreshnessText),
+  codexFallbackUsesReadingTime: codexFallbackProvider.limitsUpdatedAt === codexFallbackLimitTime,
   normalizedProviderConnectionActions:
     normalizedCodexConnectionCardHtml.includes("Log in to ChatGPT and read plan") &&
     normalizedCodexConnectionCardHtml.includes("https://chatgpt.com/#settings/Billing") &&
@@ -1659,6 +1672,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.providerCardHasLogo, true);
   assert.equal(result.providerCardFreshness, true);
   assert.equal(result.relativeFreshness, true);
+  assert.equal(result.codexFallbackUsesReadingTime, true);
   assert.equal(result.normalizedProviderConnectionActions, true);
   assert.equal(result.normalizedClaudeConnectionAction, true);
   assert.equal(result.normalizedCodexRefreshAction, true);

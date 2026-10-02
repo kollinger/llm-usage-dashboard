@@ -33,6 +33,9 @@ assert.equal(status(30, 50, 30).status, "risk");
 const wrongReset = mergeQuotaPaceSamples([], [event(30, 120, new Date(now + 8 * 60 * 60_000).toISOString()), event(50, 0)], now);
 assert.equal(assessQuotaPace(wrongReset, now).codex.weekly[120].status, "collecting");
 
+const sameResetWithClockJitter = mergeQuotaPaceSamples([], [event(30, 120, new Date(Date.parse(reset) - 30_000).toISOString()), event(50, 0)], now);
+assert.equal(assessQuotaPace(sameResetWithClockJitter, now).codex.weekly[120].status, "risk");
+
 const stale = mergeQuotaPaceSamples([], [event(30, 126), event(50, 6)], now);
 assert.equal(assessQuotaPace(stale, now).codex.weekly[120].status, "stale");
 

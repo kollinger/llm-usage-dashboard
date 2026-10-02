@@ -28,6 +28,8 @@ function assertCodexBinaryCandidates() {
     homeDir: "/Users/example",
     env: {}
   });
+  assert.equal(macCandidates.includes("/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"), true);
+  assert.equal(macCandidates.includes("/Users/example/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"), true);
   assert.equal(macCandidates.includes("/Applications/ChatGPT.app/Contents/Resources/codex"), true);
   assert.equal(macCandidates.includes("/Applications/Codex.app/Contents/Resources/codex"), true);
   assert.equal(macCandidates.includes("/Users/example/Applications/ChatGPT.app/Contents/Resources/codex"), true);
