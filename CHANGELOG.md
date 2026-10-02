@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0-preview.2 - 2026-10-02
+
+### Added
+
+- Show recent weekly quota pace for 30 minutes, 1 hour, 2 hours, or 5 hours,
+  including an estimated time until the limit at that pace. Each provider card
+  now keeps its own selected comparison window.
+- Show the exact day total and hovered model's tokens in history bar tooltips.
+
+### Fixed
+
+- Keep the chosen language across desktop app restarts, even when Electron
+  assigns a new local port.
+- Hide the 5-hour summary tile when no active provider reports that limit.
+- Label recent pace with the selected comparison window and show the time
+  remaining until exhaustion directly.
+- Correct pricing of input tokens that were not served from cache.
+
 ## 1.2.0-preview.1 - 2026-10-01
 
 ### Added

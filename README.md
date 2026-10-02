@@ -42,7 +42,7 @@ By default the dashboard is local-unlocked. Set `DASHBOARD_PASSWORD` if you expo
 
 ## Desktop App
 
-Prebuilt desktop downloads are published on the [GitHub Releases page](https://github.com/kollinger/llm-usage-dashboard/releases/latest).
+Prebuilt desktop downloads are published on the [GitHub Releases page](https://github.com/kollinger/llm-usage-dashboard/releases).
 Current desktop release assets are marked as unsigned prereleases until macOS notarization and Windows code signing are configured.
 
 The installed desktop app starts at login in the background on supported platforms and keeps the local backend running even when the dashboard window is closed. This lets live quota snapshots continue to sync while the machine is awake and online; development runs with `npm run electron` do not install a login item. macOS and Windows use native login-item APIs; Linux packaged builds write an XDG autostart `.desktop` file.
