@@ -36,7 +36,7 @@ const state = {
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
   usageProjectionMode: "bar",
-  quotaPaceWindowMinutes: 120,
+  quotaPaceWindowMinutesByCard: {},
   pricingView: "api",
   pricingModelFilter: "",
   pricingSort: { key: "total", direction: "desc" },
@@ -2493,8 +2493,9 @@ function bindEvents() {
     const quotaPaceBtn = e.target.closest("[data-quota-pace-window]");
     if (quotaPaceBtn) {
       const minutes = Number(quotaPaceBtn.dataset.quotaPaceWindow);
-      if ([30, 60, 120, 300].includes(minutes) && minutes !== state.quotaPaceWindowMinutes) {
-        state.quotaPaceWindowMinutes = minutes;
+      const card = quotaPaceBtn.dataset.quotaPaceCard;
+      if (card && [30, 60, 120, 300].includes(minutes) && minutes !== (state.quotaPaceWindowMinutesByCard[card] || 120)) {
+        state.quotaPaceWindowMinutesByCard[card] = minutes;
         if (state.usage) preservePageScrollDuring(render);
       }
       return;
@@ -2575,6 +2576,8 @@ async function loadLanguage(language, { persist = true, rerender = true } = {}) 
     } catch {
       // Keep the selected language for this session if storage is unavailable.
     }
+    const nativeSave = window.llmUsageDashboard?.setLanguagePreference?.(nextLanguage);
+    await nativeSave?.catch(() => {});
   }
 
   applyStaticTranslations();
@@ -2591,6 +2594,8 @@ async function fetchTranslations(language) {
 }
 
 function detectInitialLanguage() {
+  const nativePreference = normalizeLanguage(window.llmUsageDashboard?.initialLanguagePreference);
+  if (nativePreference) return nativePreference;
   try {
     const stored = normalizeLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY));
     if (stored) return stored;
@@ -4233,6 +4238,8 @@ function renderLocked() {
   state.lastUsageRenderSignature = null;
   els.providerGrid.innerHTML = "";
   els.fiveHourOpen.textContent = "--";
+  const fiveHourTile = summaryMetricTileById("five-hour");
+  if (fiveHourTile) fiveHourTile.hidden = true;
   els.weeklyOpen.textContent = "--";
   if (els.tokensRangeLabel) els.tokensRangeLabel.textContent = t("summary.tokensToday");
   els.tokensToday.textContent = "--";
@@ -6379,7 +6386,8 @@ function renderQuotaPaceCard(provider, row) {
   if (!isWeeklyLimit(row) || !["codex", "claudeCode"].includes(provider.id)) return "";
   const rawKey = String(row.key || "").replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase();
   const key = rawKey.startsWith("fable") ? rawKey : "weekly";
-  const minutes = state.quotaPaceWindowMinutes;
+  const card = `${provider.id}:${key}`;
+  const minutes = state.quotaPaceWindowMinutesByCard[card] || 120;
   const windows = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]];
   const windowLabel = windows.find(([value]) => value === minutes)?.[1] || "";
   const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
@@ -6417,7 +6425,7 @@ function renderQuotaPaceCard(provider, row) {
         <div class="quota-pace-windows" role="group" aria-label="${escapeHtml(t("limits.recentPace.title"))}">
           ${windows.map(([value, text]) => `
             <button type="button" class="chart-mode-btn${minutes === value ? " active" : ""}"
-              data-quota-pace-window="${value}" aria-pressed="${minutes === value}">${text}</button>
+              data-quota-pace-window="${value}" data-quota-pace-card="${escapeHtml(card)}" aria-pressed="${minutes === value}">${text}</button>
           `).join("")}
         </div>
       </div>
@@ -6820,9 +6828,13 @@ function limitStatusAccent(status, fallback) {
 }
 
 function renderSummary(providers, local, filteredDaily = []) {
-  const withFiveHour = providers.filter((p) => p.fiveHour);
+  const withFiveHour = providers.filter(providerHasUsage)
+    .map((provider) => provider.limitRows?.find(isFiveHourLimit) || provider.fiveHour)
+    .filter((limit) => limit && limit.status !== "unavailable");
   const withWeekly = providers.filter((p) => p.weekly);
-  els.fiveHourOpen.textContent = percentAverage(withFiveHour.map((p) => p.fiveHour.remainingPercent));
+  const fiveHourTile = summaryMetricTileById("five-hour");
+  if (fiveHourTile) fiveHourTile.hidden = withFiveHour.length === 0;
+  els.fiveHourOpen.textContent = percentAverage(withFiveHour.map((limit) => limit.remainingPercent));
   els.weeklyOpen.textContent = percentAverage(withWeekly.map((p) => p.weekly.remainingPercent));
   if (els.tokensRangeLabel) {
     els.tokensRangeLabel.textContent = t("summary.tokensToday");

@@ -30,6 +30,7 @@ let lastBadgeCount = null;
 let lastNotificationStatusWriteAt = 0;
 let lastNotificationStatusSignature = null;
 let themePreference = "system";
+let languagePreference = null;
 // Plan-probe backoff state per domain: { until, failures, planType, successAt }
 const planProbeBackoff = new Map();
 // Chrome cookie rows cached per domain, keyed by the cookie DB size+mtime.
@@ -122,6 +123,15 @@ ipcMain.handle("theme:set-preference", async (_event, preference) => {
   return normalized;
 });
 
+ipcMain.handle("language:set-preference", async (_event, language) => {
+  const normalized = normalizeNotificationLanguage(language);
+  if (normalized) {
+    languagePreference = normalized;
+    await writeLanguagePreference(normalized);
+  }
+  return languagePreference;
+});
+
 function setDefaultEnv(name, value) {
   if (!process.env[name]) process.env[name] = value;
 }
@@ -140,6 +150,29 @@ function normalizeThemePreference(preference) {
 
 function getThemeSettingsFile() {
   return path.join(app.getPath("userData"), "theme-settings.json");
+}
+
+function getLanguageSettingsFile() {
+  return path.join(app.getPath("userData"), "language-settings.json");
+}
+
+async function readLanguagePreference() {
+  try {
+    const settings = JSON.parse(await fs.readFile(getLanguageSettingsFile(), "utf8"));
+    return normalizeNotificationLanguage(settings?.language);
+  } catch {
+    return null;
+  }
+}
+
+async function writeLanguagePreference(language) {
+  const filePath = getLanguageSettingsFile();
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, `${JSON.stringify({ language }, null, 2)}\n`, { mode: 0o600 });
+  } catch {
+    // The renderer keeps its local preference if native persistence fails.
+  }
 }
 
 async function readThemePreference() {
@@ -248,7 +281,7 @@ function createWindow(port) {
     backgroundColor: THEME_BACKGROUND_COLORS[resolvedTheme],
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      additionalArguments: [`--llm-usage-theme=${themePreference}`],
+      additionalArguments: [`--llm-usage-theme=${themePreference}`, `--llm-usage-language=${languagePreference || ""}`],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -406,7 +439,7 @@ async function getNotificationLanguage() {
       // The window may still be loading; fall through to app/system locale.
     }
   }
-  candidates.push(app.getLocale?.(), process.env.LANG, NOTIFICATION_FALLBACK_LANGUAGE);
+  candidates.push(languagePreference, app.getLocale?.(), process.env.LANG, NOTIFICATION_FALLBACK_LANGUAGE);
   for (const candidate of candidates) {
     const normalized = normalizeNotificationLanguage(candidate);
     if (normalized) return normalized;
@@ -2442,6 +2475,7 @@ async function fileExists(filePath) {
 app.whenReady().then(async () => {
   if (!hasSingleInstanceLock) return;
   applyNativeThemePreference(await readThemePreference());
+  languagePreference = await readLanguagePreference();
   nativeTheme.on("updated", updateNativeWindowTheme);
   const port = await startBackend();
   dashboardPort = port;

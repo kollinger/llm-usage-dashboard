@@ -150,7 +150,7 @@ assert.match(styles, /--bg:\s*#0f1512/);
 assert.match(styles, /\.modal\s*\{[^}]*background:\s*var\(--panel\)/s);
 
 const electronMain = fs.readFileSync(path.join(repoRoot, "electron", "main.js"), "utf8");
-assert.match(electronMain, /additionalArguments:\s*\[`--llm-usage-theme=\$\{themePreference\}`\]/);
+assert.match(electronMain, /additionalArguments:\s*\[`--llm-usage-theme=\$\{themePreference\}`/);
 assert.match(electronMain, /backgroundColor:\s*THEME_BACKGROUND_COLORS\[resolvedTheme\]/);
 
 const i18nDir = path.join(repoRoot, "public", "i18n");
