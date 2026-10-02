@@ -6,7 +6,7 @@
 
 - Show recent weekly quota pace for 30 minutes, 1 hour, 2 hours, or 5 hours,
   including an estimated time until the limit at that pace. Each provider card
-  now keeps its own selected comparison window.
+  now keeps its own selected comparison window and gauge/bar view.
 - Show the exact day total and hovered model's tokens in history bar tooltips.
 
 ### Fixed

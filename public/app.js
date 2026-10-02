@@ -36,6 +36,7 @@ const state = {
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
   usageProjectionMode: "bar",
+  usageProjectionModes: {},
   quotaPaceWindowMinutesByCard: {},
   pricingView: "api",
   pricingModelFilter: "",
@@ -2502,7 +2503,7 @@ function bindEvents() {
     }
     const projectionModeBtn = e.target.closest("[data-usage-projection-mode]");
     if (projectionModeBtn) {
-      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode);
+      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode, projectionModeBtn.dataset.usageProjectionProvider);
       return;
     }
     const modeBtn = e.target.closest("[data-chart-mode]");
@@ -2736,28 +2737,24 @@ function normalizeUsageProjectionMode(mode) {
 
 function loadUsageProjectionModePreference() {
   try {
-    const saved = localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY);
-    if (saved) {
-      state.usageProjectionMode = normalizeUsageProjectionMode(saved);
-      return;
-    }
     const legacyMap = JSON.parse(localStorage.getItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY) || "{}");
-    const legacyMode = legacyMap && typeof legacyMap === "object" && !Array.isArray(legacyMap)
-      ? Object.values(legacyMap).find((mode) => USAGE_PROJECTION_MODES.includes(mode))
-      : null;
-    state.usageProjectionMode = normalizeUsageProjectionMode(legacyMode);
+    state.usageProjectionModes = legacyMap && typeof legacyMap === "object" && !Array.isArray(legacyMap)
+      ? Object.fromEntries(Object.entries(legacyMap).filter(([id, mode]) => id && USAGE_PROJECTION_MODES.includes(mode)))
+      : {};
+    state.usageProjectionMode = normalizeUsageProjectionMode(localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY));
   } catch {
     state.usageProjectionMode = "bar";
+    state.usageProjectionModes = {};
   }
 }
 
-function setUsageProjectionMode(mode) {
+function setUsageProjectionMode(mode, providerId) {
+  if (!providerId) return;
   const nextMode = normalizeUsageProjectionMode(mode);
-  if (state.usageProjectionMode === nextMode) return;
-  state.usageProjectionMode = nextMode;
+  if ((state.usageProjectionModes[providerId] || state.usageProjectionMode) === nextMode) return;
+  state.usageProjectionModes[providerId] = nextMode;
   try {
-    localStorage.setItem(USAGE_PROJECTION_MODE_STORAGE_KEY, nextMode);
-    localStorage.removeItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY);
+    localStorage.setItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY, JSON.stringify(state.usageProjectionModes));
   } catch {
     // Ignore storage failures; the selected view still changes for this session.
   }
@@ -6373,10 +6370,10 @@ function renderLimitBars(provider) {
     ? provider.limitRows
     : normalizeLimitRows({ fiveHour: provider.fiveHour, weekly: provider.weekly });
   if (!rows.length) return "";
-  const mode = normalizeUsageProjectionMode(state.usageProjectionMode);
+  const mode = normalizeUsageProjectionMode(state.usageProjectionModes[provider.id] || state.usageProjectionMode);
   return `
     <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
-      ${renderUsageProjectionModeToggle(mode)}
+      ${renderUsageProjectionModeToggle(mode, provider.id)}
       ${rows.map((row) => `${renderLimitBar(row, provider.accent, mode)}${renderQuotaPaceCard(provider, row)}`).join("")}
     </div>
   `;
@@ -6439,7 +6436,7 @@ function renderQuotaPaceCard(provider, row) {
   `;
 }
 
-function renderUsageProjectionModeToggle(activeMode) {
+function renderUsageProjectionModeToggle(activeMode, providerId) {
   return `
     <div class="limit-bars-head">
       <span>${escapeHtml(t("limits.gauge.title"))}</span>
@@ -6451,6 +6448,7 @@ function renderUsageProjectionModeToggle(activeMode) {
               type="button"
               class="chart-mode-btn usage-projection-mode-btn${active ? " active" : ""}"
               data-usage-projection-mode="${mode}"
+              data-usage-projection-provider="${escapeHtml(providerId)}"
               aria-pressed="${active}"
             >
               ${escapeHtml(t(`limits.view.${mode}`))}

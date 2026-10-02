@@ -670,7 +670,14 @@ for (const filter of ["today", "h24", "week", "month", "all"]) {
 }
 const todaySummaryTotal = usageTotalsForToday({ daily }, []).totalTokens;
 const recordDay = findRecordDay(daily);
+const fiveHourTile = document.getElementById("fiveHourTile");
+summaryMetricTileById = () => fiveHourTile;
 renderSummary([], local, filterDailyByRange(daily, "today"));
+const fiveHourTileHiddenWithoutLimit = fiveHourTile.hidden;
+renderSummary([{ id: "codex", todayTokens: 1, limitRows: [
+  { key: "fiveHour", windowMinutes: 300, usedPercent: 20, remainingPercent: 80 }
+] }], local, filterDailyByRange(daily, "today"));
+const fiveHourTileVisibleWithLimit = !fiveHourTile.hidden;
 const renderedTokensToday = document.getElementById("tokensToday").textContent;
 const renderedTokensTotal = document.getElementById("tokensTotal").textContent;
 const renderedTokensTodayNote = document.getElementById("tokensRangeNote").textContent;
@@ -1001,11 +1008,10 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
 const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent, "tachometer");
 let storedProjectionMode = "";
 localStorage.setItem = (key, value) => {
-  if (key === USAGE_PROJECTION_MODE_STORAGE_KEY) storedProjectionMode = value;
+  if (key === LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY) storedProjectionMode = value;
 };
-setUsageProjectionMode("tachometer");
-setUsageProjectionMode("bar");
-const projectionModeAfterToggle = state.usageProjectionMode;
+setUsageProjectionMode("tachometer", "claudeCode");
+const projectionModeAfterToggle = state.usageProjectionModes.claudeCode;
 const codexLimitBarsHtml = renderLimitBars({
   id: "codex",
   accent: providerMeta.codex.accent,
@@ -1250,6 +1256,8 @@ JSON.stringify({
   recordDayLabel: t("summary.recordDayLabel"),
   recordDayFormattedDate: formatFullDate(recordDay?.date),
   renderedTokensToday,
+  fiveHourTileHiddenWithoutLimit,
+  fiveHourTileVisibleWithLimit,
   renderedTokensTotal,
   renderedTokensTodayNote,
   renderedTokensTotalNote,
@@ -1435,14 +1443,15 @@ JSON.stringify({
   limitBarsHasProjectionToggle:
     limitBarsHtml.includes("usage-projection-toggle") &&
     limitBarsHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
-    limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\""),
-  providerProjectionModeGlobal:
+    limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\"") &&
+    limitBarsHtml.includes("data-usage-projection-provider=\\"codex\\""),
+  providerProjectionModeIndependent:
     codexLimitBarsHtml.includes("limit-bars-mode-bar") &&
     codexLimitBarsHtml.includes("limit-projection-bar") &&
     !codexLimitBarsHtml.includes("limit-tachometer-gauge") &&
-    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-bar") &&
-    claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
-    !claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
+    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-tachometer") &&
+    !claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
+    claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
 	    claudeLoginAction:
 		    claudeLoginCardHtml.includes("Read Claude plan again") &&
 		    !claudeLoginCardHtml.includes("Log in to Claude and read plan") &&
@@ -1583,6 +1592,8 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.recordDayTokens, 500);
   assert.equal(result.recordDayLabel, "Record day");
   assert.equal(result.renderedTokensToday, "222");
+  assert.equal(result.fiveHourTileHiddenWithoutLimit, true);
+  assert.equal(result.fiveHourTileVisibleWithLimit, true);
   assert.equal(result.renderedTokensTotal, "722");
   assert.equal(result.renderedTokensTodayNote.includes("not provider quota limits"), true);
   assert.equal(result.renderedTokensTodayNote.includes("Codex: 222"), true);
@@ -1656,11 +1667,11 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
   assert.equal(result.defaultUsageProjectionMode, "bar");
-  assert.equal(result.projectionModeAfterToggle, "bar");
-  assert.equal(result.storedProjectionMode, "bar");
+  assert.equal(result.projectionModeAfterToggle, "tachometer");
+  assert.deepEqual(JSON.parse(result.storedProjectionMode), { claudeCode: "tachometer" });
   assert.equal(result.invalidProjectionModeFallsBack, "bar");
   assert.equal(result.limitBarsHasProjectionToggle, true);
-  assert.equal(result.providerProjectionModeGlobal, true);
+  assert.equal(result.providerProjectionModeIndependent, true);
   assert.equal(result.claudeLoginAction, true);
   assert.equal(result.connectionRereadFlow, true);
   assert.equal(result.claudeConflictAction, true);
