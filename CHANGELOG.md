@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0-preview.2 - 2026-10-03
+
+### Fixed
+
+- Show the quota usage fill in the reset-history table in both light and dark themes.
+
 ## 1.3.0-preview.1 - 2026-10-03
 
 ### Added

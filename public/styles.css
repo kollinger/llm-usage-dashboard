@@ -4253,7 +4253,7 @@ textarea {
 .reset-uncertain { color: var(--muted); }
 .reset-usage { white-space: nowrap; }
 .reset-usage-track { width: 65px; height: 4px; background: var(--line); margin-top: 8px; border-radius: 3px; }
-.reset-usage-track i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.reset-usage-track i { display: block; height: 100%; background: var(--accent, var(--green)); border-radius: inherit; }
 @media (max-width: 700px) { .reset-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reset-metric strong { font-size: 1.5rem; } }
 
 .reset-events { margin: 16px 0; font-size: .82rem; color: var(--muted); }
