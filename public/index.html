@@ -93,6 +93,18 @@
         <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
       </section>
 
+      <section class="panel codex-reset-panel" data-dashboard-panel-id="codex-resets" data-dashboard-panel-label-key="codexResets.title">
+        <div class="panel-heading">
+          <h2 data-i18n="codexResets.title">Codex · Reset-Historie</h2>
+          <select id="codexResetPeriod" aria-label="Zeitraum" data-i18n-aria-label="codexResets.period">
+            <option value="10" data-i18n="codexResets.last10">Letzte 10 Fenster</option>
+            <option value="30" data-i18n="codexResets.last30">Letzte 30 Fenster</option>
+            <option value="0" data-i18n="codexResets.all">Alle Fenster</option>
+          </select>
+        </div>
+        <div id="codexResetHistory" aria-live="polite"></div>
+      </section>
+
       <section class="usage-layout" data-dashboard-panel-id="token-history" data-dashboard-panel-label-key="chart.heading">
         <div class="panel chart-panel">
           <div class="panel-heading chart-heading">

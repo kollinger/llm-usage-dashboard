@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0-preview.1 - 2026-10-03
+
+### Added
+
+- Local Codex reset history with available reset credits, announced reset dates,
+  estimated window duration, early resets, and highest observed quota usage.
+- Read-only background recording while the app runs, with account-separated live
+  snapshots and reconstruction from existing quota/session logs.
+- Evidence labels distinguish confirmed credit redemptions, inferred redemptions,
+  stale overlapping windows, and recording gaps. No reset is consumed by the app.
+
 ## 1.2.0-preview.4 - 2026-10-02
 
 ### Fixed

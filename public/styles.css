@@ -4230,3 +4230,34 @@ textarea {
   height: 28px;
   border-radius: 4px;
 }
+
+/* Quota reset history remains readable when the rest of the dashboard is rearranged. */
+.codex-reset-panel { margin-top: 14px; }
+.codex-reset-panel .panel-heading { flex-wrap: wrap; gap: 12px; }
+.codex-reset-panel select { width: auto; max-width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text); }
+.reset-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.reset-metric { border: 1px solid var(--line); border-radius: 6px; padding: 14px; min-width: 0; }
+.reset-metric span, .reset-metric small { display: block; color: var(--muted); font-size: .8rem; line-height: 1.4; }
+.reset-metric strong { display: block; font-size: 1.9rem; line-height: 1.25; margin: 6px 0; overflow-wrap: anywhere; }
+.reset-note { color: var(--muted); font-size: .82rem; line-height: 1.5; margin: 10px 0; }
+.reset-warning { color: var(--warning, #a97419); }
+.reset-expiries { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.reset-expiry, .reset-tag { border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; font-size: .75rem; }
+.reset-table-wrap { overflow-x: auto; margin-top: 16px; }
+.reset-table { width: 100%; border-collapse: collapse; font-size: .8rem; text-align: start; }
+.reset-table th, .reset-table td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: start; vertical-align: top; }
+.reset-table th { color: var(--muted); font-weight: 650; }
+.reset-table td { min-width: 95px; }
+.reset-table td small { display: block; color: var(--muted); margin-top: 7px; line-height: 1.4; }
+.reset-early { color: var(--warning, #a97419); }
+.reset-uncertain { color: var(--muted); }
+.reset-usage { white-space: nowrap; }
+.reset-usage-track { width: 65px; height: 4px; background: var(--line); margin-top: 8px; border-radius: 3px; }
+.reset-usage-track i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+@media (max-width: 700px) { .reset-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reset-metric strong { font-size: 1.5rem; } }
+
+.reset-events { margin: 16px 0; font-size: .82rem; color: var(--muted); }
+.reset-events summary { cursor: pointer; }
+.reset-events ul { padding-inline-start: 20px; }
+.reset-events li { margin: 10px 0; }
+.reset-events small { display: block; margin-top: 3px; }

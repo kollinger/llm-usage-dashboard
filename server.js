@@ -23,6 +23,7 @@ const {
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath } = require("./lib/usage-events");
 const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
+const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildHistory: buildCodexResetHistory } = require("./lib/codex-reset-history");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
   codexAccountObservationsFromAuth,
@@ -46,6 +47,8 @@ const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
 const CLAUDE_USAGE_SNAPSHOT_FILE = path.join(DATA_DIR, "claude-usage-snapshot.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
+const CODEX_RESET_SNAPSHOTS_FILE = path.join(DATA_DIR, "codex-reset-snapshots.jsonl");
+const CODEX_RESET_IMPORT_FILE = path.join(DATA_DIR, "codex-reset-history-import.json");
 const QUOTA_PACE_SAMPLES_FILE = path.join(DATA_DIR, "quota-pace-samples.json");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
@@ -1570,6 +1573,14 @@ app.post("/api/account-billing/snapshots", electronSyncMiddleware, async (req, r
     res.json({ ok: true, snapshot });
   } catch (error) {
     sendApiError(res, error, "account_billing_snapshot_save_failed");
+  }
+});
+
+app.get("/api/codex-reset-history", authMiddleware, async (req, res) => {
+  try {
+    res.json(await readCodexResetHistory(Number(req.query.limit ?? 10)));
+  } catch (error) {
+    sendApiError(res, error, "codex_reset_history_read_failed");
   }
 });
 
@@ -4246,6 +4257,7 @@ async function readCodexUsage(options = {}) {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
+  await saveCodexHistoricalSamples(rateLimitEvents).catch(() => {});
   const daily = buildDaily(dailyMap);
   const liveRateLimits = await liveRateLimitsPromise;
   const codexPlan = preferredCodexPlan(liveRateLimits?.codex?.planType || null);
@@ -8905,7 +8917,9 @@ async function readCodexLiveRateLimits() {
     try {
       const client = await getCodexAppServer();
       const response = await client.request("account/rateLimits/read", undefined);
-      return normalizeCodexLiveRateLimits(response);
+      const normalized = normalizeCodexLiveRateLimits(response);
+      await recordCodexResetSnapshot(normalized.historySnapshot);
+      return normalized;
     } catch (error) {
       if (codexLiveRateLimitsCache.value) throw error;
       return {
@@ -9020,6 +9034,7 @@ function normalizeCodexLiveRateLimits(response) {
   return {
     codex,
     spark,
+    historySnapshot: normalizeResetSnapshot(response),
     source: {
       status: codex || spark ? "live" : "empty",
       source: "codex app-server",
@@ -10672,6 +10687,97 @@ function collectNotificationWindows(usageMap) {
   return windows;
 }
 
+let codexResetWriteQueue = Promise.resolve();
+let lastCodexResetSnapshot = null;
+let codexHistoricalImport = null;
+let legacyCodexQuotaPromise = null;
+
+function queueCodexResetWrite(write) {
+  const next = codexResetWriteQueue.then(write);
+  codexResetWriteQueue = next.catch(() => {});
+  return next;
+}
+
+function recordCodexResetSnapshot(snapshot) {
+  if (!snapshot) return Promise.resolve();
+  return queueCodexResetWrite(async () => {
+    if (lastCodexResetSnapshot) {
+      const { at: previousAt, ...previous } = lastCodexResetSnapshot;
+      if (Date.parse(snapshot.at) < Date.parse(previousAt)) return;
+      const { at, ...current } = snapshot;
+      if (JSON.stringify(previous) === JSON.stringify(current) && Date.parse(at) - Date.parse(previousAt) < (snapshot.kind === "gap" ? 5 * 60000 : 60000)) return;
+    }
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    await fsp.appendFile(CODEX_RESET_SNAPSHOTS_FILE, `${JSON.stringify(snapshot)}\n`, { mode: 0o600 });
+    lastCodexResetSnapshot = snapshot;
+  });
+}
+
+async function saveCodexHistoricalSamples(events) {
+  const incoming = codexHistoricalSamples(events);
+  if (!incoming.length) return;
+  await queueCodexResetWrite(async () => {
+    if (!codexHistoricalImport) {
+      try { codexHistoricalImport = JSON.parse(await fsp.readFile(CODEX_RESET_IMPORT_FILE, "utf8")); }
+      catch (error) { if (error.code !== "ENOENT") throw error; codexHistoricalImport = []; }
+    }
+    const merged = codexHistoricalSamples([...codexHistoricalImport, ...incoming]);
+    if (JSON.stringify(merged) === JSON.stringify(codexHistoricalImport)) return;
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    const temporary = `${CODEX_RESET_IMPORT_FILE}.tmp`;
+    await fsp.writeFile(temporary, JSON.stringify(merged), { mode: 0o600 });
+    await fsp.rename(temporary, CODEX_RESET_IMPORT_FILE);
+    codexHistoricalImport = merged;
+  });
+}
+
+async function readCodexResetHistory(limit = 10) {
+  if (!legacyCodexQuotaPromise) {
+    legacyCodexQuotaPromise = (async () => {
+      const events = [];
+      try {
+        await readJsonl(QUOTA_EVENTS_FILE, (event) => {
+          if (event.provider === "codex" && event.type === "quota_window" && Number(event.windowMinutes) === 10080) events.push(event);
+        });
+      } catch (error) { if (error.code !== "ENOENT") throw error; }
+      return codexHistoricalSamples(events);
+    })().catch((error) => { legacyCodexQuotaPromise = null; throw error; });
+  }
+  const records = [];
+  try { await readJsonl(CODEX_RESET_SNAPSHOTS_FILE, (record) => records.push(record)); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  let imported = [];
+  try { imported = JSON.parse(await fsp.readFile(CODEX_RESET_IMPORT_FILE, "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  if (lastCodexResetSnapshot && lastCodexResetSnapshot.at > (records.at(-1)?.at || "")) records.push(lastCodexResetSnapshot);
+  return buildCodexResetHistory(records, [...await legacyCodexQuotaPromise, ...imported], { limit });
+}
+
+function startCodexResetCollector() {
+  if (!CODEX_LIVE_RATE_LIMITS_ENABLED) return () => {};
+  let stopped = false, running = false;
+  const tick = async () => {
+    if (stopped || running) return;
+    running = true;
+    try {
+      const client = await getCodexAppServer();
+      const response = await client.request("account/rateLimits/read", undefined);
+      const normalized = normalizeCodexLiveRateLimits(response);
+      if (!normalized.historySnapshot) throw new Error("Codex quota unavailable");
+      await recordCodexResetSnapshot(normalized.historySnapshot);
+      codexLiveRateLimitsCache.value = normalized;
+      codexLiveRateLimitsCache.updatedAtMs = Date.now();
+      codexLiveRateLimitsCache.expiresAt = Date.now() + CODEX_LIVE_RATE_LIMITS_CACHE_MS;
+    } catch {
+      await recordCodexResetSnapshot({ kind: "gap", at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+    } finally { running = false; }
+  };
+  const first = setTimeout(tick, 1000);
+  const timer = setInterval(tick, 60000);
+  first.unref?.(); timer.unref?.();
+  return () => { stopped = true; clearTimeout(first); clearInterval(timer); };
+}
+
 async function appendOllamaUsageLog(event) {
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.appendFile(OLLAMA_USAGE_FILE, `${JSON.stringify(event)}\n`);
@@ -10687,6 +10793,8 @@ function startDashboard(options = {}) {
   });
   const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy();
   startGptAccountAuthWatch();
+  const stopCodexResetCollector = startCodexResetCollector();
+  dashboardServer.once("close", stopCodexResetCollector);
   return { dashboardServer, ollamaProxyServer };
 }
 
@@ -10705,6 +10813,9 @@ module.exports = {
   invalidateTimedCache,
   readThroughCache,
   _test: {
+    recordCodexResetSnapshot,
+    saveCodexHistoricalSamples,
+    readCodexResetHistory,
     copilotLimitsFromQuota,
     resolveGlmCodingPlanBase,
     readGlmCodingPlanAuth,

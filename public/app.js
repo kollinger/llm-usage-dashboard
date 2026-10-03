@@ -2,6 +2,10 @@ const state = {
   auth: null,
   usage: null,
   subscriptionHistory: null,
+  codexResetHistory: null,
+  codexResetLimit: 10,
+  loadingCodexResetHistory: false,
+  codexResetError: false,
   loadingUsage: false,
   queuedUsageForce: false,
   queuedUsageIndicator: false,
@@ -72,6 +76,8 @@ const els = {
   dashboardLayout: document.getElementById("dashboardLayout"),
   summaryStrip: document.getElementById("summaryStrip"),
   providerGrid: document.getElementById("providerGrid"),
+  codexResetHistory: document.getElementById("codexResetHistory"),
+  codexResetPeriod: document.getElementById("codexResetPeriod"),
   providerViewNotice: document.getElementById("providerViewNotice"),
   sourceDiagnosticsSection: document.getElementById("sourceDiagnosticsSection"),
   sourceDiagnosticsMeta: document.getElementById("sourceDiagnosticsMeta"),
@@ -280,6 +286,7 @@ const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "overview-history",
   "overview",
   "providers",
+  "codex-resets",
   "live",
   "token-history",
   "token-mix",
@@ -2371,6 +2378,7 @@ async function init() {
   bindEvents();
   refreshIcons();
   await loadAuth();
+  setInterval(loadCodexResetHistory, 60000);
   await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics(), loadSystemMetrics()]);
   setInterval(pollUsage, USAGE_POLL_INTERVAL_MS);
   scheduleSystemMetricsPolling();
@@ -2466,6 +2474,10 @@ function bindEvents() {
   els.notificationTestBtn?.addEventListener("click", sendTestNotification);
   els.themeSelect?.addEventListener("change", () => setThemePreference(els.themeSelect.value));
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
+  els.codexResetPeriod?.addEventListener("change", () => {
+    state.codexResetLimit = Number(els.codexResetPeriod.value);
+    void loadCodexResetHistory();
+  });
   window.addEventListener("llm-usage-theme-change", (event) => {
     state.themePreference = normalizeThemePreference(event.detail?.preference);
     syncThemeSelect();
@@ -4125,6 +4137,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     renderLocked();
     return;
   }
+  if (force || Date.now() - (state.codexResetFetchedAt || 0) >= 60000) void loadCodexResetHistory();
   if (force) state.gptAccountScanMessage = "";
   setUsageLoading(true, showIndicator);
   try {
@@ -4343,6 +4356,7 @@ function render() {
   const selectedRangeRows = usageRowsForSelectedRange(usage.local, chartRows);
   renderSummary(visibleProviders, usage.local, filteredDaily);
   renderGptAccounts(usage.gptAccounts);
+  renderCodexResetHistory();
   updateSummaryMetricLayout();
   renderOverviewHistory(chartRows);
   updateDashboardLayoutMode();
@@ -4375,6 +4389,69 @@ function render() {
   renderSourceDiagnostics();
   renderSourceSettings();
   refreshIcons();
+}
+
+async function loadCodexResetHistory() {
+  if (state.loadingCodexResetHistory || state.auth?.authenticated === false) return;
+  state.loadingCodexResetHistory = true;
+  const limit = state.codexResetLimit;
+  try {
+    const history = await fetchJson(`/api/codex-reset-history?limit=${limit}`);
+    if (limit === state.codexResetLimit) state.codexResetHistory = history;
+    state.codexResetFetchedAt = Date.now();
+    state.codexResetError = false;
+  } catch {
+    state.codexResetError = true;
+  } finally {
+    state.loadingCodexResetHistory = false;
+    renderCodexResetHistory();
+    if (limit !== state.codexResetLimit) void loadCodexResetHistory();
+  }
+}
+
+function renderCodexResetHistory() {
+  if (els.codexResetHistory) els.codexResetHistory.innerHTML = renderCodexResetHistoryContent(state.codexResetHistory);
+}
+
+function renderCodexResetHistoryContent(history) {
+  const text = (key, params = {}) => escapeHtml(t(`codexResets.${key}`, params));
+  if (!history) return `<p class="empty-message">${text(state.codexResetError ? "unavailable" : "loading")}</p>`;
+  const summary = history.summary;
+  const number = (value) => value === null || value === undefined ? "—" : new Intl.NumberFormat(currentLocale(), { maximumFractionDigits: 1 }).format(value);
+  const days = (value) => value === null || value === undefined ? "—" : text("days", { value: number(value) });
+  const metric = (label, value, note) => `<div class="reset-metric"><span>${text(label)}</span><strong>${value}</strong><small>${note}</small></div>`;
+  const credits = history.credits?.availableCount;
+  const status = state.codexResetError ? "unavailable" : history.liveStatus;
+  const rows = history.windows.map((w) => {
+    const uncertain = w.confidence === "uncertain";
+    const kind = uncertain ? "uncertain" : w.resetType;
+    const detail = w.creditRedemption ? text(w.creditRedemption === "confirmed" ? "confirmed" : "inferred") : text("estimated");
+    const interval = w.resetObservedBetween ? `${formatDateTime(w.resetObservedBetween.from)} – ${formatDateTime(w.resetObservedBetween.to)}` : "";
+    return `<tr><td>${escapeHtml(formatDateTime(w.startsAt))}</td><td>${escapeHtml(formatDateTime(w.scheduledResetAt))}</td>
+      <td title="${escapeHtml(interval)}">${escapeHtml(formatDateTime(w.closedAt))}</td><td>${days(w.durationDays)}</td>
+      <td><span class="reset-usage">${number(w.maxUsedPercent)} %</span><div class="reset-usage-track"><i style="width:${Math.max(0, Math.min(100, Number(w.maxUsedPercent)))}%"></i></div></td>
+      <td><span class="reset-tag ${uncertain ? "reset-uncertain" : w.resetType === "early" ? "reset-early" : ""}">${text(kind)}</span><small>${detail}</small></td></tr>`;
+  }).join("");
+  const events = (history.creditEvents || []).map((e) => {
+    const key = e.type === "redeemed" ? (e.confidence === "confirmed" ? "confirmed" : "inferred")
+      : e.type === "granted" ? "granted" : e.type === "expired" ? "expired" : "creditUnknown";
+    return `<li><span>${text(key)}</span><small>${escapeHtml(formatDateTime(e.from))} – ${escapeHtml(formatDateTime(e.to))}</small></li>`;
+  }).join("");
+  const expiries = (history.credits?.items || []).filter((c) => c.status === "available" && c.expiresAt)
+    .map((c) => `<span class="reset-expiry">${text("expires", { time: formatDateTime(c.expiresAt) })}</span>`).join("");
+  return `<div class="reset-summary">
+    ${metric("credits", number(credits), text(status))}
+    ${metric("earlyCount", number(summary.earlyResets), text("windows", { count: summary.selectedWindows }))}
+    ${metric("averageDuration", days(summary.averageDurationDays), text("durationBasis", { count: summary.durationSampleCount }))}
+    ${metric("averageUsage", summary.averageMaxUsedPercent === null ? "—" : `${number(summary.averageMaxUsedPercent)} %`, text("maximum"))}
+  </div>
+  <p class="reset-note">${text("note")}</p>
+  ${history.recordingStartedAt ? `<p class="reset-note">${text("recordingSince", { time: formatDateTime(history.recordingStartedAt) })} · ${text("redemptions", { confirmed: summary.confirmedRedemptions, inferred: summary.inferredRedemptions })}</p>` : ""}
+  ${expiries ? `<div class="reset-expiries">${expiries}</div>` : ""}
+  ${summary.uncertainWindows || summary.recordingGaps ? `<p class="reset-note reset-warning">${text("coverage", { uncertain: summary.uncertainWindows, gaps: summary.recordingGaps })}</p>` : ""}
+  ${history.current ? `<p class="reset-note">${text("current", { time: formatDateTime(history.current.scheduledResetAt), percent: number(history.current.maxUsedPercent) })}</p>` : ""}
+  ${events ? `<details class="reset-events"><summary>${text("events")}</summary><ul>${events}</ul></details>` : ""}
+  ${rows ? `<div class="reset-table-wrap"><table class="reset-table"><thead><tr>${["start", "plannedReset", "end", "duration", "usage", "result"].map((key) => `<th scope="col">${text(key)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty-message">${text("empty")}</p>`}`;
 }
 
 function renderGptAccounts(registry) {

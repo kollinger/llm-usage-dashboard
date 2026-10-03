@@ -495,3 +495,21 @@ npm run dist:win
 ```
 
 The GitHub Actions workflow `Desktop builds` can build macOS, Linux, and Windows artifacts from tags or manual workflow dispatch.
+
+### Codex reset history
+
+The Codex reset-history panel shows the last 10, 30, or all observed weekly
+windows: announced reset, estimated end/duration, and highest observed usage.
+Overlapping old sources and long observation gaps remain visible and are
+excluded from duration averages. Historical logs have no reliable account
+attribution; live histories are separated by an opaque account key.
+
+While the app runs, a read-only Codex app-server request checks quota and reset
+credits every minute. Changes and minute heartbeats are saved locally under the
+configured data directory in `codex-reset-snapshots.jsonl`; compressed historical
+quota metadata is in `codex-reset-history-import.json`. Records omit raw account
+and credit IDs, credentials, source paths, and chat content. The app never redeems
+a reset credit. A redeemed provider status confirms a credit redemption; an
+unexpired disappearing credit plus a nearby quota reset is only inferred.
+An expired credit, incomplete inventory, missing sample, person, or device is
+not silently attributed to a user action. Recording pauses when the app quits.
