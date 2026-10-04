@@ -1067,6 +1067,17 @@
     "events": "Avvenimenti tal-krediti · l-aħħar 30",
     "granted": "Kreditu mogħti",
     "expired": "Kreditu skadut",
-    "creditUnknown": "Bidla fil-kreditu: mhux ċara"
+    "creditUnknown": "Bidla fil-kreditu: mhux ċara",
+    "cause": "Kawża tar-reset",
+    "causeManual": "Manwali · kupun",
+    "causeProvider": "OpenAI · inferit",
+    "causeScheduled": "Skedat",
+    "causeUnknown": "Mhux magħrufa",
+    "causeMissing": "Nieqsa evidenza tal-kupun jew tat-tranżizzjoni",
+    "causeNoCredit": "Kmieni mingħajr użu osservat ta’ kupun",
+    "causeConfirmed": "Ikkonfermat",
+    "causeInferred": "Inferit",
+    "causeSummary": "Kawżi: {manual} kupun · {provider} OpenAI (inferit) · {scheduled} skedat · {unknown} mhux magħrufa",
+    "causeNote": "Reset bikri ma jidentifikax il-kawża. OpenAI jiġi inferit biss meta l-lista sħiħa tal-kupuni tibqa’ l-istess waqt reset tal-kwota osservat mill-qrib. Logs qodma ma jisseparawx resets manwali minn OpenAI. Il-persuna li bdiet ir-reset mhix magħrufa."
   }
 }

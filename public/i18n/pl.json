@@ -1067,6 +1067,17 @@
     "events": "Zdarzenia kredytów · ostatnie 30",
     "granted": "Kredyt przyznany",
     "expired": "Kredyt wygasł",
-    "creditUnknown": "Zmiana kredytu: niejasna"
+    "creditUnknown": "Zmiana kredytu: niejasna",
+    "cause": "Przyczyna resetu",
+    "causeManual": "Ręczny · kupon",
+    "causeProvider": "OpenAI · wnioskowane",
+    "causeScheduled": "Planowy",
+    "causeUnknown": "Nieznana",
+    "causeMissing": "Brak dowodu kuponu lub przejścia",
+    "causeNoCredit": "Przedwczesny bez zaobserwowanego użycia kuponu",
+    "causeConfirmed": "Potwierdzone",
+    "causeInferred": "Wnioskowane",
+    "causeSummary": "Przyczyny: {manual} kupon · {provider} OpenAI (wnioskowane) · {scheduled} planowe · {unknown} nieznane",
+    "causeNote": "Przedwczesny termin nie wskazuje przyczyny. OpenAI jest wnioskowane tylko wtedy, gdy pełna lista kuponów nie zmienia się przy dokładnie obserwowanym resecie limitu. Stare logi nie rozróżniają resetów ręcznych i OpenAI. Osoba uruchamiająca reset jest nieznana."
   }
 }

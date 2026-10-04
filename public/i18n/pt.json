@@ -1067,6 +1067,17 @@
     "events": "Eventos de crédito · últimos 30",
     "granted": "Crédito concedido",
     "expired": "Crédito expirado",
-    "creditUnknown": "Alteração de crédito: incerta"
+    "creditUnknown": "Alteração de crédito: incerta",
+    "cause": "Causa da reposição",
+    "causeManual": "Manual · cupão",
+    "causeProvider": "OpenAI · inferida",
+    "causeScheduled": "Programada",
+    "causeUnknown": "Desconhecida",
+    "causeMissing": "Falta prova do cupão ou da transição",
+    "causeNoCredit": "Antecipada sem uso observado de cupão",
+    "causeConfirmed": "Confirmada",
+    "causeInferred": "Inferida",
+    "causeSummary": "Causas: {manual} cupão · {provider} OpenAI (inferida) · {scheduled} programadas · {unknown} desconhecidas",
+    "causeNote": "Uma reposição antecipada não identifica a causa. OpenAI só é inferida quando o inventário completo de cupões fica inalterado durante uma reposição de quota observada de perto. Os registos antigos não separam reposições manuais de OpenAI. A pessoa que a iniciou é desconhecida."
   }
 }

@@ -1067,6 +1067,17 @@
     "events": "Kreditų įvykiai · paskutiniai 30",
     "granted": "Kreditas suteiktas",
     "expired": "Kreditas baigė galioti",
-    "creditUnknown": "Kredito pokytis: neaiškus"
+    "creditUnknown": "Kredito pokytis: neaiškus",
+    "cause": "Atstatymo priežastis",
+    "causeManual": "Rankinis · kuponas",
+    "causeProvider": "OpenAI · išvada",
+    "causeScheduled": "Suplanuotas",
+    "causeUnknown": "Nežinoma",
+    "causeMissing": "Trūksta kupono arba perėjimo įrodymo",
+    "causeNoCredit": "Ankstyvas be pastebėto kupono naudojimo",
+    "causeConfirmed": "Patvirtinta",
+    "causeInferred": "Išvada",
+    "causeSummary": "Priežastys: {manual} kuponas · {provider} OpenAI (išvada) · {scheduled} suplanuota · {unknown} nežinoma",
+    "causeNote": "Ankstyvas laikas neparodo priežasties. OpenAI nustatomas tik pagal išvadą, kai visas kuponų sąrašas lieka nepakitęs per atidžiai stebėtą kvotos atstatymą. Seni žurnalai neatskiria rankinių ir OpenAI atstatymų. Atstatymą inicijavęs asmuo nežinomas."
   }
 }

@@ -1067,6 +1067,17 @@
     "events": "Kredithändelser · senaste 30",
     "granted": "Kredit beviljad",
     "expired": "Kredit utgången",
-    "creditUnknown": "Kreditändring: oklar"
+    "creditUnknown": "Kreditändring: oklar",
+    "cause": "Orsak till återställning",
+    "causeManual": "Manuell · kupong",
+    "causeProvider": "OpenAI · härledd",
+    "causeScheduled": "Schemalagd",
+    "causeUnknown": "Okänd",
+    "causeMissing": "Bevis för kupong eller övergång saknas",
+    "causeNoCredit": "Tidig utan observerad kuponganvändning",
+    "causeConfirmed": "Bekräftad",
+    "causeInferred": "Härledd",
+    "causeSummary": "Orsaker: {manual} kupong · {provider} OpenAI (härledd) · {scheduled} schemalagda · {unknown} okända",
+    "causeNote": "Ett tidigt tillfälle visar inte orsaken. OpenAI härleds bara när den fullständiga kuponglistan är oförändrad vid en noggrant observerad kvotåterställning. Gamla loggar skiljer inte manuella återställningar från OpenAI. Personen som utlöste återställningen är okänd."
   }
 }

@@ -1067,6 +1067,17 @@
     "events": "Kredithændelser · seneste 30",
     "granted": "Kredit tildelt",
     "expired": "Kredit udløbet",
-    "creditUnknown": "Kreditændring: uklar"
+    "creditUnknown": "Kreditændring: uklar",
+    "cause": "Årsag til nulstilling",
+    "causeManual": "Manuel · kupon",
+    "causeProvider": "OpenAI · udledt",
+    "causeScheduled": "Planlagt",
+    "causeUnknown": "Ukendt",
+    "causeMissing": "Dokumentation for kupon eller overgang mangler",
+    "causeNoCredit": "Tidlig uden observeret kuponbrug",
+    "causeConfirmed": "Bekræftet",
+    "causeInferred": "Udledt",
+    "causeSummary": "Årsager: {manual} kupon · {provider} OpenAI (udledt) · {scheduled} planlagt · {unknown} ukendt",
+    "causeNote": "Et tidligt tidspunkt viser ikke årsagen. OpenAI udledes kun, når komplette kuponlister er uændrede ved en tæt observeret kvotenulstilling. Gamle logfiler skelner ikke mellem manuelle nulstillinger og OpenAI. Personen, der udløste nulstillingen, er ukendt."
   }
 }

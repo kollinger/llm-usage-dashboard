@@ -1067,6 +1067,17 @@
     "events": "Eventi dei crediti · ultimi 30",
     "granted": "Credito concesso",
     "expired": "Credito scaduto",
-    "creditUnknown": "Cambio di credito: incerto"
+    "creditUnknown": "Cambio di credito: incerto",
+    "cause": "Causa del reset",
+    "causeManual": "Manuale · buono",
+    "causeProvider": "OpenAI · dedotta",
+    "causeScheduled": "Programmato",
+    "causeUnknown": "Sconosciuta",
+    "causeMissing": "Manca la prova del buono o della transizione",
+    "causeNoCredit": "Anticipato senza uso osservato di buoni",
+    "causeConfirmed": "Confermata",
+    "causeInferred": "Dedotta",
+    "causeSummary": "Cause: {manual} buono · {provider} OpenAI (dedotta) · {scheduled} programmate · {unknown} sconosciute",
+    "causeNote": "Un reset anticipato non identifica la causa. OpenAI viene dedotta solo quando l’inventario completo dei buoni resta invariato durante un reset della quota osservato da vicino. I vecchi log non separano i reset manuali da OpenAI. La persona che lo ha attivato è sconosciuta."
   }
 }

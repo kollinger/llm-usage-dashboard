@@ -1067,6 +1067,17 @@
     "events": "Événements de crédit · 30 derniers",
     "granted": "Crédit accordé",
     "expired": "Crédit expiré",
-    "creditUnknown": "Changement de crédit : incertain"
+    "creditUnknown": "Changement de crédit : incertain",
+    "cause": "Cause de la réinitialisation",
+    "causeManual": "Manuelle · coupon",
+    "causeProvider": "OpenAI · déduite",
+    "causeScheduled": "Planifiée",
+    "causeUnknown": "Inconnue",
+    "causeMissing": "Preuve du coupon ou de la transition manquante",
+    "causeNoCredit": "Anticipée sans utilisation de coupon observée",
+    "causeConfirmed": "Confirmée",
+    "causeInferred": "Déduite",
+    "causeSummary": "Causes : {manual} coupon · {provider} OpenAI (déduite) · {scheduled} planifiées · {unknown} inconnues",
+    "causeNote": "Une réinitialisation anticipée ne révèle pas sa cause. OpenAI est déduit uniquement si la liste complète des coupons reste inchangée lors d’une réinitialisation du quota observée de près. Les anciens journaux ne distinguent pas les réinitialisations manuelles d’OpenAI. La personne à l’origine reste inconnue."
   }
 }

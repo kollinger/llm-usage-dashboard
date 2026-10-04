@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 const require = createRequire(import.meta.url);
-const { normalizeSnapshot, historicalSamples, buildHistory, creditChanges } = require('../lib/codex-reset-history');
+const { normalizeSnapshot, historicalSamples, buildHistory, creditChanges, resetCause } = require('../lib/codex-reset-history');
 const date = (s) => Date.parse(s);
 const snapshot = (at, reset, used, credits = [{ id: 'test-credit', status: 'available', expiresAt: '2026-12-01T00:00:00Z' }], account = 'test-account') => normalizeSnapshot({
   accountId: account, rateLimits: { primary: { usedPercent: used, resetsAt: date(reset) / 1000, windowDurationMins: 10080 } },
@@ -38,10 +38,32 @@ assert.equal(history.summary.averageDurationDays, 2);
 assert.equal(history.summary.averageMaxUsedPercent, 95);
 assert.equal(history.summary.inferredRedemptions, 1);
 assert.equal(history.credits.availableCount, 0);
+assert.deepEqual(history.windows[0].resetCause, {type:'manual',confidence:'inferred'});
+assert.equal(history.summary.manualResets, 1);
+const confirmedHistory = buildHistory([before, confirmed], [], {now:date(after.at)});
+assert.deepEqual(confirmedHistory.windows[0].resetCause, {type:'manual',confidence:'confirmed'});
+const noCreditUsed = snapshot(after.at, after.window.resetsAt, 1);
+const providerHistory = buildHistory([before, noCreditUsed], [], {now:date(after.at)});
+assert.deepEqual(providerHistory.windows[0].resetCause, {type:'provider_inferred',confidence:'inferred'});
+assert.equal(providerHistory.summary.providerResetsInferred, 1);
+assert.equal(providerHistory.summary.manualResets, 0);
+assert.equal(buildHistory([before, replaced], [], {now:date(after.at)}).summary.manualResets, 1, 'same count with a replacement credit is still manual');
+for (const pair of [[incomplete,after],[noExpiry,after],[expiredBefore,after],[redeeming,noCreditUsed],[before,{...noCreditUsed,planType:'different-plan'}]]) {
+  assert.equal(resetCause(...pair, 'early').type, 'unknown', 'partial, expired, pending or changed-plan evidence cannot identify a provider reset');
+}
+assert.equal(resetCause(before,snapshot(after.at, after.window.resetsAt, 1, [], 'different-account'),'early').type,'unknown');
+const zeroCreditsBefore = snapshot(before.at,before.window.resetsAt,95,[]);
+assert.equal(resetCause(zeroCreditsBefore,after,'early').type,'provider_inferred','complete empty inventories still provide evidence');
+const timelyRegularBefore = snapshot('2026-09-08T11:59:00Z',before.window.resetsAt,99);
+const timelyRegularAfter = snapshot('2026-09-08T12:01:00Z','2026-09-15T12:00:00Z',1);
+assert.equal(buildHistory([timelyRegularBefore,timelyRegularAfter],[],{now:date(timelyRegularAfter.at)}).windows[0].resetCause.type,'scheduled');
+const interruptedHistory = buildHistory([before,{kind:'gap',at:'2026-09-03T12:00:00Z'},noCreditUsed],[],{now:date(after.at)});
+assert.equal(interruptedHistory.windows[0].resetCause.type,'unknown','an interrupted transition cannot exclude credit use');
 const regular = buildHistory([before, snapshot('2026-09-08T12:01:00Z', '2026-09-15T12:00:00Z', 1)], [], { now: date('2026-09-08T12:02:00Z') });
 assert.equal(regular.windows[0].resetType, 'regular');
 assert.equal(regular.summary.uncertainWindows, 1, 'long observation gap is explicit');
 assert.equal(regular.summary.averageDurationDays, null);
+assert.equal(regular.windows[0].resetCause.type,'unknown','a scheduled deadline across a long gap does not prove the cause');
 const jitter = snapshot('2026-09-03T12:01:00Z', '2026-09-08T12:00:50Z', 96);
 assert.equal(buildHistory([before, jitter], [], { now: date(after.at) }).summary.totalWindows, 0);
 const rollingZeros = Array.from({length:10}, (_,i) => {
@@ -57,6 +79,7 @@ const overlap = buildHistory([before, after, stale], [], { now: date(stale.at) }
 assert.equal(overlap.windows[0].overlap, true);
 assert.equal(overlap.summary.averageDurationDays, null);
 assert.equal(overlap.summary.earlyResets, 0);
+assert.equal(overlap.windows[0].resetCause.type,'unknown');
 const gaps = buildHistory([before, {kind:'gap',at:'2026-09-03T12:00:00Z'}, {kind:'gap',at:'2026-09-03T12:05:00Z'}], [], { now: date('2026-09-03T12:05:00Z') });
 assert.equal(gaps.liveStatus, 'unavailable');
 assert.equal(gaps.summary.recordingGaps, 1);
@@ -68,6 +91,9 @@ assert(!JSON.stringify(imported).includes('private'));
 assert.equal(historicalSamples([{...raw, timestamp:'2026-08-01T00:00:00Z'}]).length, 0);
 const legacy = buildHistory([], [raw, { ...raw, timestamp:after.at, rateLimits:{primary:{used_percent:1,window_minutes:10080,resets_at:date(after.window.resetsAt)/1000}} }], {now:date(after.at)});
 assert.equal(legacy.windows[0].accountScope, 'historical_unscoped');
+assert.equal(legacy.windows[0].resetCause.type,'unknown','early historical timing is not an OpenAI reset');
+assert.equal(legacy.summary.providerResetsInferred,0);
+assert.equal(legacy.summary.unknownResetCauses,1);
 // Every language has the same keys and interpolation contract.
 const fs = require('node:fs');
 const locales = fs.readdirSync(new URL('../public/i18n/', import.meta.url)).filter(n => n.endsWith('.json'));
@@ -84,6 +110,9 @@ const html = vm.runInNewContext(app+`\nstate.translations = ${JSON.stringify({co
 assert(html.includes('Credit redeemed: inferred'));
 assert(html.includes('95 %'));
 assert(html.includes('2 days'));
+assert(html.includes('Reset cause'));
+assert(html.includes('Manual · credit'));
+assert(html.includes('Causes: 1 credit · 0 OpenAI (inferred) · 0 scheduled · 0 unknown'));
 assert(!html.includes('test-account'));
 const unavailableHtml = vm.runInNewContext(app+`\nstate.translations = ${JSON.stringify({codexResets:en})}; renderCodexResetHistoryContent(${JSON.stringify({...history,credits:null})});`,{...context, document:{...context.document}, window:{}});
 assert(unavailableHtml.includes('<strong>—</strong>'));
@@ -113,6 +142,8 @@ try {
         assert.equal(r.status,200); const h=await r.json();
         assert.equal(h.summary.inferredRedemptions,1); assert.equal(h.windows.length,1);
         assert.equal(h.credits.availableCount,0);
+        assert.equal(h.windows[0].resetCause.type,'manual');
+        assert.equal(h.summary.manualResets,1);
       } catch(e) {console.error(e);process.exitCode=1} finally {server.close()}
     });
   `], {env:environment});

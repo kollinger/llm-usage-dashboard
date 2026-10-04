@@ -513,3 +513,15 @@ a reset credit. A redeemed provider status confirms a credit redemption; an
 unexpired disappearing credit plus a nearby quota reset is only inferred.
 An expired credit, incomplete inventory, missing sample, person, or device is
 not silently attributed to a user action. Recording pauses when the app quits.
+
+Reset timing and cause are separate columns. A credit redemption across a
+closely observed quota reset is classified as manual (confirmed or inferred).
+An early reset with unchanged complete credit inventories is classified as
+OpenAI (inferred); this is evidence of no observed credit use, not a provider
+statement of cause. Scheduled transitions use the same coverage checks. Each
+transition requires live observations of the same account and plan no more
+than five minutes apart, a usage drop, and no conflicting window or recording
+gap. Historical causes stay unknown because the old logs lack credit evidence.
+Cause counts apply to the selected 10, 30, or all windows, independently of
+credit-event totals since live recording began. No reset is attributed to a
+particular person or device.

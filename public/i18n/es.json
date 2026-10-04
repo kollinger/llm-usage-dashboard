@@ -1067,6 +1067,17 @@
     "events": "Eventos de crédito · últimos 30",
     "granted": "Crédito concedido",
     "expired": "Crédito caducado",
-    "creditUnknown": "Cambio de crédito: incierto"
+    "creditUnknown": "Cambio de crédito: incierto",
+    "cause": "Causa del reinicio",
+    "causeManual": "Manual · cupón",
+    "causeProvider": "OpenAI · inferido",
+    "causeScheduled": "Programado",
+    "causeUnknown": "Desconocida",
+    "causeMissing": "Falta evidencia del cupón o de la transición",
+    "causeNoCredit": "Anticipado sin uso observado de cupón",
+    "causeConfirmed": "Confirmado",
+    "causeInferred": "Inferido",
+    "causeSummary": "Causas: {manual} cupón · {provider} OpenAI (inferido) · {scheduled} programado · {unknown} desconocida",
+    "causeNote": "Un reinicio anticipado no identifica la causa. OpenAI solo se infiere si el inventario completo de cupones no cambia durante un reinicio de cuota observado de cerca. Los registros antiguos no separan reinicios manuales de OpenAI. Se desconoce quién lo activó."
   }
 }

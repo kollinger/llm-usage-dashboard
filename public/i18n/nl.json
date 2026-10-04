@@ -1067,6 +1067,17 @@
     "events": "Creditevenementen · laatste 30",
     "granted": "Credit toegekend",
     "expired": "Credit verlopen",
-    "creditUnknown": "Creditwijziging: onduidelijk"
+    "creditUnknown": "Creditwijziging: onduidelijk",
+    "cause": "Oorzaak van reset",
+    "causeManual": "Handmatig · voucher",
+    "causeProvider": "OpenAI · afgeleid",
+    "causeScheduled": "Gepland",
+    "causeUnknown": "Onbekend",
+    "causeMissing": "Bewijs voor voucher of overgang ontbreekt",
+    "causeNoCredit": "Vroegtijdig zonder waargenomen vouchergebruik",
+    "causeConfirmed": "Bevestigd",
+    "causeInferred": "Afgeleid",
+    "causeSummary": "Oorzaken: {manual} voucher · {provider} OpenAI (afgeleid) · {scheduled} gepland · {unknown} onbekend",
+    "causeNote": "Een vroegtijdige reset toont de oorzaak niet. OpenAI wordt alleen afgeleid als de volledige voucherlijst onveranderd blijft bij een nauwkeurig waargenomen quotareset. Oude logs scheiden handmatige resets en OpenAI niet. Wie de reset activeerde, is onbekend."
   }
 }

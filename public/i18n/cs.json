@@ -1067,6 +1067,17 @@
     "events": "Události kreditů · posledních 30",
     "granted": "Kredit přidělen",
     "expired": "Kredit vypršel",
-    "creditUnknown": "Změna kreditu: nejasná"
+    "creditUnknown": "Změna kreditu: nejasná",
+    "cause": "Příčina resetu",
+    "causeManual": "Ručně · poukaz",
+    "causeProvider": "OpenAI · odvozeno",
+    "causeScheduled": "Plánovaný",
+    "causeUnknown": "Neznámá",
+    "causeMissing": "Chybí důkaz o poukazu nebo přechodu",
+    "causeNoCredit": "Předčasně bez pozorovaného použití poukazu",
+    "causeConfirmed": "Potvrzeno",
+    "causeInferred": "Odvozeno",
+    "causeSummary": "Příčiny: {manual} poukaz · {provider} OpenAI (odvozeno) · {scheduled} plánované · {unknown} neznámé",
+    "causeNote": "Předčasný reset neurčuje příčinu. OpenAI se odvozuje jen tehdy, když se úplný seznam poukazů při těsně sledovaném resetu kvóty nezmění. Staré záznamy nerozlišují ruční resety a OpenAI. Osoba, která reset spustila, není známá."
   }
 }

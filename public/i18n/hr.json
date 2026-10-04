@@ -1067,6 +1067,17 @@
     "events": "Događaji kredita · posljednjih 30",
     "granted": "Kredit dodijeljen",
     "expired": "Kredit istekao",
-    "creditUnknown": "Promjena kredita: nejasna"
+    "creditUnknown": "Promjena kredita: nejasna",
+    "cause": "Uzrok resetiranja",
+    "causeManual": "Ručno · kupon",
+    "causeProvider": "OpenAI · izvedeno",
+    "causeScheduled": "Planirano",
+    "causeUnknown": "Nepoznato",
+    "causeMissing": "Nedostaje dokaz o kuponu ili prijelazu",
+    "causeNoCredit": "Prerano bez opaženog korištenja kupona",
+    "causeConfirmed": "Potvrđeno",
+    "causeInferred": "Izvedeno",
+    "causeSummary": "Uzroci: {manual} kupon · {provider} OpenAI (izvedeno) · {scheduled} planirano · {unknown} nepoznato",
+    "causeNote": "Prerano vrijeme ne otkriva uzrok. OpenAI se izvodi samo kada potpuni popis kupona ostaje isti tijekom pažljivo opaženog resetiranja kvote. Stari zapisi ne razlikuju ručna resetiranja od OpenAI-ja. Osoba koja je pokrenula resetiranje nije poznata."
   }
 }

@@ -1034,7 +1034,7 @@
     "last30": "Letzte 30 Fenster",
     "all": "Alle Fenster",
     "credits": "Reset-Gutscheine verfügbar",
-    "earlyCount": "Vorzeitige Resets",
+    "earlyCount": "Vorzeitige Fensterwechsel",
     "averageDuration": "Durchschnittliche Dauer ≈",
     "averageUsage": "Durchschnittlicher Verbrauch",
     "days": "{value} Tage",
@@ -1067,6 +1067,17 @@
     "events": "Gutschein-Ereignisse · letzte 30",
     "granted": "Gutschein erhalten",
     "expired": "Gutschein abgelaufen",
-    "creditUnknown": "Gutscheinwechsel: unklar"
+    "creditUnknown": "Gutscheinwechsel: unklar",
+    "cause": "Reset-Ursache",
+    "causeManual": "Manuell · Gutschein",
+    "causeProvider": "OpenAI · abgeleitet",
+    "causeScheduled": "Planmäßig",
+    "causeUnknown": "Unbekannt",
+    "causeMissing": "Gutschein- oder Übergangsbeleg fehlt",
+    "causeNoCredit": "Vorzeitig ohne beobachteten Gutscheinverbrauch",
+    "causeConfirmed": "Bestätigt",
+    "causeInferred": "Abgeleitet",
+    "causeSummary": "Ursachen: {manual} Gutschein · {provider} OpenAI (abgeleitet) · {scheduled} planmäßig · {unknown} unbekannt",
+    "causeNote": "Vorzeitig sagt nichts über die Ursache. OpenAI wird nur abgeleitet, wenn vollständige Gutscheinbestände bei einem eng beobachteten Quota-Reset unverändert bleiben. Alte Logs trennen manuelle und OpenAI-Resets nicht. Die auslösende Person bleibt unbekannt."
   }
 }

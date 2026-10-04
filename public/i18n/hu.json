@@ -1067,6 +1067,17 @@
     "events": "Kreditesemények · utolsó 30",
     "granted": "Kredit jóváírva",
     "expired": "Kredit lejárt",
-    "creditUnknown": "Kreditváltozás: nem egyértelmű"
+    "creditUnknown": "Kreditváltozás: nem egyértelmű",
+    "cause": "Visszaállítás oka",
+    "causeManual": "Kézi · kupon",
+    "causeProvider": "OpenAI · következtetett",
+    "causeScheduled": "Ütemezett",
+    "causeUnknown": "Ismeretlen",
+    "causeMissing": "Hiányzik a kupon vagy az átmenet bizonyítéka",
+    "causeNoCredit": "Korai, megfigyelt kuponhasználat nélkül",
+    "causeConfirmed": "Megerősített",
+    "causeInferred": "Következtetett",
+    "causeSummary": "Okok: {manual} kupon · {provider} OpenAI (következtetett) · {scheduled} ütemezett · {unknown} ismeretlen",
+    "causeNote": "A korai időpont nem mutatja az okot. OpenAI csak akkor következtethető, ha a teljes kuponlista változatlan marad egy szorosan megfigyelt kvóta-visszaállítás során. A régi naplók nem választják szét a kézi és OpenAI-visszaállításokat. A kiváltó személy ismeretlen."
   }
 }

@@ -1067,6 +1067,17 @@
     "events": "Imeachtaí creidmheasa · na 30 is déanaí",
     "granted": "Creidmheas deonaithe",
     "expired": "Creidmheas imithe in éag",
-    "creditUnknown": "Athrú creidmheasa: doiléir"
+    "creditUnknown": "Athrú creidmheasa: doiléir",
+    "cause": "Cúis an athshocraithe",
+    "causeManual": "De láimh · cúpón",
+    "causeProvider": "OpenAI · tátal",
+    "causeScheduled": "Sceidealaithe",
+    "causeUnknown": "Anaithnid",
+    "causeMissing": "Fianaise ar an gcúpón nó ar an athrú ar iarraidh",
+    "causeNoCredit": "Luath gan úsáid chúpóin breathnaithe",
+    "causeConfirmed": "Deimhnithe",
+    "causeInferred": "Tátal",
+    "causeSummary": "Cúiseanna: {manual} cúpón · {provider} OpenAI (tátal) · {scheduled} sceidealaithe · {unknown} anaithnid",
+    "causeNote": "Ní léiríonn am luath an chúis. Ní dhéantar tátal faoi OpenAI ach nuair nach n-athraíonn an liosta iomlán cúpón le linn athshocrú cuóta a breathnaíodh go dlúth. Ní scarann seanlogaí athshocruithe de láimh ó OpenAI. Ní fios cé a thionscain an t-athshocrú."
   }
 }

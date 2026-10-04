@@ -1067,6 +1067,17 @@
     "events": "Kredītu notikumi · pēdējie 30",
     "granted": "Kredīts piešķirts",
     "expired": "Kredīts beidzies",
-    "creditUnknown": "Kredīta izmaiņa: neskaidra"
+    "creditUnknown": "Kredīta izmaiņa: neskaidra",
+    "cause": "Atiestatīšanas iemesls",
+    "causeManual": "Manuāli · kupons",
+    "causeProvider": "OpenAI · secināts",
+    "causeScheduled": "Plānots",
+    "causeUnknown": "Nezināms",
+    "causeMissing": "Trūkst kupona vai pārejas pierādījumu",
+    "causeNoCredit": "Priekšlaicīgi bez novērotas kupona izmantošanas",
+    "causeConfirmed": "Apstiprināts",
+    "causeInferred": "Secināts",
+    "causeSummary": "Iemesli: {manual} kupons · {provider} OpenAI (secināts) · {scheduled} plānots · {unknown} nezināms",
+    "causeNote": "Agrīns laiks nenorāda iemeslu. OpenAI secina tikai tad, ja pilns kuponu saraksts paliek nemainīgs cieši novērotas kvotas atiestatīšanas laikā. Vecie žurnāli neatšķir manuālas un OpenAI atiestatīšanas. Persona, kas to izraisīja, nav zināma."
   }
 }

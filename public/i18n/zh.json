@@ -1067,6 +1067,17 @@
     "events": "额度事件 · 最近 30 次",
     "granted": "已获得额度",
     "expired": "额度已到期",
-    "creditUnknown": "额度变化：原因不明"
+    "creditUnknown": "额度变化：原因不明",
+    "cause": "重置原因",
+    "causeManual": "手动 · 重置券",
+    "causeProvider": "OpenAI · 推断",
+    "causeScheduled": "按计划",
+    "causeUnknown": "未知",
+    "causeMissing": "缺少重置券或状态转换证据",
+    "causeNoCredit": "提前重置，未观察到重置券使用",
+    "causeConfirmed": "已确认",
+    "causeInferred": "推断",
+    "causeSummary": "原因：{manual} 次重置券 · {provider} 次 OpenAI（推断）· {scheduled} 次按计划 · {unknown} 次未知",
+    "causeNote": "提前重置的时间并不能说明原因。只有在密切观察到配额重置且完整重置券清单保持不变时，才推断为 OpenAI 重置。旧日志无法区分手动和 OpenAI 重置。触发重置的人仍然未知。"
   }
 }

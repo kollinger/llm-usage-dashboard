@@ -1067,6 +1067,17 @@
     "events": "أحداث الرصيد · آخر 30",
     "granted": "مُنح رصيد",
     "expired": "انتهت صلاحية الرصيد",
-    "creditUnknown": "تغير الرصيد: غير واضح"
+    "creditUnknown": "تغير الرصيد: غير واضح",
+    "cause": "سبب إعادة التعيين",
+    "causeManual": "يدوي · قسيمة",
+    "causeProvider": "OpenAI · مستنتج",
+    "causeScheduled": "مجدول",
+    "causeUnknown": "غير معروف",
+    "causeMissing": "دليل القسيمة أو الانتقال مفقود",
+    "causeNoCredit": "مبكر دون استخدام قسيمة ملحوظ",
+    "causeConfirmed": "مؤكد",
+    "causeInferred": "مستنتج",
+    "causeSummary": "الأسباب: {manual} قسيمة · {provider} OpenAI (مستنتج) · {scheduled} مجدول · {unknown} غير معروف",
+    "causeNote": "التوقيت المبكر لا يحدد السبب. يُستنتج OpenAI فقط عندما يبقى سجل القسائم الكامل دون تغيير أثناء إعادة تعيين حصة مرصودة عن كثب. لا تميز السجلات القديمة بين الإعادة اليدوية وOpenAI. الشخص الذي بدأ الإعادة غير معروف."
   }
 }

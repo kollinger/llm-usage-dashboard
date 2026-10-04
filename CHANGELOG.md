@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0-preview.3 - 2026-10-04
+
+### Fixed
+
+- Show the cause separately from the timing of each Codex reset: credit-backed
+  manual reset, inferred OpenAI reset without credit use, scheduled, or unknown.
+- Keep historical causes unknown when credit evidence is missing, and show
+  cause counts for the selected history period. Early timing alone is not an
+  OpenAI reset; the person who triggered a reset remains unknown.
+
 ## 1.3.0-preview.2 - 2026-10-03
 
 ### Fixed

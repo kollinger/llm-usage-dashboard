@@ -1034,7 +1034,7 @@
     "last30": "Last 30 windows",
     "all": "All windows",
     "credits": "Reset credits available",
-    "earlyCount": "Early resets",
+    "earlyCount": "Early window changes",
     "averageDuration": "Average duration ≈",
     "averageUsage": "Average usage",
     "days": "{value} days",
@@ -1067,6 +1067,17 @@
     "events": "Credit events · last 30",
     "granted": "Credit granted",
     "expired": "Credit expired",
-    "creditUnknown": "Credit change: unclear"
+    "creditUnknown": "Credit change: unclear",
+    "cause": "Reset cause",
+    "causeManual": "Manual · credit",
+    "causeProvider": "OpenAI · inferred",
+    "causeScheduled": "Scheduled",
+    "causeUnknown": "Unknown",
+    "causeMissing": "Credit or transition evidence missing",
+    "causeNoCredit": "Early, with no observed credit use",
+    "causeConfirmed": "Confirmed",
+    "causeInferred": "Inferred",
+    "causeSummary": "Causes: {manual} credit · {provider} OpenAI (inferred) · {scheduled} scheduled · {unknown} unknown",
+    "causeNote": "Early timing does not identify the cause. OpenAI is inferred only when complete credit inventories stay unchanged across a closely observed quota reset. Historical logs cannot separate manual and OpenAI resets. The person who triggered a reset is unknown."
   }
 }

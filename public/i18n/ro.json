@@ -1067,6 +1067,17 @@
     "events": "Evenimente de credit · ultimele 30",
     "granted": "Credit acordat",
     "expired": "Credit expirat",
-    "creditUnknown": "Schimbare de credit: neclară"
+    "creditUnknown": "Schimbare de credit: neclară",
+    "cause": "Cauza resetării",
+    "causeManual": "Manuală · cupon",
+    "causeProvider": "OpenAI · dedusă",
+    "causeScheduled": "Programată",
+    "causeUnknown": "Necunoscută",
+    "causeMissing": "Lipsesc dovezi despre cupon sau tranziție",
+    "causeNoCredit": "Anticipată fără utilizare observată a cuponului",
+    "causeConfirmed": "Confirmată",
+    "causeInferred": "Dedusă",
+    "causeSummary": "Cauze: {manual} cupon · {provider} OpenAI (dedusă) · {scheduled} programate · {unknown} necunoscute",
+    "causeNote": "O resetare anticipată nu identifică cauza. OpenAI este dedusă numai când inventarul complet de cupoane rămâne neschimbat la o resetare a cotei observată atent. Jurnalele vechi nu separă resetările manuale de OpenAI. Persoana care a inițiat resetarea este necunoscută."
   }
 }

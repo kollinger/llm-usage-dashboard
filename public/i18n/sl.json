@@ -1067,6 +1067,17 @@
     "events": "Dogodki kreditov · zadnjih 30",
     "granted": "Kredit dodeljen",
     "expired": "Kredit potekel",
-    "creditUnknown": "Sprememba kredita: nejasna"
+    "creditUnknown": "Sprememba kredita: nejasna",
+    "cause": "Vzrok ponastavitve",
+    "causeManual": "Ročno · kupon",
+    "causeProvider": "OpenAI · sklepano",
+    "causeScheduled": "Načrtovana",
+    "causeUnknown": "Neznan",
+    "causeMissing": "Manjka dokaz o kuponu ali prehodu",
+    "causeNoCredit": "Predčasno brez opažene uporabe kupona",
+    "causeConfirmed": "Potrjeno",
+    "causeInferred": "Sklepano",
+    "causeSummary": "Vzroki: {manual} kupon · {provider} OpenAI (sklepano) · {scheduled} načrtovane · {unknown} neznani",
+    "causeNote": "Predčasen čas ne določa vzroka. OpenAI se sklepa samo, ko celoten seznam kuponov ostane enak pri natančno opazovani ponastavitvi kvote. Stari dnevniki ne ločijo ročnih ponastavitev od OpenAI. Oseba, ki jo je sprožila, ni znana."
   }
 }

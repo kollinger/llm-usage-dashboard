@@ -1067,6 +1067,17 @@
     "events": "Krediidisündmused · viimased 30",
     "granted": "Krediit antud",
     "expired": "Krediit aegunud",
-    "creditUnknown": "Krediidimuutus: ebaselge"
+    "creditUnknown": "Krediidimuutus: ebaselge",
+    "cause": "Lähtestamise põhjus",
+    "causeManual": "Käsitsi · kupong",
+    "causeProvider": "OpenAI · järeldatud",
+    "causeScheduled": "Plaaniline",
+    "causeUnknown": "Teadmata",
+    "causeMissing": "Kupongi või ülemineku tõend puudub",
+    "causeNoCredit": "Varajane ilma täheldatud kupongikasutuseta",
+    "causeConfirmed": "Kinnitatud",
+    "causeInferred": "Järeldatud",
+    "causeSummary": "Põhjused: {manual} kupong · {provider} OpenAI (järeldatud) · {scheduled} plaaniline · {unknown} teadmata",
+    "causeNote": "Varajane aeg ei näita põhjust. OpenAI järeldatakse ainult siis, kui täielik kupongiloend jääb tihedalt jälgitud kvoodi lähtestamisel samaks. Vanad logid ei erista käsitsi ja OpenAI lähtestamisi. Lähtestaja isik pole teada."
   }
 }

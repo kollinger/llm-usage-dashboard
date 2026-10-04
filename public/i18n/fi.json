@@ -1067,6 +1067,17 @@
     "events": "Krediittitapahtumat · viimeiset 30",
     "granted": "Krediitti myönnetty",
     "expired": "Krediitti vanhentunut",
-    "creditUnknown": "Krediittimuutos: epäselvä"
+    "creditUnknown": "Krediittimuutos: epäselvä",
+    "cause": "Nollauksen syy",
+    "causeManual": "Manuaalinen · kuponki",
+    "causeProvider": "OpenAI · päätelty",
+    "causeScheduled": "Ajastettu",
+    "causeUnknown": "Tuntematon",
+    "causeMissing": "Kupongin tai siirtymän näyttö puuttuu",
+    "causeNoCredit": "Ennenaikainen ilman havaittua kupongin käyttöä",
+    "causeConfirmed": "Vahvistettu",
+    "causeInferred": "Päätelty",
+    "causeSummary": "Syyt: {manual} kuponki · {provider} OpenAI (päätelty) · {scheduled} ajastettu · {unknown} tuntematon",
+    "causeNote": "Ennenaikainen ajankohta ei osoita syytä. OpenAI päätellään vain, kun täydellinen kuponkiluettelo pysyy samana tarkasti havaitussa kiintiön nollauksessa. Vanhat lokit eivät erota manuaalisia ja OpenAI-nollauksia. Nollauksen käynnistänyt henkilö on tuntematon."
   }
 }

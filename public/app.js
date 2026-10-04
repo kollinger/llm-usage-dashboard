@@ -4426,11 +4426,15 @@ function renderCodexResetHistoryContent(history) {
     const uncertain = w.confidence === "uncertain";
     const kind = uncertain ? "uncertain" : w.resetType;
     const detail = w.creditRedemption ? text(w.creditRedemption === "confirmed" ? "confirmed" : "inferred") : text("estimated");
+    const cause = w.resetCause || { type: "unknown", confidence: "unknown" };
+    const causeKey = cause.type === "manual" ? "causeManual" : cause.type === "provider_inferred" ? "causeProvider" : cause.type === "scheduled" ? "causeScheduled" : "causeUnknown";
+    const causeDetail = cause.type === "unknown" ? text("causeMissing") : cause.type === "provider_inferred" ? text("causeNoCredit") : text(cause.confidence === "confirmed" ? "causeConfirmed" : "causeInferred");
     const interval = w.resetObservedBetween ? `${formatDateTime(w.resetObservedBetween.from)} – ${formatDateTime(w.resetObservedBetween.to)}` : "";
     return `<tr><td>${escapeHtml(formatDateTime(w.startsAt))}</td><td>${escapeHtml(formatDateTime(w.scheduledResetAt))}</td>
       <td title="${escapeHtml(interval)}">${escapeHtml(formatDateTime(w.closedAt))}</td><td>${days(w.durationDays)}</td>
       <td><span class="reset-usage">${number(w.maxUsedPercent)} %</span><div class="reset-usage-track"><i style="width:${Math.max(0, Math.min(100, Number(w.maxUsedPercent)))}%"></i></div></td>
-      <td><span class="reset-tag ${uncertain ? "reset-uncertain" : w.resetType === "early" ? "reset-early" : ""}">${text(kind)}</span><small>${detail}</small></td></tr>`;
+      <td><span class="reset-tag ${uncertain ? "reset-uncertain" : w.resetType === "early" ? "reset-early" : ""}">${text(kind)}</span><small>${detail}</small></td>
+      <td><strong>${text(causeKey)}</strong><small>${causeDetail}</small></td></tr>`;
   }).join("");
   const events = (history.creditEvents || []).map((e) => {
     const key = e.type === "redeemed" ? (e.confidence === "confirmed" ? "confirmed" : "inferred")
@@ -4446,12 +4450,14 @@ function renderCodexResetHistoryContent(history) {
     ${metric("averageUsage", summary.averageMaxUsedPercent === null ? "—" : `${number(summary.averageMaxUsedPercent)} %`, text("maximum"))}
   </div>
   <p class="reset-note">${text("note")}</p>
+  <p class="reset-note"><strong>${text("causeSummary", { manual: summary.manualResets ?? 0, provider: summary.providerResetsInferred ?? 0, scheduled: summary.scheduledResets ?? 0, unknown: summary.unknownResetCauses ?? summary.selectedWindows })}</strong></p>
+  <p class="reset-note">${text("causeNote")}</p>
   ${history.recordingStartedAt ? `<p class="reset-note">${text("recordingSince", { time: formatDateTime(history.recordingStartedAt) })} · ${text("redemptions", { confirmed: summary.confirmedRedemptions, inferred: summary.inferredRedemptions })}</p>` : ""}
   ${expiries ? `<div class="reset-expiries">${expiries}</div>` : ""}
   ${summary.uncertainWindows || summary.recordingGaps ? `<p class="reset-note reset-warning">${text("coverage", { uncertain: summary.uncertainWindows, gaps: summary.recordingGaps })}</p>` : ""}
   ${history.current ? `<p class="reset-note">${text("current", { time: formatDateTime(history.current.scheduledResetAt), percent: number(history.current.maxUsedPercent) })}</p>` : ""}
   ${events ? `<details class="reset-events"><summary>${text("events")}</summary><ul>${events}</ul></details>` : ""}
-  ${rows ? `<div class="reset-table-wrap"><table class="reset-table"><thead><tr>${["start", "plannedReset", "end", "duration", "usage", "result"].map((key) => `<th scope="col">${text(key)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty-message">${text("empty")}</p>`}`;
+  ${rows ? `<div class="reset-table-wrap"><table class="reset-table"><thead><tr>${["start", "plannedReset", "end", "duration", "usage", "result", "cause"].map((key) => `<th scope="col">${text(key)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty-message">${text("empty")}</p>`}`;
 }
 
 function renderGptAccounts(registry) {
