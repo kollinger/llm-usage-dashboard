@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "GPT-account toevoegen",
+    "signIn": "Aanmelden bij OpenAI",
+    "removeLogin": "Opgeslagen aanmelding verwijderen",
+    "login": {
+      "waiting": "Voltooi de aanmelding bij OpenAI. Kies het gewenste account in je browser.",
+      "complete": "Account verbonden.",
+      "failed": "Aanmelden niet beschikbaar. Installeer Codex CLI of probeer opnieuw."
+    },
+    "connectionHelp": "Bestaande Codex- en OpenCode-aanmeldingen worden automatisch herkend. Voeg hier meer GPT-accounts toe zonder ze te vervangen.",
+    "loginPrivacy": "Aanmelden communiceert met OpenAI. Inloggegevens blijven in een apart lokaal profiel en worden niet naar de ontwikkelaar of gekoppelde apparaten gestuurd."
   },
   "codexResets": {
     "title": "Codex · Resetgeschiedenis",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Afgeleid",
     "causeSummary": "Oorzaken: {manual} voucher · {provider} OpenAI (afgeleid) · {scheduled} gepland · {unknown} onbekend",
     "causeNote": "Een vroegtijdige reset toont de oorzaak niet. OpenAI wordt alleen afgeleid als de volledige voucherlijst onveranderd blijft bij een nauwkeurig waargenomen quotareset. Oude logs scheiden handmatige resets en OpenAI niet. Wie de reset activeerde, is onbekend."
+  },
+  "deviceSync": {
+    "heading": "Je apparaten verbinden",
+    "enabled": "Directe synchronisatie inschakelen",
+    "name": "Apparaatnaam",
+    "invite": "Koppelcode maken",
+    "code": "Koppelcode",
+    "copy": "Code kopiëren",
+    "join": "Apparaat verbinden",
+    "forget": "Apparaat ontkoppelen",
+    "view": "Apparaten",
+    "local": "Dit apparaat",
+    "all": "Alle verbonden apparaten",
+    "copied": "Code gekopieerd.",
+    "working": "Verbinden…",
+    "ready": "Gereed.",
+    "inviteReady": "Deze code verloopt over vijf minuten. Plak hem op je andere apparaat.",
+    "errors": {
+      "default": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "peer_unreachable": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "invalid_pairing_code": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "network_unavailable": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "sync_disabled": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "capture_failed": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "storage_unavailable": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat.",
+      "discovery_unavailable": "Verbinding niet beschikbaar. Eerder ontvangen gegevens blijven op dit apparaat."
+    },
+    "privacy": "Er gaan geen gebruiksgegevens of inloggegevens naar de ontwikkelaar. Alleen versleutelde metingen worden gedeeld met uitdrukkelijk gekoppelde apparaten. Ontkoppelen wist eerder ontvangen kopieën niet.",
+    "networkLimit": "Directe verbindingen gebruiken het lokale netwerk of een bestaande privé-VPN, zonder relay, zoekserver of routerwijzigingen. Netwerken die dit blokkeren kunnen niet automatisch synchroniseren.",
+    "coverage": "{count} unieke records · {duplicates} duplicaten verwijderd · {excluded} records blijven lokaal zonder betrouwbare identificatie. Limieten zijn opgeslagen metingen; API-totalen worden niet opgeteld."
   }
 }

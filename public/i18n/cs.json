@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Přidat účet GPT",
+    "signIn": "Přihlásit se k OpenAI",
+    "removeLogin": "Odstranit uložené přihlášení",
+    "login": {
+      "waiting": "Dokončete přihlášení k OpenAI. V prohlížeči vyberte požadovaný účet.",
+      "complete": "Účet připojen.",
+      "failed": "Přihlášení není dostupné. Nainstalujte Codex CLI nebo to zkuste znovu."
+    },
+    "connectionHelp": "Existující přihlášení Codex a OpenCode se rozpoznají automaticky. Přidejte zde další účty GPT bez jejich nahrazení.",
+    "loginPrivacy": "Přihlášení komunikuje s OpenAI. Přihlašovací údaje zůstávají v odděleném místním profilu a neposílají se vývojáři ani spárovaným zařízením."
   },
   "codexResets": {
     "title": "Codex · Historie resetů",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Odvozeno",
     "causeSummary": "Příčiny: {manual} poukaz · {provider} OpenAI (odvozeno) · {scheduled} plánované · {unknown} neznámé",
     "causeNote": "Předčasný reset neurčuje příčinu. OpenAI se odvozuje jen tehdy, když se úplný seznam poukazů při těsně sledovaném resetu kvóty nezmění. Staré záznamy nerozlišují ruční resety a OpenAI. Osoba, která reset spustila, není známá."
+  },
+  "deviceSync": {
+    "heading": "Propojit vlastní zařízení",
+    "enabled": "Zapnout přímou synchronizaci",
+    "name": "Název zařízení",
+    "invite": "Vytvořit párovací kód",
+    "code": "Párovací kód",
+    "copy": "Kopírovat kód",
+    "join": "Připojit zařízení",
+    "forget": "Odpojit zařízení",
+    "view": "Zařízení",
+    "local": "Toto zařízení",
+    "all": "Všechna připojená zařízení",
+    "copied": "Kód zkopírován.",
+    "working": "Připojování…",
+    "ready": "Připraveno.",
+    "inviteReady": "Kód platí pět minut. Vložte jej na druhém zařízení.",
+    "errors": {
+      "default": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "peer_unreachable": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "invalid_pairing_code": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "network_unavailable": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "sync_disabled": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "capture_failed": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "storage_unavailable": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení.",
+      "discovery_unavailable": "Spojení není dostupné. Dříve přijatá data zůstávají na tomto zařízení."
+    },
+    "privacy": "Vývojáři se neposílají údaje o využití ani přihlašovací údaje. Šifrovaná měření se sdílejí jen s výslovně spárovanými zařízeními. Odpojení neodstraní již přijaté kopie.",
+    "networkLimit": "Přímé spojení využívá místní síť nebo existující soukromou VPN, bez relay, vyhledávacího serveru a změn routeru. Sítě blokující tato spojení znemožňují automatickou synchronizaci.",
+    "coverage": "{count} jedinečných záznamů · odstraněno {duplicates} duplicit · {excluded} záznamů zůstává místních bez spolehlivé identifikace. Limity jsou uložená měření; součty API se nepřičítají."
   }
 }

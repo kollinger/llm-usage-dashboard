@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "GPT-fiók hozzáadása",
+    "signIn": "Bejelentkezés az OpenAI-ba",
+    "removeLogin": "Mentett bejelentkezés eltávolítása",
+    "login": {
+      "waiting": "Fejezze be az OpenAI-bejelentkezést. Válassza ki a kívánt fiókot a böngészőben.",
+      "complete": "Fiók csatlakoztatva.",
+      "failed": "A bejelentkezés nem érhető el. Telepítse a Codex CLI-t, vagy próbálja újra."
+    },
+    "connectionHelp": "A meglévő Codex- és OpenCode-bejelentkezések automatikusan felismerhetők. Adjon hozzá GPT-fiókokat a meglévők cseréje nélkül.",
+    "loginPrivacy": "A bejelentkezés az OpenAI-val kommunikál. A hitelesítő adatok külön helyi profilban maradnak, és nem kerülnek a fejlesztőhöz vagy párosított eszközökre."
   },
   "codexResets": {
     "title": "Codex · Visszaállítási előzmények",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Következtetett",
     "causeSummary": "Okok: {manual} kupon · {provider} OpenAI (következtetett) · {scheduled} ütemezett · {unknown} ismeretlen",
     "causeNote": "A korai időpont nem mutatja az okot. OpenAI csak akkor következtethető, ha a teljes kuponlista változatlan marad egy szorosan megfigyelt kvóta-visszaállítás során. A régi naplók nem választják szét a kézi és OpenAI-visszaállításokat. A kiváltó személy ismeretlen."
+  },
+  "deviceSync": {
+    "heading": "Saját eszközök összekapcsolása",
+    "enabled": "Közvetlen szinkronizálás engedélyezése",
+    "name": "Eszköz neve",
+    "invite": "Párosítási kód létrehozása",
+    "code": "Párosítási kód",
+    "copy": "Kód másolása",
+    "join": "Eszköz csatlakoztatása",
+    "forget": "Eszköz leválasztása",
+    "view": "Eszközök",
+    "local": "Ez az eszköz",
+    "all": "Minden csatlakoztatott eszköz",
+    "copied": "Kód másolva.",
+    "working": "Csatlakozás…",
+    "ready": "Kész.",
+    "inviteReady": "A kód öt percig érvényes. Illessze be a másik eszközön.",
+    "errors": {
+      "default": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "peer_unreachable": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "invalid_pairing_code": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "network_unavailable": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "sync_disabled": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "capture_failed": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "storage_unavailable": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak.",
+      "discovery_unavailable": "A kapcsolat nem érhető el. A korábban fogadott adatok ezen az eszközön maradnak."
+    },
+    "privacy": "Használati és hitelesítő adatok nem kerülnek a fejlesztőhöz. Titkosított méréseket csak kifejezetten párosított eszközökkel osztunk meg. A leválasztás nem törli a már megkapott másolatokat.",
+    "networkLimit": "A közvetlen kapcsolatok a helyi hálózatot vagy meglévő privát VPN-t használják, közvetítő, keresőszerver és routermódosítás nélkül. Az ezeket blokkoló hálózatok megakadályozzák az automatikus szinkronizálást.",
+    "coverage": "{count} egyedi rekord · {duplicates} ismétlődés eltávolítva · {excluded} rekord helyben marad megbízható azonosító nélkül. A korlátok mentett mérések; az API-összesítések nem adódnak hozzá."
   }
 }

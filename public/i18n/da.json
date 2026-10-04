@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Tilføj GPT-konto",
+    "signIn": "Log ind hos OpenAI",
+    "removeLogin": "Fjern gemt login",
+    "login": {
+      "waiting": "Afslut login hos OpenAI. Vælg den ønskede konto i browseren.",
+      "complete": "Konto forbundet.",
+      "failed": "Login er ikke tilgængeligt. Installer Codex CLI, eller prøv igen."
+    },
+    "connectionHelp": "Eksisterende Codex- og OpenCode-login registreres automatisk. Tilføj GPT-konti uden at erstatte dem.",
+    "loginPrivacy": "Login kommunikerer med OpenAI. Loginoplysninger bliver i en separat lokal profil og sendes ikke til udvikleren eller parrede enheder."
   },
   "codexResets": {
     "title": "Codex · Nulstillingshistorik",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Udledt",
     "causeSummary": "Årsager: {manual} kupon · {provider} OpenAI (udledt) · {scheduled} planlagt · {unknown} ukendt",
     "causeNote": "Et tidligt tidspunkt viser ikke årsagen. OpenAI udledes kun, når komplette kuponlister er uændrede ved en tæt observeret kvotenulstilling. Gamle logfiler skelner ikke mellem manuelle nulstillinger og OpenAI. Personen, der udløste nulstillingen, er ukendt."
+  },
+  "deviceSync": {
+    "heading": "Forbind dine enheder",
+    "enabled": "Aktivér direkte synkronisering",
+    "name": "Enhedsnavn",
+    "invite": "Opret parringskode",
+    "code": "Parringskode",
+    "copy": "Kopiér kode",
+    "join": "Forbind enhed",
+    "forget": "Afbryd enhed",
+    "view": "Enheder",
+    "local": "Denne enhed",
+    "all": "Alle forbundne enheder",
+    "copied": "Kode kopieret.",
+    "working": "Forbinder…",
+    "ready": "Klar.",
+    "inviteReady": "Koden udløber om fem minutter. Indsæt den på din anden enhed.",
+    "errors": {
+      "default": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "peer_unreachable": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "invalid_pairing_code": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "network_unavailable": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "sync_disabled": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "capture_failed": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "storage_unavailable": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed.",
+      "discovery_unavailable": "Forbindelsen er ikke tilgængelig. Tidligere modtagne data bliver på denne enhed."
+    },
+    "privacy": "Brugsdata og loginoplysninger sendes ikke til udvikleren. Kun krypterede målinger deles med udtrykkeligt parrede enheder. Afbrydelse sletter ikke allerede modtagne kopier.",
+    "networkLimit": "Direkte forbindelser bruger det lokale netværk eller en eksisterende privat VPN uden relay, søgeserver eller routerændringer. Netværk, der blokerer dette, forhindrer automatisk synkronisering.",
+    "coverage": "{count} forskellige poster · {duplicates} dubletter fjernet · {excluded} poster forbliver lokale uden sikker identifikation. Grænser er gemte målinger; API-totaler tilføjes ikke."
   }
 }

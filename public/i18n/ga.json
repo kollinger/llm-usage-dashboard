@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Cuir cuntas GPT leis",
+    "signIn": "Sínigh isteach le OpenAI",
+    "removeLogin": "Bain an síniú isteach sábháilte",
+    "login": {
+      "waiting": "Críochnaigh an síniú isteach le OpenAI. Roghnaigh an cuntas sa bhrabhsálaí.",
+      "complete": "Cuntas ceangailte.",
+      "failed": "Níl síniú isteach ar fáil. Suiteáil Codex CLI nó bain triail eile as."
+    },
+    "connectionHelp": "Aimsítear sínithe isteach Codex agus OpenCode go huathoibríoch. Cuir cuntais GPT leis gan iad a athsholáthar.",
+    "loginPrivacy": "Déanann an síniú isteach cumarsáid le OpenAI. Fanann dintiúir i bpróifíl áitiúil ar leith agus ní sheoltar chuig an bhforbróir ná chuig gléasanna péireáilte iad."
   },
   "codexResets": {
     "title": "Codex · Stair athshocruithe",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Tátal",
     "causeSummary": "Cúiseanna: {manual} cúpón · {provider} OpenAI (tátal) · {scheduled} sceidealaithe · {unknown} anaithnid",
     "causeNote": "Ní léiríonn am luath an chúis. Ní dhéantar tátal faoi OpenAI ach nuair nach n-athraíonn an liosta iomlán cúpón le linn athshocrú cuóta a breathnaíodh go dlúth. Ní scarann seanlogaí athshocruithe de láimh ó OpenAI. Ní fios cé a thionscain an t-athshocrú."
+  },
+  "deviceSync": {
+    "heading": "Ceangail do ghléasanna",
+    "enabled": "Cumasaigh sioncronú díreach",
+    "name": "Ainm an ghléis",
+    "invite": "Cruthaigh cód péireála",
+    "code": "Cód péireála",
+    "copy": "Cóipeáil an cód",
+    "join": "Ceangail an gléas",
+    "forget": "Dícheangail an gléas",
+    "view": "Gléasanna",
+    "local": "An gléas seo",
+    "all": "Gach gléas ceangailte",
+    "copied": "Cód cóipeáilte.",
+    "working": "Ag ceangal…",
+    "ready": "Réidh.",
+    "inviteReady": "Rachaidh an cód seo in éag i gceann cúig nóiméad. Greamaigh ar do ghléas eile é.",
+    "errors": {
+      "default": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "peer_unreachable": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "invalid_pairing_code": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "network_unavailable": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "sync_disabled": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "capture_failed": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "storage_unavailable": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo.",
+      "discovery_unavailable": "Níl an nasc ar fáil. Fanann sonraí a fuarthas cheana ar an ngléas seo."
+    },
+    "privacy": "Ní sheoltar sonraí úsáide ná dintiúir chuig an bhforbróir. Ní roinntear ach tomhais chriptithe le gléasanna atá péireáilte go sainráite. Ní scriosann dícheangal cóipeanna a fuarthas cheana.",
+    "networkLimit": "Úsáideann naisc dhíreacha an líonra áitiúil nó VPN príobháideach atá ann cheana, gan athsheachadán, freastalaí aimsithe ná athruithe ródaire. Cuireann líonraí a chuireann bac orthu cosc ar shioncronú uathoibríoch.",
+    "coverage": "{count} taifead ar leith · {duplicates} dúblach bainte · fanann {excluded} taifead áitiúil gan aitheantóir iontaofa. Is tomhais sábháilte iad teorainneacha; ní chuirtear iomláin API leis."
   }
 }

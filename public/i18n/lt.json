@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Pridėti GPT paskyrą",
+    "signIn": "Prisijungti prie OpenAI",
+    "removeLogin": "Pašalinti išsaugotą prisijungimą",
+    "login": {
+      "waiting": "Užbaikite prisijungimą prie OpenAI. Naršyklėje pasirinkite norimą paskyrą.",
+      "complete": "Paskyra prijungta.",
+      "failed": "Prisijungimas nepasiekiamas. Įdiekite Codex CLI arba bandykite dar kartą."
+    },
+    "connectionHelp": "Esami Codex ir OpenCode prisijungimai aptinkami automatiškai. Pridėkite GPT paskyras jų nekeisdami.",
+    "loginPrivacy": "Prisijungimas palaiko ryšį su OpenAI. Prisijungimo duomenys lieka atskirame vietiniame profilyje ir nesiunčiami kūrėjui ar susietiems įrenginiams."
   },
   "codexResets": {
     "title": "Codex · Atstatymų istorija",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Išvada",
     "causeSummary": "Priežastys: {manual} kuponas · {provider} OpenAI (išvada) · {scheduled} suplanuota · {unknown} nežinoma",
     "causeNote": "Ankstyvas laikas neparodo priežasties. OpenAI nustatomas tik pagal išvadą, kai visas kuponų sąrašas lieka nepakitęs per atidžiai stebėtą kvotos atstatymą. Seni žurnalai neatskiria rankinių ir OpenAI atstatymų. Atstatymą inicijavęs asmuo nežinomas."
+  },
+  "deviceSync": {
+    "heading": "Sujunkite savo įrenginius",
+    "enabled": "Įjungti tiesioginį sinchronizavimą",
+    "name": "Įrenginio pavadinimas",
+    "invite": "Sukurti susiejimo kodą",
+    "code": "Susiejimo kodas",
+    "copy": "Kopijuoti kodą",
+    "join": "Prijungti įrenginį",
+    "forget": "Atjungti įrenginį",
+    "view": "Įrenginiai",
+    "local": "Šis įrenginys",
+    "all": "Visi prijungti įrenginiai",
+    "copied": "Kodas nukopijuotas.",
+    "working": "Jungiama…",
+    "ready": "Paruošta.",
+    "inviteReady": "Kodas galioja penkias minutes. Įklijuokite jį kitame įrenginyje.",
+    "errors": {
+      "default": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "peer_unreachable": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "invalid_pairing_code": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "network_unavailable": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "sync_disabled": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "capture_failed": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "storage_unavailable": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje.",
+      "discovery_unavailable": "Ryšys nepasiekiamas. Anksčiau gauti duomenys lieka šiame įrenginyje."
+    },
+    "privacy": "Naudojimo ir prisijungimo duomenys nesiunčiami kūrėjui. Šifruoti matavimai bendrinami tik su aiškiai susietais įrenginiais. Atjungimas neištrina gautų kopijų.",
+    "networkLimit": "Tiesioginis ryšys naudoja vietinį tinklą arba esamą privatų VPN be perdavimo, paieškos serverio ir maršrutizatoriaus pakeitimų. Ryšį blokuojantys tinklai neleidžia automatiškai sinchronizuoti.",
+    "coverage": "{count} unikalių įrašų · pašalinta {duplicates} dublikatų · {excluded} įrašų lieka vietiniai be patikimo identifikatoriaus. Limitai yra išsaugoti matavimai; API sumos nepridedamos."
   }
 }

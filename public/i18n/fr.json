@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Ajouter un compte GPT",
+    "signIn": "Se connecter à OpenAI",
+    "removeLogin": "Supprimer la connexion enregistrée",
+    "login": {
+      "waiting": "Terminez la connexion à OpenAI. Choisissez le compte souhaité dans votre navigateur.",
+      "complete": "Compte connecté.",
+      "failed": "Connexion indisponible. Installez Codex CLI ou réessayez."
+    },
+    "connectionHelp": "Les connexions Codex et OpenCode existantes sont détectées automatiquement. Ajoutez ici d’autres comptes GPT sans les remplacer.",
+    "loginPrivacy": "La connexion communique avec OpenAI. Les identifiants restent dans un profil local séparé et ne sont envoyés ni au développeur ni aux appareils associés."
   },
   "codexResets": {
     "title": "Codex · Historique des resets",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Déduite",
     "causeSummary": "Causes : {manual} coupon · {provider} OpenAI (déduite) · {scheduled} planifiées · {unknown} inconnues",
     "causeNote": "Une réinitialisation anticipée ne révèle pas sa cause. OpenAI est déduit uniquement si la liste complète des coupons reste inchangée lors d’une réinitialisation du quota observée de près. Les anciens journaux ne distinguent pas les réinitialisations manuelles d’OpenAI. La personne à l’origine reste inconnue."
+  },
+  "deviceSync": {
+    "heading": "Connecter vos appareils",
+    "enabled": "Activer la synchronisation directe",
+    "name": "Nom de l’appareil",
+    "invite": "Créer un code d’association",
+    "code": "Code d’association",
+    "copy": "Copier le code",
+    "join": "Connecter l’appareil",
+    "forget": "Déconnecter l’appareil",
+    "view": "Appareils",
+    "local": "Cet appareil",
+    "all": "Tous les appareils connectés",
+    "copied": "Code copié.",
+    "working": "Connexion en cours…",
+    "ready": "Prêt.",
+    "inviteReady": "Ce code expire dans cinq minutes. Collez-le sur votre autre appareil.",
+    "errors": {
+      "default": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "peer_unreachable": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "invalid_pairing_code": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "network_unavailable": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "sync_disabled": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "capture_failed": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "storage_unavailable": "Connexion indisponible. Les données déjà reçues restent sur cet appareil.",
+      "discovery_unavailable": "Connexion indisponible. Les données déjà reçues restent sur cet appareil."
+    },
+    "privacy": "Aucune donnée d’utilisation ni aucun identifiant n’est envoyé au développeur. Seules des mesures chiffrées sont partagées avec les appareils explicitement associés. Les copies déjà reçues ne sont pas effacées lors de la déconnexion.",
+    "networkLimit": "Les connexions directes utilisent le réseau local ou un VPN privé existant, sans relais, serveur de découverte ni modification du routeur. Un réseau bloquant ces connexions empêche la synchronisation automatique.",
+    "coverage": "{count} enregistrements distincts · {duplicates} doublons supprimés · {excluded} enregistrements conservés localement faute d’identifiant fiable. Les limites sont des mesures enregistrées ; les totaux API ne sont pas ajoutés."
   }
 }

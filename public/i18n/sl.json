@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Dodaj račun GPT",
+    "signIn": "Prijava v OpenAI",
+    "removeLogin": "Odstrani shranjeno prijavo",
+    "login": {
+      "waiting": "Dokončajte prijavo v OpenAI. V brskalniku izberite želeni račun.",
+      "complete": "Račun je povezan.",
+      "failed": "Prijava ni na voljo. Namestite Codex CLI ali poskusite znova."
+    },
+    "connectionHelp": "Obstoječe prijave Codex in OpenCode se zaznajo samodejno. Dodajte račune GPT, ne da bi jih zamenjali.",
+    "loginPrivacy": "Prijava komunicira z OpenAI. Prijavni podatki ostanejo v ločenem lokalnem profilu in se ne pošljejo razvijalcu ali povezanim napravam."
   },
   "codexResets": {
     "title": "Codex · Zgodovina ponastavitev",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Sklepano",
     "causeSummary": "Vzroki: {manual} kupon · {provider} OpenAI (sklepano) · {scheduled} načrtovane · {unknown} neznani",
     "causeNote": "Predčasen čas ne določa vzroka. OpenAI se sklepa samo, ko celoten seznam kuponov ostane enak pri natančno opazovani ponastavitvi kvote. Stari dnevniki ne ločijo ročnih ponastavitev od OpenAI. Oseba, ki jo je sprožila, ni znana."
+  },
+  "deviceSync": {
+    "heading": "Povežite svoje naprave",
+    "enabled": "Omogoči neposredno sinhronizacijo",
+    "name": "Ime naprave",
+    "invite": "Ustvari kodo za povezovanje",
+    "code": "Koda za povezovanje",
+    "copy": "Kopiraj kodo",
+    "join": "Poveži napravo",
+    "forget": "Odklopi napravo",
+    "view": "Naprave",
+    "local": "Ta naprava",
+    "all": "Vse povezane naprave",
+    "copied": "Koda kopirana.",
+    "working": "Povezovanje…",
+    "ready": "Pripravljeno.",
+    "inviteReady": "Koda velja pet minut. Prilepite jo na drugi napravi.",
+    "errors": {
+      "default": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "peer_unreachable": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "invalid_pairing_code": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "network_unavailable": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "sync_disabled": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "capture_failed": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "storage_unavailable": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi.",
+      "discovery_unavailable": "Povezava ni na voljo. Prej prejeti podatki ostanejo na tej napravi."
+    },
+    "privacy": "Podatki o uporabi in prijavni podatki se ne pošiljajo razvijalcu. Šifrirane meritve se delijo le z izrecno povezanimi napravami. Odklop ne izbriše že prejetih kopij.",
+    "networkLimit": "Neposredne povezave uporabljajo lokalno omrežje ali obstoječi zasebni VPN, brez releja, strežnika za odkrivanje in sprememb usmerjevalnika. Omrežja, ki to blokirajo, preprečijo samodejno sinhronizacijo.",
+    "coverage": "{count} različnih zapisov · {duplicates} dvojnikov odstranjenih · {excluded} zapisov ostane lokalnih brez zanesljivega identifikatorja. Omejitve so shranjene meritve; vsote API se ne prištevajo."
   }
 }

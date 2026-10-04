@@ -2404,6 +2404,7 @@ function bindEvents() {
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
+  setupConnections();
   els.supportReportDownloadBtn?.addEventListener("click", downloadSupportReport);
   els.supportReportCopyBtn?.addEventListener("click", copySupportReportSummary);
   els.loginDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
@@ -4143,6 +4144,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
     params.set("lang", state.language || DEFAULT_LANGUAGE);
+    params.set("device", connectionState.selectedDevice);
     if (force) params.set("force", "1");
     // Subscription history changes rarely; refresh it on force and on a slow
     // cadence instead of alongside every usage poll.
@@ -4356,6 +4358,7 @@ function render() {
   const selectedRangeRows = usageRowsForSelectedRange(usage.local, chartRows);
   renderSummary(visibleProviders, usage.local, filteredDaily);
   renderGptAccounts(usage.gptAccounts);
+  renderConnections(usage);
   renderCodexResetHistory();
   updateSummaryMetricLayout();
   renderOverviewHistory(chartRows);
@@ -4463,6 +4466,8 @@ function renderCodexResetHistoryContent(history) {
 function renderGptAccounts(registry) {
   if (!els.gptAccountsSection || !els.gptAccountsMeta || !els.gptAccountList) return;
   const accounts = Array.isArray(registry?.accounts) ? registry.accounts : [];
+  document.getElementById("accountOverviewPanel").hidden = accounts.length < 2 && !state.usage?.deviceSync?.enabled;
+  document.getElementById("accountOverviewList").innerHTML = accounts.map(renderGptAccount).join("");
   const activeCount = accounts.filter((account) => account.active).length;
   const scanStatus = registry?.scan?.status || registry?.status || "empty";
   els.gptAccountsRecheckBtn.disabled = state.gptAccountScanPending;
@@ -4516,7 +4521,7 @@ function renderGptAccount(account) {
     </span>
   `).join("");
   const metrics = [];
-  if (Number.isFinite(Number(lifetimeTokens))) {
+  if (typeof lifetimeTokens === "number" && Number.isFinite(lifetimeTokens)) {
     metrics.push(`<span><strong>${escapeHtml(formatTokens(lifetimeTokens))}</strong>${escapeHtml(t("gptAccounts.lifetimeTokens"))}</span>`);
   }
   for (const limit of limits) {
@@ -9691,7 +9696,8 @@ async function openSettings() {
     loadUpdateSettingsAndStatus(),
     loadNotificationSettings(),
     loadNotificationStatus(),
-    loadSourceDiagnostics()
+    loadSourceDiagnostics(),
+    loadConnectionSettings()
   ]);
 }
 

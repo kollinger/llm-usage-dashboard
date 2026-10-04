@@ -7,7 +7,8 @@
     <title data-i18n="app.title">LLM Usage</title>
     <script src="/theme-bootstrap.js"></script>
     <link rel="stylesheet" href="/styles.css" />
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="/vendor/lucide/lucide.js" defer></script>
+    <script src="/connections.js" defer></script>
     <script src="/app.js" defer></script>
   </head>
   <body>
@@ -27,6 +28,11 @@
           <button class="text-button ghost" id="logoutBtn" hidden data-i18n="auth.logout">Logout</button>
         </div>
       </header>
+
+      <div class="device-view-controls" id="deviceViewControls" hidden>
+        <label class="field"><span data-i18n="deviceSync.view">Devices</span><select id="deviceViewSelect"></select></label>
+        <p class="settings-desc" id="deviceSyncCoverage" role="status"></p>
+      </div>
 
       <div class="dashboard-layout" id="dashboardLayout">
       <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf nach Anbieter" data-i18n-aria-label="chart.overviewAria" data-dashboard-panel-id="overview-history" data-dashboard-panel-label-key="chart.overviewAria" hidden>
@@ -64,6 +70,11 @@
           <strong id="recordDayTokens">--</strong>
           <span class="metric-note" id="recordDayDate" hidden></span>
         </div>
+      </section>
+
+      <section class="panel" id="accountOverviewPanel" hidden data-dashboard-panel-id="accounts" data-dashboard-panel-label-key="gptAccounts.heading">
+        <div class="panel-heading"><h2 data-i18n="gptAccounts.heading"></h2></div>
+        <div id="accountOverviewList" class="gpt-account-list"></div>
       </section>
 
       <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel" data-dashboard-panel-id="diagnostics" data-dashboard-panel-label-key="diagnostics.heading">
@@ -253,10 +264,37 @@
             </button>
           </div>
           <p class="gpt-accounts-meta" id="gptAccountsMeta"></p>
+          <p class="settings-desc" data-i18n="gptAccounts.connectionHelp"></p>
+          <button class="text-button" id="gptAccountAddBtn" type="button" data-i18n="gptAccounts.add"></button>
+          <div class="account-login-status" id="gptAccountLogin" hidden aria-live="polite">
+            <p id="gptAccountLoginMessage"></p>
+            <a class="text-button" id="gptAccountLoginLink" target="_blank" rel="noopener noreferrer" hidden data-i18n="gptAccounts.signIn"></a>
+            <button class="text-button ghost" id="gptAccountLoginCancel" type="button" data-i18n="actions.close"></button>
+          </div>
+          <p class="settings-desc" data-i18n="gptAccounts.loginPrivacy"></p>
+          <div id="gptAccountProfiles" class="connection-list"></div>
           <div class="gpt-account-list" id="gptAccountList"></div>
           <p class="gpt-accounts-note" id="gptAccountsNote" data-i18n="gptAccounts.attributionNote">
             OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.
           </p>
+        </section>
+        <section class="settings-section" id="deviceSyncSection">
+          <h3 data-i18n="deviceSync.heading"></h3>
+          <p class="settings-desc" data-i18n="deviceSync.privacy"></p>
+          <p class="settings-desc" data-i18n="deviceSync.networkLimit"></p>
+          <label class="field toggle-field"><input type="checkbox" id="deviceSyncEnabled" /><span data-i18n="deviceSync.enabled"></span></label>
+          <label class="field"><span data-i18n="deviceSync.name"></span><input id="deviceSyncName" type="text" maxlength="60" autocomplete="off" /></label>
+          <div class="connection-actions">
+            <button class="text-button" id="deviceSyncInviteBtn" type="button" data-i18n="deviceSync.invite"></button>
+            <button class="text-button ghost" id="deviceSyncRefreshBtn" type="button" data-i18n="actions.refresh"></button>
+          </div>
+          <label class="field"><span data-i18n="deviceSync.code"></span><textarea id="deviceSyncCode" rows="3" autocomplete="off" spellcheck="false"></textarea></label>
+          <div class="connection-actions">
+            <button class="text-button ghost" id="deviceSyncCopyBtn" type="button" data-i18n="deviceSync.copy"></button>
+            <button class="text-button" id="deviceSyncJoinBtn" type="button" data-i18n="deviceSync.join"></button>
+          </div>
+          <p id="deviceSyncMessage" class="settings-desc" role="status" aria-live="polite"></p>
+          <div id="deviceSyncPeers" class="connection-list"></div>
         </section>
         <div class="settings-section">
           <h3 data-i18n="settings.notifications.title">Limits & Warnungen</h3>

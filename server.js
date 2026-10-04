@@ -14,6 +14,9 @@ const execFileAsync = promisify(execFile);
 const express = require("express");
 const session = require("express-session");
 const packageInfo = require("./package.json");
+const { createGptAccountLogin } = require("./lib/gpt-account-login");
+const { DeviceSync } = require("./lib/device-sync");
+const { exportUsageEvents, combinedUsage } = require("./lib/device-sync-data");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -79,6 +82,7 @@ const CODEX_HOMES = uniquePaths([
   DEFAULT_CODEX_HOME,
   CODEX_HOME,
   ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR),
+  ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles")),
   ...parsePathList(process.env.LLM_USAGE_CODEX_HOMES)
 ]);
 const COPILOT_HOME = expandHome(process.env.COPILOT_HOME || path.join(os.homedir(), ".copilot"));
@@ -542,6 +546,79 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(ROOT, "public")));
+app.use("/vendor/lucide", express.static(path.join(path.dirname(require.resolve("lucide/package.json")), "dist", "umd")));
+
+const deviceSync = new DeviceSync({ dataDir: DATA_DIR });
+const gptLogin = createGptAccountLogin({
+  profilesDir: path.join(DATA_DIR, "codex-profiles"),
+  clientFactory: createCodexAppServer,
+  onComplete: async () => {
+    prepareForcedGptAccountRefresh();
+    await readGptAccounts({ force: true });
+  }
+});
+
+function localControlMiddleware(req, res, next) {
+  const remote = req.socket.remoteAddress?.replace(/^::ffff:/, "");
+  const local = remote === "::1" || remote === "127.0.0.1";
+  const host = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(req.hostname);
+  let originAllowed = true;
+  if (req.get("origin")) {
+    try { originAllowed = new URL(req.get("origin")).origin === `${req.protocol}://${req.get("host")}`; }
+    catch { originAllowed = false; }
+  }
+  if (!local || !host || !originAllowed || req.get("sec-fetch-site") === "cross-site") return res.status(403).json({ error: "local_control_only" });
+  next();
+}
+
+app.get("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, (_req, res) => res.json(gptLogin.status()));
+app.post("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, async (_req, res) => {
+  try { res.json(await gptLogin.start()); }
+  catch { res.status(400).json({ error: "codex_login_unavailable" }); }
+});
+app.delete("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, async (_req, res) => {
+  try { res.json(await gptLogin.cancel()); }
+  catch { res.status(400).json({ error: "login_cancel_failed" }); }
+});
+app.get("/api/gpt-accounts/profiles", authMiddleware, localControlMiddleware, async (_req, res) => {
+  const root = path.join(DATA_DIR, "codex-profiles");
+  const profiles = [];
+  for (const home of defaultCodexAccountHomes(root)) {
+    const id = path.basename(home);
+    if (!/^[a-f0-9-]{36}$/.test(id)) continue;
+    try {
+      const auth = JSON.parse(await fsp.readFile(path.join(home, "auth.json"), "utf8"));
+      const account = codexAccountObservationsFromAuth(auth)[0];
+      if (account) profiles.push({ id, label: account.label, accountId: account.id });
+    } catch { /* Pending and expired logins do not appear as connected accounts. */ }
+  }
+  res.json({ profiles });
+});
+app.delete("/api/gpt-accounts/profiles/:id", authMiddleware, localControlMiddleware, async (req, res) => {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(req.params.id)) return res.status(400).json({ error: "invalid_profile" });
+  try {
+    await fsp.rm(path.join(DATA_DIR, "codex-profiles", req.params.id), { recursive: true, force: true });
+    prepareForcedGptAccountRefresh();
+    res.json({ ok: true });
+  } catch { res.status(400).json({ error: "profile_remove_failed" }); }
+});
+app.get("/api/device-sync", authMiddleware, localControlMiddleware, (_req, res) => res.json(deviceSync.status()));
+app.post("/api/device-sync/:action", authMiddleware, localControlMiddleware, async (req, res) => {
+  try {
+    let result;
+    if (req.params.action === "settings") result = await deviceSync.configure(req.body);
+    else if (req.params.action === "invite") result = deviceSync.createInvite();
+    else if (req.params.action === "join") result = await deviceSync.join(req.body.code);
+    else if (req.params.action === "forget") result = await deviceSync.forget(req.body.id);
+    else if (req.params.action === "refresh") result = await deviceSync.sync();
+    else return res.status(404).json({ error: "unknown_action" });
+    invalidateTimedCache(usageCache);
+    res.json(result);
+  } catch (error) {
+    const allowed = new Set(["sync_disabled", "invalid_pairing_code", "peer_unreachable", "network_unavailable", "invalid_device", "invalid_settings", "device_limit"]);
+    res.status(400).json({ error: allowed.has(error.message) ? error.message : "sync_failed" });
+  }
+});
 
 function expandHome(value) {
   if (!value) return value;
@@ -773,7 +850,13 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
     markInteractiveUsageRequest();
     const usage = await readUsageDashboard({ force: parseBoolean(req.query.force) });
-    res.json(localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)));
+    const selected = typeof req.query.device === "string" ? req.query.device : "local";
+    const sync = deviceSync.status();
+    if (sync.enabled && selected !== "local") {
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+      return res.json({ ...combinedUsage(usage, [...deviceSync.snapshots.values()], selected), deviceSync: sync });
+    }
+    res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
   }
@@ -962,6 +1045,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
     const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, openai, anthropic]).catch(() => []);
     const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
     const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, ollama]);
+    if (deviceSync.config.enabled) {
+      try {
+        await deviceSync.capture({ ...exportUsageEvents([codex, openCode, copilot, claudeCode, gemini, glm, ollama]), accounts: gptAccounts.accounts });
+      } catch { deviceSync.error = "capture_failed"; }
+    }
 
     const now = new Date().toISOString();
     return {
@@ -8465,7 +8553,7 @@ async function pollGptAccountAuthChanges() {
   gptAccountAuthWatchPending = (async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
-    const codexHomes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)]);
+    const codexHomes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR), ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))]);
     const authFiles = [
       ...codexHomes.map((home) => path.join(home, "auth.json")),
       ...openCodeGptAccountAuthFiles(localSources.openCode)
@@ -8545,7 +8633,8 @@ async function readCodexGptAccountObservation(options = {}) {
   const refreshToken = Boolean(options.refreshToken);
   const codexHomes = uniquePaths(options.codexHomes || [
     ...CODEX_HOMES,
-    ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)
+    ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR),
+    ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))
   ]);
   const observations = [];
   let profilesScanned = 0;
@@ -9291,7 +9380,11 @@ async function createCodexAppServer(options = {}) {
         continue;
       }
 
-      if (!message || !Object.prototype.hasOwnProperty.call(message, "id")) continue;
+      if (!message) continue;
+      if (!Object.prototype.hasOwnProperty.call(message, "id")) {
+        if (typeof options.onNotification === "function") options.onNotification(message);
+        continue;
+      }
       const entry = pending.get(String(message.id));
       if (!entry) continue;
       clearTimeout(entry.timeout);
@@ -9751,11 +9844,11 @@ async function fetchText(url, options = {}) {
   return text;
 }
 
-function startOllamaProxy() {
+function startOllamaProxy(host) {
   const proxy = express();
   proxy.use(express.json({ limit: "50mb", type: "*/*" }));
   proxy.all("*", proxyOllamaRequest);
-  const server = proxy.listen(OLLAMA_PROXY_PORT, () => {
+  const server = proxy.listen(OLLAMA_PROXY_PORT, host, () => {
     console.log(`Ollama usage proxy listening on http://localhost:${OLLAMA_PROXY_PORT} -> ${OLLAMA_HOST}`);
   });
   server.on("error", (error) => {
@@ -10785,15 +10878,26 @@ async function appendOllamaUsageLog(event) {
 
 function startDashboard(options = {}) {
   const port = Number(options.port ?? PORT);
-  const dashboardServer = app.listen(port, () => {
+  const dashboardServer = app.listen(port, options.host, () => {
     const address = dashboardServer.address();
     const actualPort = typeof address === "object" && address ? address.port : port;
     currentDashboardUrl = `http://localhost:${actualPort}`;
     console.log(`LLM usage dashboard listening on http://localhost:${actualPort}`);
   });
-  const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy();
+  const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy(options.host);
   startGptAccountAuthWatch();
   const stopCodexResetCollector = startCodexResetCollector();
+  deviceSync.initialize().catch(() => { deviceSync.error = "storage_unavailable"; });
+  let syncReading = false;
+  const syncCollector = setInterval(async () => {
+    if (!deviceSync.config.enabled || syncReading) return;
+    syncReading = true;
+    try { await readUsageDashboard({ maxAgeMs: 30_000 }); }
+    catch { deviceSync.error = "capture_failed"; }
+    finally { syncReading = false; }
+  }, 60_000);
+  syncCollector.unref?.();
+  dashboardServer.once("close", () => { clearInterval(syncCollector); gptLogin.close(); deviceSync.stop().catch(() => {}); });
   dashboardServer.once("close", stopCodexResetCollector);
   return { dashboardServer, ollamaProxyServer };
 }
@@ -10813,6 +10917,7 @@ module.exports = {
   invalidateTimedCache,
   readThroughCache,
   _test: {
+    createCodexAppServer,
     recordCodexResetSnapshot,
     saveCodexHistoricalSamples,
     readCodexResetHistory,

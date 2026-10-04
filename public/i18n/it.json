@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Aggiungi account GPT",
+    "signIn": "Accedi a OpenAI",
+    "removeLogin": "Rimuovi accesso salvato",
+    "login": {
+      "waiting": "Completa l’accesso a OpenAI. Scegli l’account desiderato nel browser.",
+      "complete": "Account collegato.",
+      "failed": "Accesso non disponibile. Installa Codex CLI o riprova."
+    },
+    "connectionHelp": "Gli accessi Codex e OpenCode esistenti vengono rilevati automaticamente. Aggiungi altri account GPT qui senza sostituirli.",
+    "loginPrivacy": "L’accesso comunica con OpenAI. Le credenziali restano in un profilo locale separato e non vengono inviate allo sviluppatore o ai dispositivi abbinati."
   },
   "codexResets": {
     "title": "Codex · Cronologia dei reset",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Dedotta",
     "causeSummary": "Cause: {manual} buono · {provider} OpenAI (dedotta) · {scheduled} programmate · {unknown} sconosciute",
     "causeNote": "Un reset anticipato non identifica la causa. OpenAI viene dedotta solo quando l’inventario completo dei buoni resta invariato durante un reset della quota osservato da vicino. I vecchi log non separano i reset manuali da OpenAI. La persona che lo ha attivato è sconosciuta."
+  },
+  "deviceSync": {
+    "heading": "Collega i tuoi dispositivi",
+    "enabled": "Attiva sincronizzazione diretta",
+    "name": "Nome del dispositivo",
+    "invite": "Crea codice di abbinamento",
+    "code": "Codice di abbinamento",
+    "copy": "Copia codice",
+    "join": "Collega dispositivo",
+    "forget": "Scollega dispositivo",
+    "view": "Dispositivi",
+    "local": "Questo dispositivo",
+    "all": "Tutti i dispositivi collegati",
+    "copied": "Codice copiato.",
+    "working": "Connessione in corso…",
+    "ready": "Pronto.",
+    "inviteReady": "Questo codice scade tra cinque minuti. Incollalo sull’altro dispositivo.",
+    "errors": {
+      "default": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "peer_unreachable": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "invalid_pairing_code": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "network_unavailable": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "sync_disabled": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "capture_failed": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "storage_unavailable": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo.",
+      "discovery_unavailable": "Connessione non disponibile. I dati già ricevuti restano su questo dispositivo."
+    },
+    "privacy": "Nessun dato di utilizzo o credenziale viene inviato allo sviluppatore. Solo misurazioni cifrate vengono condivise con dispositivi abbinati esplicitamente. La disconnessione non elimina le copie già ricevute.",
+    "networkLimit": "Le connessioni dirette usano la rete locale o una VPN privata esistente, senza relay, server di rilevamento o modifiche al router. Le reti che bloccano queste connessioni impediscono la sincronizzazione automatica.",
+    "coverage": "{count} record distinti · {duplicates} duplicati rimossi · {excluded} record restano locali senza identificatore affidabile. I limiti sono misurazioni salvate; i totali API non vengono aggiunti."
   }
 }

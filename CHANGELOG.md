@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.4.0-preview.1 - 2026-10-04
+
+### Added
+
+- Add multiple GPT accounts through OpenAI sign-in with separate local Codex
+  profiles, and show account cards directly in the dashboard.
+- Optional encrypted direct device sync, one-use pairing, automatic LAN
+  rediscovery, offline snapshot history, and all-device/per-device usage views.
+- Deduplicate stable local usage events across devices and show missing coverage.
+  Credentials and conversation content never enter device sync.
+
+### Security
+
+- Serve icons locally and bind the desktop dashboard/proxy to loopback.
+- Restrict account and pairing controls to the local app with origin/Host checks.
+- Update affected Express/updater transitive dependencies to patched versions.
+
+### Preview limits
+
+- Direct reachability is required: no external discovery, relay, or automatic
+  router/VPN setup. See [accounts and direct sync](docs/accounts-and-direct-sync.md)
+  for supported sources, network limits, and the current security model.
+
 ## 1.3.0-preview.3 - 2026-10-04
 
 ### Fixed

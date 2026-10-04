@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Adaugă cont GPT",
+    "signIn": "Autentificare la OpenAI",
+    "removeLogin": "Elimină autentificarea salvată",
+    "login": {
+      "waiting": "Finalizează autentificarea la OpenAI. Alege contul dorit în browser.",
+      "complete": "Cont conectat.",
+      "failed": "Autentificarea nu este disponibilă. Instalează Codex CLI sau încearcă din nou."
+    },
+    "connectionHelp": "Autentificările Codex și OpenCode existente sunt detectate automat. Adaugă conturi GPT fără a le înlocui.",
+    "loginPrivacy": "Autentificarea comunică cu OpenAI. Datele de autentificare rămân într-un profil local separat și nu sunt trimise dezvoltatorului sau dispozitivelor asociate."
   },
   "codexResets": {
     "title": "Codex · Istoricul resetărilor",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Dedusă",
     "causeSummary": "Cauze: {manual} cupon · {provider} OpenAI (dedusă) · {scheduled} programate · {unknown} necunoscute",
     "causeNote": "O resetare anticipată nu identifică cauza. OpenAI este dedusă numai când inventarul complet de cupoane rămâne neschimbat la o resetare a cotei observată atent. Jurnalele vechi nu separă resetările manuale de OpenAI. Persoana care a inițiat resetarea este necunoscută."
+  },
+  "deviceSync": {
+    "heading": "Conectează dispozitivele proprii",
+    "enabled": "Activează sincronizarea directă",
+    "name": "Numele dispozitivului",
+    "invite": "Creează cod de asociere",
+    "code": "Cod de asociere",
+    "copy": "Copiază codul",
+    "join": "Conectează dispozitivul",
+    "forget": "Deconectează dispozitivul",
+    "view": "Dispozitive",
+    "local": "Acest dispozitiv",
+    "all": "Toate dispozitivele conectate",
+    "copied": "Cod copiat.",
+    "working": "Se conectează…",
+    "ready": "Gata.",
+    "inviteReady": "Codul expiră în cinci minute. Lipește-l pe celălalt dispozitiv.",
+    "errors": {
+      "default": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "peer_unreachable": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "invalid_pairing_code": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "network_unavailable": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "sync_disabled": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "capture_failed": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "storage_unavailable": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv.",
+      "discovery_unavailable": "Conexiunea nu este disponibilă. Datele primite anterior rămân pe acest dispozitiv."
+    },
+    "privacy": "Datele de utilizare și de autentificare nu sunt trimise dezvoltatorului. Numai măsurătorile criptate sunt partajate cu dispozitive asociate explicit. Deconectarea nu șterge copiile primite.",
+    "networkLimit": "Conexiunile directe folosesc rețeaua locală sau un VPN privat existent, fără releu, server de descoperire ori modificări ale routerului. Rețelele care le blochează împiedică sincronizarea automată.",
+    "coverage": "{count} înregistrări unice · {duplicates} duplicate eliminate · {excluded} înregistrări rămân locale fără identificator sigur. Limitele sunt măsurători salvate; totalurile API nu se adaugă."
   }
 }

@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Añadir cuenta GPT",
+    "signIn": "Iniciar sesión en OpenAI",
+    "removeLogin": "Eliminar sesión guardada",
+    "login": {
+      "waiting": "Completa el inicio de sesión en OpenAI. Elige la cuenta deseada en el navegador.",
+      "complete": "Cuenta conectada.",
+      "failed": "Inicio de sesión no disponible. Instala Codex CLI o inténtalo de nuevo."
+    },
+    "connectionHelp": "Los inicios de sesión existentes de Codex y OpenCode se detectan automáticamente. Añade más cuentas GPT aquí sin sustituirlos.",
+    "loginPrivacy": "El inicio de sesión se comunica con OpenAI. Las credenciales permanecen en un perfil local independiente y no se envían al desarrollador ni a los dispositivos vinculados."
   },
   "codexResets": {
     "title": "Codex · Historial de reinicios",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Inferido",
     "causeSummary": "Causas: {manual} cupón · {provider} OpenAI (inferido) · {scheduled} programado · {unknown} desconocida",
     "causeNote": "Un reinicio anticipado no identifica la causa. OpenAI solo se infiere si el inventario completo de cupones no cambia durante un reinicio de cuota observado de cerca. Los registros antiguos no separan reinicios manuales de OpenAI. Se desconoce quién lo activó."
+  },
+  "deviceSync": {
+    "heading": "Conectar tus dispositivos",
+    "enabled": "Activar sincronización directa",
+    "name": "Nombre del dispositivo",
+    "invite": "Crear código de vinculación",
+    "code": "Código de vinculación",
+    "copy": "Copiar código",
+    "join": "Conectar dispositivo",
+    "forget": "Desconectar dispositivo",
+    "view": "Dispositivos",
+    "local": "Este dispositivo",
+    "all": "Todos los dispositivos conectados",
+    "copied": "Código copiado.",
+    "working": "Conectando…",
+    "ready": "Listo.",
+    "inviteReady": "Este código caduca en cinco minutos. Pégalo en tu otro dispositivo.",
+    "errors": {
+      "default": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "peer_unreachable": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "invalid_pairing_code": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "network_unavailable": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "sync_disabled": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "capture_failed": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "storage_unavailable": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo.",
+      "discovery_unavailable": "Conexión no disponible. Los datos ya recibidos permanecen en este dispositivo."
+    },
+    "privacy": "No se envían datos de uso ni credenciales al desarrollador. Solo se comparten mediciones cifradas con dispositivos vinculados explícitamente. Desconectar no borra las copias ya recibidas.",
+    "networkLimit": "Las conexiones directas usan la red local o una VPN privada existente, sin relé, servidor de descubrimiento ni cambios en el router. Las redes que bloquean estas conexiones impiden la sincronización automática.",
+    "coverage": "{count} registros únicos · {duplicates} duplicados eliminados · {excluded} registros siguen locales por falta de identificador fiable. Los límites son mediciones guardadas; no se añaden los totales API."
   }
 }

@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Żid kont GPT",
+    "signIn": "Idħol ma’ OpenAI",
+    "removeLogin": "Neħħi l-login salvat",
+    "login": {
+      "waiting": "Imla l-login ma’ OpenAI. Agħżel il-kont mixtieq fil-browser.",
+      "complete": "Kont konness.",
+      "failed": "Il-login mhux disponibbli. Installa Codex CLI jew erġa’ pprova."
+    },
+    "connectionHelp": "Il-logins eżistenti ta’ Codex u OpenCode jinstabu awtomatikament. Żid kontijiet GPT mingħajr ma tibdilhom.",
+    "loginPrivacy": "Il-login jikkomunika ma’ OpenAI. Il-kredenzjali jibqgħu fi profil lokali separat u ma jintbagħtux lill-iżviluppatur jew lill-apparati mqabbla."
   },
   "codexResets": {
     "title": "Codex · Storja tar-resets",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Inferit",
     "causeSummary": "Kawżi: {manual} kupun · {provider} OpenAI (inferit) · {scheduled} skedat · {unknown} mhux magħrufa",
     "causeNote": "Reset bikri ma jidentifikax il-kawża. OpenAI jiġi inferit biss meta l-lista sħiħa tal-kupuni tibqa’ l-istess waqt reset tal-kwota osservat mill-qrib. Logs qodma ma jisseparawx resets manwali minn OpenAI. Il-persuna li bdiet ir-reset mhix magħrufa."
+  },
+  "deviceSync": {
+    "heading": "Qabbad l-apparati tiegħek",
+    "enabled": "Attiva sinkronizzazzjoni diretta",
+    "name": "Isem tal-apparat",
+    "invite": "Oħloq kodiċi ta’ tqabbil",
+    "code": "Kodiċi ta’ tqabbil",
+    "copy": "Ikkopja l-kodiċi",
+    "join": "Qabbad l-apparat",
+    "forget": "Skonnettja l-apparat",
+    "view": "Apparati",
+    "local": "Dan l-apparat",
+    "all": "L-apparati kollha konnessi",
+    "copied": "Kodiċi kkupjat.",
+    "working": "Qed jikkonnettja…",
+    "ready": "Lest.",
+    "inviteReady": "Il-kodiċi jiskadi f’ħames minuti. Waħħlu fuq l-apparat l-ieħor.",
+    "errors": {
+      "default": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "peer_unreachable": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "invalid_pairing_code": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "network_unavailable": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "sync_disabled": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "capture_failed": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "storage_unavailable": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat.",
+      "discovery_unavailable": "Il-konnessjoni mhix disponibbli. Id-data diġà riċevuta tibqa’ fuq dan l-apparat."
+    },
+    "privacy": "Data tal-użu u kredenzjali ma jintbagħtux lill-iżviluppatur. Kejl ikkriptat jinqasam biss ma’ apparati mqabbla espliċitament. L-iskonnessjoni ma tħassarx kopji riċevuti.",
+    "networkLimit": "Konnessjonijiet diretti jużaw in-netwerk lokali jew VPN privat eżistenti, mingħajr relay, server ta’ skoperta jew bidliet fir-router. Netwerks li jimblokkawhom jipprevjenu sinkronizzazzjoni awtomatika.",
+    "coverage": "{count} rekords distinti · {duplicates} duplikati mneħħija · {excluded} rekords jibqgħu lokali mingħajr identifikatur affidabbli. Il-limiti huma kejl salvat; it-totali API ma jiżdiedux."
   }
 }

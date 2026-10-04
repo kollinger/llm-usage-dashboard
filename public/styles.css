@@ -4261,3 +4261,13 @@ textarea {
 .reset-events ul { padding-inline-start: 20px; }
 .reset-events li { margin: 10px 0; }
 .reset-events small { display: block; margin-top: 3px; }
+/* Local account connection and optional direct device exchange. */
+.connection-actions, .connection-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.connection-row { justify-content: space-between; padding-block: 12px; border-bottom: 1px solid var(--line); }
+.connection-list, .account-login-status { margin-block: 12px; }
+.account-login-status .text-button { display: inline-flex; text-decoration: none; }
+.device-view-controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-block: 12px; }
+.device-view-controls[hidden] { display: none; }
+.device-view-controls .field { min-width: min(260px, 100%); }
+#deviceSyncSection textarea { width: 100%; resize: vertical; overflow-wrap: anywhere; font: inherit; }
+#deviceSyncSection .connection-actions { margin-block: 12px; }

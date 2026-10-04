@@ -82,7 +82,17 @@
     "sources": {
       "codex": "Codex",
       "openCode": "OpenCode"
-    }
+    },
+    "add": "Add GPT account",
+    "signIn": "Sign in with OpenAI",
+    "removeLogin": "Remove saved login",
+    "login": {
+      "waiting": "Finish signing in with OpenAI. Select the desired account in your browser.",
+      "complete": "Account connected.",
+      "failed": "Sign-in unavailable. Install Codex CLI or try again."
+    },
+    "connectionHelp": "Existing Codex and OpenCode logins are detected automatically. Add another GPT account here without replacing them.",
+    "loginPrivacy": "Sign-in communicates with OpenAI. Credentials stay in a separate local profile and are never sent to the developer or to paired devices."
   },
   "chart": {
     "eyebrow": "Local capture",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Inferred",
     "causeSummary": "Causes: {manual} credit · {provider} OpenAI (inferred) · {scheduled} scheduled · {unknown} unknown",
     "causeNote": "Early timing does not identify the cause. OpenAI is inferred only when complete credit inventories stay unchanged across a closely observed quota reset. Historical logs cannot separate manual and OpenAI resets. The person who triggered a reset is unknown."
+  },
+  "deviceSync": {
+    "heading": "Connect your devices",
+    "enabled": "Enable direct device sync",
+    "name": "Device name",
+    "invite": "Create pairing code",
+    "code": "Pairing code",
+    "copy": "Copy code",
+    "join": "Connect device",
+    "forget": "Disconnect device",
+    "view": "Devices",
+    "local": "This device",
+    "all": "All connected devices",
+    "copied": "Code copied.",
+    "working": "Connecting…",
+    "ready": "Ready.",
+    "inviteReady": "This code expires in five minutes. Paste it on your other device.",
+    "errors": {
+      "default": "Connection unavailable. Previously received data stays on this device.",
+      "peer_unreachable": "Connection unavailable. Previously received data stays on this device.",
+      "invalid_pairing_code": "Connection unavailable. Previously received data stays on this device.",
+      "network_unavailable": "Connection unavailable. Previously received data stays on this device.",
+      "sync_disabled": "Connection unavailable. Previously received data stays on this device.",
+      "capture_failed": "Connection unavailable. Previously received data stays on this device.",
+      "storage_unavailable": "Connection unavailable. Previously received data stays on this device.",
+      "discovery_unavailable": "Connection unavailable. Previously received data stays on this device."
+    },
+    "privacy": "No usage data or credentials are sent to the developer. Only encrypted usage and quota measurements are shared with devices you explicitly pair. Disconnecting cannot erase copies already received elsewhere.",
+    "networkLimit": "Direct connections use your local network or an existing private VPN. No relay, discovery server or router configuration is used. Networks that block direct connections cannot sync automatically.",
+    "coverage": "{count} distinct records · {duplicates} duplicates removed · {excluded} records remain local because no reliable identifier is available. Account limits are saved measurements; provider API totals are not added."
   }
 }

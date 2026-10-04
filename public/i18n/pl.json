@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Dodaj konto GPT",
+    "signIn": "Zaloguj się w OpenAI",
+    "removeLogin": "Usuń zapisane logowanie",
+    "login": {
+      "waiting": "Dokończ logowanie w OpenAI. Wybierz właściwe konto w przeglądarce.",
+      "complete": "Konto połączone.",
+      "failed": "Logowanie niedostępne. Zainstaluj Codex CLI lub spróbuj ponownie."
+    },
+    "connectionHelp": "Istniejące logowania Codex i OpenCode są wykrywane automatycznie. Dodaj kolejne konta GPT bez ich zastępowania.",
+    "loginPrivacy": "Logowanie komunikuje się z OpenAI. Dane uwierzytelniające pozostają w oddzielnym profilu lokalnym i nie trafiają do twórcy ani do sparowanych urządzeń."
   },
   "codexResets": {
     "title": "Codex · Historia resetów",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Wnioskowane",
     "causeSummary": "Przyczyny: {manual} kupon · {provider} OpenAI (wnioskowane) · {scheduled} planowe · {unknown} nieznane",
     "causeNote": "Przedwczesny termin nie wskazuje przyczyny. OpenAI jest wnioskowane tylko wtedy, gdy pełna lista kuponów nie zmienia się przy dokładnie obserwowanym resecie limitu. Stare logi nie rozróżniają resetów ręcznych i OpenAI. Osoba uruchamiająca reset jest nieznana."
+  },
+  "deviceSync": {
+    "heading": "Połącz swoje urządzenia",
+    "enabled": "Włącz bezpośrednią synchronizację",
+    "name": "Nazwa urządzenia",
+    "invite": "Utwórz kod parowania",
+    "code": "Kod parowania",
+    "copy": "Kopiuj kod",
+    "join": "Połącz urządzenie",
+    "forget": "Odłącz urządzenie",
+    "view": "Urządzenia",
+    "local": "To urządzenie",
+    "all": "Wszystkie połączone urządzenia",
+    "copied": "Kod skopiowany.",
+    "working": "Łączenie…",
+    "ready": "Gotowe.",
+    "inviteReady": "Kod wygasa za pięć minut. Wklej go na drugim urządzeniu.",
+    "errors": {
+      "default": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "peer_unreachable": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "invalid_pairing_code": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "network_unavailable": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "sync_disabled": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "capture_failed": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "storage_unavailable": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu.",
+      "discovery_unavailable": "Połączenie niedostępne. Wcześniej odebrane dane pozostają na tym urządzeniu."
+    },
+    "privacy": "Dane użycia i dane uwierzytelniające nie trafiają do twórcy. Tylko zaszyfrowane pomiary są udostępniane jawnie sparowanym urządzeniom. Odłączenie nie usuwa wcześniej otrzymanych kopii.",
+    "networkLimit": "Bezpośrednie połączenia używają sieci lokalnej lub istniejącej prywatnej sieci VPN, bez przekaźnika, serwera wykrywania ani zmian routera. Sieci blokujące takie połączenia uniemożliwiają automatyczną synchronizację.",
+    "coverage": "{count} unikalnych rekordów · usunięto {duplicates} duplikatów · {excluded} rekordów pozostaje lokalnie bez wiarygodnego identyfikatora. Limity są zapisanymi pomiarami; sumy API nie są dodawane."
   }
 }

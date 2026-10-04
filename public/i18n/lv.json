@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Pievienot GPT kontu",
+    "signIn": "Pierakstīties OpenAI",
+    "removeLogin": "Noņemt saglabāto pierakstīšanos",
+    "login": {
+      "waiting": "Pabeidziet pierakstīšanos OpenAI. Pārlūkā izvēlieties vajadzīgo kontu.",
+      "complete": "Konts savienots.",
+      "failed": "Pierakstīšanās nav pieejama. Instalējiet Codex CLI vai mēģiniet vēlreiz."
+    },
+    "connectionHelp": "Esošās Codex un OpenCode pierakstīšanās tiek atrastas automātiski. Pievienojiet GPT kontus, tās neaizstājot.",
+    "loginPrivacy": "Pierakstīšanās sazinās ar OpenAI. Akreditācijas dati paliek atsevišķā lokālā profilā un netiek sūtīti izstrādātājam vai savienotām ierīcēm."
   },
   "codexResets": {
     "title": "Codex · Atiestatīšanas vēsture",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Secināts",
     "causeSummary": "Iemesli: {manual} kupons · {provider} OpenAI (secināts) · {scheduled} plānots · {unknown} nezināms",
     "causeNote": "Agrīns laiks nenorāda iemeslu. OpenAI secina tikai tad, ja pilns kuponu saraksts paliek nemainīgs cieši novērotas kvotas atiestatīšanas laikā. Vecie žurnāli neatšķir manuālas un OpenAI atiestatīšanas. Persona, kas to izraisīja, nav zināma."
+  },
+  "deviceSync": {
+    "heading": "Savienojiet savas ierīces",
+    "enabled": "Iespējot tiešo sinhronizāciju",
+    "name": "Ierīces nosaukums",
+    "invite": "Izveidot savienošanas kodu",
+    "code": "Savienošanas kods",
+    "copy": "Kopēt kodu",
+    "join": "Savienot ierīci",
+    "forget": "Atvienot ierīci",
+    "view": "Ierīces",
+    "local": "Šī ierīce",
+    "all": "Visas savienotās ierīces",
+    "copied": "Kods nokopēts.",
+    "working": "Savieno…",
+    "ready": "Gatavs.",
+    "inviteReady": "Kods der piecas minūtes. Ielīmējiet to otrā ierīcē.",
+    "errors": {
+      "default": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "peer_unreachable": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "invalid_pairing_code": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "network_unavailable": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "sync_disabled": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "capture_failed": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "storage_unavailable": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē.",
+      "discovery_unavailable": "Savienojums nav pieejams. Iepriekš saņemtie dati paliek šajā ierīcē."
+    },
+    "privacy": "Lietojuma un akreditācijas dati netiek sūtīti izstrādātājam. Šifrēti mērījumi tiek kopīgoti tikai ar skaidri savienotām ierīcēm. Atvienošana neizdzēš saņemtās kopijas.",
+    "networkLimit": "Tiešie savienojumi izmanto lokālo tīklu vai esošu privātu VPN bez starpnieka, atklāšanas servera vai maršrutētāja izmaiņām. Tīkli, kas tos bloķē, nepieļauj automātisku sinhronizāciju.",
+    "coverage": "{count} unikāli ieraksti · {duplicates} dublikāti noņemti · {excluded} ieraksti paliek lokāli bez uzticama identifikatora. Limiti ir saglabāti mērījumi; API summas netiek pievienotas."
   }
 }

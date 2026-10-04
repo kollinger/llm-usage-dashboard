@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Dodaj GPT račun",
+    "signIn": "Prijava u OpenAI",
+    "removeLogin": "Ukloni spremljenu prijavu",
+    "login": {
+      "waiting": "Dovršite prijavu u OpenAI. U pregledniku odaberite željeni račun.",
+      "complete": "Račun je povezan.",
+      "failed": "Prijava nije dostupna. Instalirajte Codex CLI ili pokušajte ponovno."
+    },
+    "connectionHelp": "Postojeće prijave Codex i OpenCode otkrivaju se automatski. Dodajte GPT račune bez njihove zamjene.",
+    "loginPrivacy": "Prijava komunicira s OpenAI-jem. Vjerodajnice ostaju u odvojenom lokalnom profilu i ne šalju se razvojnom programeru ili uparenim uređajima."
   },
   "codexResets": {
     "title": "Codex · Povijest resetiranja",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Izvedeno",
     "causeSummary": "Uzroci: {manual} kupon · {provider} OpenAI (izvedeno) · {scheduled} planirano · {unknown} nepoznato",
     "causeNote": "Prerano vrijeme ne otkriva uzrok. OpenAI se izvodi samo kada potpuni popis kupona ostaje isti tijekom pažljivo opaženog resetiranja kvote. Stari zapisi ne razlikuju ručna resetiranja od OpenAI-ja. Osoba koja je pokrenula resetiranje nije poznata."
+  },
+  "deviceSync": {
+    "heading": "Povežite svoje uređaje",
+    "enabled": "Omogući izravnu sinkronizaciju",
+    "name": "Naziv uređaja",
+    "invite": "Izradi kôd za uparivanje",
+    "code": "Kôd za uparivanje",
+    "copy": "Kopiraj kôd",
+    "join": "Poveži uređaj",
+    "forget": "Odspoji uređaj",
+    "view": "Uređaji",
+    "local": "Ovaj uređaj",
+    "all": "Svi povezani uređaji",
+    "copied": "Kôd kopiran.",
+    "working": "Povezivanje…",
+    "ready": "Spremno.",
+    "inviteReady": "Kôd vrijedi pet minuta. Zalijepite ga na drugom uređaju.",
+    "errors": {
+      "default": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "peer_unreachable": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "invalid_pairing_code": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "network_unavailable": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "sync_disabled": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "capture_failed": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "storage_unavailable": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju.",
+      "discovery_unavailable": "Veza nije dostupna. Prethodno primljeni podaci ostaju na ovom uređaju."
+    },
+    "privacy": "Podaci o korištenju i vjerodajnice ne šalju se razvojnom programeru. Šifrirana mjerenja dijele se samo s izričito uparenim uređajima. Odspajanje ne briše primljene kopije.",
+    "networkLimit": "Izravne veze koriste lokalnu mrežu ili postojeći privatni VPN, bez releja, poslužitelja za otkrivanje i promjena usmjerivača. Mreže koje ih blokiraju sprječavaju automatsku sinkronizaciju.",
+    "coverage": "{count} jedinstvenih zapisa · uklonjeno {duplicates} duplikata · {excluded} zapisa ostaje lokalno bez pouzdanog identifikatora. Ograničenja su spremljena mjerenja; API zbrojevi se ne dodaju."
   }
 }

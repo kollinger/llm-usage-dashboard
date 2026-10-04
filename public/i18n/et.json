@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Lisa GPT-konto",
+    "signIn": "Logi OpenAI-sse sisse",
+    "removeLogin": "Eemalda salvestatud sisselogimine",
+    "login": {
+      "waiting": "Lõpeta OpenAI-sse sisselogimine. Vali brauseris soovitud konto.",
+      "complete": "Konto ühendatud.",
+      "failed": "Sisselogimine pole saadaval. Paigalda Codex CLI või proovi uuesti."
+    },
+    "connectionHelp": "Olemasolevad Codexi ja OpenCode’i sisselogimised tuvastatakse automaatselt. Lisa GPT-kontosid neid asendamata.",
+    "loginPrivacy": "Sisselogimine suhtleb OpenAI-ga. Volitused jäävad eraldi kohalikku profiili ega lähe arendajale ega seotud seadmetele."
   },
   "codexResets": {
     "title": "Codex · Lähtestuste ajalugu",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Järeldatud",
     "causeSummary": "Põhjused: {manual} kupong · {provider} OpenAI (järeldatud) · {scheduled} plaaniline · {unknown} teadmata",
     "causeNote": "Varajane aeg ei näita põhjust. OpenAI järeldatakse ainult siis, kui täielik kupongiloend jääb tihedalt jälgitud kvoodi lähtestamisel samaks. Vanad logid ei erista käsitsi ja OpenAI lähtestamisi. Lähtestaja isik pole teada."
+  },
+  "deviceSync": {
+    "heading": "Ühenda oma seadmed",
+    "enabled": "Luba otsene sünkroonimine",
+    "name": "Seadme nimi",
+    "invite": "Loo sidumiskood",
+    "code": "Sidumiskood",
+    "copy": "Kopeeri kood",
+    "join": "Ühenda seade",
+    "forget": "Katkesta seadme ühendus",
+    "view": "Seadmed",
+    "local": "See seade",
+    "all": "Kõik ühendatud seadmed",
+    "copied": "Kood kopeeritud.",
+    "working": "Ühendamine…",
+    "ready": "Valmis.",
+    "inviteReady": "Kood aegub viie minuti pärast. Kleebi see oma teises seadmes.",
+    "errors": {
+      "default": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "peer_unreachable": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "invalid_pairing_code": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "network_unavailable": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "sync_disabled": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "capture_failed": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "storage_unavailable": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse.",
+      "discovery_unavailable": "Ühendus pole saadaval. Varem saadud andmed jäävad sellesse seadmesse."
+    },
+    "privacy": "Kasutusandmeid ja volitusi ei saadeta arendajale. Krüptitud mõõtmisi jagatakse ainult selgelt seotud seadmetega. Ühenduse katkestamine ei kustuta saadud koopiaid.",
+    "networkLimit": "Otseühendused kasutavad kohalikku võrku või olemasolevat privaatset VPN-i ilma vahendusserveri, otsinguserveri või ruuterimuudatusteta. Neid blokeerivad võrgud takistavad automaatset sünkroonimist.",
+    "coverage": "{count} unikaalset kirjet · {duplicates} duplikaati eemaldatud · {excluded} kirjet jäävad kohaliku usaldusväärse tunnuseta. Piirangud on salvestatud mõõtmised; API kogusummasid ei lisata."
   }
 }

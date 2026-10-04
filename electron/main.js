@@ -219,7 +219,7 @@ function applyNativeThemePreference(preference) {
 async function startBackend() {
   configureDashboardEnv();
   const { startDashboard } = require("../server");
-  const servers = startDashboard({ port: Number(process.env.PORT || 0) });
+  const servers = startDashboard({ port: Number(process.env.PORT || 0), host: "127.0.0.1" });
   dashboardServer = servers.dashboardServer;
   ollamaProxyServer = servers.ollamaProxyServer;
   await new Promise((resolve) => dashboardServer.once("listening", resolve));

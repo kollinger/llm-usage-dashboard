@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "添加 GPT 账户",
+    "signIn": "登录 OpenAI",
+    "removeLogin": "删除已保存的登录",
+    "login": {
+      "waiting": "请完成 OpenAI 登录，并在浏览器中选择所需账户。",
+      "complete": "账户已连接。",
+      "failed": "暂时无法登录。请安装 Codex CLI 或重试。"
+    },
+    "connectionHelp": "自动识别现有 Codex 和 OpenCode 登录。可在此添加其他 GPT 账户，而不替换现有登录。",
+    "loginPrivacy": "登录时会与 OpenAI 通信。凭据保存在独立的本地配置中，不会发送给开发者或配对设备。"
   },
   "codexResets": {
     "title": "Codex · 重置历史",
@@ -1079,5 +1089,35 @@
     "causeInferred": "推断",
     "causeSummary": "原因：{manual} 次重置券 · {provider} 次 OpenAI（推断）· {scheduled} 次按计划 · {unknown} 次未知",
     "causeNote": "提前重置的时间并不能说明原因。只有在密切观察到配额重置且完整重置券清单保持不变时，才推断为 OpenAI 重置。旧日志无法区分手动和 OpenAI 重置。触发重置的人仍然未知。"
+  },
+  "deviceSync": {
+    "heading": "连接自己的设备",
+    "enabled": "启用设备间直接同步",
+    "name": "设备名称",
+    "invite": "生成配对码",
+    "code": "配对码",
+    "copy": "复制配对码",
+    "join": "连接设备",
+    "forget": "断开设备",
+    "view": "设备",
+    "local": "此设备",
+    "all": "所有已连接设备",
+    "copied": "配对码已复制。",
+    "working": "正在连接…",
+    "ready": "就绪。",
+    "inviteReady": "配对码五分钟后失效。请将其粘贴到另一台设备上。",
+    "errors": {
+      "default": "无法连接。已接收的数据仍保存在此设备上。",
+      "peer_unreachable": "无法连接。已接收的数据仍保存在此设备上。",
+      "invalid_pairing_code": "无法连接。已接收的数据仍保存在此设备上。",
+      "network_unavailable": "无法连接。已接收的数据仍保存在此设备上。",
+      "sync_disabled": "无法连接。已接收的数据仍保存在此设备上。",
+      "capture_failed": "无法连接。已接收的数据仍保存在此设备上。",
+      "storage_unavailable": "无法连接。已接收的数据仍保存在此设备上。",
+      "discovery_unavailable": "无法连接。已接收的数据仍保存在此设备上。"
+    },
+    "privacy": "不会向开发者发送用量数据或凭据。仅向明确配对的设备共享加密的用量和额度测量。断开连接不会删除其他设备已接收的副本。",
+    "networkLimit": "直接连接使用本地网络或现有的私有 VPN，不使用中继、发现服务器，也不修改路由器。阻止直接连接的网络无法自动同步。",
+    "coverage": "{count} 条唯一记录 · 已去除 {duplicates} 条重复记录 · {excluded} 条记录因缺少可靠标识而留在本地。账户额度是已保存的测量值；不会累加提供商 API 总量。"
   }
 }

@@ -82,7 +82,17 @@
     "sources": {
       "codex": "Codex",
       "openCode": "OpenCode"
-    }
+    },
+    "add": "GPT-Account hinzufügen",
+    "signIn": "Bei OpenAI anmelden",
+    "removeLogin": "Gespeicherte Anmeldung entfernen",
+    "login": {
+      "waiting": "Schließe die Anmeldung bei OpenAI ab. Wähle im Browser den gewünschten Account.",
+      "complete": "Account verbunden.",
+      "failed": "Anmeldung nicht verfügbar. Installiere Codex CLI oder versuche es erneut."
+    },
+    "connectionHelp": "Vorhandene Codex- und OpenCode-Anmeldungen werden automatisch erkannt. Hier kannst du weitere GPT-Accounts hinzufügen, ohne sie zu ersetzen.",
+    "loginPrivacy": "Die Anmeldung kommuniziert mit OpenAI. Zugangsdaten bleiben in einem getrennten lokalen Profil und werden weder an den Entwickler noch an gekoppelte Geräte gesendet."
   },
   "chart": {
     "eyebrow": "Lokale Erfassung",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Abgeleitet",
     "causeSummary": "Ursachen: {manual} Gutschein · {provider} OpenAI (abgeleitet) · {scheduled} planmäßig · {unknown} unbekannt",
     "causeNote": "Vorzeitig sagt nichts über die Ursache. OpenAI wird nur abgeleitet, wenn vollständige Gutscheinbestände bei einem eng beobachteten Quota-Reset unverändert bleiben. Alte Logs trennen manuelle und OpenAI-Resets nicht. Die auslösende Person bleibt unbekannt."
+  },
+  "deviceSync": {
+    "heading": "Eigene Geräte verbinden",
+    "enabled": "Direkten Geräteaustausch aktivieren",
+    "name": "Gerätename",
+    "invite": "Kopplungscode erstellen",
+    "code": "Kopplungscode",
+    "copy": "Code kopieren",
+    "join": "Gerät verbinden",
+    "forget": "Gerät trennen",
+    "view": "Geräte",
+    "local": "Dieses Gerät",
+    "all": "Alle verbundenen Geräte",
+    "copied": "Code kopiert.",
+    "working": "Verbindung wird aufgebaut…",
+    "ready": "Bereit.",
+    "inviteReady": "Dieser Code gilt fünf Minuten. Füge ihn auf deinem anderen Gerät ein.",
+    "errors": {
+      "default": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "peer_unreachable": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "invalid_pairing_code": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "network_unavailable": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "sync_disabled": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "capture_failed": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "storage_unavailable": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät.",
+      "discovery_unavailable": "Verbindung nicht verfügbar. Bereits empfangene Daten bleiben auf diesem Gerät."
+    },
+    "privacy": "Keine Verbrauchsdaten oder Zugangsdaten werden an den Entwickler gesendet. Nur verschlüsselte Verbrauchs- und Limitmessungen werden mit ausdrücklich gekoppelten Geräten geteilt. Das Trennen löscht keine bereits anderswo empfangenen Kopien.",
+    "networkLimit": "Direkte Verbindungen nutzen dein lokales Netzwerk oder ein bestehendes privates VPN. Es werden kein Relay, kein Suchserver und keine Routeränderungen verwendet. Netzwerke, die direkte Verbindungen blockieren, können nicht automatisch synchronisieren.",
+    "coverage": "{count} eindeutige Datensätze · {duplicates} Duplikate entfernt · {excluded} Datensätze bleiben mangels verlässlicher Kennung lokal. Kontolimits sind gespeicherte Messungen; Provider-API-Gesamtwerte werden nicht addiert."
   }
 }

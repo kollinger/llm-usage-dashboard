@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Lägg till GPT-konto",
+    "signIn": "Logga in hos OpenAI",
+    "removeLogin": "Ta bort sparad inloggning",
+    "login": {
+      "waiting": "Slutför inloggningen hos OpenAI. Välj önskat konto i webbläsaren.",
+      "complete": "Kontot är anslutet.",
+      "failed": "Inloggning är inte tillgänglig. Installera Codex CLI eller försök igen."
+    },
+    "connectionHelp": "Befintliga Codex- och OpenCode-inloggningar upptäcks automatiskt. Lägg till GPT-konton utan att ersätta dem.",
+    "loginPrivacy": "Inloggningen kommunicerar med OpenAI. Inloggningsuppgifter stannar i en separat lokal profil och skickas inte till utvecklaren eller parkopplade enheter."
   },
   "codexResets": {
     "title": "Codex · Återställningshistorik",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Härledd",
     "causeSummary": "Orsaker: {manual} kupong · {provider} OpenAI (härledd) · {scheduled} schemalagda · {unknown} okända",
     "causeNote": "Ett tidigt tillfälle visar inte orsaken. OpenAI härleds bara när den fullständiga kuponglistan är oförändrad vid en noggrant observerad kvotåterställning. Gamla loggar skiljer inte manuella återställningar från OpenAI. Personen som utlöste återställningen är okänd."
+  },
+  "deviceSync": {
+    "heading": "Anslut dina enheter",
+    "enabled": "Aktivera direkt synkronisering",
+    "name": "Enhetsnamn",
+    "invite": "Skapa parkopplingskod",
+    "code": "Parkopplingskod",
+    "copy": "Kopiera kod",
+    "join": "Anslut enhet",
+    "forget": "Koppla från enhet",
+    "view": "Enheter",
+    "local": "Den här enheten",
+    "all": "Alla anslutna enheter",
+    "copied": "Koden kopierad.",
+    "working": "Ansluter…",
+    "ready": "Klart.",
+    "inviteReady": "Koden går ut om fem minuter. Klistra in den på din andra enhet.",
+    "errors": {
+      "default": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "peer_unreachable": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "invalid_pairing_code": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "network_unavailable": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "sync_disabled": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "capture_failed": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "storage_unavailable": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten.",
+      "discovery_unavailable": "Anslutningen är inte tillgänglig. Tidigare mottagna data finns kvar på den här enheten."
+    },
+    "privacy": "Användningsdata och inloggningsuppgifter skickas inte till utvecklaren. Endast krypterade mätningar delas med uttryckligen parkopplade enheter. Frånkoppling raderar inte redan mottagna kopior.",
+    "networkLimit": "Direkta anslutningar använder det lokala nätverket eller en befintlig privat VPN utan relay, sökserver eller routerändringar. Nätverk som blockerar detta förhindrar automatisk synkronisering.",
+    "coverage": "{count} unika poster · {duplicates} dubbletter borttagna · {excluded} poster förblir lokala utan säker identifiering. Gränser är sparade mätningar; API-totaler läggs inte till."
   }
 }

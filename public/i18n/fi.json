@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Lisää GPT-tili",
+    "signIn": "Kirjaudu OpenAI-palveluun",
+    "removeLogin": "Poista tallennettu kirjautuminen",
+    "login": {
+      "waiting": "Viimeistele OpenAI-kirjautuminen. Valitse haluamasi tili selaimessa.",
+      "complete": "Tili yhdistetty.",
+      "failed": "Kirjautuminen ei ole saatavilla. Asenna Codex CLI tai yritä uudelleen."
+    },
+    "connectionHelp": "Olemassa olevat Codex- ja OpenCode-kirjautumiset tunnistetaan automaattisesti. Lisää GPT-tilejä korvaamatta niitä.",
+    "loginPrivacy": "Kirjautuminen viestii OpenAI:n kanssa. Tunnukset pysyvät erillisessä paikallisessa profiilissa, eikä niitä lähetetä kehittäjälle tai yhdistetyille laitteille."
   },
   "codexResets": {
     "title": "Codex · Nollaushistoria",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Päätelty",
     "causeSummary": "Syyt: {manual} kuponki · {provider} OpenAI (päätelty) · {scheduled} ajastettu · {unknown} tuntematon",
     "causeNote": "Ennenaikainen ajankohta ei osoita syytä. OpenAI päätellään vain, kun täydellinen kuponkiluettelo pysyy samana tarkasti havaitussa kiintiön nollauksessa. Vanhat lokit eivät erota manuaalisia ja OpenAI-nollauksia. Nollauksen käynnistänyt henkilö on tuntematon."
+  },
+  "deviceSync": {
+    "heading": "Yhdistä omat laitteesi",
+    "enabled": "Ota suora synkronointi käyttöön",
+    "name": "Laitteen nimi",
+    "invite": "Luo pariliitoskoodi",
+    "code": "Pariliitoskoodi",
+    "copy": "Kopioi koodi",
+    "join": "Yhdistä laite",
+    "forget": "Katkaise laitteen yhteys",
+    "view": "Laitteet",
+    "local": "Tämä laite",
+    "all": "Kaikki yhdistetyt laitteet",
+    "copied": "Koodi kopioitu.",
+    "working": "Yhdistetään…",
+    "ready": "Valmis.",
+    "inviteReady": "Koodi vanhenee viiden minuutin kuluttua. Liitä se toisella laitteellasi.",
+    "errors": {
+      "default": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "peer_unreachable": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "invalid_pairing_code": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "network_unavailable": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "sync_disabled": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "capture_failed": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "storage_unavailable": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa.",
+      "discovery_unavailable": "Yhteys ei ole saatavilla. Aiemmin vastaanotetut tiedot säilyvät tässä laitteessa."
+    },
+    "privacy": "Käyttötietoja ja tunnuksia ei lähetetä kehittäjälle. Vain salattuja mittauksia jaetaan erikseen yhdistetyille laitteille. Yhteyden katkaisu ei poista vastaanotettuja kopioita.",
+    "networkLimit": "Suorat yhteydet käyttävät lähiverkkoa tai olemassa olevaa yksityistä VPN:ää ilman välityspalvelinta, löytöpalvelinta tai reititinmuutoksia. Estävät verkot estävät automaattisen synkronoinnin.",
+    "coverage": "{count} yksilöllistä tietuetta · {duplicates} kaksoiskappaletta poistettu · {excluded} tietuetta säilyy paikallisena ilman luotettavaa tunnistetta. Rajat ovat tallennettuja mittauksia; API-summia ei lisätä."
   }
 }

@@ -1025,7 +1025,17 @@
       "codex": "Codex",
       "openCode": "OpenCode"
     },
-    "activeSourceCountOne": "1 active source"
+    "activeSourceCountOne": "1 active source",
+    "add": "Adicionar conta GPT",
+    "signIn": "Iniciar sessão na OpenAI",
+    "removeLogin": "Remover sessão guardada",
+    "login": {
+      "waiting": "Conclua o início de sessão na OpenAI. Escolha a conta pretendida no navegador.",
+      "complete": "Conta ligada.",
+      "failed": "Início de sessão indisponível. Instale Codex CLI ou tente novamente."
+    },
+    "connectionHelp": "As sessões existentes de Codex e OpenCode são detetadas automaticamente. Adicione mais contas GPT aqui sem as substituir.",
+    "loginPrivacy": "O início de sessão comunica com a OpenAI. As credenciais ficam num perfil local separado e não são enviadas ao programador nem aos dispositivos emparelhados."
   },
   "codexResets": {
     "title": "Codex · Histórico de reposições",
@@ -1079,5 +1089,35 @@
     "causeInferred": "Inferida",
     "causeSummary": "Causas: {manual} cupão · {provider} OpenAI (inferida) · {scheduled} programadas · {unknown} desconhecidas",
     "causeNote": "Uma reposição antecipada não identifica a causa. OpenAI só é inferida quando o inventário completo de cupões fica inalterado durante uma reposição de quota observada de perto. Os registos antigos não separam reposições manuais de OpenAI. A pessoa que a iniciou é desconhecida."
+  },
+  "deviceSync": {
+    "heading": "Ligar os seus dispositivos",
+    "enabled": "Ativar sincronização direta",
+    "name": "Nome do dispositivo",
+    "invite": "Criar código de emparelhamento",
+    "code": "Código de emparelhamento",
+    "copy": "Copiar código",
+    "join": "Ligar dispositivo",
+    "forget": "Desligar dispositivo",
+    "view": "Dispositivos",
+    "local": "Este dispositivo",
+    "all": "Todos os dispositivos ligados",
+    "copied": "Código copiado.",
+    "working": "A ligar…",
+    "ready": "Pronto.",
+    "inviteReady": "Este código expira em cinco minutos. Cole-o no outro dispositivo.",
+    "errors": {
+      "default": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "peer_unreachable": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "invalid_pairing_code": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "network_unavailable": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "sync_disabled": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "capture_failed": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "storage_unavailable": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo.",
+      "discovery_unavailable": "Ligação indisponível. Os dados já recebidos permanecem neste dispositivo."
+    },
+    "privacy": "Não são enviados dados de utilização nem credenciais ao programador. Apenas medições encriptadas são partilhadas com dispositivos explicitamente emparelhados. Desligar não apaga cópias já recebidas.",
+    "networkLimit": "As ligações diretas usam a rede local ou uma VPN privada existente, sem relay, servidor de descoberta ou alterações ao router. Redes que bloqueiam estas ligações impedem a sincronização automática.",
+    "coverage": "{count} registos únicos · {duplicates} duplicados removidos · {excluded} registos ficam locais sem identificador fiável. Os limites são medições guardadas; os totais API não são adicionados."
   }
 }
