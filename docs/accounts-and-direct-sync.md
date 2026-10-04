@@ -98,8 +98,8 @@ Each device generates X25519 and Ed25519 keys locally. Pairing pins the public
 identity from the supplied code. Messages use X25519/HKDF-SHA256-derived keys,
 AES-256-GCM authenticated encryption, and Ed25519 signatures. Nonces, response
 binding, and bounded timestamps reject packet replay. Snapshots retain their
-origin signature when another paired device forwards them. Downloads are paged,
-size-limited, and committed only after the complete signed revision verifies.
+origin signature when another paired device forwards them. Downloads are paged; unchanged blocks are reused after comparing hashes and
+verifying the complete signed revision. Downloads are size-limited, and committed only after the complete signed revision verifies.
 
 Private keys/settings use owner-only permissions on POSIX systems. Received
 snapshots are encrypted at rest in `data/device-sync/snapshots.json`, with a key
@@ -117,5 +117,5 @@ device from every remaining device is necessary. This preview does not yet offer
 recovery or a group-wide revocation/re-enrollment flow.
 
 The current bounds are 20 directly paired peers, 40 snapshot origins, and
-250,000 stable events per origin. An exceeded bound produces an incomplete/
+1,000,000 stable events per origin. An exceeded bound produces an incomplete/
 unreachable indication rather than publishing a partial snapshot.

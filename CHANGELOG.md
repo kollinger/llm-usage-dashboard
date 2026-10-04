@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0-preview.2 - 2026-10-04
+
+### Fixed
+
+- Support large usage histories up to one million stable events per device.
+- Transfer only changed event blocks after the first sync, including quota-only
+  changes, while verifying the complete signed snapshot before accepting it.
+- Preserve the local view with a visible coverage error if the initial local
+  snapshot cannot be created, instead of showing an empty combined total.
+
 ## 1.4.0-preview.1 - 2026-10-04
 
 ### Added

@@ -854,6 +854,9 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
     const sync = deviceSync.status();
     if (sync.enabled && selected !== "local") {
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+      if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
+        return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
+      }
       return res.json({ ...combinedUsage(usage, [...deviceSync.snapshots.values()], selected), deviceSync: sync });
     }
     res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
@@ -1048,6 +1051,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
     if (deviceSync.config.enabled) {
       try {
         await deviceSync.capture({ ...exportUsageEvents([codex, openCode, copilot, claudeCode, gemini, glm, ollama]), accounts: gptAccounts.accounts });
+        if (deviceSync.error === "capture_failed") deviceSync.error = null;
       } catch { deviceSync.error = "capture_failed"; }
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "llm-usage-dashboard",
-  "version": "1.4.0-preview.1",
+  "version": "1.4.0-preview.2",
   "private": true,
   "description": "Local dashboard for Codex, OpenAI, Anthropic/Claude, Gemini, and local LLM token usage.",
   "author": {
@@ -24,7 +24,8 @@
     "dist:mac": "electron-builder --mac dmg zip --universal",
     "dist:linux": "electron-builder --linux AppImage",
     "dist:win": "electron-builder --win nsis portable --x64",
-    "dist:dir": "electron-builder --dir"
+    "dist:dir": "electron-builder --dir",
+    "test:sync-large": "node test/device-sync-large.test.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",

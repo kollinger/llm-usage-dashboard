@@ -126,7 +126,11 @@ async function connectionAction(action, body, onSuccess) {
 function renderConnections(usage) {
   if (usage?.deviceSync) renderDeviceSync(usage.deviceSync);
   const coverage = usage?.syncCoverage;
-  connectionElement("deviceSyncCoverage").textContent = coverage
+  connectionElement("deviceSyncCoverage").textContent = coverage?.unavailable
+    ? `${t("deviceSync.local")} · ${t("deviceSync.errors.default")}`
+    : usage?.deviceSync?.error
+      ? t("deviceSync.errors.default")
+      : coverage
     ? t("deviceSync.coverage", { count: formatTokens(coverage.eventCount), excluded: formatTokens(coverage.excludedEvents), duplicates: formatTokens(coverage.duplicatesSkipped) })
     : t("deviceSync.local");
 }
