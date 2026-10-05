@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Az első bejelentkezéskor az alkalmazás közvetlenül a Kimitől tölti le a hivatalos Kimi-segédprogramot. Helyben fut; az irányítópult nem küld telemetriát.",
     "lastSeen": "Utoljára észlelve: {time}"
+  },
+  "history": {
+    "refreshing": "Mentett előzmények · {time}. Frissítés a háttérben."
   }
 }

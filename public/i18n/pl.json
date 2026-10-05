@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Przy pierwszym logowaniu aplikacja pobiera oficjalne narzędzie Kimi bezpośrednio od Kimi. Działa lokalnie; panel nie wysyła telemetrii.",
     "lastSeen": "Ostatnio widziane {time}"
+  },
+  "history": {
+    "refreshing": "Zapisana historia · {time}. Aktualizacja w tle."
   }
 }

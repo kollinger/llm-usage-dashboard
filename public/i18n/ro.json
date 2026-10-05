@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "La prima autentificare, aplicația descarcă instrumentul oficial Kimi direct de la Kimi. Rulează local; panoul nu trimite telemetrie.",
     "lastSeen": "Văzut ultima dată {time}"
+  },
+  "history": {
+    "refreshing": "Istoric salvat · {time}. Actualizare în fundal."
   }
 }

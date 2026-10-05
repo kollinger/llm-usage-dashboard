@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Pri prvoj prijavi aplikacija preuzima službeni Kimi pomoćni program izravno od Kimija. Radi lokalno; nadzorna ploča ne šalje telemetriju.",
     "lastSeen": "Zadnji put viđeno {time}"
+  },
+  "history": {
+    "refreshing": "Spremljena povijest · {time}. Ažuriranje u pozadini."
   }
 }

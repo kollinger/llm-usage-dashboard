@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { mkdtemp, writeFile, readFile, readdir, chmod, stat, rm, rename, utimes } from "node:fs/promises";
 import { createRequire } from "node:module";
 import os from "node:os";
@@ -33,8 +34,10 @@ try {
   const saved = path.join(directory, (await readdir(directory))[0]);
   const decoded = (await decompress(await readFile(saved))).toString();
   assert(!decoded.includes(transcript), "the cache must contain extracted usage, never transcript content");
-  assert.equal((await stat(directory)).mode & 0o777, 0o700);
-  assert.equal((await stat(saved)).mode & 0o777, 0o600);
+  if (process.platform !== "win32") {
+    assert.equal((await stat(directory)).mode & 0o777, 0o700);
+    assert.equal((await stat(saved)).mode & 0o777, 0o600);
+  }
   assert.deepEqual(await readUsageFileEvents(new Map(), record, parse, options), first);
   assert.equal(parses, 1, "a new process can reuse unchanged extraction without parsing the transcript");
   await writeFile(file, fixture(5));
@@ -52,7 +55,13 @@ try {
   await rename(replacement, file);
   const memory = new Map();
   assert.equal((await readUsageFileEvents(memory, record, parse, options))[0].usage.total_tokens, 7);
-  if (process.getuid?.() !== 0) {
+  if (process.platform === "win32") {
+    const account = os.userInfo().username;
+    execFileSync("icacls", [file, "/deny", `${account}:(R)`], { stdio: "ignore" });
+    try {
+      assert.deepEqual(await readUsageFileEvents(memory, record, parse, options), [], "cached values do not bypass Windows source ACLs");
+    } finally { execFileSync("icacls", [file, "/remove:d", account], { stdio: "ignore" }); }
+  } else if (process.getuid?.() !== 0) {
     await chmod(file, 0o000);
     assert.deepEqual(await readUsageFileEvents(memory, record, parse, options), [], "cached values do not bypass source read permissions");
     await chmod(file, 0o600);

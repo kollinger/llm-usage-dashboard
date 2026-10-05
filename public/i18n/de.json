@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Bei der ersten Anmeldung lädt die App das offizielle Hilfsprogramm von Kimi direkt von Kimi herunter. Es läuft lokal; das Dashboard sendet dabei keine Telemetrie.",
     "lastSeen": "Zuletzt gesehen {time}"
+  },
+  "history": {
+    "refreshing": "Gespeicherter Verlauf · {time}. Aktualisierung läuft im Hintergrund."
   }
 }

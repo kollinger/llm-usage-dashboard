@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Fl-ewwel dħul, l-app tniżżel l-għodda uffiċjali ta’ Kimi direttament mingħand Kimi. Taħdem lokalment; id-dashboard ma jibgħatx telemetrija.",
     "lastSeen": "Deher l-aħħar {time}"
+  },
+  "history": {
+    "refreshing": "Storja ssejvjata · {time}. Aġġornament fl-isfond."
   }
 }

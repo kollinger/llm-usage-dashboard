@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Ved første login henter appen den officielle Kimi-hjælper direkte fra Kimi. Den kører lokalt; dashboardet sender ingen telemetri.",
     "lastSeen": "Sidst set {time}"
+  },
+  "history": {
+    "refreshing": "Gemt historik · {time}. Opdaterer i baggrunden."
   }
 }

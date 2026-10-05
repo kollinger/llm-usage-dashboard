@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Bij de eerste aanmelding downloadt de app het officiële Kimi-hulpprogramma rechtstreeks van Kimi. Het draait lokaal; het dashboard verstuurt geen telemetrie.",
     "lastSeen": "Laatst gezien {time}"
+  },
+  "history": {
+    "refreshing": "Opgeslagen geschiedenis · {time}. Wordt op de achtergrond bijgewerkt."
   }
 }

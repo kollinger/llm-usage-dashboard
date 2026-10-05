@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "On first sign-in, the app downloads the official Kimi helper directly from Kimi. It runs locally; the dashboard sends no telemetry.",
     "lastSeen": "Last seen {time}"
+  },
+  "history": {
+    "refreshing": "Saved history · {time}. Updating in the background."
   }
 }

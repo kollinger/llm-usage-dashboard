@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Al primo accesso, l’app scarica lo strumento ufficiale Kimi direttamente da Kimi. Viene eseguito localmente; la dashboard non invia telemetria.",
     "lastSeen": "Ultimo rilevamento {time}"
+  },
+  "history": {
+    "refreshing": "Cronologia salvata · {time}. Aggiornamento in background."
   }
 }

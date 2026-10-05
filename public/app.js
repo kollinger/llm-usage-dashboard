@@ -8,6 +8,7 @@ const state = {
   codexResetError: false,
   loadingUsage: false,
   loadingUsageDevice: null,
+  usageRequestAbort: null,
   queuedUsageScope: false,
   queuedUsageForce: false,
   queuedUsageIndicator: false,
@@ -4134,7 +4135,10 @@ function systemMetricsPollDelayMs() {
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
   if (state.loadingUsage) {
-    if (connectionState.selectedDevice !== state.loadingUsageDevice) state.queuedUsageScope = true;
+    if (connectionState.selectedDevice !== state.loadingUsageDevice) {
+      state.queuedUsageScope = true;
+      state.usageRequestAbort?.abort();
+    }
     if (force) {
       state.queuedUsageForce = true;
       state.queuedUsageIndicator ||= showIndicator;
@@ -4153,6 +4157,8 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   if (force) state.gptAccountScanMessage = "";
   const requestedDevice = connectionState.selectedDevice;
   state.loadingUsageDevice = requestedDevice;
+  const requestAbort = new AbortController();
+  state.usageRequestAbort = requestAbort;
   setUsageLoading(true, showIndicator);
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
@@ -4166,9 +4172,9 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
       !state.subscriptionHistory ||
       Date.now() - (state.subscriptionHistoryFetchedAt || 0) >= SUBSCRIPTION_HISTORY_REFRESH_MS;
     const [usage, subscriptionHistory] = await Promise.all([
-      fetchJson(`/api/usage?${params.toString()}`),
+      fetchJson(`/api/usage?${params.toString()}`, { signal: requestAbort.signal }),
       refreshSubscriptionHistory
-        ? fetchJson("/api/subscription-history").catch((error) => {
+        ? fetchJson("/api/subscription-history", { signal: requestAbort.signal }).catch((error) => {
             if (error.status === 401) throw error;
             // Keep the previous data on transient failures and retry next poll.
             return null;
@@ -4184,6 +4190,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     state.subscriptionHistory = subscriptionHistory || state.subscriptionHistory || { version: 1, entries: [] };
     renderUsageIfChanged({ force });
   } catch (error) {
+    if (requestAbort.signal.aborted) return;
     if (error.status === 401) {
       await loadAuth();
       renderLocked();
@@ -4194,6 +4201,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     // render even when its payload matches the last rendered signature.
     state.lastUsageRenderSignature = null;
   } finally {
+    if (state.usageRequestAbort === requestAbort) state.usageRequestAbort = null;
     setUsageLoading(false);
     if (state.queuedUsageForce || state.queuedUsageScope) {
       const shouldRunQueuedUsage = !state.auth || state.auth.authenticated;
@@ -4357,6 +4365,11 @@ function renderUsageIfChanged({ force = false } = {}) {
 
 function render() {
   const usage = state.usage;
+  const historyNotice = document.getElementById("usageRefreshNotice");
+  if (historyNotice) {
+    historyNotice.hidden = !usage.cache?.refreshing;
+    historyNotice.textContent = historyNotice.hidden ? "" : t("history.refreshing", { time: formatUpdatedAt(usage.local?.updatedAt) });
+  }
   const providers = orderProviders(buildProviders(usage));
   const visibleProviders = state.showAllProviders ? providers : providers.filter(providerHasUsage);
   const chartScrollState = captureChartScrollState();

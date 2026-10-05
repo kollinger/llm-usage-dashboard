@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.0-preview.10 - 2026-10-05
+
+### Fixed
+
+- Restore completed token charts immediately after a restart, with the saved
+  timestamp and a visible background-update notice; read live Codex limits separately.
+- Calculate provider and Spark histories in one pass, preserving model totals,
+  copied-record deduplication and each provider's full date range.
+- Verify encrypted device histories in a background worker so startup does not
+  block the dashboard HTTP server.
+- Cancel obsolete chart requests when switching installations.
+- Recheck actual source read access before using extraction caches, including
+  Windows access-control permissions.
+
 ## 1.6.0-preview.9 - 2026-10-05
 
 ### Fixed
