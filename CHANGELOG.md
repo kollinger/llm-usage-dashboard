@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0-preview.2 - 2026-10-05
+
+### Fixed
+
+- Keep pairing reliable while installations collect or synchronize large histories.
+- Use clearly separated installation and account colors that stay consistent across date filters.
+
 ## 1.6.0-preview.1 - 2026-10-05
 
 ### Added
