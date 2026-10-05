@@ -25,8 +25,21 @@ state.chartBreakdownMode = "account";
 const tooltip = chartHistoryDetail(days[0]);
 const slotHtml = renderHistorySlotTimeline({ rows: [{ ...days[0], slotStart: "2026-10-04T12:00:00.000Z" }], max: 200, axisY: 240, chartHeight: 200, xForRow: () => 20, valueForRow: row => row.totalTokens, valueFormatter: formatTokens });
 const fallback = buildFallbackHistorySlots([{ ...days[0], date: new Date().toISOString().slice(0, 10) }], "today");
+const paletteDevices = ["fixture-d", "fixture-b", "fixture-c", "fixture-a"].map((id) => ({ id, label: id, quality: "observed", totalTokens: 25 }));
+const paletteAccounts = paletteDevices.map((row) => ({ ...row, id: "gpt:" + row.id, quality: "recorded" }));
+const paletteDay = { totalTokens: 100, attribution: { devices: paletteDevices, accounts: paletteAccounts } };
+state.usage = { deviceSync: { deviceId: "fixture-d", devices: paletteDevices }, local: { daily: [paletteDay], attribution: paletteDay.attribution } };
+const paletteColors = Object.fromEntries(chartAttributionEntries([paletteDay], "device").map((row) => [row.attributionId, row.color]));
+const accountColors = Object.fromEntries(chartAttributionEntries([paletteDay], "account").map((row) => [row.attributionId, row.color]));
+const subsetColors = Object.fromEntries(chartAttributionEntries([{ totalTokens: 25, attribution: { devices: [paletteDevices[0]] } }], "device").map((row) => [row.attributionId, row.color]));
+const accountSubsetColors = Object.fromEntries(chartAttributionEntries([{ totalTokens: 25, attribution: { accounts: [paletteAccounts[0]] } }], "account").map((row) => [row.attributionId, row.color]));
+state.usage = JSON.parse(JSON.stringify(state.usage));
+state.usage.deviceSync.devices.reverse();
+state.usage.local.attribution.devices.reverse();
+const refreshedColors = Object.fromEntries(chartAttributionEntries([{ ...paletteDay, attribution: { ...paletteDay.attribution, devices: paletteDevices.map((row) => ({ ...row, label: "Renamed" })) } }], "device").map((row) => [row.attributionId, row.color]));
 JSON.stringify({
-  deviceEntries, accountEntries,
+  deviceEntries, accountEntries, paletteColors, accountColors, subsetColors, accountSubsetColors, refreshedColors,
+  specialColors: [chartAttributionColor({ id: "unknown" }, "device"), chartAttributionColor({ id: "shared" }, "device")],
   perDay: days.map(day => chartSegmentsForDay(day, accountEntries).reduce((sum, row) => sum + row.totalTokens, 0)),
   absent: chartAttributionRows({ totalTokens: 45 }, "account"),
   overflow: chartAttributionRows({ totalTokens: 100, attribution: { devices: [device] } }, "device"),
@@ -54,6 +67,17 @@ assert.equal(result.partial.length, 1);
 assert.equal(result.partial[0].totalTokens, 200);
 assert.equal(result.conflict, "Unknown account");
 assert.equal(result.stableColor, true);
+assert.equal(new Set(Object.values(result.paletteColors)).size, 4, "four known installations must have distinct colors");
+assert.equal(new Set(Object.values(result.accountColors)).size, 4, "four known accounts must have distinct colors");
+assert.equal(result.subsetColors["fixture-d"], result.paletteColors["fixture-d"], "filtering other installations must not change a color");
+assert.equal(result.accountSubsetColors["gpt:fixture-d"], result.accountColors["gpt:fixture-d"], "date filters must retain the all-time account colors");
+assert.deepEqual(result.refreshedColors, result.paletteColors, "refresh, input order and labels must not change colors");
+assert.deepEqual(result.specialColors, ["#89918c", "#b07a34"]);
+for (const color of Object.values(result.paletteColors)) {
+  const channels = color.slice(1).match(/../g).map(value => parseInt(value, 16) / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+  const luminance = channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+  assert.ok(1.05 / (luminance + .05) >= 3, `${color} must contrast with the light plot background`);
+}
 assert.match(result.summary, /Work &lt;account&gt;/);
 assert.doesNotMatch(result.summary, /Work <account>/);
 assert.match(result.summary, /Laptop: 120/);

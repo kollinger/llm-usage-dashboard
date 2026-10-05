@@ -340,6 +340,7 @@ const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
 const LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
 const CHART_BREAKDOWN_MODES = ["total", "provider", "model", "device", "account"];
+const CHART_ATTRIBUTION_PALETTE = ["#0072b2", "#008765", "#d14900", "#803e9c", "#c3365f", "#526127", "#006b73", "#77502d"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
 const LIMIT_GAUGE_TARGET_PERCENT = 100;
 const LIVE_TOKEN_DISPLAY_TICK_MS = 1000;
@@ -9456,19 +9457,36 @@ function chartAttributionEntries(daily, dimension) {
       }
     }
   }
+  const colorIds = chartAttributionKnownIds(dimension, [...groups.keys()]);
   return [...groups.values()].map((group) => {
     const row = { ...group, devices: [...group.devices.values()], observedOn: [...group.observedOn.values()] };
     return { ...row, id: `${dimension}:${row.id}`, attributionId: row.id, dimension, type: "attribution", markId: null,
-      label: chartAttributionLabel(row, dimension), detail: chartAttributionDetail(row, dimension), color: chartAttributionColor(row, dimension) };
+      label: chartAttributionLabel(row, dimension), detail: chartAttributionDetail(row, dimension), color: chartAttributionColor(row, dimension, colorIds) };
   }).sort((left, right) => right.totalTokens - left.totalTokens || left.id.localeCompare(right.id));
 }
 
-function chartAttributionColor(row, dimension) {
+function chartAttributionKnownIds(dimension, extraIds = []) {
+  const usage = state.usage || {};
+  const key = dimension === "account" ? "accounts" : "devices";
+  const allTime = usage.local?.attribution?.[key];
+  const rows = Array.isArray(allTime) ? allTime
+    : (usage.local?.daily || []).flatMap((day) => day.attribution?.[key] || []);
+  const ids = new Set([...extraIds, ...rows.map((row) => row.id)]);
+  if (dimension === "device") {
+    const sync = usage.deviceSync || {};
+    ids.add(sync.deviceId);
+    for (const device of [...(sync.devices || []), ...(sync.peers || []), ...rows.flatMap((row) => row.observedOn || [])]) ids.add(device.id);
+  }
+  return [...ids].filter((id) => typeof id === "string" && id && !["unknown", "shared"].includes(id)).sort();
+}
+
+function chartAttributionColor(row, dimension, knownIds = chartAttributionKnownIds(dimension, [row.id])) {
   if (row.id === "unknown" || ["unknown", "conflict"].includes(row.quality)) return "#89918c";
   if (row.id === "shared" || row.quality === "ambiguous") return "#b07a34";
-  let hash = 0;
-  for (const character of `${dimension}:${row.id}`) hash = (Math.imul(hash, 31) + character.charCodeAt(0)) >>> 0;
-  return `hsl(${hash % 360} 48% 43%)`;
+  // Use the complete installation/all-time account catalog, never the current
+  // date-filter subset or token ranking, so refreshes preserve category colors.
+  const index = Math.max(0, knownIds.indexOf(row.id));
+  return CHART_ATTRIBUTION_PALETTE[index % CHART_ATTRIBUTION_PALETTE.length];
 }
 
 function renderAttributionTotalBars(daily, dimension) {
