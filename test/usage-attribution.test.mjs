@@ -39,6 +39,24 @@ assert.equal(summary.attribution.accounts.find((row) => row.id === accountA.acco
 assert.equal(summary.attribution.accounts.find((row) => row.id === "unknown").quality, "unknown");
 assert(!JSON.stringify(summary).includes("fixture-account"));
 
+const modelEvents = [
+  { ...raw("model-a", 10, { observedOn: [a] }), model: "gpt-fixture" },
+  { ...raw("model-b", 20, { observedOn: [a] }, "claudeCode"), model: "claude-fixture" },
+  { ...raw("model-unknown", 5, { observedOn: [a] }), model: null },
+  { ...raw("model-c", 30, { observedOn: [b] }), model: "gpt-fixture" }
+];
+const modelSummary = aggregateUsageEvents(modelEvents, { now });
+const deviceAModels = modelSummary.attribution.devices.find((row) => row.id === a.id).models;
+assert.deepEqual(deviceAModels.map(({ model, totalTokens }) => ({ model, totalTokens })), [
+  { model: "claude-fixture", totalTokens: 20 }, { model: "gpt-fixture", totalTokens: 10 }, { model: null, totalTokens: 5 }
+]);
+assert.equal(modelSummary.attribution.devices.find((row) => row.id === b.id).models[0].totalTokens, 30);
+for (const row of [modelSummary, ...modelSummary.daily, ...modelSummary.slots.last24h]) {
+  for (const device of row.attribution.devices) {
+    assert.equal(device.models.reduce((sum, model) => sum + model.totalTokens, 0), device.totalTokens, "device models reconcile in every time window");
+  }
+}
+
 const exported = exportUsageEvents([{ _usageEvents: [events[0]] }]);
 assert.equal(exported.events[0].accountId, accountA.accountId);
 assert(!JSON.stringify(exported).includes("Computer A"));
@@ -52,6 +70,7 @@ for (const selection of ["all", a.id, b.id]) {
   assert.equal(merged.local.attribution.devices[0].quality, "ambiguous");
   assert.equal(merged.local.attribution.devices[0].observedOn.length, 2);
   assert.equal(merged.local.attribution.accounts[0].devices[0].id, "shared");
+  assert.deepEqual(merged.local.attribution.devices[0].models.map(({ model, totalTokens }) => ({ model, totalTokens })), [{ model: "fixture-model", totalTokens: 10 }], "a copied model event is counted once and stays ambiguous");
 }
 const conflicting = combinedUsage({}, [copied[0], snapshot(b, [{ ...exported.events[0], accountId: accountB.accountId }])]);
 assert.equal(conflicting.local.attribution.accounts[0].id, "unknown");
