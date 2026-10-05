@@ -5133,6 +5133,7 @@ function renderOverviewHistory(daily) {
           const isOnlySegment = visibleSegments.length === 1;
           const isTopSegment = segmentIndex === visibleSegments.length - 1;
           const isBottomSegment = segmentIndex === 0;
+          const segmentDetail = state.chartBreakdownMode === "device" ? chartHistoryDetail(row, mode, segment.id) : "";
           const clipPath = isOnlySegment
             ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
             : isTopSegment
@@ -5144,7 +5145,7 @@ function renderOverviewHistory(daily) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}" data-history-segment-label="${escapeHtml(segment.label)}" data-history-segment-value="${escapeHtml(historyBarValue(mode, mode === "costs" ? segment.totalEur : segment.totalTokens))}" aria-label="${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatNumber(segment.totalTokens)}`)}"></rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}" data-history-segment-label="${escapeHtml(segment.label)}" data-history-segment-value="${escapeHtml(historyBarValue(mode, mode === "costs" ? segment.totalEur : segment.totalTokens))}" data-history-detail="${escapeHtml(segmentDetail)}" aria-label="${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatNumber(segment.totalTokens)}`)}"></rect>
           `;
         })
         .join("");
@@ -8706,7 +8707,7 @@ function showHistoryBarTooltip(event) {
     historyBarTooltip.querySelector(".history-bar-tooltip-segment-value").textContent = `${segment.dataset.historySegmentLabel} · ${segment.dataset.historySegmentValue}`;
   }
   const detailLine = historyBarTooltip.querySelector(".history-bar-tooltip-detail");
-  detailLine.textContent = bar.dataset.historyDetail || "";
+  detailLine.textContent = segment?.dataset.historyDetail || bar.dataset.historyDetail || "";
   detailLine.hidden = !detailLine.textContent;
   historyBarTooltip.hidden = false;
   const bounds = bar.getBoundingClientRect();
@@ -8865,6 +8866,7 @@ function renderStackedHistoryChart({
           const isOnlySegment = visibleSegments.length === 1;
           const isTopSegment = segmentIndex === visibleSegments.length - 1;
           const isBottomSegment = segmentIndex === 0;
+          const segmentDetail = state.chartBreakdownMode === "device" ? chartHistoryDetail(row, mode, segment.id) : "";
           const clipPath = isOnlySegment
             ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
             : isTopSegment
@@ -8876,7 +8878,7 @@ function renderStackedHistoryChart({
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}" data-history-segment-label="${escapeHtml(segmentLabel(segment))}" data-history-segment-value="${escapeHtml(historyBarValue(mode, segmentValue(segment)))}" aria-label="${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}"></rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}" data-history-segment-label="${escapeHtml(segmentLabel(segment))}" data-history-segment-value="${escapeHtml(historyBarValue(mode, segmentValue(segment)))}" data-history-detail="${escapeHtml(segmentDetail)}" aria-label="${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}"></rect>
           `;
         })
         .join("");
@@ -9442,10 +9444,17 @@ function chartAttributionEntries(daily, dimension) {
     for (const row of chartAttributionRows(day, dimension)) {
       let group = groups.get(row.id);
       if (!group) {
-        group = { ...row, totalTokens: 0, devices: new Map(), observedOn: new Map() };
+        group = { ...row, totalTokens: 0, devices: new Map(), observedOn: new Map(), models: new Map() };
         groups.set(row.id, group);
       }
       group.totalTokens += row.totalTokens;
+      if (dimension === "device") {
+        for (const model of chartAttributionModelRows(row)) {
+          const key = JSON.stringify([model.sourceId, model.model]);
+          const existing = group.models.get(key);
+          group.models.set(key, { ...model, totalTokens: (existing?.totalTokens || 0) + model.totalTokens });
+        }
+      }
       if (row.quality === "conflict") group.quality = "conflict";
       for (const device of Array.isArray(row.devices) ? row.devices : []) {
         if (!device?.id || !Number.isFinite(device.totalTokens)) continue;
@@ -9459,7 +9468,8 @@ function chartAttributionEntries(daily, dimension) {
   }
   const colorIds = chartAttributionKnownIds(dimension, [...groups.keys()]);
   return [...groups.values()].map((group) => {
-    const row = { ...group, devices: [...group.devices.values()], observedOn: [...group.observedOn.values()] };
+    const row = { ...group, devices: [...group.devices.values()], observedOn: [...group.observedOn.values()],
+      models: [...group.models.values()].sort((a, b) => b.totalTokens - a.totalTokens || String(a.model || "").localeCompare(String(b.model || ""))) };
     return { ...row, id: `${dimension}:${row.id}`, attributionId: row.id, dimension, type: "attribution", markId: null,
       label: chartAttributionLabel(row, dimension), detail: chartAttributionDetail(row, dimension), color: chartAttributionColor(row, dimension, colorIds) };
   }).sort((left, right) => right.totalTokens - left.totalTokens || left.id.localeCompare(right.id));
@@ -9510,11 +9520,24 @@ function renderAttributionWindowSummary(daily, dimension) {
     ).join("")}</tbody></table></div></div>`;
 }
 
-function chartHistoryDetail(row, mode = "tokens") {
+function chartHistoryDetail(row, mode = "tokens", selectedId = null) {
   if (mode !== "tokens" || !["device", "account"].includes(state.chartBreakdownMode)) return "";
-  return chartAttributionEntries([row], state.chartBreakdownMode).map((entry) => `${entry.label}: ${formatTokens(entry.totalTokens)}${entry.detail ? ` (${entry.detail})` : ""}`).join("\n");
+  return chartAttributionEntries([row], state.chartBreakdownMode).filter((entry) => !selectedId || entry.id === selectedId).map((entry) => {
+    const heading = `${entry.label}: ${formatTokens(entry.totalTokens)}${entry.detail ? ` (${entry.detail})` : ""}`;
+    const models = entry.models.map((model) => `  ${model.model || t("chart.models.unknown")}: ${formatTokens(model.totalTokens)}`);
+    return [heading, ...models].join("\n");
+  }).join("\n");
 }
 
+function chartAttributionModelRows(row) {
+  const total = Math.max(0, Number(row.totalTokens) || 0);
+  const values = (Array.isArray(row.models) ? row.models : []).filter((model) => model && Number.isFinite(model.totalTokens) && model.totalTokens > 0)
+    .map((model) => ({ sourceId: model.sourceId || null, model: model.model || null, totalTokens: model.totalTokens }));
+  const sum = values.reduce((value, model) => value + model.totalTokens, 0);
+  if (sum > total + 0.01) return [{ sourceId: null, model: null, totalTokens: total }];
+  if (sum < total) values.push({ sourceId: null, model: null, totalTokens: total - sum });
+  return values;
+}
 function chartHasProviderBreakdown(daily) {
   return (Array.isArray(daily) ? daily : []).some((day) =>
     (Array.isArray(day.sources) ? day.sources : []).some((source) => Number(source.totalTokens || 0) > 0)
@@ -9637,7 +9660,8 @@ function chartSegmentsForDay(day, entries) {
     const byId = new Map(chartAttributionRows(day, mode).map((row) => [row.id, row]));
     return entries.flatMap((entry) => {
       const row = byId.get(entry.attributionId);
-      return row?.totalTokens > 0 ? [{ ...entry, totalTokens: row.totalTokens, detail: chartAttributionDetail(row, mode) }] : [];
+      return row?.totalTokens > 0 ? [{ ...entry, totalTokens: row.totalTokens, detail: chartAttributionDetail(row, mode),
+        models: mode === "device" ? chartAttributionModelRows(row) : [] }] : [];
     });
   }
   if (entries.length === 1 && entries[0]?.type === "total") {

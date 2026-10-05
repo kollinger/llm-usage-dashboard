@@ -4315,7 +4315,7 @@ textarea {
 .attribution-table td:first-child { min-width: 130px; }
 .attribution-table td:last-child { min-width: 190px; max-width: 440px; white-space: normal; overflow-wrap: anywhere; }
 .attribution-table .chart-legend-swatch { display: inline-block; margin-inline-end: 8px; }
-.history-bar-tooltip-detail { max-width: min(420px, calc(100vw - 40px)); white-space: pre-line; overflow-wrap: anywhere; color: var(--muted); font-size: .74rem; line-height: 1.5; }
+.history-bar-tooltip-detail { max-width: min(420px, calc(100vw - 40px)); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); font-size: .74rem; line-height: 1.5; }
 @media (max-width: 600px) {
   .chart-breakdown-control { max-width: 100%; }
   .chart-group-field { flex-wrap: wrap; }

@@ -12,6 +12,7 @@ assert.notEqual(code, source);
 const result = JSON.parse(vm.runInNewContext(`${code}
 state.translations = ${await readFile(path.join(rootDir, "public/i18n/en.json"), "utf8")};
 const device = { id: "fixture-laptop", label: "Laptop", quality: "observed", totalTokens: 120 };
+device.models = [{ sourceId: "codex", model: "gpt-fixture", totalTokens: 80 }, { sourceId: "claudeCode", model: "claude-<fixture>", totalTokens: 30 }];
 const shared = { id: "shared", label: null, quality: "ambiguous", totalTokens: 80,
   observedOn: [{ id: "fixture-laptop", label: "Laptop" }, { id: "fixture-desktop", label: "Desktop" }] };
 const account = { id: "gpt:fixture", label: "Work <account>", quality: "recorded", totalTokens: 120, devices: [device] };
@@ -23,6 +24,13 @@ const deviceEntries = chartAttributionEntries(days, "device");
 const accountEntries = chartAttributionEntries(days, "account");
 state.chartBreakdownMode = "account";
 const tooltip = chartHistoryDetail(days[0]);
+state.chartBreakdownMode = "device";
+const deviceTooltip = chartHistoryDetail(days[0], "tokens", "device:fixture-laptop");
+const otherDay = { totalTokens: 10, attribution: { devices: [{ ...device, totalTokens: 10, models: [{ sourceId: "codex", model: "gpt-other-day", totalTokens: 10 }] }] } };
+const rangeEntries = chartAttributionEntries([days[0], otherDay], "device");
+const daySegment = chartSegmentsForDay(days[0], rangeEntries).find((row) => row.attributionId === device.id);
+const modelOverflow = chartAttributionModelRows({ totalTokens: 10, models: [{ model: "wrong", totalTokens: 20 }] });
+state.chartBreakdownMode = "account";
 const slotHtml = renderHistorySlotTimeline({ rows: [{ ...days[0], slotStart: "2026-10-04T12:00:00.000Z" }], max: 200, axisY: 240, chartHeight: 200, xForRow: () => 20, valueForRow: row => row.totalTokens, valueFormatter: formatTokens });
 const fallback = buildFallbackHistorySlots([{ ...days[0], date: new Date().toISOString().slice(0, 10) }], "today");
 const paletteDevices = ["fixture-d", "fixture-b", "fixture-c", "fixture-a"].map((id) => ({ id, label: id, quality: "observed", totalTokens: 25 }));
@@ -47,7 +55,7 @@ JSON.stringify({
   conflict: chartAttributionLabel({ id: "unknown", quality: "conflict", label: "Must not be used" }, "account"),
   stableColor: chartAttributionColor(device, "device") === chartAttributionColor({ ...device, label: "Renamed" }, "device"),
   summary: renderAttributionWindowSummary(days, "account"),
-  selector: renderChartBreakdownToggle(), tooltip, slotHtml,
+  selector: renderChartBreakdownToggle(), tooltip, deviceTooltip, daySegment, modelOverflow, slotHtml,
   costTooltip: chartHistoryDetail(days[0], "costs"),
   fallbackTotal: fallback.reduce((sum, row) => sum + row.totalTokens, 0),
   fallbackKnown: chartAttributionEntries(fallback, "account").filter(row => row.attributionId !== "unknown")
@@ -82,6 +90,11 @@ assert.match(result.summary, /Work &lt;account&gt;/);
 assert.doesNotMatch(result.summary, /Work <account>/);
 assert.match(result.summary, /Laptop: 120/);
 assert.match(result.tooltip, /Work <account>: 120.*Laptop: 120/);
+assert.match(result.deviceTooltip, /Laptop: 120[\s\S]*gpt-fixture: 80[\s\S]*claude-<fixture>: 30[\s\S]*Unknown model: 10/);
+assert.doesNotMatch(result.deviceTooltip, /Desktop|gpt-other-day/);
+assert.equal(result.daySegment.models.reduce((sum, model) => sum + model.totalTokens, 0), 120);
+assert(!result.daySegment.models.some((row) => row.model === "gpt-other-day"), "a day must not inherit the period's model totals");
+assert.deepEqual(result.modelOverflow, [{ sourceId: null, model: null, totalTokens: 10 }]);
 assert.match(result.slotHtml, /data-history-detail=/);
 assert.match(result.slotHtml, /Work &lt;account&gt;/);
 assert.equal(result.costTooltip, "");
