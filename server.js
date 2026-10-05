@@ -4676,7 +4676,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       isSparkRateLimit: isCodexSparkRateLimit(rateLimits),
       isSparkUsage: isCodexSparkUsageEvent(currentModel, rateLimits)
     });
-  });
+  }, new Set(["session_meta", "turn_context", "event_msg"]));
   return compactCodexFileEvents(events);
 }
 
@@ -7949,12 +7949,18 @@ function pruneUsageFileScanCache(cacheMap, fileRecords) {
   }
 }
 
-async function readJsonl(file, onObject) {
+async function readJsonl(file, onObject, acceptedRootTypes = null) {
   const stream = fs.createReadStream(file, { encoding: "utf8" });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
   let lineNumber = 0;
   for await (const line of rl) {
     lineNumber += 1;
+    if (acceptedRootTypes) {
+      // Only recognize the standard top-level header. Other key orders and
+      // escaped values use the complete JSON parser as before.
+      const type = line.slice(0, 256).match(/^[ ]*[{][ ]*(?:"timestamp"[ ]*:[ ]*"[-0-9T:.+Z]*"[ ]*,[ ]*)?"type"[ ]*:[ ]*"([a-z_]+)"[ ]*[,}]/)?.[1];
+      if (type && !acceptedRootTypes.has(type)) continue;
+    }
     if (!line.trim()) continue;
     try {
       onObject(JSON.parse(line), { file, line: lineNumber });
