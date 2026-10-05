@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Användningsdata och inloggningsuppgifter skickas inte till utvecklaren. Endast krypterade mätningar delas med uttryckligen parkopplade enheter. Frånkoppling raderar inte redan mottagna kopior.",
     "networkLimit": "Direkta anslutningar använder det lokala nätverket eller en befintlig privat VPN utan relay, sökserver eller routerändringar. Nätverk som blockerar detta förhindrar automatisk synkronisering.",
     "coverage": "{count} unika poster · {duplicates} dubbletter borttagna · {excluded} poster förblir lokala utan säker identifiering. Gränser är sparade mätningar; API-totaler läggs inte till."
+  },
+  "connections": {
+    "accounts": "Konton",
+    "installations": "Installationer",
+    "general": "Allmänt",
+    "advanced": "Avancerat",
+    "addAccount": "Lägg till konto",
+    "chooseProvider": "Välj leverantör",
+    "detectedDetails": "Upptäckta GPT-konton och detaljer",
+    "back": "Tillbaka",
+    "accountLabel": "Namn (valfritt)",
+    "apiKey": "API-nyckel",
+    "adminKey": "Administratörsnyckel för API",
+    "region": "Region",
+    "global": "Internationell",
+    "china": "Kina",
+    "setupHelp": "Installationsanvisningar",
+    "connect": "Anslut",
+    "openSignIn": "Öppna inloggning",
+    "connectInstallation": "Anslut installation",
+    "haveCode": "Jag har en kod",
+    "syncOptions": "Synkronisering och integritet",
+    "remove": "Ta bort",
+    "automatic": "Upptäckt automatiskt",
+    "empty": "Inga konton är anslutna ännu.",
+    "apiAccount": "API-konto",
+    "subscription": "Prenumeration / kodplan",
+    "thisInstallation": "Denna installation",
+    "syncOn": "Synkronisering aktiverad",
+    "syncOff": "Synkronisering inaktiverad",
+    "local": "Lokal",
+    "waitingSync": "Väntar på första synkroniseringen",
+    "viaPeer": "Via en parkopplad installation",
+    "balance": "Saldo",
+    "privacy": "Inloggningsuppgifter stannar på denna enhet. Användning skickas inte till utvecklaren.",
+    "installationsHelp": "Anslut dina egna installationer för att se deras användning tillsammans.",
+    "pairHelp": "Öppna Installationer på den andra enheten. Skapa en kod här eller klistra in dess kod. Båda enheterna måste vara direkt nåbara.",
+    "adminKeyHelp": "Användningsrapporter kräver organisationens administratörsnyckel för API, separat från chattprenumerationen.",
+    "glmHelp": "Använd din GLM Coding Plan-nyckel och välj dess region.",
+    "browserHelp": "Fortsätt via leverantörens officiella inloggning.",
+    "keyPrivacy": "Nyckeln lagras lokalt och används bara för förfrågningar till denna leverantör.",
+    "needsSetup": "Installera först leverantörens officiella CLI och uppdatera listan.",
+    "claudeHelp": "Claude Code hanterar inloggningen på denna enhet. Claude Code CLI måste vara installerat.",
+    "kimiHelp": "Använd den officiella Kimi Code-inloggningen eller en Kimi Code-plannyckel.",
+    "moonshotHelp": "Använd en Moonshot API-nyckel för API-saldot, separat från Kimi Code.",
+    "loginWaiting": "Slutför leverantörens inloggning. Håll detta fönster öppet.",
+    "loginComplete": "Kontot är anslutet. Mätningar uppdateras automatiskt.",
+    "claudeSignIn": "Anslut med Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Logga in",
+    "failed": "Inloggning misslyckades",
+    "checking": "Ansluter…",
+    "installation": "Installationer",
+    "status": {
+      "connected": "Aktiv",
+      "detected": "Upptäckt",
+      "historical": "Tidigare",
+      "auth_required": "Inloggning krävs",
+      "error": "Fel",
+      "unavailable": "Inte tillgänglig",
+      "unknown": "Inte tillgänglig"
+    },
+    "errors": {
+      "invalid_account": "Kontot hittades inte. Uppdatera kontolistan.",
+      "invalid_key": "Nyckeln avvisades. Kontrollera nyckeln och vald leverantör.",
+      "permission_denied": "Nyckeln saknar åtkomst till användningsrapporter. Använd en nyckel med rätt behörigheter.",
+      "unsupported_key": "Denna nyckeltyp kan inte läsa användning. Följ leverantörens installationsanvisningar.",
+      "account_limit": "Kontogränsen har nåtts. Ta först bort ett oanvänt konto.",
+      "connection_unavailable": "Leverantören kunde inte nås. Kontrollera anslutningen och försök igen.",
+      "account_storage_unavailable": "Lokal kontolagring är inte tillgänglig. Kontrollera appens filbehörigheter.",
+      "profile_remove_failed": "Den sparade inloggningen kunde inte tas bort. Stäng inloggningsfönstret och försök igen.",
+      "unsupported_platform": "Webbläsarinloggning är inte tillgänglig på denna plattform. Använd en tillgänglig nyckelmetod."
+    },
+    "kimiHelperHelp": "Vid första inloggningen hämtar appen det officiella Kimi-hjälpprogrammet direkt från Kimi. Det körs lokalt; dashboarden skickar ingen telemetri.",
+    "lastSeen": "Senast sedd {time}"
   }
 }

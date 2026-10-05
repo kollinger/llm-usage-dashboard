@@ -16,9 +16,9 @@ try {
   const status = await fetch(`${url}/api/device-sync`).then((response) => response.json());
   assert.equal(status.enabled, false);
   assert.equal(status.deviceId, null, "disabled installs create neither keys nor listeners");
-  for (const headers of [{ Origin: "https://attacker.example" }, { Host: "attacker.example" }, { "Sec-Fetch-Site": "cross-site" }]) {
+  for (const route of ["/api/device-sync/settings", "/api/connections", "/api/connections/refresh", "/api/connections/login/kimi"]) for (const headers of [{ Origin: "https://attacker.example" }, { Host: "attacker.example" }, { "Sec-Fetch-Site": "cross-site" }]) {
     const response = await new Promise((resolve, reject) => {
-      const request = http.request(`${url}/api/device-sync/settings`, { method: "POST", headers: { "Content-Type": "application/json", ...headers } }, (response) => {
+      const request = http.request(`${url}${route}`, { method: route.includes("/login/") ? "DELETE" : "POST", agent: false, headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(JSON.stringify({ enabled: true, name: "test" })), ...headers } }, (response) => {
         let body = "";
         response.on("data", (chunk) => { body += chunk; });
         response.on("end", () => resolve({ status: response.statusCode, body: JSON.parse(body) }));

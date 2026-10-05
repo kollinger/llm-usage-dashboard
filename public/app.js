@@ -205,6 +205,7 @@ const providerMeta = {
   anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
   openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
   gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: "#b94e5c" },
+  kimi: { name: "Kimi", kickerKey: "providers.kimi.kicker", accent: "#227eaa" },
   glm: { name: "GLM/Z.AI", kickerKey: "providers.glm.kicker", accent: "#48505a" },
   ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
 };
@@ -218,6 +219,7 @@ const providerBrandMeta = {
   anthropic: { label: "Anthropic", mark: "An", logo: "anthropic.svg", accent: providerMeta.anthropic.accent },
   openai: { label: "OpenAI", mark: "AI", logo: "openai.svg", accent: providerMeta.openai.accent },
   gemini: { label: "Google Gemini", mark: "G", logo: "gemini.svg", accent: providerMeta.gemini.accent },
+  kimi: { label: "Kimi", mark: "K", accent: providerMeta.kimi.accent },
   glm: { label: "GLM/Z.AI", mark: "Z", logo: "zai.svg", accent: providerMeta.glm.accent },
   ollama: { label: "Ollama", mark: "Ol", accent: providerMeta.ollama.accent },
   minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: "#2459d8" },
@@ -248,6 +250,9 @@ const providerBrandAliases = new Map([
   ["google", "gemini"],
   ["googlegemini", "gemini"],
   ["gemini", "gemini"],
+  ["kimi", "kimi"],
+  ["moonshot", "kimi"],
+  ["moonshotai", "kimi"],
   ["glm", "glm"],
   ["glmzai", "glm"],
   ["ollama", "ollama"],
@@ -355,7 +360,7 @@ const MODAL_BACKDROP_GRACE_MS = 450;
 const translationCache = new Map();
 const dialogOpenedAt = new WeakMap();
 const dialogPointerStartedInside = new WeakMap();
-const chartSourceOrder = ["codex", "codexSpark", "openCode", "copilot", "claudeCode", "ollama", "gemini", "glm", "openai", "anthropic", "local"];
+const chartSourceOrder = ["codex", "codexSpark", "openCode", "copilot", "claudeCode", "ollama", "gemini", "glm", "kimi", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
   codexSpark: providerMeta.codexSpark.accent,
@@ -365,6 +370,7 @@ const chartSourceColors = {
   ollama: providerMeta.ollama.accent,
   gemini: providerMeta.gemini.accent,
   glm: providerMeta.glm.accent,
+  kimi: providerMeta.kimi.accent,
   openai: providerMeta.openai.accent,
   anthropic: providerMeta.anthropic.accent,
   local: "#23745c"
@@ -2659,6 +2665,7 @@ function renderLanguageOptions() {
 
 function rerenderLanguageSensitiveViews() {
   renderAuth();
+  renderConnectionAccounts();
   if (state.usage) {
     render();
   } else if (state.auth && !state.auth.authenticated) {
@@ -4644,6 +4651,7 @@ function buildProviders(usage) {
     normalizeLocalProvider("copilot", usage.copilot),
     normalizeLocalProvider("ollama", usage.ollama),
     normalizeLocalProvider("glm", usage.glm),
+    normalizeLocalProvider("kimi", usage.kimi),
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
   ];
@@ -5508,7 +5516,7 @@ function normalizeLocalProvider(id, provider) {
   const limitsUpdatedAt =
     id === "claudeCode"
       ? provider?.limitsUpdatedAt
-      : (id === "copilot" || id === "glm") && hasLimitData
+      : ["copilot", "glm", "kimi"].includes(id) && hasLimitData
         ? provider?.limitsUpdatedAt || provider?.quotaStatus?.updatedAt
         : null;
   const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
@@ -9686,9 +9694,10 @@ function parseDateOnly(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-async function openSettings() {
+async function openSettings(tab = "accounts") {
   if (!state.auth?.authenticated) return openModalDialog(els.loginDialog);
   openModalDialog(els.settingsDialog);
+  selectSettingsTab(typeof tab === "string" ? tab : "general");
   renderSourceSettings();
   renderSupportReport();
   await Promise.all([

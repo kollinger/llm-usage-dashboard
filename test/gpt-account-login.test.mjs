@@ -14,9 +14,10 @@ try {
     clientOptions = options;
     return { request: async (method) => method === "account/login/start" ? { loginId: "test", authUrl: "https://auth.openai.com/authorize?state=test" } : {}, close() {} };
   }, onComplete: async () => { completed += 1; } });
-  const [first, concurrent] = await Promise.all([login.start(), login.start()]);
+  const [first, concurrent] = await Promise.all([login.start({ label: "Personal" }), login.start()]);
   assert.equal(first.id, concurrent.id, "concurrent starts own one profile");
   assert.equal(first.status, "waiting");
+  assert.equal(JSON.parse(await readFile(path.join(clientOptions.codexHome, "dashboard-account.json"), "utf8")).label, "Personal");
   assert(!JSON.stringify(first).includes(tmp));
   assert.equal((await login.start()).id, first.id, "duplicate clicks cannot create concurrent login profiles");
   assert((await readFile(path.join(clientOptions.codexHome, "config.toml"), "utf8")).includes('cli_auth_credentials_store = "file"'));

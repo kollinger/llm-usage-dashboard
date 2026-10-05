@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Vývojárovi sa neposielajú údaje o používaní ani prihlasovacie údaje. Šifrované merania sa zdieľajú len s výslovne spárovanými zariadeniami. Odpojenie neodstráni prijaté kópie.",
     "networkLimit": "Priame spojenia využívajú miestnu sieť alebo existujúcu súkromnú VPN, bez relay, vyhľadávacieho servera a zmien routera. Siete blokujúce tieto spojenia znemožňujú automatickú synchronizáciu.",
     "coverage": "{count} jedinečných záznamov · odstránených {duplicates} duplikátov · {excluded} záznamov zostáva miestnych bez spoľahlivej identifikácie. Limity sú uložené merania; súčty API sa nepripočítavajú."
+  },
+  "connections": {
+    "accounts": "Účty",
+    "installations": "Inštalácie",
+    "general": "Všeobecné",
+    "advanced": "Pokročilé",
+    "addAccount": "Pridať účet",
+    "chooseProvider": "Vyberte poskytovateľa",
+    "detectedDetails": "Nájdené účty GPT a podrobnosti",
+    "back": "Späť",
+    "accountLabel": "Názov (voliteľné)",
+    "apiKey": "API kľúč",
+    "adminKey": "Administrátorský API kľúč",
+    "region": "Oblasť",
+    "global": "Medzinárodná",
+    "china": "Čína",
+    "setupHelp": "Pokyny na nastavenie",
+    "connect": "Pripojiť",
+    "openSignIn": "Otvoriť prihlásenie",
+    "connectInstallation": "Prepojiť inštaláciu",
+    "haveCode": "Mám kód",
+    "syncOptions": "Synchronizácia a súkromie",
+    "remove": "Odstrániť",
+    "automatic": "Automaticky nájdené",
+    "empty": "Zatiaľ nie sú pripojené žiadne účty.",
+    "apiAccount": "API účet",
+    "subscription": "Predplatné / programovací plán",
+    "thisInstallation": "Táto inštalácia",
+    "syncOn": "Synchronizácia zapnutá",
+    "syncOff": "Synchronizácia vypnutá",
+    "local": "Lokálna",
+    "waitingSync": "Čakanie na prvú synchronizáciu",
+    "viaPeer": "Cez spárovanú inštaláciu",
+    "balance": "Zostatok",
+    "privacy": "Prihlasovacie údaje zostávajú na tomto zariadení. Údaje o využití sa vývojárovi neposielajú.",
+    "installationsHelp": "Prepojte vlastné inštalácie a zobrazte ich využitie spoločne.",
+    "pairHelp": "Na druhom zariadení otvorte Inštalácie. Vytvorte tu kód alebo vložte jeho kód. Zariadenia musia byť priamo dostupné.",
+    "adminKeyHelp": "Prehľady vyžadujú administrátorský API kľúč organizácie, nezávislý od predplatného chatu.",
+    "glmHelp": "Použite kľúč GLM Coding Plan a vyberte jeho oblasť.",
+    "browserHelp": "Pokračujte oficiálnym prihlásením poskytovateľa.",
+    "keyPrivacy": "Kľúč sa ukladá lokálne a používa sa len na požiadavky tomuto poskytovateľovi.",
+    "needsSetup": "Najprv nainštalujte oficiálne CLI poskytovateľa a obnovte zoznam.",
+    "claudeHelp": "Claude Code zabezpečuje prihlásenie na tomto zariadení. Je potrebné CLI Claude Code.",
+    "kimiHelp": "Použite oficiálne prihlásenie Kimi Code alebo kľúč plánu Kimi Code.",
+    "moonshotHelp": "Kľúčom API Moonshot načítate zostatok API, nezávislý od Kimi Code.",
+    "loginWaiting": "Dokončite prihlásenie poskytovateľa. Nechajte toto okno otvorené.",
+    "loginComplete": "Účet pripojený. Merania sa obnovujú automaticky.",
+    "claudeSignIn": "Pripojiť cez Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Prihlásiť sa",
+    "failed": "Prihlásenie zlyhalo",
+    "checking": "Pripájanie…",
+    "installation": "Inštalácie",
+    "status": {
+      "connected": "Aktívny",
+      "detected": "Nájdený",
+      "historical": "Predchádzajúci",
+      "auth_required": "Vyžaduje prihlásenie",
+      "error": "Chyba",
+      "unavailable": "Nedostupné",
+      "unknown": "Nedostupné"
+    },
+    "errors": {
+      "invalid_account": "Účet sa nenašiel. Obnovte zoznam účtov.",
+      "invalid_key": "Kľúč bol odmietnutý. Skontrolujte kľúč a vybraného poskytovateľa.",
+      "permission_denied": "Tento kľúč nemá prístup k prehľadom využitia. Použite kľúč s potrebnými oprávneniami.",
+      "unsupported_key": "Tento typ kľúča nedokáže čítať využitie. Postupujte podľa pokynov poskytovateľa.",
+      "account_limit": "Dosiahli ste limit účtov. Najprv odstráňte nepoužívaný účet.",
+      "connection_unavailable": "Poskytovateľ nie je dostupný. Skontrolujte pripojenie a skúste znova.",
+      "account_storage_unavailable": "Lokálne úložisko účtov nie je dostupné. Skontrolujte oprávnenia aplikácie k súborom.",
+      "profile_remove_failed": "Uložené prihlásenie sa nepodarilo odstrániť. Zatvorte prihlasovacie okno a skúste znova.",
+      "unsupported_platform": "Prihlásenie v prehliadači nie je na tejto platforme dostupné. Použite dostupnú metódu s kľúčom."
+    },
+    "kimiHelperHelp": "Pri prvom prihlásení aplikácia stiahne oficiálny pomocný program Kimi priamo od Kimi. Beží lokálne; dashboard neposiela telemetriu.",
+    "lastSeen": "Naposledy zaznamenané {time}"
   }
 }

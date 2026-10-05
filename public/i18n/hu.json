@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Használati és hitelesítő adatok nem kerülnek a fejlesztőhöz. Titkosított méréseket csak kifejezetten párosított eszközökkel osztunk meg. A leválasztás nem törli a már megkapott másolatokat.",
     "networkLimit": "A közvetlen kapcsolatok a helyi hálózatot vagy meglévő privát VPN-t használják, közvetítő, keresőszerver és routermódosítás nélkül. Az ezeket blokkoló hálózatok megakadályozzák az automatikus szinkronizálást.",
     "coverage": "{count} egyedi rekord · {duplicates} ismétlődés eltávolítva · {excluded} rekord helyben marad megbízható azonosító nélkül. A korlátok mentett mérések; az API-összesítések nem adódnak hozzá."
+  },
+  "connections": {
+    "accounts": "Fiókok",
+    "installations": "Telepítések",
+    "general": "Általános",
+    "advanced": "Speciális",
+    "addAccount": "Fiók hozzáadása",
+    "chooseProvider": "Válasszon szolgáltatót",
+    "detectedDetails": "Észlelt GPT-fiókok és részletek",
+    "back": "Vissza",
+    "accountLabel": "Név (nem kötelező)",
+    "apiKey": "API-kulcs",
+    "adminKey": "Adminisztrátori API-kulcs",
+    "region": "Régió",
+    "global": "Nemzetközi",
+    "china": "Kína",
+    "setupHelp": "Beállítási útmutató",
+    "connect": "Csatlakoztatás",
+    "openSignIn": "Bejelentkezés megnyitása",
+    "connectInstallation": "Telepítés összekapcsolása",
+    "haveCode": "Van kódom",
+    "syncOptions": "Szinkronizálás és adatvédelem",
+    "remove": "Eltávolítás",
+    "automatic": "Automatikusan észlelve",
+    "empty": "Még nincs csatlakoztatott fiók.",
+    "apiAccount": "API-fiók",
+    "subscription": "Előfizetés / programozási csomag",
+    "thisInstallation": "Ez a telepítés",
+    "syncOn": "Szinkronizálás bekapcsolva",
+    "syncOff": "Szinkronizálás kikapcsolva",
+    "local": "Helyi",
+    "waitingSync": "Várakozás az első szinkronizálásra",
+    "viaPeer": "Párosított telepítésen keresztül",
+    "balance": "Egyenleg",
+    "privacy": "A bejelentkezési adatok ezen az eszközön maradnak. A használati adatokat nem küldjük el a fejlesztőnek.",
+    "installationsHelp": "Kapcsolja össze saját telepítéseit a használat közös megtekintéséhez.",
+    "pairHelp": "Nyissa meg a Telepítések lapot a másik eszközön. Itt hozzon létre kódot vagy illessze be annak kódját. Az eszközöknek közvetlenül elérhetőnek kell lenniük.",
+    "adminKeyHelp": "A jelentésekhez a szervezet adminisztrátori API-kulcsa kell, a csevegés-előfizetéstől függetlenül.",
+    "glmHelp": "Használja a GLM Coding Plan kulcsát, és válassza ki a régióját.",
+    "browserHelp": "Folytassa a szolgáltató hivatalos bejelentkezésével.",
+    "keyPrivacy": "A kulcs helyben tárolódik, és csak ehhez a szolgáltatóhoz küldött kérésekhez használjuk.",
+    "needsSetup": "Először telepítse a szolgáltató hivatalos CLI-jét, majd frissítse a listát.",
+    "claudeHelp": "A Claude Code végzi a bejelentkezést ezen az eszközön. Telepített Claude Code CLI szükséges.",
+    "kimiHelp": "Használja a hivatalos Kimi Code bejelentkezést vagy egy Kimi Code csomagkulcsot.",
+    "moonshotHelp": "Moonshot API-kulccsal olvashatja az API-egyenleget, a Kimi Code-tól függetlenül.",
+    "loginWaiting": "Fejezze be a szolgáltatói bejelentkezést. Tartsa nyitva ezt az ablakot.",
+    "loginComplete": "Fiók csatlakoztatva. A mérések automatikusan frissülnek.",
+    "claudeSignIn": "Csatlakozás Claude Code-dal",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Bejelentkezés",
+    "failed": "Sikertelen bejelentkezés",
+    "checking": "Csatlakozás…",
+    "installation": "Telepítések",
+    "status": {
+      "connected": "Aktív",
+      "detected": "Észlelve",
+      "historical": "Korábbi",
+      "auth_required": "Bejelentkezés szükséges",
+      "error": "Hiba",
+      "unavailable": "Nem érhető el",
+      "unknown": "Nem érhető el"
+    },
+    "errors": {
+      "invalid_account": "A fiók nem található. Frissítse a fióklistát.",
+      "invalid_key": "A kulcs elutasítva. Ellenőrizze a kulcsot és a kiválasztott szolgáltatót.",
+      "permission_denied": "A kulcs nem fér hozzá a használati jelentésekhez. Használjon megfelelő jogosultságú kulcsot.",
+      "unsupported_key": "Ez a kulcstípus nem tudja olvasni a használatot. Kövesse a szolgáltató beállítási útmutatóját.",
+      "account_limit": "Elérte a fiókkorlátot. Először távolítson el egy nem használt fiókot.",
+      "connection_unavailable": "A szolgáltató nem érhető el. Ellenőrizze a kapcsolatot és próbálja újra.",
+      "account_storage_unavailable": "A helyi fióktároló nem elérhető. Ellenőrizze az alkalmazás fájljogosultságait.",
+      "profile_remove_failed": "A mentett bejelentkezés nem távolítható el. Zárja be a bejelentkezési ablakot és próbálja újra.",
+      "unsupported_platform": "A böngészős bejelentkezés nem érhető el ezen a platformon. Használjon elérhető kulcsos módszert."
+    },
+    "kimiHelperHelp": "Az első bejelentkezéskor az alkalmazás közvetlenül a Kimitől tölti le a hivatalos Kimi-segédprogramot. Helyben fut; az irányítópult nem küld telemetriát.",
+    "lastSeen": "Utoljára észlelve: {time}"
   }
 }

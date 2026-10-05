@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Lietojuma un akreditācijas dati netiek sūtīti izstrādātājam. Šifrēti mērījumi tiek kopīgoti tikai ar skaidri savienotām ierīcēm. Atvienošana neizdzēš saņemtās kopijas.",
     "networkLimit": "Tiešie savienojumi izmanto lokālo tīklu vai esošu privātu VPN bez starpnieka, atklāšanas servera vai maršrutētāja izmaiņām. Tīkli, kas tos bloķē, nepieļauj automātisku sinhronizāciju.",
     "coverage": "{count} unikāli ieraksti · {duplicates} dublikāti noņemti · {excluded} ieraksti paliek lokāli bez uzticama identifikatora. Limiti ir saglabāti mērījumi; API summas netiek pievienotas."
+  },
+  "connections": {
+    "accounts": "Konti",
+    "installations": "Instalācijas",
+    "general": "Vispārīgi",
+    "advanced": "Papildu",
+    "addAccount": "Pievienot kontu",
+    "chooseProvider": "Izvēlieties pakalpojumu sniedzēju",
+    "detectedDetails": "Atrastie GPT konti un informācija",
+    "back": "Atpakaļ",
+    "accountLabel": "Nosaukums (neobligāti)",
+    "apiKey": "API atslēga",
+    "adminKey": "Administratora API atslēga",
+    "region": "Reģions",
+    "global": "Starptautisks",
+    "china": "Ķīna",
+    "setupHelp": "Iestatīšanas norādījumi",
+    "connect": "Savienot",
+    "openSignIn": "Atvērt pieteikšanos",
+    "connectInstallation": "Savienot instalāciju",
+    "haveCode": "Man ir kods",
+    "syncOptions": "Sinhronizācija un privātums",
+    "remove": "Noņemt",
+    "automatic": "Atrasts automātiski",
+    "empty": "Vēl nav pievienotu kontu.",
+    "apiAccount": "API konts",
+    "subscription": "Abonements / programmēšanas plāns",
+    "thisInstallation": "Šī instalācija",
+    "syncOn": "Sinhronizācija ieslēgta",
+    "syncOff": "Sinhronizācija izslēgta",
+    "local": "Lokāla",
+    "waitingSync": "Gaida pirmo sinhronizāciju",
+    "viaPeer": "Caur pārī savienotu instalāciju",
+    "balance": "Atlikums",
+    "privacy": "Pieteikšanās dati paliek šajā ierīcē. Lietojuma dati izstrādātājam netiek sūtīti.",
+    "installationsHelp": "Savienojiet savas instalācijas, lai kopā skatītu to lietojumu.",
+    "pairHelp": "Otrā ierīcē atveriet Instalācijas. Šeit izveidojiet kodu vai ielīmējiet otras ierīces kodu. Ierīcēm jābūt tieši sasniedzamām.",
+    "adminKeyHelp": "Pārskatiem nepieciešama organizācijas administratora API atslēga, atsevišķi no tērzēšanas abonementa.",
+    "glmHelp": "Izmantojiet GLM Coding Plan atslēgu un izvēlieties tās reģionu.",
+    "browserHelp": "Turpiniet ar pakalpojumu sniedzēja oficiālo pieteikšanos.",
+    "keyPrivacy": "Atslēga tiek glabāta lokāli un izmantota tikai pieprasījumiem šim pakalpojumu sniedzējam.",
+    "needsSetup": "Vispirms instalējiet oficiālo CLI un atsvaidziniet sarakstu.",
+    "claudeHelp": "Claude Code pārvalda pieteikšanos šajā ierīcē. Jābūt instalētam Claude Code CLI.",
+    "kimiHelp": "Izmantojiet oficiālo Kimi Code pieteikšanos vai Kimi Code plāna atslēgu.",
+    "moonshotHelp": "Izmantojiet Moonshot API atslēgu API atlikuma nolasīšanai, atsevišķi no Kimi Code.",
+    "loginWaiting": "Pabeidziet pieteikšanos pie pakalpojumu sniedzēja. Atstājiet šo logu atvērtu.",
+    "loginComplete": "Konts savienots. Mērījumi tiek automātiski atjaunināti.",
+    "claudeSignIn": "Savienot ar Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Pieteikties",
+    "failed": "Pieteikšanās neizdevās",
+    "checking": "Savieno…",
+    "installation": "Instalācijas",
+    "status": {
+      "connected": "Aktīvs",
+      "detected": "Atrasts",
+      "historical": "Iepriekšējs",
+      "auth_required": "Jāpiesakās",
+      "error": "Kļūda",
+      "unavailable": "Nav pieejams",
+      "unknown": "Nav pieejams"
+    },
+    "errors": {
+      "invalid_account": "Konts nav atrasts. Atsvaidziniet kontu sarakstu.",
+      "invalid_key": "Atslēga noraidīta. Pārbaudiet atslēgu un izvēlēto pakalpojumu sniedzēju.",
+      "permission_denied": "Atslēgai nav piekļuves lietojuma pārskatiem. Izmantojiet atslēgu ar vajadzīgajām atļaujām.",
+      "unsupported_key": "Šis atslēgas veids nevar nolasīt lietojumu. Ievērojiet pakalpojumu sniedzēja iestatīšanas norādījumus.",
+      "account_limit": "Sasniegts kontu limits. Vispirms noņemiet neizmantotu kontu.",
+      "connection_unavailable": "Pakalpojumu sniedzējs nav sasniedzams. Pārbaudiet savienojumu un mēģiniet vēlreiz.",
+      "account_storage_unavailable": "Lokālā kontu krātuve nav pieejama. Pārbaudiet lietotnes failu atļaujas.",
+      "profile_remove_failed": "Saglabāto pieteikšanos neizdevās noņemt. Aizveriet pieteikšanās logu un mēģiniet vēlreiz.",
+      "unsupported_platform": "Pieteikšanās pārlūkā šajā platformā nav pieejama. Izmantojiet pieejamu atslēgas metodi."
+    },
+    "kimiHelperHelp": "Pirmajā pieteikšanās reizē lietotne lejupielādē oficiālo Kimi palīgrīku tieši no Kimi. Tas darbojas lokāli; panelis nesūta telemetriju.",
+    "lastSeen": "Pēdējoreiz redzēts {time}"
   }
 }

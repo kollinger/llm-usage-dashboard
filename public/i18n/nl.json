@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Er gaan geen gebruiksgegevens of inloggegevens naar de ontwikkelaar. Alleen versleutelde metingen worden gedeeld met uitdrukkelijk gekoppelde apparaten. Ontkoppelen wist eerder ontvangen kopieën niet.",
     "networkLimit": "Directe verbindingen gebruiken het lokale netwerk of een bestaande privé-VPN, zonder relay, zoekserver of routerwijzigingen. Netwerken die dit blokkeren kunnen niet automatisch synchroniseren.",
     "coverage": "{count} unieke records · {duplicates} duplicaten verwijderd · {excluded} records blijven lokaal zonder betrouwbare identificatie. Limieten zijn opgeslagen metingen; API-totalen worden niet opgeteld."
+  },
+  "connections": {
+    "accounts": "Accounts",
+    "installations": "Installaties",
+    "general": "Algemeen",
+    "advanced": "Geavanceerd",
+    "addAccount": "Account toevoegen",
+    "chooseProvider": "Kies een aanbieder",
+    "detectedDetails": "Gevonden GPT-accounts en details",
+    "back": "Terug",
+    "accountLabel": "Naam (optioneel)",
+    "apiKey": "API-sleutel",
+    "adminKey": "Beheerder-API-sleutel",
+    "region": "Regio",
+    "global": "Internationaal",
+    "china": "China",
+    "setupHelp": "Installatie-instructies",
+    "connect": "Verbinden",
+    "openSignIn": "Aanmelden openen",
+    "connectInstallation": "Installatie verbinden",
+    "haveCode": "Ik heb een code",
+    "syncOptions": "Synchronisatie en privacy",
+    "remove": "Verwijderen",
+    "automatic": "Automatisch gevonden",
+    "empty": "Er zijn nog geen accounts verbonden.",
+    "apiAccount": "API-account",
+    "subscription": "Abonnement / programmeerplan",
+    "thisInstallation": "Deze installatie",
+    "syncOn": "Synchronisatie ingeschakeld",
+    "syncOff": "Synchronisatie uitgeschakeld",
+    "local": "Lokaal",
+    "waitingSync": "Wachten op eerste synchronisatie",
+    "viaPeer": "Via een gekoppelde installatie",
+    "balance": "Saldo",
+    "privacy": "Inloggegevens blijven op dit apparaat. Gebruik wordt niet naar de ontwikkelaar gestuurd.",
+    "installationsHelp": "Verbind je eigen installaties om hun gebruik samen te bekijken.",
+    "pairHelp": "Open Installaties op het andere apparaat. Maak hier een code of plak de code ervan. Beide apparaten moeten direct bereikbaar zijn.",
+    "adminKeyHelp": "Een beheerder-API-sleutel van de organisatie is vereist voor gebruiksrapporten, los van het chatabonnement.",
+    "glmHelp": "Gebruik je GLM Coding Plan-sleutel en kies de bijbehorende regio.",
+    "browserHelp": "Ga verder via de officiële aanmelding van de aanbieder.",
+    "keyPrivacy": "De sleutel wordt lokaal opgeslagen en alleen voor verzoeken aan deze aanbieder gebruikt.",
+    "needsSetup": "Installeer eerst de officiële CLI van de aanbieder en vernieuw deze lijst.",
+    "claudeHelp": "Claude Code verzorgt de aanmelding op dit apparaat. De Claude Code CLI moet geïnstalleerd zijn.",
+    "kimiHelp": "Gebruik de officiële Kimi Code-aanmelding of een Kimi Code-abonnementssleutel.",
+    "moonshotHelp": "Gebruik een Moonshot API-sleutel voor het API-saldo, los van Kimi Code.",
+    "loginWaiting": "Voltooi de aanmelding bij de aanbieder. Houd dit venster open.",
+    "loginComplete": "Account verbonden. Metingen worden automatisch bijgewerkt.",
+    "claudeSignIn": "Verbinden met Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Inloggen",
+    "failed": "Inloggen mislukt",
+    "checking": "Verbinden…",
+    "installation": "Installaties",
+    "status": {
+      "connected": "Actief",
+      "detected": "Gevonden",
+      "historical": "Eerder",
+      "auth_required": "Aanmelding vereist",
+      "error": "Fout",
+      "unavailable": "Niet beschikbaar",
+      "unknown": "Niet beschikbaar"
+    },
+    "errors": {
+      "invalid_account": "Account niet gevonden. Vernieuw de accountlijst.",
+      "invalid_key": "Sleutel geweigerd. Controleer de sleutel en de gekozen aanbieder.",
+      "permission_denied": "Deze sleutel heeft geen toegang tot gebruiksrapporten. Gebruik een sleutel met de vereiste rechten.",
+      "unsupported_key": "Dit sleuteltype kan geen gebruik lezen. Volg de installatie-instructies van de aanbieder.",
+      "account_limit": "Accountlimiet bereikt. Verwijder eerst een ongebruikt account.",
+      "connection_unavailable": "De aanbieder is niet bereikbaar. Controleer je verbinding en probeer opnieuw.",
+      "account_storage_unavailable": "Lokale accountopslag is niet beschikbaar. Controleer de bestandsrechten van deze app.",
+      "profile_remove_failed": "De opgeslagen aanmelding kon niet worden verwijderd. Sluit het aanmeldvenster en probeer opnieuw.",
+      "unsupported_platform": "Aanmelden via de browser is niet beschikbaar op dit platform. Gebruik een beschikbare sleutelmethode."
+    },
+    "kimiHelperHelp": "Bij de eerste aanmelding downloadt de app het officiële Kimi-hulpprogramma rechtstreeks van Kimi. Het draait lokaal; het dashboard verstuurt geen telemetrie.",
+    "lastSeen": "Laatst gezien {time}"
   }
 }

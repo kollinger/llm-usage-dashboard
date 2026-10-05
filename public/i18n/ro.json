@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Datele de utilizare și de autentificare nu sunt trimise dezvoltatorului. Numai măsurătorile criptate sunt partajate cu dispozitive asociate explicit. Deconectarea nu șterge copiile primite.",
     "networkLimit": "Conexiunile directe folosesc rețeaua locală sau un VPN privat existent, fără releu, server de descoperire ori modificări ale routerului. Rețelele care le blochează împiedică sincronizarea automată.",
     "coverage": "{count} înregistrări unice · {duplicates} duplicate eliminate · {excluded} înregistrări rămân locale fără identificator sigur. Limitele sunt măsurători salvate; totalurile API nu se adaugă."
+  },
+  "connections": {
+    "accounts": "Conturi",
+    "installations": "Instalări",
+    "general": "General",
+    "advanced": "Avansat",
+    "addAccount": "Adaugă cont",
+    "chooseProvider": "Alege un furnizor",
+    "detectedDetails": "Conturi GPT detectate și detalii",
+    "back": "Înapoi",
+    "accountLabel": "Nume (opțional)",
+    "apiKey": "Cheie API",
+    "adminKey": "Cheie API de administrator",
+    "region": "Regiune",
+    "global": "Internațional",
+    "china": "China",
+    "setupHelp": "Instrucțiuni de configurare",
+    "connect": "Conectează",
+    "openSignIn": "Deschide autentificarea",
+    "connectInstallation": "Conectează instalarea",
+    "haveCode": "Am un cod",
+    "syncOptions": "Sincronizare și confidențialitate",
+    "remove": "Elimină",
+    "automatic": "Detectat automat",
+    "empty": "Nu există conturi conectate încă.",
+    "apiAccount": "Cont API",
+    "subscription": "Abonament / plan de programare",
+    "thisInstallation": "Această instalare",
+    "syncOn": "Sincronizare activată",
+    "syncOff": "Sincronizare dezactivată",
+    "local": "Local",
+    "waitingSync": "Se așteaptă prima sincronizare",
+    "viaPeer": "Printr-o instalare asociată",
+    "balance": "Sold",
+    "privacy": "Datele de autentificare rămân pe acest dispozitiv. Utilizarea nu este trimisă dezvoltatorului.",
+    "installationsHelp": "Conectează instalările proprii pentru a vedea utilizarea împreună.",
+    "pairHelp": "Deschide Instalări pe celălalt dispozitiv. Creează un cod aici sau lipește codul lui. Dispozitivele trebuie să fie accesibile direct.",
+    "adminKeyHelp": "Rapoartele necesită o cheie API de administrator a organizației, separată de abonamentul de chat.",
+    "glmHelp": "Folosește cheia GLM Coding Plan și selectează regiunea sa.",
+    "browserHelp": "Continuă prin autentificarea oficială a furnizorului.",
+    "keyPrivacy": "Cheia este stocată local și folosită numai pentru cereri către acest furnizor.",
+    "needsSetup": "Instalează mai întâi CLI-ul oficial al furnizorului și reîmprospătează lista.",
+    "claudeHelp": "Claude Code gestionează autentificarea pe acest dispozitiv. Este necesar CLI-ul Claude Code instalat.",
+    "kimiHelp": "Folosește autentificarea oficială Kimi Code sau o cheie a planului Kimi Code.",
+    "moonshotHelp": "Folosește o cheie Moonshot API pentru soldul API, separat de Kimi Code.",
+    "loginWaiting": "Finalizează autentificarea furnizorului. Păstrează această fereastră deschisă.",
+    "loginComplete": "Cont conectat. Măsurătorile se actualizează automat.",
+    "claudeSignIn": "Conectează prin Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Autentificare",
+    "failed": "Autentificarea a eșuat",
+    "checking": "Se conectează…",
+    "installation": "Instalări",
+    "status": {
+      "connected": "Activ",
+      "detected": "Detectat",
+      "historical": "Anterior",
+      "auth_required": "Autentificare necesară",
+      "error": "Eroare",
+      "unavailable": "Indisponibil",
+      "unknown": "Indisponibil"
+    },
+    "errors": {
+      "invalid_account": "Contul nu a fost găsit. Reîmprospătează lista de conturi.",
+      "invalid_key": "Cheia a fost respinsă. Verifică cheia și furnizorul selectat.",
+      "permission_denied": "Cheia nu are acces la rapoartele de utilizare. Folosește o cheie cu permisiunile necesare.",
+      "unsupported_key": "Acest tip de cheie nu poate citi utilizarea. Urmează instrucțiunile furnizorului.",
+      "account_limit": "S-a atins limita de conturi. Elimină mai întâi un cont nefolosit.",
+      "connection_unavailable": "Furnizorul nu este accesibil. Verifică conexiunea și încearcă din nou.",
+      "account_storage_unavailable": "Stocarea locală a conturilor nu este disponibilă. Verifică permisiunile de fișiere ale aplicației.",
+      "profile_remove_failed": "Autentificarea salvată nu a putut fi eliminată. Închide fereastra de autentificare și încearcă din nou.",
+      "unsupported_platform": "Autentificarea în browser nu este disponibilă pe această platformă. Folosește o metodă disponibilă cu cheie."
+    },
+    "kimiHelperHelp": "La prima autentificare, aplicația descarcă instrumentul oficial Kimi direct de la Kimi. Rulează local; panoul nu trimite telemetrie.",
+    "lastSeen": "Văzut ultima dată {time}"
   }
 }

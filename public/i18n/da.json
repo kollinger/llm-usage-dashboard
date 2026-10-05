@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Brugsdata og loginoplysninger sendes ikke til udvikleren. Kun krypterede målinger deles med udtrykkeligt parrede enheder. Afbrydelse sletter ikke allerede modtagne kopier.",
     "networkLimit": "Direkte forbindelser bruger det lokale netværk eller en eksisterende privat VPN uden relay, søgeserver eller routerændringer. Netværk, der blokerer dette, forhindrer automatisk synkronisering.",
     "coverage": "{count} forskellige poster · {duplicates} dubletter fjernet · {excluded} poster forbliver lokale uden sikker identifikation. Grænser er gemte målinger; API-totaler tilføjes ikke."
+  },
+  "connections": {
+    "accounts": "Konti",
+    "installations": "Installationer",
+    "general": "Generelt",
+    "advanced": "Avanceret",
+    "addAccount": "Tilføj konto",
+    "chooseProvider": "Vælg udbyder",
+    "detectedDetails": "Registrerede GPT-konti og detaljer",
+    "back": "Tilbage",
+    "accountLabel": "Navn (valgfrit)",
+    "apiKey": "API-nøgle",
+    "adminKey": "Admin-API-nøgle",
+    "region": "Region",
+    "global": "International",
+    "china": "Kina",
+    "setupHelp": "Opsætningsvejledning",
+    "connect": "Forbind",
+    "openSignIn": "Åbn login",
+    "connectInstallation": "Forbind installation",
+    "haveCode": "Jeg har en kode",
+    "syncOptions": "Synkronisering og privatliv",
+    "remove": "Fjern",
+    "automatic": "Registreret automatisk",
+    "empty": "Ingen konti er forbundet endnu.",
+    "apiAccount": "API-konto",
+    "subscription": "Abonnement / kodeplan",
+    "thisInstallation": "Denne installation",
+    "syncOn": "Synkronisering aktiveret",
+    "syncOff": "Synkronisering deaktiveret",
+    "local": "Lokal",
+    "waitingSync": "Venter på første synkronisering",
+    "viaPeer": "Via en parret installation",
+    "balance": "Saldo",
+    "privacy": "Loginoplysninger bliver på denne enhed. Forbrug sendes ikke til udvikleren.",
+    "installationsHelp": "Forbind dine egne installationer for at se deres samlede forbrug.",
+    "pairHelp": "Åbn Installationer på den anden enhed. Opret en kode her, eller indsæt dens kode. Begge enheder skal kunne nås direkte.",
+    "adminKeyHelp": "Forbrugsrapporter kræver en Admin-API-nøgle for organisationen, adskilt fra chatabonnementet.",
+    "glmHelp": "Brug din GLM Coding Plan-nøgle og vælg dens region.",
+    "browserHelp": "Fortsæt via udbyderens officielle login.",
+    "keyPrivacy": "Nøglen gemmes lokalt og bruges kun til forespørgsler til denne udbyder.",
+    "needsSetup": "Installer først udbyderens officielle CLI, og opdater listen.",
+    "claudeHelp": "Claude Code håndterer login på denne enhed. Claude Code CLI skal være installeret.",
+    "kimiHelp": "Brug det officielle Kimi Code-login eller en Kimi Code-plannøgle.",
+    "moonshotHelp": "Brug en Moonshot API-nøgle til at læse API-saldoen, adskilt fra Kimi Code.",
+    "loginWaiting": "Fuldfør udbyderens login. Hold dette vindue åbent imens.",
+    "loginComplete": "Kontoen er forbundet. Målinger opdateres automatisk.",
+    "claudeSignIn": "Forbind med Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Log ind",
+    "failed": "Login mislykkedes",
+    "checking": "Forbinder…",
+    "installation": "Installationer",
+    "status": {
+      "connected": "Aktiv",
+      "detected": "Registreret",
+      "historical": "Tidligere",
+      "auth_required": "Login påkrævet",
+      "error": "Fejl",
+      "unavailable": "Ikke tilgængelig",
+      "unknown": "Ikke tilgængelig"
+    },
+    "errors": {
+      "invalid_account": "Kontoen blev ikke fundet. Opdater kontolisten.",
+      "invalid_key": "Nøglen blev afvist. Kontroller nøglen og den valgte udbyder.",
+      "permission_denied": "Nøglen har ikke adgang til forbrugsrapporter. Brug en nøgle med de nødvendige rettigheder.",
+      "unsupported_key": "Denne nøgletype kan ikke læse forbrug. Følg udbyderens opsætningsvejledning.",
+      "account_limit": "Kontogrænsen er nået. Fjern først en ubrugt konto.",
+      "connection_unavailable": "Udbyderen kunne ikke nås. Kontroller forbindelsen, og prøv igen.",
+      "account_storage_unavailable": "Lokal kontolagring er utilgængelig. Kontroller appens filtilladelser.",
+      "profile_remove_failed": "Det gemte login kunne ikke fjernes. Luk loginvinduet, og prøv igen.",
+      "unsupported_platform": "Browserlogin er ikke tilgængeligt på denne platform. Brug en tilgængelig nøglemetode."
+    },
+    "kimiHelperHelp": "Ved første login henter appen den officielle Kimi-hjælper direkte fra Kimi. Den kører lokalt; dashboardet sender ingen telemetri.",
+    "lastSeen": "Sidst set {time}"
   }
 }
