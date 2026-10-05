@@ -11,6 +11,8 @@
 - Verify encrypted device histories in a background worker so startup does not
   block the dashboard HTTP server.
 - Cancel obsolete chart requests when switching installations.
+- Recheck actual source read access before using extraction caches, including
+  Windows access-control permissions.
 
 ## 1.6.0-preview.9 - 2026-10-05
 

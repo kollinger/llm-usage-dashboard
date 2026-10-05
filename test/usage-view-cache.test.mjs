@@ -46,9 +46,9 @@ try {
  assert.equal(await store.read('local','revoked-trust'),null);
  const nextVersion=createUsageViewCache({directory,context:store.context,version:2});
  assert.equal(await nextVersion.read('local','current-trust'),null);
- assert.equal((await stat(directory)).mode&0o777,0o700);
+ if(process.platform !== 'win32') assert.equal((await stat(directory)).mode&0o777,0o700);
  for(const file of await readdir(directory)) {
-  assert.equal((await stat(join(directory,file))).mode&0o777,0o600);
+  if(process.platform !== 'win32') assert.equal((await stat(join(directory,file))).mode&0o777,0o600);
   const text=gunzipSync(await readFile(join(directory,file))).toString();
   for(const secret of ['private transcript','secret-key','secret-token','private provider payload']) assert.ok(!text.includes(secret));
  }
