@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Skupaj",
       "provider": "Ponudnik",
-      "model": "Modeli"
+      "model": "Modeli",
+      "device": "Namestitvi",
+      "account": "Računu"
     },
     "breakdownToggleAria": "Razčlenitev žetonov",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Združi po",
+      "unknownAccount": "Neznan račun",
+      "unknownDevice": "Neznana namestitev",
+      "sharedDevice": "Najdeno na več namestitvah",
+      "sharedDeviceHelp": "Šteto enkrat; prvotna namestitev ni jasna.",
+      "observed": "Najdeno v lokalnih dnevnikih",
+      "observedOn": "Najdeno na namestitvah",
+      "evidence": "Pripisovanje",
+      "observedHelp": "Namestitve kažejo, kje so bili najdeni dnevniki. Kopirani dogodki se štejejo enkrat; prvotni računalnik je lahko neznan.",
+      "accountHelp": "Račun se pripiše le, kadar je zabeležen v podatkih o uporabi. Drugi žetoni ostanejo pod Neznan račun."
     }
   },
   "tokenMix": {

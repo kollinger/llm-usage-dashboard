@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "I alt",
       "provider": "Udbyder",
-      "model": "Modeller"
+      "model": "Modeller",
+      "device": "Installation",
+      "account": "Konto"
     },
     "breakdownToggleAria": "Tokenopdeling",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Gruppér efter",
+      "unknownAccount": "Ukendt konto",
+      "unknownDevice": "Ukendt installation",
+      "sharedDevice": "Set på flere installationer",
+      "sharedDeviceHelp": "Talt én gang; oprindelig installation er uklar.",
+      "observed": "Set i lokale logfiler",
+      "observedOn": "Set på installationer",
+      "evidence": "Tilknytning",
+      "observedHelp": "Installationer viser, hvor logfiler blev fundet. Kopierede hændelser tælles én gang; den oprindelige computer kan være ukendt.",
+      "accountHelp": "En konto tilknyttes kun, når den er registreret i forbrugsdata. Andre tokens forbliver under Ukendt konto."
     }
   },
   "tokenMix": {

@@ -159,7 +159,9 @@
     "breakdown": {
       "total": "Total",
       "provider": "Provider",
-      "model": "Model"
+      "model": "Model",
+      "device": "Installation",
+      "account": "Account"
     },
     "breakdownToggleAria": "Token breakdown",
     "overviewAria": "Compact token history by provider",
@@ -191,6 +193,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Group by",
+      "unknownAccount": "Unknown account",
+      "unknownDevice": "Unknown installation",
+      "sharedDevice": "Seen on multiple installations",
+      "sharedDeviceHelp": "Counted once; original installation unclear.",
+      "observed": "Observed in local logs",
+      "observedOn": "Observed on installations",
+      "evidence": "Attribution",
+      "observedHelp": "Installations show where logs were found. Copied events are counted once; the original computer may be unknown.",
+      "accountHelp": "An account is assigned only when recorded in the usage evidence. Other tokens remain under Unknown account."
     }
   },
   "tokenMix": {

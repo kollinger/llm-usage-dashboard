@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Ukupno",
       "provider": "Pružatelj",
-      "model": "Modeli"
+      "model": "Modeli",
+      "device": "Instalaciji",
+      "account": "Računu"
     },
     "breakdownToggleAria": "Raščlamba tokena",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Grupiraj prema",
+      "unknownAccount": "Nepoznat račun",
+      "unknownDevice": "Nepoznata instalacija",
+      "sharedDevice": "Pronađeno na više instalacija",
+      "sharedDeviceHelp": "Broji se jednom; izvorna instalacija nije jasna.",
+      "observed": "Pronađeno u lokalnim zapisima",
+      "observedOn": "Pronađeno na instalacijama",
+      "evidence": "Pripisivanje",
+      "observedHelp": "Instalacije pokazuju gdje su pronađeni zapisi. Kopirani događaji broje se jednom; izvorno računalo može biti nepoznato.",
+      "accountHelp": "Račun se pripisuje samo ako je zabilježen u podacima o korištenju. Ostali tokeni ostaju pod Nepoznat račun."
     }
   },
   "tokenMix": {

@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Razem",
       "provider": "Dostawca",
-      "model": "Modele"
+      "model": "Modele",
+      "device": "Instalacji",
+      "account": "Konta"
     },
     "breakdownToggleAria": "Podział tokenów",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Grupuj według",
+      "unknownAccount": "Nieznane konto",
+      "unknownDevice": "Nieznana instalacja",
+      "sharedDevice": "Wykryto na wielu instalacjach",
+      "sharedDeviceHelp": "Policzono raz; pierwotna instalacja jest niejasna.",
+      "observed": "Wykryto w lokalnych logach",
+      "observedOn": "Wykryto na instalacjach",
+      "evidence": "Przypisanie",
+      "observedHelp": "Instalacje pokazują, gdzie znaleziono logi. Skopiowane zdarzenia są liczone raz; pierwotny komputer może być nieznany.",
+      "accountHelp": "Konto jest przypisywane tylko wtedy, gdy potwierdzają je dane użycia. Pozostałe tokeny pozostają pod Nieznanym kontem."
     }
   },
   "tokenMix": {

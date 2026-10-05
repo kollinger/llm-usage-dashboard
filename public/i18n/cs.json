@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Celkem",
       "provider": "Poskytovatel",
-      "model": "Modely"
+      "model": "Modely",
+      "device": "Instalace",
+      "account": "Účet"
     },
     "breakdownToggleAria": "Rozdělení tokenů",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Seskupit podle",
+      "unknownAccount": "Neznámý účet",
+      "unknownDevice": "Neznámá instalace",
+      "sharedDevice": "Nalezeno ve více instalacích",
+      "sharedDeviceHelp": "Započítáno jednou; původní instalace není jasná.",
+      "observed": "Nalezeno v místních protokolech",
+      "observedOn": "Nalezeno v instalacích",
+      "evidence": "Přiřazení",
+      "observedHelp": "Instalace ukazují, kde byly nalezeny protokoly. Zkopírované události se počítají jednou; původní počítač může být neznámý.",
+      "accountHelp": "Účet se přiřadí pouze s doložením v záznamu využití. Ostatní tokeny zůstávají pod Neznámý účet."
     }
   },
   "tokenMix": {

@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Totale",
       "provider": "Fornitore",
-      "model": "Modello"
+      "model": "Modello",
+      "device": "Installazione",
+      "account": "Account"
     },
     "breakdownToggleAria": "Suddivisione token",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Raggruppa per",
+      "unknownAccount": "Account sconosciuto",
+      "unknownDevice": "Installazione sconosciuta",
+      "sharedDevice": "Rilevato su più installazioni",
+      "sharedDeviceHelp": "Contato una volta; installazione originale incerta.",
+      "observed": "Rilevato nei log locali",
+      "observedOn": "Rilevato sulle installazioni",
+      "evidence": "Attribuzione",
+      "observedHelp": "Le installazioni indicano dove sono stati trovati i log. Gli eventi copiati vengono contati una volta; il computer originale può essere sconosciuto.",
+      "accountHelp": "Un account viene attribuito solo se documentato nei dati di utilizzo. Gli altri token restano sotto Account sconosciuto."
     }
   },
   "tokenMix": {

@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Totalt",
       "provider": "Leverantör",
-      "model": "Modell"
+      "model": "Modell",
+      "device": "Installation",
+      "account": "Konto"
     },
     "breakdownToggleAria": "Tokenuppdelning",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Gruppera efter",
+      "unknownAccount": "Okänt konto",
+      "unknownDevice": "Okänd installation",
+      "sharedDevice": "Upptäckt på flera installationer",
+      "sharedDeviceHelp": "Räknat en gång; ursprunglig installation oklar.",
+      "observed": "Upptäckt i lokala loggar",
+      "observedOn": "Upptäckt på installationer",
+      "evidence": "Tilldelning",
+      "observedHelp": "Installationer visar var loggarna hittades. Kopierade händelser räknas en gång; den ursprungliga datorn kan vara okänd.",
+      "accountHelp": "Ett konto tilldelas endast när det är dokumenterat i användningsdata. Övriga tokens förblir under Okänt konto."
     }
   },
   "tokenMix": {

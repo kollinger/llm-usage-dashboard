@@ -37,9 +37,10 @@
       </div>
 
       <div class="dashboard-layout" id="dashboardLayout">
-      <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf nach Anbieter" data-i18n-aria-label="chart.overviewAria" data-dashboard-panel-id="overview-history" data-dashboard-panel-label-key="chart.overviewAria" hidden>
+      <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf" data-i18n-aria-label="chart.svgAria" data-dashboard-panel-id="overview-history" data-dashboard-panel-label-key="chart.svgAria" hidden>
         <div class="overview-history-toolbar">
           <nav id="overviewHistoryFilterBar" class="chart-filter-bar overview-history-filter-bar" aria-label="Zeitraum" data-i18n-aria-label="chart.filterBarAria"></nav>
+          <div id="overviewHistoryBreakdownToggle" class="chart-breakdown-control"></div>
           <nav id="overviewHistoryModeToggle" class="chart-mode-toggle overview-history-mode-toggle" aria-label="Ansichtsmodus" data-i18n-aria-label="chart.modeToggleAria"></nav>
         </div>
         <div id="overviewHistoryChart" class="overview-history-chart"></div>
@@ -126,7 +127,7 @@
               <div class="chart-heading-row">
                 <h2 id="chartTitle" data-i18n="chart.heading">Token-Verlauf aus Logs</h2>
                 <nav id="chartModeToggle" class="chart-mode-toggle" aria-label="Ansichtsmodus" data-i18n-aria-label="chart.modeToggleAria"></nav>
-                <nav id="chartBreakdownToggle" class="chart-mode-toggle chart-breakdown-toggle" aria-label="Token-Aufschlüsselung" data-i18n-aria-label="chart.breakdownToggleAria"></nav>
+                <div id="chartBreakdownToggle" class="chart-breakdown-control"></div>
               </div>
             </div>
             <div class="chart-heading-tools">

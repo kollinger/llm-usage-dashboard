@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Всего",
       "provider": "Провайдер",
-      "model": "Модель"
+      "model": "Модель",
+      "device": "Установке",
+      "account": "Аккаунту"
     },
     "breakdownToggleAria": "Разбивка токенов",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Группировать по",
+      "unknownAccount": "Неизвестный аккаунт",
+      "unknownDevice": "Неизвестная установка",
+      "sharedDevice": "Обнаружено на нескольких установках",
+      "sharedDeviceHelp": "Учтено один раз; исходная установка неясна.",
+      "observed": "Обнаружено в локальных логах",
+      "observedOn": "Обнаружено на установках",
+      "evidence": "Привязка",
+      "observedHelp": "Установки показывают, где найдены логи. Скопированные события учитываются один раз; исходный компьютер может быть неизвестен.",
+      "accountHelp": "Аккаунт назначается только при подтверждении в данных использования. Остальные токены остаются в группе Неизвестный аккаунт."
     }
   },
   "tokenMix": {

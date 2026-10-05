@@ -70,6 +70,21 @@ and overlapping uptime for new information to travel. Closing a desktop window
 leaves the installed app's normal background collector running; quitting the app
 or sleeping the computer stops collection and sync until it resumes.
 
+## Read installation and account charts
+
+The chart breakdown selector includes **Installation** and **Account** alongside
+the existing total, provider and model views. The device selector filters the
+data included in the dashboard; the chart breakdown changes how those selected
+records are grouped. Tooltips and group totals show the relationship between
+installations and recorded accounts.
+
+An installation is the observer of a usage record, not proof that the original
+request executed on that computer. When the same stable event is present on
+several installations, the combined view counts it once and marks the device
+attribution as shared/ambiguous. Missing historical account evidence is shown
+as **Unknown account**. Signing into an account today never relabels old usage.
+Provider quota or billing aggregates do not manufacture per-event attribution.
+
 ## Network boundary
 
 The app operates without developer infrastructure, external discovery, STUN,
@@ -132,6 +147,8 @@ AES-256-GCM authenticated encryption, and Ed25519 signatures. Nonces, response
 binding, and bounded timestamps reject packet replay. Snapshots retain their
 origin signature when another paired device forwards them. Downloads are paged; unchanged blocks are reused after comparing hashes and
 verifying the complete signed revision. Downloads are size-limited, and committed only after the complete signed revision verifies.
+An active download leases its signed revision for a bounded interval, allowing
+new local captures to proceed without changing pages already being transferred.
 
 Provider keys are AES-256-GCM encrypted at rest in `data/provider-accounts/`;
 the encryption key stays beside the vault in an owner-only file. Private
@@ -154,6 +171,7 @@ The current bounds are 20 directly paired peers, 40 snapshot origins, and
 1,000,000 stable events per origin. An exceeded bound produces an incomplete/
 unreachable indication rather than publishing a partial snapshot.
 
-All paired installations should run 1.5.0-preview.1 or newer for the expanded
-account snapshot format. Old signed snapshots remain readable; older apps do
-not understand new extended snapshots.
+All paired installations should run 1.6.0-preview.1 or newer for installation
+and historical account attribution. Old signed snapshots remain readable;
+older apps do not understand new extended snapshots containing event account
+evidence.

@@ -22,7 +22,7 @@ const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
 const { DeviceSync } = require("./lib/device-sync");
-const { exportUsageEvents, combinedUsage } = require("./lib/device-sync-data");
+const { exportUsageEvents, createCombinedUsageCache, attributeLocalUsageEvents } = require("./lib/device-sync-data");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -30,7 +30,7 @@ const {
   normalizeConnectedSource,
   readSourceSettings
 } = require("./lib/source-settings");
-const { aggregateUsageEvents, hashEvidencePath } = require("./lib/usage-events");
+const { aggregateUsageEvents, hashEvidencePath, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
 const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildHistory: buildCodexResetHistory } = require("./lib/codex-reset-history");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
@@ -555,6 +555,7 @@ app.use(express.static(path.join(ROOT, "public")));
 app.use("/vendor/lucide", express.static(path.join(path.dirname(require.resolve("lucide/package.json")), "dist", "umd")));
 
 const deviceSync = new DeviceSync({ dataDir: DATA_DIR });
+const combinedUsageCache = createCombinedUsageCache();
 const gptLogin = createGptAccountLogin({
   profilesDir: path.join(DATA_DIR, "codex-profiles"),
   clientFactory: createCodexAppServer,
@@ -1013,7 +1014,7 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
       if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
         return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
       }
-      return res.json({ ...combinedUsage(usage, [...deviceSync.snapshots.values()], selected), deviceSync: sync });
+      return res.json({ ...combinedUsageCache.get(usage, [...deviceSync.snapshots.values()], selected), deviceSync: sync });
     }
     res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
@@ -1213,7 +1214,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
     );
     const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
     const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
-    const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama]);
+    const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama], {
+      device: { id: deviceSync.identity?.id || "local", label: deviceSync.config.name },
+      snapshots: [...deviceSync.snapshots.values()],
+      accounts: [...(gptAccounts.accounts || []), ...connectedAccounts]
+    });
     if (deviceSync.config.enabled) {
       try {
         await deviceSync.capture({ ...exportUsageEvents([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama]), accounts: gptAccounts.accounts, connections: connectedAccounts });
@@ -4481,6 +4486,7 @@ async function readCodexUsage(options = {}) {
         timestampMs,
         model: currentModel || entry.limitName || null,
         usage,
+        attribution: entry.attribution,
         evidence: {
           realpath: fileRecord.realPath,
           realpathHash,
@@ -4608,7 +4614,9 @@ async function parseCodexSessionFileEvents(fileRecord) {
   const events = [];
   let currentModel = null;
   let currentReasoningEffort = null;
+  let sessionAttribution = null;
   await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type === "session_meta") sessionAttribution = recordedAccountAttribution("codex", event.payload);
     if (event?.type === "turn_context" && event.payload?.model) {
       currentModel = event.payload.model;
       currentReasoningEffort = normalizeCodexReasoningEffort(event.payload.effort);
@@ -4631,6 +4639,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       // Kept separately so model attribution survives rate-limit compaction.
       limitName: rateLimits?.limit_name || null,
       usage: event.payload.info?.last_token_usage || {},
+      attribution: recordedAccountAttribution("codex", event.payload) || sessionAttribution,
       info: event.payload.info || {},
       rateLimits,
       eventId: event.id || event.payload?.id || null,
@@ -5789,6 +5798,7 @@ async function readClaudeCodeUsage(options = {}) {
         timestampMs,
         model,
         usage: normalized,
+        attribution: entry.attribution,
         evidence: {
           realpath: fileRecord.realPath,
           realpathHash,
@@ -5931,6 +5941,7 @@ async function parseClaudeTranscriptFileEvents(fileRecord) {
       timestampMs,
       model: event.message.model || "unknown",
       usage: normalizeClaudeUsage(event.message.usage),
+      attribution: recordedAccountAttribution("claudeCode", event) || recordedAccountAttribution("claudeCode", event.message),
       requestId: event.requestId || null,
       messageId: event.message?.id || null,
       uuid: event.uuid || null,
@@ -7642,8 +7653,13 @@ async function readOllamaUsage(options = {}) {
   };
 }
 
-function buildLocalAggregate(providers) {
-  const usageEvents = providers.flatMap((provider) => provider?._usageEvents || []);
+function buildLocalAggregate(providers, options = {}) {
+  const accountLabels = new Map((options.accounts || []).map((account) => [account.accountId || account.id, account.label]));
+  const usageEvents = attributeLocalUsageEvents(providers.flatMap((provider) => provider?._usageEvents || []), options).map((event) => {
+    const attribution = event.attribution;
+    if (accountLabels.has(attribution.accountId)) attribution.accountLabel = normalizeAttribution({ ...attribution, accountLabel: accountLabels.get(attribution.accountId) }).accountLabel;
+    return { ...event, attribution };
+  });
   if (usageEvents.length) {
     const aggregate = aggregateUsageEvents(usageEvents, { dailyHistoryDays: DAILY_HISTORY_DAYS });
     return {
@@ -7654,6 +7670,7 @@ function buildLocalAggregate(providers) {
       daily: aggregate.daily,
       slots: aggregate.slots,
       sources: aggregate.sources,
+      attribution: aggregate.attribution,
       eventStats: aggregate.stats
     };
   }
@@ -11117,6 +11134,9 @@ module.exports = {
   invalidateTimedCache,
   readThroughCache,
   _test: {
+    parseCodexSessionFileEvents,
+    parseClaudeTranscriptFileEvents,
+    buildLocalAggregate,
     createCodexAppServer,
     recordCodexResetSnapshot,
     saveCodexHistoricalSamples,

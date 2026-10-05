@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Spolu",
       "provider": "Poskytovateľ",
-      "model": "Modely"
+      "model": "Modely",
+      "device": "Inštalácie",
+      "account": "Účtu"
     },
     "breakdownToggleAria": "Rozdelenie tokenov",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Zoskupiť podľa",
+      "unknownAccount": "Neznámy účet",
+      "unknownDevice": "Neznáma inštalácia",
+      "sharedDevice": "Nájdené vo viacerých inštaláciách",
+      "sharedDeviceHelp": "Započítané raz; pôvodná inštalácia je nejasná.",
+      "observed": "Nájdené v lokálnych protokoloch",
+      "observedOn": "Nájdené v inštaláciách",
+      "evidence": "Priradenie",
+      "observedHelp": "Inštalácie ukazujú, kde sa našli protokoly. Skopírované udalosti sa počítajú raz; pôvodný počítač môže byť neznámy.",
+      "accountHelp": "Účet sa priradí iba pri doložení v údajoch o využití. Ostatné tokeny zostávajú pod Neznámy účet."
     }
   },
   "tokenMix": {

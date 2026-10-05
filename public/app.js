@@ -168,6 +168,7 @@ const els = {
   overviewHistoryPanel: document.getElementById("overviewHistoryPanel"),
   overviewHistoryFilterBar: document.getElementById("overviewHistoryFilterBar"),
   overviewHistoryModeToggle: document.getElementById("overviewHistoryModeToggle"),
+  overviewHistoryBreakdownToggle: document.getElementById("overviewHistoryBreakdownToggle"),
   overviewHistoryChart: document.getElementById("overviewHistoryChart"),
   overviewHistoryLegend: document.getElementById("overviewHistoryLegend"),
   chartTitle: document.getElementById("chartTitle"),
@@ -338,7 +339,8 @@ const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
 const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
 const LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
-const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
+const CHART_BREAKDOWN_MODES = ["total", "provider", "model", "device", "account"];
+const CHART_ATTRIBUTION_PALETTE = ["#0072b2", "#008765", "#d14900", "#803e9c", "#c3365f", "#526127", "#006b73", "#77502d"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
 const LIMIT_GAUGE_TARGET_PERCENT = 100;
 const LIVE_TOKEN_DISPLAY_TICK_MS = 1000;
@@ -2509,6 +2511,14 @@ function bindEvents() {
     }
   });
   els.loginForm.addEventListener("submit", login);
+  els.appShell.addEventListener("change", (event) => {
+    const select = event.target.closest("[data-chart-group]");
+    if (!select) return;
+    state.chartBreakdownMode = CHART_BREAKDOWN_MODES.includes(select.value) ? select.value : "total";
+    requestChartLatestForViewChange();
+    requestOverviewHistoryLatestForViewChange();
+    if (state.usage) preservePageScrollDuring(render);
+  });
   els.appShell.addEventListener("click", (e) => {
     const quotaPaceBtn = e.target.closest("[data-quota-pace-window]");
     if (quotaPaceBtn) {
@@ -2530,15 +2540,6 @@ function bindEvents() {
       state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
       requestChartLatestForViewChange();
       requestOverviewHistoryLatestForViewChange();
-      if (state.usage) preservePageScrollDuring(render);
-      return;
-    }
-    const breakdownBtn = e.target.closest("[data-chart-breakdown]");
-    if (breakdownBtn) {
-      state.chartBreakdownMode = CHART_BREAKDOWN_MODES.includes(breakdownBtn.dataset.chartBreakdown)
-        ? breakdownBtn.dataset.chartBreakdown
-        : "total";
-      requestChartLatestForViewChange();
       if (state.usage) preservePageScrollDuring(render);
       return;
     }
@@ -4671,19 +4672,14 @@ function renderChartModeToggle() {
 }
 
 function renderChartBreakdownToggle() {
-  return CHART_BREAKDOWN_MODES
-    .map((mode) => {
-      const active = state.chartBreakdownMode === mode;
-      return `
-        <button type="button" class="chart-mode-btn${active ? " active" : ""}" data-chart-breakdown="${mode}" aria-pressed="${active}">
-          ${escapeHtml(t(`chart.breakdown.${mode}`))}
-        </button>
-      `;
-    })
-    .join("");
+  return `<label class="chart-group-field"><span>${escapeHtml(t("chart.attribution.groupBy"))}</span>
+    <select data-chart-group aria-label="${escapeHtml(t("chart.attribution.groupBy"))}">${CHART_BREAKDOWN_MODES.map((mode) =>
+      `<option value="${mode}"${state.chartBreakdownMode === mode ? " selected" : ""}>${escapeHtml(t(`chart.breakdown.${mode}`))}</option>`
+    ).join("")}</select></label>`;
 }
 
 function renderTokenBreakdownSummary(daily, breakdownMode) {
+  if (["device", "account"].includes(breakdownMode)) return renderAttributionTotalBars(daily, breakdownMode);
   if (breakdownMode === "model") return renderModelTotalBars(daily);
   if (breakdownMode === "provider") return renderProviderTotalBars(daily);
   return renderTotalBreakdownSummary(daily);
@@ -5038,6 +5034,7 @@ function renderOverviewHistory(daily) {
     els.overviewHistoryPanel.hidden = true;
     els.overviewHistoryFilterBar.innerHTML = "";
     els.overviewHistoryModeToggle.innerHTML = "";
+    if (els.overviewHistoryBreakdownToggle) els.overviewHistoryBreakdownToggle.innerHTML = "";
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
@@ -5058,11 +5055,15 @@ function renderOverviewHistory(daily) {
     : activeRows;
   const segmentEntries = mode === "costs"
     ? costSourcesInUse(activeRows)
-    : chartProviderSegmentsInUse(activeRows);
+    : chartTokenSegmentEntries(activeRows, state.chartBreakdownMode);
   const rawMax = Math.max(...rows.map((row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0)), mode === "costs" ? 0.01 : 1);
   const scale = mode === "costs" ? chartCostScale(rawMax) : chartTokenScale(rawMax);
   els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(state.usage?.local?.daily || []);
   els.overviewHistoryModeToggle.innerHTML = renderChartModeToggle();
+  if (els.overviewHistoryBreakdownToggle) {
+    els.overviewHistoryBreakdownToggle.hidden = mode === "costs";
+    els.overviewHistoryBreakdownToggle.innerHTML = mode === "costs" ? "" : renderChartBreakdownToggle();
+  }
   const visibleDays = Math.min(rows.length, isSlotSeries ? 96 : viewportWidth >= 1000 ? 72 : 48);
   const barGap = isSlotSeries ? 2 : 3;
   const rawBarWidth = (plotViewportWidth - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1);
@@ -5095,7 +5096,8 @@ function renderOverviewHistory(daily) {
       valueForRow: (row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0),
       valueFormatter: (value) => historyBarValue(mode, value),
       lineColor: typeof segmentEntries[0] === "string" ? chartSourceColor(segmentEntries[0]) : chartSegmentColor(segmentEntries[0]),
-      pointRadius: 2.3
+      pointRadius: 2.3,
+      mode
     })
     : "";
 
@@ -5105,6 +5107,7 @@ function renderOverviewHistory(daily) {
       const x = barX(index);
       const fullLabel = formatHistoryRowFullLabel(row);
       const total = historyBarValue(mode, mode === "costs" ? row.totalEur : row.totalTokens);
+      const detail = chartHistoryDetail(row, mode);
       const rawSegments = mode === "costs"
         ? segmentEntries
           .map((id) => ({
@@ -5145,7 +5148,7 @@ function renderOverviewHistory(daily) {
           `;
         })
         .join("");
-      return `<g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" aria-label="${escapeHtml(`${fullLabel} · ${total}`)}">${segmentRects}</g>`;
+      return `<g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" data-history-detail="${escapeHtml(detail)}" aria-label="${escapeHtml(`${fullLabel} · ${total}${detail ? ` · ${detail}` : ""}`)}">${segmentRects}</g>`;
     })
     .join("");
   const tickFormatter = mode === "costs" ? formatChartEuro : formatTokens;
@@ -5169,7 +5172,7 @@ function renderOverviewHistory(daily) {
       </svg>
       <div class="overview-history-scroll">
         <div class="overview-history-canvas" style="width: ${width}px">
-          <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.overviewAria"))}" style="width: ${width}px">
+          <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.svgAria"))}" style="width: ${width}px">
             ${gridLines}
             <line x1="0" y1="${axisY}" x2="${width}" y2="${axisY}" stroke="var(--line)"></line>
             ${timeline}
@@ -8234,6 +8237,7 @@ function selectedRangeInsightDetail() {
 }
 
 function renderBreakdownWindowSummary(daily, breakdownMode) {
+  if (["device", "account"].includes(breakdownMode)) return renderAttributionWindowSummary(daily, breakdownMode);
   if (breakdownMode === "model") return renderModelWindowSummary(daily);
   return renderProviderWindowSummary(daily, breakdownMode);
 }
@@ -8689,7 +8693,7 @@ function showHistoryBarTooltip(event) {
     historyBarTooltip = document.createElement("div");
     historyBarTooltip.className = "history-bar-tooltip";
     historyBarTooltip.setAttribute("aria-hidden", "true");
-    historyBarTooltip.innerHTML = '<strong class="history-bar-tooltip-date"></strong><span class="history-bar-tooltip-value"></span><span class="history-bar-tooltip-segment" hidden><span class="history-bar-tooltip-swatch"></span><span class="history-bar-tooltip-segment-value"></span></span>';
+    historyBarTooltip.innerHTML = '<strong class="history-bar-tooltip-date"></strong><span class="history-bar-tooltip-value"></span><span class="history-bar-tooltip-segment" hidden><span class="history-bar-tooltip-swatch"></span><span class="history-bar-tooltip-segment-value"></span></span><span class="history-bar-tooltip-detail" hidden></span>';
     document.body.appendChild(historyBarTooltip);
   }
   historyBarTooltip.querySelector(".history-bar-tooltip-date").textContent = bar.dataset.historyLabel;
@@ -8701,6 +8705,9 @@ function showHistoryBarTooltip(event) {
     historyBarTooltip.querySelector(".history-bar-tooltip-swatch").style.backgroundColor = segment.getAttribute("fill");
     historyBarTooltip.querySelector(".history-bar-tooltip-segment-value").textContent = `${segment.dataset.historySegmentLabel} · ${segment.dataset.historySegmentValue}`;
   }
+  const detailLine = historyBarTooltip.querySelector(".history-bar-tooltip-detail");
+  detailLine.textContent = bar.dataset.historyDetail || "";
+  detailLine.hidden = !detailLine.textContent;
   historyBarTooltip.hidden = false;
   const bounds = bar.getBoundingClientRect();
   const x = event.type === "focusin" ? bounds.left + bounds.width / 2 : event.clientX;
@@ -8747,7 +8754,7 @@ function historyTimelineAreaPath(points, axisY) {
   ].join(" ");
 }
 
-function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, valueForRow, valueFormatter, lineColor, pointRadius = 2.5 }) {
+function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, valueForRow, valueFormatter, lineColor, pointRadius = 2.5, mode = "tokens" }) {
   const points = historyTimelinePoints(rows, max, axisY, chartHeight, xForRow, valueForRow);
   const linePath = historyTimelineLinePath(points);
   const areaPath = historyTimelineAreaPath(points, axisY);
@@ -8756,8 +8763,9 @@ function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, val
     .map((point) => {
       const label = formatHistoryRowFullLabel(point.row);
       const value = valueFormatter(point.value);
+      const detail = chartHistoryDetail(point.row, mode);
       const radius = point.value > 0 ? pointRadius : Math.max(1.4, pointRadius * 0.58);
-      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}" tabindex="0" data-history-label="${escapeHtml(label)}" data-history-value="${escapeHtml(value)}" aria-label="${escapeHtml(`${label} · ${value}`)}"></circle>`;
+      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}" tabindex="0" data-history-label="${escapeHtml(label)}" data-history-value="${escapeHtml(value)}" data-history-detail="${escapeHtml(detail)}" aria-label="${escapeHtml(`${label} · ${value}${detail ? ` · ${detail}` : ""}`)}"></circle>`;
     })
     .join("");
   return `
@@ -8818,7 +8826,8 @@ function renderStackedHistoryChart({
       valueForRow: (row) => normalizedHistoryRowValue(row, segmentValue, segmentsForRow),
       valueFormatter: (value) => historyBarValue(mode, value),
       lineColor: timelineSegment ? segmentColor(timelineSegment) : chartSourceColor("local"),
-      pointRadius: 3
+      pointRadius: 3,
+      mode
     })
     : "";
   const timelineLabelStep = isSlotSeries ? Math.max(1, Math.ceil(rows.length / 8)) : 1;
@@ -8838,6 +8847,7 @@ function renderStackedHistoryChart({
       const label = formatHistoryRowTick(row);
       const fullLabel = formatHistoryRowFullLabel(row);
       const total = historyBarValue(mode, mode === "costs" ? row.totalEur : row.totalTokens);
+      const detail = chartHistoryDetail(row, mode);
       const rawSegments = segmentsForRow(row);
       const normalizedSegments = rawSegments.map((segment) => ({
         ...segment,
@@ -8871,7 +8881,7 @@ function renderStackedHistoryChart({
         })
         .join("");
       return `
-        <g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" aria-label="${escapeHtml(`${fullLabel} · ${total}`)}">${segmentRects}</g>
+        <g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" data-history-detail="${escapeHtml(detail)}" aria-label="${escapeHtml(`${fullLabel} · ${total}${detail ? ` · ${detail}` : ""}`)}">${segmentRects}</g>
         <text x="${x + barWidth / 2}" y="${dateLabelY}" text-anchor="middle" class="axis-label">${label}</text>
       `;
     })
@@ -9373,6 +9383,7 @@ function chartSourcesInUse(daily) {
 }
 
 function chartTokenSegmentEntries(daily, mode) {
+  if (["device", "account"].includes(mode)) return chartAttributionEntries(daily, mode);
   if (mode === "model") return chartModelSegmentsInUse(daily);
   if (mode === "provider") return chartProviderSegmentsInUse(daily);
   if (chartHasProviderBreakdown(daily)) return chartProviderSegmentsInUse(daily);
@@ -9386,6 +9397,122 @@ function chartTokenSegmentEntries(daily, mode) {
       color: "#5f6f68"
     }
   ];
+}
+
+function chartAttributionLabel(row, dimension) {
+  if (dimension === "account" && (row.id === "unknown" || ["unknown", "conflict"].includes(row.quality))) return t("chart.attribution.unknownAccount");
+  if (dimension === "device" && (row.id === "shared" || row.quality === "ambiguous")) return t("chart.attribution.sharedDevice");
+  if (row.id === "unknown" || row.quality === "unknown") return t("chart.attribution.unknownDevice");
+  return row.label || t(dimension === "account" ? "chart.attribution.unknownAccount" : "chart.attribution.unknownDevice");
+}
+
+function chartAttributionRows(row, dimension) {
+  const total = Math.max(0, Number(row?.totalTokens) || 0);
+  if (!total) return [];
+  const raw = row?.attribution?.[dimension === "account" ? "accounts" : "devices"];
+  const values = (Array.isArray(raw) ? raw : []).filter((entry) => entry && typeof entry.id === "string" && Number.isFinite(entry.totalTokens) && entry.totalTokens > 0);
+  const sum = values.reduce((value, entry) => value + entry.totalTokens, 0);
+  // An absent/inconsistent breakdown must not assign measured tokens to a
+  // guessed installation or account. Preserve the bar total in an unknown row.
+  if (sum > total + 0.01) return [{ id: "unknown", quality: "unknown", label: null, totalTokens: total }];
+  const result = values.map((entry) => ({ ...entry }));
+  if (sum < total) {
+    const unknown = result.find((entry) => entry.id === "unknown");
+    if (unknown) unknown.totalTokens += total - sum;
+    else result.push({ id: "unknown", quality: "unknown", label: null, totalTokens: total - sum });
+  }
+  return result;
+}
+
+function chartAttributionDetail(row, dimension) {
+  if (dimension === "account") {
+    const devices = chartAttributionRows({ totalTokens: row.totalTokens, attribution: { devices: row.devices } }, "device");
+    return devices.map((device) => `${chartAttributionLabel(device, "device")}: ${formatTokens(device.totalTokens)}`).join(" · ");
+  }
+  if (row.quality === "ambiguous" || row.id === "shared") {
+    const observed = (Array.isArray(row.observedOn) ? row.observedOn : []).map((device) => device.label).filter(Boolean);
+    return observed.length ? observed.join(" · ") : t("chart.attribution.sharedDeviceHelp");
+  }
+  return t(row.quality === "observed" ? "chart.attribution.observed" : "chart.attribution.unknownDevice");
+}
+
+function chartAttributionEntries(daily, dimension) {
+  const groups = new Map();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    for (const row of chartAttributionRows(day, dimension)) {
+      let group = groups.get(row.id);
+      if (!group) {
+        group = { ...row, totalTokens: 0, devices: new Map(), observedOn: new Map() };
+        groups.set(row.id, group);
+      }
+      group.totalTokens += row.totalTokens;
+      if (row.quality === "conflict") group.quality = "conflict";
+      for (const device of Array.isArray(row.devices) ? row.devices : []) {
+        if (!device?.id || !Number.isFinite(device.totalTokens)) continue;
+        const existing = group.devices.get(device.id);
+        group.devices.set(device.id, { ...device, totalTokens: (existing?.totalTokens || 0) + device.totalTokens });
+      }
+      for (const device of Array.isArray(row.observedOn) ? row.observedOn : []) {
+        if (device?.id) group.observedOn.set(device.id, device);
+      }
+    }
+  }
+  const colorIds = chartAttributionKnownIds(dimension, [...groups.keys()]);
+  return [...groups.values()].map((group) => {
+    const row = { ...group, devices: [...group.devices.values()], observedOn: [...group.observedOn.values()] };
+    return { ...row, id: `${dimension}:${row.id}`, attributionId: row.id, dimension, type: "attribution", markId: null,
+      label: chartAttributionLabel(row, dimension), detail: chartAttributionDetail(row, dimension), color: chartAttributionColor(row, dimension, colorIds) };
+  }).sort((left, right) => right.totalTokens - left.totalTokens || left.id.localeCompare(right.id));
+}
+
+function chartAttributionKnownIds(dimension, extraIds = []) {
+  const usage = state.usage || {};
+  const key = dimension === "account" ? "accounts" : "devices";
+  const allTime = usage.local?.attribution?.[key];
+  const rows = Array.isArray(allTime) ? allTime
+    : (usage.local?.daily || []).flatMap((day) => day.attribution?.[key] || []);
+  const ids = new Set([...extraIds, ...rows.map((row) => row.id)]);
+  if (dimension === "device") {
+    const sync = usage.deviceSync || {};
+    ids.add(sync.deviceId);
+    for (const device of [...(sync.devices || []), ...(sync.peers || []), ...rows.flatMap((row) => row.observedOn || [])]) ids.add(device.id);
+  }
+  return [...ids].filter((id) => typeof id === "string" && id && !["unknown", "shared"].includes(id)).sort();
+}
+
+function chartAttributionColor(row, dimension, knownIds = chartAttributionKnownIds(dimension, [row.id])) {
+  if (row.id === "unknown" || ["unknown", "conflict"].includes(row.quality)) return "#89918c";
+  if (row.id === "shared" || row.quality === "ambiguous") return "#b07a34";
+  // Use the complete installation/all-time account catalog, never the current
+  // date-filter subset or token ranking, so refreshes preserve category colors.
+  const index = Math.max(0, knownIds.indexOf(row.id));
+  return CHART_ATTRIBUTION_PALETTE[index % CHART_ATTRIBUTION_PALETTE.length];
+}
+
+function renderAttributionTotalBars(daily, dimension) {
+  const entries = chartAttributionEntries(daily, dimension);
+  if (!entries.length) return "--";
+  const total = entries.reduce((sum, entry) => sum + entry.totalTokens, 0);
+  const max = Math.max(...entries.map((entry) => entry.totalTokens), 1);
+  return `<div class="source-bars-title"><span>${escapeHtml(t(`chart.breakdown.${dimension}`))}</span><strong>${formatTokens(total)}</strong></div>` + entries.slice(0, 5).map((entry) =>
+    `<div class="source-bar-row" title="${escapeHtml(`${entry.label} · ${entry.detail}`)}"><span class="source-bar-name">${escapeHtml(entry.label)}</span><span class="source-bar-track" aria-hidden="true"><span class="source-bar-fill" style="--bar-width: ${Math.max(.8, entry.totalTokens / max * 100)}; --accent: ${entry.color}"></span></span><span class="source-bar-value">${formatTokens(entry.totalTokens)}</span></div>`
+  ).join("");
+}
+
+function renderAttributionWindowSummary(daily, dimension) {
+  const entries = chartAttributionEntries(daily, dimension);
+  if (!entries.length) return "";
+  const total = entries.reduce((sum, entry) => sum + entry.totalTokens, 0);
+  return `<div class="model-window-summary attribution-window-summary"><div class="model-window-head"><strong>${escapeHtml(t(`chart.breakdown.${dimension}`))}</strong><span>${escapeHtml(chartRangeLabel(state.chartTimeFilter))}</span></div>
+    <p class="attribution-note">${escapeHtml(t("chart.attribution.observedHelp"))}${dimension === "account" ? ` ${escapeHtml(t("chart.attribution.accountHelp"))}` : ""}</p>
+    <div class="model-window-table-wrap"><table class="model-window-table attribution-table"><thead><tr><th scope="col">${escapeHtml(t(`chart.breakdown.${dimension}`))}</th><th scope="col">${escapeHtml(t("chart.providers.columns.tokens"))}</th><th scope="col">${escapeHtml(t("chart.providers.columns.share"))}</th><th scope="col">${escapeHtml(t(dimension === "account" ? "chart.attribution.observedOn" : "chart.attribution.evidence"))}</th></tr></thead><tbody>${entries.map((entry) =>
+      `<tr><td><span class="chart-legend-swatch" style="background: ${entry.color}"></span>${escapeHtml(entry.label)}</td><td>${formatTokens(entry.totalTokens)}</td><td>${formatSharePercent(total ? entry.totalTokens / total * 100 : 0)}</td><td>${escapeHtml(entry.detail)}</td></tr>`
+    ).join("")}</tbody></table></div></div>`;
+}
+
+function chartHistoryDetail(row, mode = "tokens") {
+  if (mode !== "tokens" || !["device", "account"].includes(state.chartBreakdownMode)) return "";
+  return chartAttributionEntries([row], state.chartBreakdownMode).map((entry) => `${entry.label}: ${formatTokens(entry.totalTokens)}${entry.detail ? ` (${entry.detail})` : ""}`).join("\n");
 }
 
 function chartHasProviderBreakdown(daily) {
@@ -9505,6 +9632,14 @@ function modelRowTotalTokens(model) {
 }
 
 function chartSegmentsForDay(day, entries) {
+  if (entries.some((entry) => entry.type === "attribution")) {
+    const mode = entries[0].dimension;
+    const byId = new Map(chartAttributionRows(day, mode).map((row) => [row.id, row]));
+    return entries.flatMap((entry) => {
+      const row = byId.get(entry.attributionId);
+      return row?.totalTokens > 0 ? [{ ...entry, totalTokens: row.totalTokens, detail: chartAttributionDetail(row, mode) }] : [];
+    });
+  }
   if (entries.length === 1 && entries[0]?.type === "total") {
     const totalTokens = Number(day.totalTokens || 0);
     return totalTokens > 0

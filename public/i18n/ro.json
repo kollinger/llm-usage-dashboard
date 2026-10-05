@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Sumă",
       "provider": "Furnizor",
-      "model": "Modele"
+      "model": "Modele",
+      "device": "Instalare",
+      "account": "Cont"
     },
     "breakdownToggleAria": "Defalcare tokenuri",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Grupează după",
+      "unknownAccount": "Cont necunoscut",
+      "unknownDevice": "Instalare necunoscută",
+      "sharedDevice": "Detectat pe mai multe instalări",
+      "sharedDeviceHelp": "Numărat o dată; instalarea inițială este neclară.",
+      "observed": "Detectat în jurnalele locale",
+      "observedOn": "Detectat pe instalări",
+      "evidence": "Atribuire",
+      "observedHelp": "Instalările arată unde au fost găsite jurnalele. Evenimentele copiate sunt numărate o dată; computerul inițial poate fi necunoscut.",
+      "accountHelp": "Un cont este atribuit doar dacă apare în dovezile de utilizare. Celelalte tokenuri rămân la Cont necunoscut."
     }
   },
   "tokenMix": {

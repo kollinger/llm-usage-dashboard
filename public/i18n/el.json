@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Σύνολο",
       "provider": "Πάροχος",
-      "model": "Μοντέλο"
+      "model": "Μοντέλο",
+      "device": "Εγκατάσταση",
+      "account": "Λογαριασμό"
     },
     "breakdownToggleAria": "Ανάλυση token",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Ομαδοποίηση κατά",
+      "unknownAccount": "Άγνωστος λογαριασμός",
+      "unknownDevice": "Άγνωστη εγκατάσταση",
+      "sharedDevice": "Εντοπίστηκε σε πολλές εγκαταστάσεις",
+      "sharedDeviceHelp": "Μετράται μία φορά· η αρχική εγκατάσταση είναι ασαφής.",
+      "observed": "Εντοπίστηκε σε τοπικά αρχεία καταγραφής",
+      "observedOn": "Εντοπίστηκε σε εγκαταστάσεις",
+      "evidence": "Αντιστοίχιση",
+      "observedHelp": "Οι εγκαταστάσεις δείχνουν πού βρέθηκαν οι καταγραφές. Τα αντιγραμμένα συμβάντα μετρώνται μία φορά· ο αρχικός υπολογιστής μπορεί να είναι άγνωστος.",
+      "accountHelp": "Λογαριασμός αντιστοιχίζεται μόνο όταν τεκμηριώνεται στα δεδομένα χρήσης. Τα υπόλοιπα tokens παραμένουν στον Άγνωστο λογαριασμό."
     }
   },
   "tokenMix": {
