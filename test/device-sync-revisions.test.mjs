@@ -11,6 +11,7 @@ const { DeviceSync, createIdentity, signedSnapshot, seal } = require("../lib/dev
 const { hash } = require("../lib/device-sync-data");
 const temporary = await mkdtemp(path.join(os.tmpdir(), "llm-sync-revisions-"));
 const devices = [];
+const pendingWrites = [];
 const realNow = Date.now;
 let clock = realNow();
 Date.now = () => clock;
@@ -23,7 +24,22 @@ try {
   const invite = source.createInvite();
   const value = JSON.parse(Buffer.from(invite.code.split(":")[1], "base64url"));
   value.endpoints = [`http://127.0.0.1:${source.port}`];
+  const persist = source.persist.bind(source);
+  let pairingDurable = false;
+  source.persist = () => {
+    const pending = (async () => {
+      // A busy origin must commit trust before replying, even when its existing
+      // snapshot write queue takes longer than the connection attempt budget.
+      await new Promise((resolve) => setTimeout(resolve, 5200));
+      await persist(); pairingDurable = true;
+    })();
+    pendingWrites.push(pending); return pending;
+  };
   await reader.join(`llm-device-v1:${Buffer.from(JSON.stringify(value)).toString("base64url")}`);
+  assert.equal(pairingDurable, true, "pairing waits for durable trust storage before succeeding");
+  assert.equal(reader.config.peers.length, 1);
+  assert.equal(source.config.peers.length, 1, "slow persistence still pairs both sides on the first attempt");
+  source.persist = persist;
   const events = Array.from({ length: 2401 }, (_, index) => ({
     key: hash(`revision-test-${index}`), providerId: "codex", model: "gpt-fixture",
     timestamp: new Date(clock - 60_000).toISOString(), usage: { inputTokens: 1, totalTokens: 1 }
@@ -108,11 +124,14 @@ try {
   transport.identity = createIdentity(); transport.config.enabled = true; transport.server = {};
   const remote = createIdentity(), remotePeer = { ...remote, endpoint: "http://127.0.0.1:41778" };
   const realRequest = http.request;
-  let replyAge = 0, wrongNonce = false, observedTimeout = null;
+  let replyAge = 0, wrongNonce = false, observedTimeout = null, connectedTimeout = null;
   http.request = (_url, options, respond) => {
-    observedTimeout = options.timeout;
+    observedTimeout = options.timeout; connectedTimeout = null;
     const request = new EventEmitter();
+    request.setTimeout = (timeout) => { connectedTimeout = timeout; return request; };
     request.end = (body) => queueMicrotask(() => {
+      const socket = new EventEmitter(); socket.connecting = true;
+      request.emit("socket", socket); socket.connecting = false; socket.emit("connect");
       const incoming = JSON.parse(body);
       const receivedAt = clock;
       let packet;
@@ -134,6 +153,7 @@ try {
     replyAge = 0;
     await transport.exchange(remotePeer, { type: "pair" });
     assert.equal(observedTimeout, 5000, "unreachable pairing endpoints retain the short timeout");
+    assert.equal(connectedTimeout, 30_000, "connected pairing peers get enough time to durably persist trust");
     replyAge = 30_001;
     await assert.rejects(transport.exchange(remotePeer, { type: "pair" }), /peer_identity_changed/);
     replyAge = 60_001;
@@ -141,9 +161,30 @@ try {
     replyAge = 0; wrongNonce = true;
     await assert.rejects(transport.exchange(remotePeer, { type: "manifest" }), /replayed_reply/);
     assert.equal(transport.requests.size, 0);
+
+    const realSetTimeout = globalThis.setTimeout, realClearTimeout = globalThis.clearTimeout;
+    const timer = { unref() {} };
+    let connectExpired = null, timerCleared = false;
+    globalThis.setTimeout = (callback, delay) => {
+      assert.equal(delay, 5000); connectExpired = callback; return timer;
+    };
+    globalThis.clearTimeout = (value) => { assert.equal(value, timer); timerCleared = true; };
+    http.request = () => {
+      const request = new EventEmitter(); request.end = () => {};
+      request.destroy = (error) => { request.destroyed = true; request.emit("error", error); request.emit("close"); };
+      return request;
+    };
+    try {
+      const pending = transport.exchange(remotePeer, { type: "pair" });
+      connectExpired();
+      await assert.rejects(pending, /peer_unreachable/);
+      assert.equal(timerCleared, true, "an unreachable socket releases its connection timer");
+      assert.equal(transport.requests.size, 0);
+    } finally { globalThis.setTimeout = realSetTimeout; globalThis.clearTimeout = realClearTimeout; }
   } finally { http.request = realRequest; }
 } finally {
   Date.now = realNow;
+  await Promise.allSettled(pendingWrites);
   await Promise.all(devices.map((device) => device.stop()));
   await rm(temporary, { recursive: true, force: true });
 }
