@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-preview.7 - 2026-10-05
+
+### Fixed
+
+- Speed up large token histories by reusing device attribution across views
+  and avoiding repeated daily calculations.
+- Apply device changes made during a pending request immediately afterward,
+  without displaying the previous device's response under the new selection.
+
 ## 1.6.0-preview.6 - 2026-10-05
 
 ### Fixed
