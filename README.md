@@ -229,10 +229,12 @@ By default, Codex rate-limit rings also try to read a live snapshot from the loc
 
 ### GPT accounts and OpenCode
 
-Use **Settings → GPT accounts → Add GPT account** to sign in through OpenAI with
-a separate local Codex profile. Repeat for multiple accounts. Optional direct
+Use **Accounts → Add account** to choose ChatGPT, Claude Code, Kimi Code,
+GLM or an API connection. Browser logins use isolated local profiles; API keys
+stay in an encrypted local vault. Repeat for multiple accounts. Optional direct
 device sync shares sanitized consumption and saved account quotas only between
 your paired devices, without developer infrastructure or relay services.
+Use **Installations → Connect installation** to pair your own devices.
 See [accounts and direct sync](docs/accounts-and-direct-sync.md) for setup,
 privacy, supported network paths, and preview limitations.
 

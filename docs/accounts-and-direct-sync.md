@@ -2,31 +2,61 @@
 
 ## Connect accounts
 
-Open **Settings → GPT accounts → Add GPT account**. The app creates a separate
-local Codex profile and returns OpenAI's official browser sign-in link. Sign in
-with the intended ChatGPT account; use a separate browser profile or change the
-account in that browser when necessary. Repeat for another account. This requires
-an installed Codex CLI. The dashboard detects common desktop/CLI installations.
-No dashboard service account, developer login, or hosted dashboard is needed.
+Open **Accounts → Add account** in the dashboard header, or **Settings →
+Accounts**. Choose a provider and its offered connection method. A label helps
+identify personal/work connections. Settings are split into four tabs; provider
+choices and connection forms appear only when needed.
 
-The app does not replace the active Codex CLI login. Managed credentials live in
-owner-only `data/codex-profiles/<random-id>/auth.json`; they never enter device
-sync, exports, or Git. **Remove local login** deletes only the profile created by
-this dashboard. It does not revoke an OpenAI session on other devices. Existing
-CLI/OpenCode profiles remain automatically detected. Account cards appear on the
-main dashboard when multiple accounts are known or sync is enabled.
+| Provider | Connection | Measurements currently exposed |
+| --- | --- | --- |
+| ChatGPT / Codex | Official Codex browser login; Codex CLI required | Detected local usage and account quota windows |
+| Claude / Claude Code | Official installed Claude CLI browser login in an isolated profile | Authentication/plan; official statusline quotas after session activity |
+| Kimi Code | Official Kimi browser login or Kimi Code key | Provider quota windows; token history is unavailable |
+| GLM / Z.AI Coding Plan | Coding Plan key; Global or China endpoint | Coding Plan quota windows |
+| OpenAI API | Organization admin key | Last seven days of completions token usage and available organization costs |
+| Anthropic API | Organization admin key | Last seven days of Messages usage and available organization costs |
+| Moonshot / Kimi API | Moonshot API key | Available account balance; token usage is unavailable |
 
-Other providers continue to use their existing local source connections and
-provider-specific integrations. This feature does not add an independent OAuth
-login flow for every provider. OpenCode and older local usage logs may lack an
-account identifier: provider totals and account quota cards are separate, and
-usage is never invented for an individual account.
+API keys and subscriptions are different products. A normal inference key does
+not grant organization-report permission. Admin reports may cover more than the
+local CLI logs, and cost coverage differs from token coverage. Reports and
+balances remain on individual account cards and are never added to local token
+totals. Multiple quota windows/accounts are not summed into one percentage.
+
+Browser login creates a separate app-owned profile; it does not replace the
+active CLI login. Select the intended account in the provider's browser page.
+Claude uses the unmodified official CLI for authentication/status/logout, not a
+third-party OAuth client or copied token. A sanitized statusline hook is installed
+only in the new profile; logging in alone does not produce Claude quota values.
+The dashboard never sends a paid model request to obtain or test those values.
+
+Kimi browser sign-in prepares the pinned official MIT-licensed Kimi Code 2.1.1
+helper under local `data/tools/kimi/`. It downloads roughly 150–190 MB directly
+from Kimi, verifies a checked-in SHA-256 digest before execution, disables helper
+telemetry/automatic updates, and leaves existing CLI installations unchanged.
+The helper serves only an authenticated loopback interface and stops after the
+login or refresh. The Code key method does not require this download.
+
+Managed credentials stay in app-owned local profiles or the encrypted local
+provider-key vault. They never enter device sync, exports, or Git. Removing an
+app-owned connection affects that profile only; automatically detected CLI
+accounts are managed in their original application. Provider-side session
+revocation and previously shared snapshots are separate from local removal.
+
+Existing CLI/OpenCode sources remain automatically detected. Older usage records
+can lack a reliable account identity; provider totals and per-account quotas
+therefore remain distinct. The dashboard never invents per-account attribution.
+Different keys for one organization appear as separate connections because the
+reports do not always expose a trustworthy canonical organization identity.
 
 ## Pair your own devices
 
-1. Enable **Settings → Direct device sync** on both devices and give each a name.
-2. On one device, create a pairing code and copy it to the other device.
-3. Paste it into the other app and choose **Connect device** within five minutes.
+1. Open **Installations** in the dashboard header. This installation is always
+   shown, even while sync is disabled.
+2. Choose **Connect installation → Create code** on one device. This explicitly
+   enables direct sync and creates a short-lived pairing code.
+3. On the other device choose **I have a code**, paste it, and connect within
+   five minutes. Give each installation a recognizable name.
 4. The apps now exchange updates automatically while running and reachable.
    The dashboard initially shows all connected devices. Select **This device**
    or one remote device to inspect its consumption separately.
@@ -75,6 +105,8 @@ The sync boundary is a positive allowlist:
   token counters from local normalized usage events.
 - Opaque GPT account identity, plan, numeric lifetime-token summary, numeric quota
   windows, and measurement timestamps. Account names/emails do not travel.
+- Opaque identities and saved numeric quota/report/balance measurements for
+  connected Claude, Kimi, GLM and API connections; labels/keys never travel.
 - Paired device name and public cryptographic identity.
 
 Credentials, OAuth tokens, API keys, cookies, prompts, responses, transcripts,
@@ -90,7 +122,7 @@ they are a current live query.
 
 Only your explicitly paired devices receive these snapshots. The app's existing
 provider queries go directly to those providers; optional update checks/downloads
-go to GitHub. There is no developer usage-upload endpoint or new telemetry.
+go to GitHub; the optional Kimi helper download goes directly to Kimi. There is no developer usage-upload endpoint or new telemetry.
 
 ## Security and local storage
 
@@ -101,7 +133,9 @@ binding, and bounded timestamps reject packet replay. Snapshots retain their
 origin signature when another paired device forwards them. Downloads are paged; unchanged blocks are reused after comparing hashes and
 verifying the complete signed revision. Downloads are size-limited, and committed only after the complete signed revision verifies.
 
-Private keys/settings use owner-only permissions on POSIX systems. Received
+Provider keys are AES-256-GCM encrypted at rest in `data/provider-accounts/`;
+the encryption key stays beside the vault in an owner-only file. Private
+keys/settings use owner-only permissions on POSIX systems. Received
 snapshots are encrypted at rest in `data/device-sync/snapshots.json`, with a key
 stored locally in the private identity file. This protects against accidentally
 reading or sharing the snapshot file alone, not an attacker controlling the
@@ -119,3 +153,7 @@ recovery or a group-wide revocation/re-enrollment flow.
 The current bounds are 20 directly paired peers, 40 snapshot origins, and
 1,000,000 stable events per origin. An exceeded bound produces an incomplete/
 unreachable indication rather than publishing a partial snapshot.
+
+All paired installations should run 1.5.0-preview.1 or newer for the expanded
+account snapshot format. Old signed snapshots remain readable; older apps do
+not understand new extended snapshots.
