@@ -2798,6 +2798,7 @@ function buildReaderSources(connectedSources = []) {
 function defaultCodexSources() {
   return CODEX_HOMES.map((home) => defaultHomeSource("codex", "Codex", home, [
     { role: "sessions", path: path.join(home, "sessions"), kind: "directory" },
+    { role: "sessions", path: path.join(home, "multica-sessions"), kind: "directory" },
     { role: "archived_sessions", path: path.join(home, "archived_sessions"), kind: "directory" }
   ]));
 }
