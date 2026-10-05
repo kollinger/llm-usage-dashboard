@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-preview.5 - 2026-10-05
+
+### Fixed
+
+- Automatically include Codex logs written into Multica session directories in
+  local history, model breakdowns and device sync.
+- Detect installations that only contain Multica sessions, while counting
+  copied rollouts once across normal and Multica history.
+
 ## 1.6.0-preview.4 - 2026-10-05
 
 ### Added
