@@ -1135,7 +1135,7 @@
     },
     "privacy": "Er gaan geen gebruiksgegevens of inloggegevens naar de ontwikkelaar. Alleen versleutelde metingen worden gedeeld met uitdrukkelijk gekoppelde apparaten. Ontkoppelen wist eerder ontvangen kopieën niet.",
     "networkLimit": "Directe verbindingen gebruiken het lokale netwerk of een bestaande privé-VPN, zonder relay, zoekserver of routerwijzigingen. Netwerken die dit blokkeren kunnen niet automatisch synchroniseren.",
-    "coverage": "{count} unieke records · {duplicates} duplicaten verwijderd · {excluded} records blijven lokaal zonder betrouwbare identificatie. Limieten zijn opgeslagen metingen; API-totalen worden niet opgeteld."
+    "coverage": "{count} unieke records · {duplicates} duplicaten verwijderd · {excluded} records blijven lokaal zonder betrouwbare identificatie. Accountlimieten blijven gescheiden; API-totalen worden niet opgeteld."
   },
   "connections": {
     "accounts": "Accounts",

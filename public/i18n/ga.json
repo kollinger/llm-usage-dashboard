@@ -1135,7 +1135,7 @@
     },
     "privacy": "Ní sheoltar sonraí úsáide ná dintiúir chuig an bhforbróir. Ní roinntear ach tomhais chriptithe le gléasanna atá péireáilte go sainráite. Ní scriosann dícheangal cóipeanna a fuarthas cheana.",
     "networkLimit": "Úsáideann naisc dhíreacha an líonra áitiúil nó VPN príobháideach atá ann cheana, gan athsheachadán, freastalaí aimsithe ná athruithe ródaire. Cuireann líonraí a chuireann bac orthu cosc ar shioncronú uathoibríoch.",
-    "coverage": "{count} taifead ar leith · {duplicates} dúblach bainte · fanann {excluded} taifead áitiúil gan aitheantóir iontaofa. Is tomhais sábháilte iad teorainneacha; ní chuirtear iomláin API leis."
+    "coverage": "{count} taifead ar leith · {duplicates} dúblach bainte · fanann {excluded} taifead áitiúil gan aitheantóir iontaofa. Coinnítear teorainneacha na gcuntas ar leithligh; ní chuirtear iomláin API leis."
   },
   "connections": {
     "accounts": "Cuntais",

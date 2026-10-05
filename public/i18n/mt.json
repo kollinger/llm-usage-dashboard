@@ -1135,7 +1135,7 @@
     },
     "privacy": "Data tal-użu u kredenzjali ma jintbagħtux lill-iżviluppatur. Kejl ikkriptat jinqasam biss ma’ apparati mqabbla espliċitament. L-iskonnessjoni ma tħassarx kopji riċevuti.",
     "networkLimit": "Konnessjonijiet diretti jużaw in-netwerk lokali jew VPN privat eżistenti, mingħajr relay, server ta’ skoperta jew bidliet fir-router. Netwerks li jimblokkawhom jipprevjenu sinkronizzazzjoni awtomatika.",
-    "coverage": "{count} rekords distinti · {duplicates} duplikati mneħħija · {excluded} rekords jibqgħu lokali mingħajr identifikatur affidabbli. Il-limiti huma kejl salvat; it-totali API ma jiżdiedux."
+    "coverage": "{count} rekords distinti · {duplicates} duplikati mneħħija · {excluded} rekords jibqgħu lokali mingħajr identifikatur affidabbli. Il-limiti tal-kontijiet jinżammu separati; it-totali API ma jiżdiedux."
   },
   "connections": {
     "accounts": "Kontijiet",

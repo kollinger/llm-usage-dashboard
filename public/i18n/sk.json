@@ -1135,7 +1135,7 @@
     },
     "privacy": "Vývojárovi sa neposielajú údaje o používaní ani prihlasovacie údaje. Šifrované merania sa zdieľajú len s výslovne spárovanými zariadeniami. Odpojenie neodstráni prijaté kópie.",
     "networkLimit": "Priame spojenia využívajú miestnu sieť alebo existujúcu súkromnú VPN, bez relay, vyhľadávacieho servera a zmien routera. Siete blokujúce tieto spojenia znemožňujú automatickú synchronizáciu.",
-    "coverage": "{count} jedinečných záznamov · odstránených {duplicates} duplikátov · {excluded} záznamov zostáva miestnych bez spoľahlivej identifikácie. Limity sú uložené merania; súčty API sa nepripočítavajú."
+    "coverage": "{count} jedinečných záznamov · odstránených {duplicates} duplikátov · {excluded} záznamov zostáva miestnych bez spoľahlivej identifikácie. Limity účtov zostávajú oddelené; súčty API sa nepripočítavajú."
   },
   "connections": {
     "accounts": "Účty",

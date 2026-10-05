@@ -1135,7 +1135,7 @@
     },
     "privacy": "Brugsdata og loginoplysninger sendes ikke til udvikleren. Kun krypterede målinger deles med udtrykkeligt parrede enheder. Afbrydelse sletter ikke allerede modtagne kopier.",
     "networkLimit": "Direkte forbindelser bruger det lokale netværk eller en eksisterende privat VPN uden relay, søgeserver eller routerændringer. Netværk, der blokerer dette, forhindrer automatisk synkronisering.",
-    "coverage": "{count} forskellige poster · {duplicates} dubletter fjernet · {excluded} poster forbliver lokale uden sikker identifikation. Grænser er gemte målinger; API-totaler tilføjes ikke."
+    "coverage": "{count} forskellige poster · {duplicates} dubletter fjernet · {excluded} poster forbliver lokale uden sikker identifikation. Kontogrænser holdes adskilt; API-totaler tilføjes ikke."
   },
   "connections": {
     "accounts": "Konti",

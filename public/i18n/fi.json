@@ -1135,7 +1135,7 @@
     },
     "privacy": "Käyttötietoja ja tunnuksia ei lähetetä kehittäjälle. Vain salattuja mittauksia jaetaan erikseen yhdistetyille laitteille. Yhteyden katkaisu ei poista vastaanotettuja kopioita.",
     "networkLimit": "Suorat yhteydet käyttävät lähiverkkoa tai olemassa olevaa yksityistä VPN:ää ilman välityspalvelinta, löytöpalvelinta tai reititinmuutoksia. Estävät verkot estävät automaattisen synkronoinnin.",
-    "coverage": "{count} yksilöllistä tietuetta · {duplicates} kaksoiskappaletta poistettu · {excluded} tietuetta säilyy paikallisena ilman luotettavaa tunnistetta. Rajat ovat tallennettuja mittauksia; API-summia ei lisätä."
+    "coverage": "{count} yksilöllistä tietuetta · {duplicates} kaksoiskappaletta poistettu · {excluded} tietuetta säilyy paikallisena ilman luotettavaa tunnistetta. Tilien rajat pidetään erillään; API-summia ei lisätä."
   },
   "connections": {
     "accounts": "Tilit",

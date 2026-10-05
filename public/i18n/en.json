@@ -1135,7 +1135,7 @@
     },
     "privacy": "No usage data or credentials are sent to the developer. Only encrypted usage and quota measurements are shared with devices you explicitly pair. Disconnecting cannot erase copies already received elsewhere.",
     "networkLimit": "Direct connections use your local network or an existing private VPN. No relay, discovery server or router configuration is used. Networks that block direct connections cannot sync automatically.",
-    "coverage": "{count} distinct records · {duplicates} duplicates removed · {excluded} records remain local because no reliable identifier is available. Account limits are saved measurements; provider API totals are not added."
+    "coverage": "{count} distinct records · {duplicates} duplicates removed · {excluded} records remain local because no reliable identifier is available. Account limits are kept separate; provider API totals are not added."
   },
   "connections": {
     "accounts": "Accounts",

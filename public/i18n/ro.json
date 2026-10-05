@@ -1135,7 +1135,7 @@
     },
     "privacy": "Datele de utilizare și de autentificare nu sunt trimise dezvoltatorului. Numai măsurătorile criptate sunt partajate cu dispozitive asociate explicit. Deconectarea nu șterge copiile primite.",
     "networkLimit": "Conexiunile directe folosesc rețeaua locală sau un VPN privat existent, fără releu, server de descoperire ori modificări ale routerului. Rețelele care le blochează împiedică sincronizarea automată.",
-    "coverage": "{count} înregistrări unice · {duplicates} duplicate eliminate · {excluded} înregistrări rămân locale fără identificator sigur. Limitele sunt măsurători salvate; totalurile API nu se adaugă."
+    "coverage": "{count} înregistrări unice · {duplicates} duplicate eliminate · {excluded} înregistrări rămân locale fără identificator sigur. Limitele conturilor rămân separate; totalurile API nu se adaugă."
   },
   "connections": {
     "accounts": "Conturi",

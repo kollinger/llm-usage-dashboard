@@ -1135,7 +1135,7 @@
     },
     "privacy": "Vývojáři se neposílají údaje o využití ani přihlašovací údaje. Šifrovaná měření se sdílejí jen s výslovně spárovanými zařízeními. Odpojení neodstraní již přijaté kopie.",
     "networkLimit": "Přímé spojení využívá místní síť nebo existující soukromou VPN, bez relay, vyhledávacího serveru a změn routeru. Sítě blokující tato spojení znemožňují automatickou synchronizaci.",
-    "coverage": "{count} jedinečných záznamů · odstraněno {duplicates} duplicit · {excluded} záznamů zůstává místních bez spolehlivé identifikace. Limity jsou uložená měření; součty API se nepřičítají."
+    "coverage": "{count} jedinečných záznamů · odstraněno {duplicates} duplicit · {excluded} záznamů zůstává místních bez spolehlivé identifikace. Limity účtů zůstávají oddělené; součty API se nepřičítají."
   },
   "connections": {
     "accounts": "Účty",

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0-preview.3 - 2026-10-05
+
+### Fixed
+
+- Keep this computer's current Codex limits and active account status visible
+  when viewing usage from all connected installations.
+- Calculate combined histories in the background and reuse the last completed
+  view while refreshing, so large histories do not block the desktop interface.
+- Avoid rewriting the encrypted sync history when its snapshots are unchanged.
+
 ## 1.6.0-preview.2 - 2026-10-05
 
 ### Fixed

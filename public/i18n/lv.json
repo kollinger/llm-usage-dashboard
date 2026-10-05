@@ -1135,7 +1135,7 @@
     },
     "privacy": "Lietojuma un akreditācijas dati netiek sūtīti izstrādātājam. Šifrēti mērījumi tiek kopīgoti tikai ar skaidri savienotām ierīcēm. Atvienošana neizdzēš saņemtās kopijas.",
     "networkLimit": "Tiešie savienojumi izmanto lokālo tīklu vai esošu privātu VPN bez starpnieka, atklāšanas servera vai maršrutētāja izmaiņām. Tīkli, kas tos bloķē, nepieļauj automātisku sinhronizāciju.",
-    "coverage": "{count} unikāli ieraksti · {duplicates} dublikāti noņemti · {excluded} ieraksti paliek lokāli bez uzticama identifikatora. Limiti ir saglabāti mērījumi; API summas netiek pievienotas."
+    "coverage": "{count} unikāli ieraksti · {duplicates} dublikāti noņemti · {excluded} ieraksti paliek lokāli bez uzticama identifikatora. Kontu limiti paliek atsevišķi; API summas netiek pievienotas."
   },
   "connections": {
     "accounts": "Konti",
