@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.6.0-preview.1 - 2026-10-05
+
+### Added
+
+- Compare recorded token usage by installation or account in the charts,
+  with matching legends, period totals and hover details.
+- Show unknown account ownership explicitly and distinguish logs observed on
+  several installations from records observed on one installation. Shared
+  events still count only once in the combined view.
+
+### Fixed
+
+- Keep a signed snapshot stable throughout a direct transfer so new local
+  activity does not repeatedly interrupt the first sync of a large history.
+
+### Preview limits
+
+- Historical account attribution requires account evidence in the original
+  record. A currently signed-in account does not establish who owned old usage.
+- An installation identifies where a record was observed; copied or migrated
+  logs do not prove where the model request originally ran.
+
 ## 1.5.0-preview.2 - 2026-10-05
 
 ### Fixed
