@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "الإجمالي",
       "provider": "الموفر",
-      "model": "النموذج"
+      "model": "النموذج",
+      "device": "التثبيت",
+      "account": "الحساب"
     },
     "breakdownToggleAria": "تفصيل الرموز",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "التجميع حسب",
+      "unknownAccount": "حساب غير معروف",
+      "unknownDevice": "تثبيت غير معروف",
+      "sharedDevice": "موجود في عدة تثبيتات",
+      "sharedDeviceHelp": "يُحسب مرة واحدة؛ التثبيت الأصلي غير واضح.",
+      "observed": "مسجل في السجلات المحلية",
+      "observedOn": "مسجل في التثبيتات",
+      "evidence": "الإسناد",
+      "observedHelp": "توضح التثبيتات مكان العثور على السجلات. تُحسب الأحداث المنسوخة مرة واحدة وقد يكون الجهاز الأصلي غير معروف.",
+      "accountHelp": "يُنسب الاستخدام إلى حساب فقط عند وجود دليل في سجل الاستخدام. تبقى الرموز الأخرى ضمن الحساب غير المعروف."
     }
   },
   "tokenMix": {

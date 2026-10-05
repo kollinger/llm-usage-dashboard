@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Kokku",
       "provider": "Pakkuja",
-      "model": "Mudel"
+      "model": "Mudel",
+      "device": "Paigaldus",
+      "account": "Konto"
     },
     "breakdownToggleAria": "Tokenite jaotus",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Rühmita",
+      "unknownAccount": "Tundmatu konto",
+      "unknownDevice": "Tundmatu paigaldus",
+      "sharedDevice": "Leitud mitmest paigaldusest",
+      "sharedDeviceHelp": "Loendatud üks kord; algne paigaldus on ebaselge.",
+      "observed": "Leitud kohalikest logidest",
+      "observedOn": "Leitud paigaldustest",
+      "evidence": "Omistamine",
+      "observedHelp": "Paigaldused näitavad, kust logid leiti. Kopeeritud sündmusi loendatakse üks kord; algne arvuti võib olla tundmatu.",
+      "accountHelp": "Konto määratakse ainult kasutusandmetes oleva tõendi alusel. Muud tokenid jäävad Tundmatu konto alla."
     }
   },
   "tokenMix": {

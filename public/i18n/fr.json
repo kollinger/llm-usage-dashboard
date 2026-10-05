@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Somme",
       "provider": "Fournisseur",
-      "model": "Modèle"
+      "model": "Modèle",
+      "device": "Installation",
+      "account": "Compte"
     },
     "breakdownToggleAria": "Répartition des tokens",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Regrouper par",
+      "unknownAccount": "Compte inconnu",
+      "unknownDevice": "Installation inconnue",
+      "sharedDevice": "Détecté sur plusieurs installations",
+      "sharedDeviceHelp": "Compté une fois ; installation d’origine incertaine.",
+      "observed": "Détecté dans les journaux locaux",
+      "observedOn": "Détecté sur les installations",
+      "evidence": "Attribution",
+      "observedHelp": "Les installations indiquent où les journaux ont été trouvés. Les événements copiés sont comptés une fois ; l’ordinateur d’origine peut être inconnu.",
+      "accountHelp": "Un compte est attribué uniquement s’il est attesté dans les données d’usage. Les autres jetons restent sous Compte inconnu."
     }
   },
   "tokenMix": {

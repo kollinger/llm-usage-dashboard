@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Kollox",
       "provider": "Fornitur",
-      "model": "Mudell"
+      "model": "Mudell",
+      "device": "Installazzjoni",
+      "account": "Kont"
     },
     "breakdownToggleAria": "Tqassim tat-tokens",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Aggruppa skont",
+      "unknownAccount": "Kont mhux magħruf",
+      "unknownDevice": "Installazzjoni mhux magħrufa",
+      "sharedDevice": "Misjub f’diversi installazzjonijiet",
+      "sharedDeviceHelp": "Jingħadd darba; l-installazzjoni oriġinali mhix ċara.",
+      "observed": "Misjub fil-logs lokali",
+      "observedOn": "Misjub fuq installazzjonijiet",
+      "evidence": "Attribuzzjoni",
+      "observedHelp": "L-installazzjonijiet juru fejn instabu l-logs. Avvenimenti kkupjati jingħaddu darba; il-kompjuter oriġinali jista’ jkun mhux magħruf.",
+      "accountHelp": "Kont jiġi attribwit biss meta jkun irreġistrat fid-data tal-użu. Tokens oħra jibqgħu taħt Kont mhux magħruf."
     }
   },
   "tokenMix": {

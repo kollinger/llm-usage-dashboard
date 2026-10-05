@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Yhteensä",
       "provider": "Palveluntarjoaja",
-      "model": "Malli"
+      "model": "Malli",
+      "device": "Asennus",
+      "account": "Tili"
     },
     "breakdownToggleAria": "Tokenien erittely",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Ryhmittele",
+      "unknownAccount": "Tuntematon tili",
+      "unknownDevice": "Tuntematon asennus",
+      "sharedDevice": "Havaittu useissa asennuksissa",
+      "sharedDeviceHelp": "Laskettu kerran; alkuperäinen asennus on epäselvä.",
+      "observed": "Havaittu paikallisissa lokeissa",
+      "observedOn": "Havaittu asennuksissa",
+      "evidence": "Kohdistus",
+      "observedHelp": "Asennukset näyttävät, mistä lokit löytyivät. Kopioidut tapahtumat lasketaan kerran; alkuperäinen tietokone voi olla tuntematon.",
+      "accountHelp": "Tili kohdistetaan vain, jos se on kirjattu käyttötietoihin. Muut tokenit jäävät Tuntematon tili -kohtaan."
     }
   },
   "tokenMix": {

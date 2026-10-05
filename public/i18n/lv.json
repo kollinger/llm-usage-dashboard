@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Kopā",
       "provider": "Pakalpojumu sniedzējs",
-      "model": "Modelis"
+      "model": "Modelis",
+      "device": "Instalācijas",
+      "account": "Konta"
     },
     "breakdownToggleAria": "Tokenu sadalījums",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Grupēt pēc",
+      "unknownAccount": "Nezināms konts",
+      "unknownDevice": "Nezināma instalācija",
+      "sharedDevice": "Atrasts vairākās instalācijās",
+      "sharedDeviceHelp": "Skaitīts vienreiz; sākotnējā instalācija nav skaidra.",
+      "observed": "Atrasts lokālajos žurnālos",
+      "observedOn": "Atrasts instalācijās",
+      "evidence": "Attiecinājums",
+      "observedHelp": "Instalācijas parāda, kur atrasti žurnāli. Kopētie notikumi tiek skaitīti vienreiz; sākotnējais dators var būt nezināms.",
+      "accountHelp": "Konts tiek attiecināts tikai tad, ja tas ierakstīts lietojuma datos. Citi tokeni paliek sadaļā Nezināms konts."
     }
   },
   "tokenMix": {

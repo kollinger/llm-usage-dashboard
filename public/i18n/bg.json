@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Общо",
       "provider": "Доставчик",
-      "model": "Модел"
+      "model": "Модел",
+      "device": "Инсталация",
+      "account": "Акаунт"
     },
     "breakdownToggleAria": "Разбивка на токени",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Групиране по",
+      "unknownAccount": "Неизвестен акаунт",
+      "unknownDevice": "Неизвестна инсталация",
+      "sharedDevice": "Открито в няколко инсталации",
+      "sharedDeviceHelp": "Преброено веднъж; първоначалната инсталация е неясна.",
+      "observed": "Открито в локални логове",
+      "observedOn": "Открито в инсталации",
+      "evidence": "Приписване",
+      "observedHelp": "Инсталациите показват къде са намерени логовете. Копираните събития се броят веднъж; първоначалният компютър може да е неизвестен.",
+      "accountHelp": "Акаунт се приписва само когато е записан в данните за използване. Другите токени остават под Неизвестен акаунт."
     }
   },
   "tokenMix": {

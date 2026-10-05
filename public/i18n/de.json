@@ -159,7 +159,9 @@
     "breakdown": {
       "total": "Gesamt",
       "provider": "Anbieter",
-      "model": "Modell"
+      "model": "Modell",
+      "device": "Installation",
+      "account": "Konto"
     },
     "breakdownToggleAria": "Token-Aufschlüsselung",
     "overviewAria": "Kompakter Token-Verlauf nach Anbieter",
@@ -191,6 +193,18 @@
     "totalBreakdown": {
       "heading": "Gesamtübersicht",
       "range": "Aggregation {range}"
+    },
+    "attribution": {
+      "groupBy": "Aufteilen nach",
+      "unknownAccount": "Konto unbekannt",
+      "unknownDevice": "Installation unbekannt",
+      "sharedDevice": "Auf mehreren Installationen erfasst",
+      "sharedDeviceHelp": "Einmal gezählt; ursprüngliche Installation unklar.",
+      "observed": "In lokalen Logs erfasst",
+      "observedOn": "Erfasst auf Installationen",
+      "evidence": "Zuordnung",
+      "observedHelp": "Installationen zeigen, wo Logs gefunden wurden. Kopierte Ereignisse zählen einmal; der ursprüngliche Rechner kann unbekannt sein.",
+      "accountHelp": "Ein Konto wird nur bei belegter Zuordnung im Nutzungsdatensatz angezeigt. Andere Tokens bleiben unter „Konto unbekannt“."
     }
   },
   "tokenMix": {

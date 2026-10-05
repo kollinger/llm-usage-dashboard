@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Összes",
       "provider": "Szolgáltató",
-      "model": "Modell"
+      "model": "Modell",
+      "device": "Telepítés",
+      "account": "Fiók"
     },
     "breakdownToggleAria": "Tokenbontás",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Csoportosítás",
+      "unknownAccount": "Ismeretlen fiók",
+      "unknownDevice": "Ismeretlen telepítés",
+      "sharedDevice": "Több telepítésen észlelve",
+      "sharedDeviceHelp": "Egyszer számítva; az eredeti telepítés nem egyértelmű.",
+      "observed": "Helyi naplókban észlelve",
+      "observedOn": "Telepítéseken észlelve",
+      "evidence": "Hozzárendelés",
+      "observedHelp": "A telepítések a naplók megtalálási helyét mutatják. A másolt események egyszer számítanak; az eredeti számítógép ismeretlen lehet.",
+      "accountHelp": "Fiókot csak a használati adatokban rögzített bizonyíték alapján rendelünk hozzá. A többi token az Ismeretlen fiók alatt marad."
     }
   },
   "tokenMix": {

@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "Soma",
       "provider": "Fornecedor",
-      "model": "Modelo"
+      "model": "Modelo",
+      "device": "Instalação",
+      "account": "Conta"
     },
     "breakdownToggleAria": "Detalhe de tokens",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "Agrupar por",
+      "unknownAccount": "Conta desconhecida",
+      "unknownDevice": "Instalação desconhecida",
+      "sharedDevice": "Detetado em várias instalações",
+      "sharedDeviceHelp": "Contado uma vez; instalação original incerta.",
+      "observed": "Detetado nos registos locais",
+      "observedOn": "Detetado em instalações",
+      "evidence": "Atribuição",
+      "observedHelp": "As instalações mostram onde foram encontrados os registos. Os eventos copiados contam uma vez; o computador original pode ser desconhecido.",
+      "accountHelp": "Uma conta só é atribuída quando consta dos dados de utilização. Os outros tokens permanecem em Conta desconhecida."
     }
   },
   "tokenMix": {

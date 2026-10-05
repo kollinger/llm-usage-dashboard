@@ -123,7 +123,9 @@
     "breakdown": {
       "total": "总计",
       "provider": "提供商",
-      "model": "模型"
+      "model": "模型",
+      "device": "安装实例",
+      "account": "账户"
     },
     "breakdownToggleAria": "令牌明细",
     "overviewAria": "Compact token history by provider",
@@ -155,6 +157,18 @@
     "totalBreakdown": {
       "heading": "Total summary",
       "range": "{range} aggregate"
+    },
+    "attribution": {
+      "groupBy": "分组依据",
+      "unknownAccount": "未知账户",
+      "unknownDevice": "未知安装实例",
+      "sharedDevice": "在多个安装实例中发现",
+      "sharedDeviceHelp": "仅计一次，原始安装实例不明确。",
+      "observed": "在本地日志中发现",
+      "observedOn": "发现于安装实例",
+      "evidence": "归属",
+      "observedHelp": "安装实例表示日志的发现位置。复制的事件仅计一次，原始计算机可能未知。",
+      "accountHelp": "仅在使用记录提供可靠依据时才关联账户。其他 token 归入未知账户。"
     }
   },
   "tokenMix": {
