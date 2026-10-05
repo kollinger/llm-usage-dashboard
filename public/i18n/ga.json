@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Ní sheoltar sonraí úsáide ná dintiúir chuig an bhforbróir. Ní roinntear ach tomhais chriptithe le gléasanna atá péireáilte go sainráite. Ní scriosann dícheangal cóipeanna a fuarthas cheana.",
     "networkLimit": "Úsáideann naisc dhíreacha an líonra áitiúil nó VPN príobháideach atá ann cheana, gan athsheachadán, freastalaí aimsithe ná athruithe ródaire. Cuireann líonraí a chuireann bac orthu cosc ar shioncronú uathoibríoch.",
     "coverage": "{count} taifead ar leith · {duplicates} dúblach bainte · fanann {excluded} taifead áitiúil gan aitheantóir iontaofa. Is tomhais sábháilte iad teorainneacha; ní chuirtear iomláin API leis."
+  },
+  "connections": {
+    "accounts": "Cuntais",
+    "installations": "Suiteálacha",
+    "general": "Ginearálta",
+    "advanced": "Ardroghanna",
+    "addAccount": "Cuir cuntas leis",
+    "chooseProvider": "Roghnaigh soláthraí",
+    "detectedDetails": "Cuntais GPT aimsithe agus sonraí",
+    "back": "Ar ais",
+    "accountLabel": "Ainm (roghnach)",
+    "apiKey": "Eochair API",
+    "adminKey": "Eochair API riarthóra",
+    "region": "Réigiún",
+    "global": "Idirnáisiúnta",
+    "china": "An tSín",
+    "setupHelp": "Treoracha socraithe",
+    "connect": "Ceangail",
+    "openSignIn": "Oscail síniú isteach",
+    "connectInstallation": "Ceangail suiteáil",
+    "haveCode": "Tá cód agam",
+    "syncOptions": "Sioncronú agus príobháideachas",
+    "remove": "Bain",
+    "automatic": "Aimsithe go huathoibríoch",
+    "empty": "Níl aon chuntas ceangailte fós.",
+    "apiAccount": "Cuntas API",
+    "subscription": "Síntiús / plean códaithe",
+    "thisInstallation": "An tsuiteáil seo",
+    "syncOn": "Sioncronú cumasaithe",
+    "syncOff": "Sioncronú díchumasaithe",
+    "local": "Áitiúil",
+    "waitingSync": "Ag fanacht leis an gcéad sioncronú",
+    "viaPeer": "Trí shuiteáil phéireáilte",
+    "balance": "Iarmhéid",
+    "privacy": "Fanann na dintiúir ar an ngléas seo. Ní sheoltar úsáid chuig an bhforbróir.",
+    "installationsHelp": "Ceangail do shuiteálacha féin chun a n-úsáid a fheiceáil le chéile.",
+    "pairHelp": "Oscail Suiteálacha ar an ngléas eile. Cruthaigh cód anseo nó greamaigh a chód. Ní mór an dá ghléas a bheith insroichte go díreach.",
+    "adminKeyHelp": "Teastaíonn eochair API riarthóra na heagraíochta le haghaidh tuairiscí úsáide, ar leithligh ón síntiús comhrá.",
+    "glmHelp": "Úsáid d’eochair GLM Coding Plan agus roghnaigh a réigiún.",
+    "browserHelp": "Lean ar aghaidh trí shíniú isteach oifigiúil an tsoláthraí.",
+    "keyPrivacy": "Stóráiltear an eochair go háitiúil agus úsáidtear í le haghaidh iarratas chuig an soláthraí seo amháin.",
+    "needsSetup": "Suiteáil CLI oifigiúil an tsoláthraí ar dtús agus athnuaigh an liosta.",
+    "claudeHelp": "Láimhseálann Claude Code síniú isteach ar an ngléas seo. Teastaíonn Claude Code CLI suiteáilte.",
+    "kimiHelp": "Úsáid síniú isteach oifigiúil Kimi Code nó eochair phlean Kimi Code.",
+    "moonshotHelp": "Úsáid eochair Moonshot API chun iarmhéid API a léamh, ar leithligh ó Kimi Code.",
+    "loginWaiting": "Críochnaigh síniú isteach an tsoláthraí. Coinnigh an fhuinneog seo ar oscailt.",
+    "loginComplete": "Cuntas ceangailte. Athnuaitear tomhais go huathoibríoch.",
+    "claudeSignIn": "Ceangail le Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Sínigh isteach",
+    "failed": "Theip ar logáil isteach",
+    "checking": "Ag ceangal…",
+    "installation": "Suiteálacha",
+    "status": {
+      "connected": "Gníomhach",
+      "detected": "Aimsithe",
+      "historical": "Roimhe seo",
+      "auth_required": "Síniú isteach de dhíth",
+      "error": "Earráid",
+      "unavailable": "Níl ar fáil",
+      "unknown": "Níl ar fáil"
+    },
+    "errors": {
+      "invalid_account": "Níor aimsíodh an cuntas. Athnuaigh liosta na gcuntas.",
+      "invalid_key": "Diúltaíodh don eochair. Seiceáil an eochair agus an soláthraí roghnaithe.",
+      "permission_denied": "Níl rochtain ag an eochair seo ar thuairiscí úsáide. Úsáid eochair leis na ceadanna riachtanacha.",
+      "unsupported_key": "Ní féidir leis an gcineál eochrach seo úsáid a léamh. Lean treoracha socraithe an tsoláthraí.",
+      "account_limit": "Baineadh teorainn na gcuntas amach. Bain cuntas nach n-úsáidtear ar dtús.",
+      "connection_unavailable": "Níorbh fhéidir an soláthraí a bhaint amach. Seiceáil do nasc agus bain triail eile as.",
+      "account_storage_unavailable": "Níl stóráil áitiúil cuntas ar fáil. Seiceáil ceadanna comhad na haipe.",
+      "profile_remove_failed": "Níorbh fhéidir an síniú isteach sábháilte a bhaint. Dún a fhuinneog sínithe isteach agus bain triail eile as.",
+      "unsupported_platform": "Níl síniú isteach brabhsálaí ar fáil ar an ardán seo. Úsáid modh eochrach atá ar fáil."
+    },
+    "kimiHelperHelp": "Ar an gcéad síniú isteach, íoslódálann an aip cúntóir oifigiúil Kimi go díreach ó Kimi. Ritheann sé go háitiúil; ní sheolann an deais teiliméadracht.",
+    "lastSeen": "Feicthe go deireanach {time}"
   }
 }

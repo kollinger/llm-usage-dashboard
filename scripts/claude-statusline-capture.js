@@ -15,7 +15,7 @@ process.stdin.on("end", () => {
   try {
     const payload = input.trim() ? JSON.parse(input) : {};
     const captured = sanitizeStatuslinePayload(payload);
-    const claudeHome = process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude");
+    const claudeHome = process.env.CLAUDE_CONFIG_DIR || process.env.CLAUDE_HOME || path.join(os.homedir(), ".claude");
     const target = path.join(claudeHome, "usage-dashboard-statusline.json");
     if (shouldWriteStatusline(target, captured)) {
       fs.mkdirSync(path.dirname(target), { recursive: true });

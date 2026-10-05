@@ -4271,3 +4271,49 @@ textarea {
 .device-view-controls .field { min-width: min(260px, 100%); }
 #deviceSyncSection textarea { width: 100%; resize: vertical; overflow-wrap: anywhere; font: inherit; }
 #deviceSyncSection .connection-actions { margin-block: 12px; }
+
+/* Account setup and installations are separate, focused settings pages. */
+.settings-modal-body { display: flex; flex-direction: column; height: min(82vh, 780px); overflow: hidden; padding: 0; scrollbar-gutter: auto; }
+.settings-sticky { flex: 0 0 auto; position: sticky; top: 0; z-index: 4; background: var(--panel); border-bottom: 1px solid var(--line); }
+.settings-modal-heading { position: static; margin: 0; padding: 18px 20px 12px; border: 0; }
+.settings-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 16px; }
+.settings-tab { flex: 1 0 auto; min-height: 44px; padding: 10px 12px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--muted); font: inherit; font-weight: 750; cursor: pointer; }
+.settings-tab[aria-selected="true"] { border-bottom-color: var(--green); color: var(--ink); }
+.settings-tab:focus-visible { outline: 2px solid var(--green); outline-offset: -3px; }
+.settings-tab-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px; scrollbar-gutter: stable; }
+.settings-tab-panel[hidden], .account-provider-chooser[hidden], .connection-wizard[hidden] { display: none; }
+.settings-tab-panel > .settings-section:first-child, .account-detected-details .settings-section { margin-top: 0; padding-top: 0; border-top: 0; }
+.connection-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.connection-panel-heading h3, .connection-panel-heading h4 { margin: 0; }
+.connection-panel-heading .connection-actions { margin: 0; }
+.connection-wizard { margin-block: 18px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.account-provider-chooser { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.account-provider-option { display: grid; gap: 5px; min-height: 76px; padding: 12px; text-align: start; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--panel); cursor: pointer; font: inherit; }
+.account-provider-option:hover, .account-provider-option:focus-visible { border-color: var(--green); }
+.account-provider-option span, .connection-badge { color: var(--muted); font-size: .75rem; }
+.connection-row-content { min-width: 0; overflow-wrap: anywhere; }
+.connection-row .settings-desc { margin: 5px 0 0; }
+.connection-row > .text-button, .connection-badge { flex-shrink: 0; }
+.connection-badge { padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; }
+.connection-empty { padding: 20px; margin: 12px 0; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+.account-inline-limits { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; font-size: .78rem; }
+.account-user-code { font-size: 1.3rem; font-weight: 800; letter-spacing: .08em; overflow-wrap: anywhere; }
+#accountMethodHelpLink { margin-block: 0 12px; }
+#accountConnectForm > h4 { margin-bottom: 8px; }
+#accountMethods { margin-bottom: 12px; }
+#devicePairCodeFields textarea { min-height: 96px; max-height: 180px; font-size: .8rem; }
+#deviceSyncMessage:empty, #accountsMessage:empty { display: none; }
+#deviceSyncSection > .settings-advanced { margin-top: 20px; }
+@media (max-width: 600px) {
+  .top-actions { flex-wrap: wrap; gap: 6px; }
+  #accountsManagerBtn, #installationsManagerBtn { font-size: .78rem; padding-inline: 10px; }
+  .settings-modal-body { height: min(90dvh, 780px); max-height: 90dvh; }
+  .settings-modal-heading { padding: 14px 14px 8px; }
+  .settings-tab-content { padding: 14px; }
+  .settings-tabs { padding-inline: 6px; }
+  .settings-tab { padding-inline: 8px; font-size: .8rem; }
+  .connection-panel-heading { flex-wrap: wrap; align-items: flex-start; }
+  .connection-panel-heading .connection-actions { flex-wrap: wrap; }
+  .connection-wizard { padding: 12px; }
+  .connection-row { align-items: flex-start; }
+}

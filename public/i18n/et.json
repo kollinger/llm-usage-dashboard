@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Kasutusandmeid ja volitusi ei saadeta arendajale. Krüptitud mõõtmisi jagatakse ainult selgelt seotud seadmetega. Ühenduse katkestamine ei kustuta saadud koopiaid.",
     "networkLimit": "Otseühendused kasutavad kohalikku võrku või olemasolevat privaatset VPN-i ilma vahendusserveri, otsinguserveri või ruuterimuudatusteta. Neid blokeerivad võrgud takistavad automaatset sünkroonimist.",
     "coverage": "{count} unikaalset kirjet · {duplicates} duplikaati eemaldatud · {excluded} kirjet jäävad kohaliku usaldusväärse tunnuseta. Piirangud on salvestatud mõõtmised; API kogusummasid ei lisata."
+  },
+  "connections": {
+    "accounts": "Kontod",
+    "installations": "Paigaldused",
+    "general": "Üldine",
+    "advanced": "Täpsem",
+    "addAccount": "Lisa konto",
+    "chooseProvider": "Vali teenusepakkuja",
+    "detectedDetails": "Leitud GPT kontod ja üksikasjad",
+    "back": "Tagasi",
+    "accountLabel": "Nimi (valikuline)",
+    "apiKey": "API võti",
+    "adminKey": "Administraatori API võti",
+    "region": "Piirkond",
+    "global": "Rahvusvaheline",
+    "china": "Hiina",
+    "setupHelp": "Seadistamisjuhised",
+    "connect": "Ühenda",
+    "openSignIn": "Ava sisselogimine",
+    "connectInstallation": "Ühenda paigaldus",
+    "haveCode": "Mul on kood",
+    "syncOptions": "Sünkroonimine ja privaatsus",
+    "remove": "Eemalda",
+    "automatic": "Automaatselt leitud",
+    "empty": "Ühtegi kontot pole veel ühendatud.",
+    "apiAccount": "API konto",
+    "subscription": "Tellimus / programmeerimisplaan",
+    "thisInstallation": "See paigaldus",
+    "syncOn": "Sünkroonimine lubatud",
+    "syncOff": "Sünkroonimine keelatud",
+    "local": "Kohalik",
+    "waitingSync": "Esimese sünkroonimise ootel",
+    "viaPeer": "Seotud paigalduse kaudu",
+    "balance": "Saldo",
+    "privacy": "Sisselogimisandmed jäävad sellesse seadmesse. Kasutusandmeid arendajale ei saadeta.",
+    "installationsHelp": "Ühenda oma paigaldused, et näha nende kasutust koos.",
+    "pairHelp": "Ava teises seadmes Paigaldused. Loo siin kood või kleebi teise seadme kood. Seadmed peavad olema otse ühendatavad.",
+    "adminKeyHelp": "Kasutusaruanded nõuavad organisatsiooni administraatori API võtit, eraldi vestlustellimusest.",
+    "glmHelp": "Kasuta GLM Coding Plani võtit ja vali selle piirkond.",
+    "browserHelp": "Jätka teenusepakkuja ametliku sisselogimisega.",
+    "keyPrivacy": "Võti salvestatakse kohapeal ja seda kasutatakse ainult selle teenusepakkuja päringuteks.",
+    "needsSetup": "Paigalda esmalt teenusepakkuja ametlik CLI ja värskenda loendit.",
+    "claudeHelp": "Claude Code haldab selles seadmes sisselogimist. Vajalik on paigaldatud Claude Code CLI.",
+    "kimiHelp": "Kasuta Kimi Code’i ametlikku sisselogimist või Kimi Code’i plaani võtit.",
+    "moonshotHelp": "Kasuta Moonshot API võtit API saldo lugemiseks, eraldi Kimi Code’ist.",
+    "loginWaiting": "Lõpeta teenusepakkuja sisselogimine. Hoia see aken avatuna.",
+    "loginComplete": "Konto on ühendatud. Mõõtmisi värskendatakse automaatselt.",
+    "claudeSignIn": "Ühenda Claude Code’iga",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Logi sisse",
+    "failed": "Sisselogimine nurjus",
+    "checking": "Ühendamine…",
+    "installation": "Paigaldused",
+    "status": {
+      "connected": "Aktiivne",
+      "detected": "Leitud",
+      "historical": "Varasem",
+      "auth_required": "Sisselogimine vajalik",
+      "error": "Viga",
+      "unavailable": "Pole saadaval",
+      "unknown": "Pole saadaval"
+    },
+    "errors": {
+      "invalid_account": "Kontot ei leitud. Värskenda kontode loendit.",
+      "invalid_key": "Võti lükati tagasi. Kontrolli võtit ja valitud teenusepakkujat.",
+      "permission_denied": "Võtmel puudub juurdepääs kasutusaruannetele. Kasuta vajalike õigustega võtit.",
+      "unsupported_key": "See võtmetüüp ei saa kasutust lugeda. Järgi teenusepakkuja seadistamisjuhiseid.",
+      "account_limit": "Kontode piirang on täis. Eemalda esmalt kasutamata konto.",
+      "connection_unavailable": "Teenusepakkujat ei saa kätte. Kontrolli ühendust ja proovi uuesti.",
+      "account_storage_unavailable": "Kohalik kontode salvestus pole saadaval. Kontrolli rakenduse failiõigusi.",
+      "profile_remove_failed": "Salvestatud sisselogimist ei saanud eemaldada. Sulge sisselogimisaken ja proovi uuesti.",
+      "unsupported_platform": "Brauseriga sisselogimine pole sellel platvormil saadaval. Kasuta saadaolevat võtmega meetodit."
+    },
+    "kimiHelperHelp": "Esimesel sisselogimisel laadib rakendus ametliku Kimi abiprogrammi otse Kimilt. See töötab kohapeal; juhtpaneel ei saada telemeetriat.",
+    "lastSeen": "Viimati nähtud {time}"
   }
 }

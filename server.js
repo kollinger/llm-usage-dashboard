@@ -15,6 +15,12 @@ const express = require("express");
 const session = require("express-session");
 const packageInfo = require("./package.json");
 const { createGptAccountLogin } = require("./lib/gpt-account-login");
+const { createClaudeAccountLogin } = require("./lib/claude-account-login");
+const { createKimiAccountLogin, readKimiKeyUsage, readMoonshotBalance } = require("./lib/kimi-accounts");
+const { createProviderAccountStore, safeMeasurement, providerAccountIdentity } = require("./lib/provider-account-store");
+const { readAdminAccountUsage } = require("./lib/admin-account-usage");
+const { createKimiRuntime } = require("./lib/kimi-runtime");
+const { installConnectionsApi } = require("./lib/connections-api");
 const { DeviceSync } = require("./lib/device-sync");
 const { exportUsageEvents, combinedUsage } = require("./lib/device-sync-data");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
@@ -558,6 +564,135 @@ const gptLogin = createGptAccountLogin({
   }
 });
 
+const refreshConnectedAccounts = () => { invalidateTimedCache(usageCache); invalidateTimedCache(claudeAuthStatusCache); };
+const claudeLogin = createClaudeAccountLogin({ profilesDir: path.join(DATA_DIR, "claude-profiles"), resolveCli: resolveClaudeBinary, onComplete: async (profile) => {
+  await installManagedClaudeStatusline(profile.id);
+  refreshConnectedAccounts();
+} });
+const kimiRuntime = createKimiRuntime({ toolsDir: path.join(DATA_DIR, "tools", "kimi") });
+const kimiLogin = createKimiAccountLogin({ profilesDir: path.join(DATA_DIR, "kimi-profiles"), resolveCli: () => kimiRuntime.ensure(), onComplete: refreshConnectedAccounts });
+const connectedAccountStore = createProviderAccountStore({ dataDir: DATA_DIR, readers: {
+  openai: ({ key }) => readAdminAccountUsage("openai", key),
+  anthropic: ({ key }) => readAdminAccountUsage("anthropic", key),
+  kimi: async ({ key }) => {
+    const result = await readKimiKeyUsage(key);
+    return { ...result, authenticated: result.authenticated ?? ["available", "connected", "live"].includes(result.status) };
+  },
+  moonshot: async ({ key }) => {
+    const result = await readMoonshotBalance(key);
+    return { ...result, balance: result.balance?.available, currency: result.balance?.currency,
+      authenticated: result.authenticated ?? ["available", "connected", "live"].includes(result.status) };
+  },
+  glm: async ({ key, region }) => {
+    const base = resolveGlmCodingPlanBase(region === "china" ? "https://open.bigmodel.cn" : "https://api.z.ai");
+    const result = await fetchGlmCodingPlanQuota({ auth: { ...base, status: "available", accessToken: key, source: "dashboard_account" } });
+    return { authenticated: result.status === "available", limits: result.limits, updatedAt: result.updatedAt || new Date().toISOString(),
+      error: result.status === "expired" ? "invalid_key" : "connection_unavailable" };
+  }
+} });
+
+async function readManagedGptProfiles() {
+  const profiles = [];
+  for (const home of defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))) {
+    const id = path.basename(home);
+    if (!/^[a-f0-9-]{36}$/.test(id)) continue;
+    try {
+      const auth = JSON.parse(await fsp.readFile(path.join(home, "auth.json"), "utf8"));
+      const account = codexAccountObservationsFromAuth(auth)[0];
+      if (account) {
+        let label = account.label;
+        try {
+          const metadata = JSON.parse(await fsp.readFile(path.join(home, "dashboard-account.json"), "utf8"));
+          if (typeof metadata.label === "string" && metadata.label.trim()) label = metadata.label.replace(/[\x00-\x1f\x7f]/g, "").trim().slice(0, 80);
+        } catch { /* Profiles created before account labels keep their masked label. */ }
+        profiles.push({ id, label, accountId: account.id });
+      }
+    } catch { /* An unfinished or expired login is not a connected account. */ }
+  }
+  return profiles;
+}
+
+async function readBrowserConnections({ force = false } = {}) {
+  const [profiles, registry, claudeProfiles, kimiProfiles, localClaude] = await Promise.all([
+    readManagedGptProfiles(),
+    force ? readGptAccounts({ force: true }) : Promise.resolve(gptAccountsCache.value || null).then((value) => value || readGptAccountRegistry(DATA_DIR).then(publicGptAccountRegistry)),
+    claudeLogin.profiles({ refresh: force }),
+    force ? kimiLogin.refresh().then(() => kimiLogin.profiles()) : kimiLogin.profiles(),
+    readClaudeAuthStatus()
+  ]);
+  const accounts = (registry.accounts || []).map((account) => {
+    const profile = profiles.find((item) => item.accountId === account.id);
+    const source = account.sources?.filter((item) => item.limits?.rows?.length).sort((a, b) => Date.parse(b.limitsUpdatedAt || 0) - Date.parse(a.limitsUpdatedAt || 0))[0];
+    return { id: profile ? `gpt:${profile.id}` : `detected:${account.id}`, accountId: account.id, provider: "gpt", label: profile?.label || account.label,
+      kind: "subscription", managed: Boolean(profile), status: account.active ? "connected" : "saved", updatedAt: source?.limitsUpdatedAt || account.lastSeenAt,
+      ...safeMeasurement({ limits: source?.limits, updatedAt: source?.limitsUpdatedAt || account.lastSeenAt, planType: account.planType }) };
+  });
+  for (const profile of profiles) {
+    if (!accounts.some((account) => account.id === `gpt:${profile.id}`)) accounts.push({ id: `gpt:${profile.id}`, accountId: profile.accountId, provider: "gpt", label: profile.label, kind: "subscription", managed: true, status: "connected", updatedAt: null });
+  }
+  for (const profile of claudeProfiles) {
+    const configDir = path.join(DATA_DIR, "claude-profiles", profile.id);
+    let measurement = await readClaudeProfileMeasurement(configDir);
+    const detectedUsage = usageCache.value?.claudeCode;
+    if (profile.accountId && profile.accountId === localClaude.accountId && localClaude.authMethod === "claude.ai" && detectedUsage?.limits?.rows?.length &&
+        (!measurement.limits?.rows?.length || Date.parse(detectedUsage.limitsUpdatedAt || detectedUsage.updatedAt) > Date.parse(measurement.updatedAt || 0))) {
+      measurement = { limits: detectedUsage.limits, updatedAt: detectedUsage.limitsUpdatedAt || detectedUsage.updatedAt };
+    }
+    accounts.push({ id: `claude:${profile.id}`, accountId: profile.accountId || null, provider: "claude", label: profile.label || "Claude Code",
+      kind: "subscription", managed: true, status: profile.authenticated ? "connected" : "unavailable", ...safeMeasurement({ ...measurement, planType: profile.planType }), detailCode: measurement?.limits ? null : "limits_unavailable" });
+  }
+  if (localClaude.loggedIn && localClaude.authMethod === "claude.ai" && !accounts.some((account) => account.accountId && account.accountId === localClaude.accountId)) {
+    const usage = usageCache.value?.claudeCode;
+    accounts.push({ id: "detected:claude", accountId: localClaude.accountId || null, provider: "claude", label: "Claude Code", kind: "subscription", managed: false, status: "connected",
+      ...safeMeasurement({ limits: usage?.limits, updatedAt: usage?.limitsUpdatedAt || null, planType: localClaude.planType }) });
+  }
+  for (const profile of kimiProfiles) accounts.push({ id: `kimi:${profile.id}`, accountId: profile.accountId || null, provider: "kimi", label: profile.label || "Kimi Code", kind: "subscription", managed: true,
+    status: profile.measurement?.error === "auth_failed" ? "auth_required" : ["connected", "available", "live"].includes(profile.status) ? "connected" : profile.status || "unavailable",
+    detailCode: profile.measurement?.error === "auth_failed" ? "invalid_key" : profile.measurement?.status === "unavailable" ? "limits_unavailable" : null,
+    ...safeMeasurement(profile.measurement) });
+  const glm = usageCache.value?.glm;
+  if (!glm?.connectedAccountCount && glm?.limits?.rows?.length) {
+    const auth = await readGlmCodingPlanAuth().catch(() => null);
+    const accountId = auth?.status === "available" && auth.accessToken
+      ? providerAccountIdentity("glm", auth.provider === "bigmodel" ? "china" : "global", auth.accessToken) : null;
+    accounts.push({ id: "detected:glm", accountId, provider: "glm", label: "GLM / Z.AI", kind: "subscription", managed: false, status: "connected",
+      ...safeMeasurement({ limits: glm.limits, updatedAt: glm.limitsUpdatedAt || glm.updatedAt }) });
+  }
+  return accounts;
+}
+
+async function readClaudeProfileMeasurement(configDir) {
+  try {
+    const raw = JSON.parse(await fsp.readFile(path.join(configDir, "usage-dashboard-statusline.json"), "utf8"));
+    const statusline = extractClaudeStatusline(raw);
+    return { limits: statusline?.limits, updatedAt: raw.captured_at };
+  } catch { return {}; }
+}
+
+async function installManagedClaudeStatusline(id) {
+  if (!/^[a-f0-9-]{36}$/.test(id)) return;
+  const profileDir = path.join(DATA_DIR, "claude-profiles", id);
+  const settingsFile = path.join(profileDir, "settings.json");
+  let settings = {};
+  try { settings = JSON.parse(await fsp.readFile(settingsFile, "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  // Only our newly created profile is configured. Never replace a user's hook.
+  if (settings.statusLine) return;
+  const capture = path.join(profileDir, "llm-usage-statusline-capture.js");
+  await fsp.copyFile(path.join(ROOT, "scripts", "claude-statusline-capture.js"), capture);
+  await fsp.chmod(capture, 0o700);
+  const runner = process.versions?.electron ? `ELECTRON_RUN_AS_NODE=1 ${shellQuote(process.execPath)}` : shellQuote(process.execPath);
+  let command = `${runner} ${shellQuote(capture)}`;
+  if (process.platform === "win32") {
+    const quote = (value) => `'${value.replace(/'/g, "''")}'`;
+    const script = `${process.versions?.electron ? "$env:ELECTRON_RUN_AS_NODE='1'; " : ""}$input | & ${quote(process.execPath)} ${quote(capture)}`;
+    command = `powershell.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand ${Buffer.from(script, "utf16le").toString("base64")}`;
+  }
+  settings.statusLine = { type: "command", command };
+  await fsp.writeFile(settingsFile, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+  await fsp.chmod(settingsFile, 0o600);
+}
+
 function localControlMiddleware(req, res, next) {
   const remote = req.socket.remoteAddress?.replace(/^::ffff:/, "");
   const local = remote === "::1" || remote === "127.0.0.1";
@@ -570,6 +705,27 @@ function localControlMiddleware(req, res, next) {
   if (!local || !host || !originAllowed || req.get("sec-fetch-site") === "cross-site") return res.status(403).json({ error: "local_control_only" });
   next();
 }
+
+installConnectionsApi(app, {
+  middleware: [authMiddleware, localControlMiddleware], keyStore: connectedAccountStore,
+  logins: { gpt: gptLogin, claude: claudeLogin, kimi: { ...kimiLogin, cancel: async () => { await kimiRuntime.cancel(); return kimiLogin.cancel(); } } },
+  available: (provider) => provider === "kimi" ? kimiRuntime.availability() : ({ gpt: resolveCodexBinary, claude: resolveClaudeBinary }[provider]?.()),
+  listBrowserAccounts: readBrowserConnections,
+  async removeBrowserAccount(id) {
+    const match = /^(gpt|claude|kimi):([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/.exec(id);
+    if (!match) throw new Error("invalid_account");
+    const [, provider, profileId] = match;
+    if (provider === "gpt") {
+      if (!(await readManagedGptProfiles()).some((profile) => profile.id === profileId)) throw new Error("invalid_account");
+      await fsp.rm(path.join(DATA_DIR, "codex-profiles", profileId), { recursive: true });
+      prepareForcedGptAccountRefresh();
+    } else {
+      try { await (provider === "claude" ? claudeLogin : kimiLogin).remove(profileId); }
+      catch { throw new Error("profile_remove_failed"); }
+    }
+  },
+  invalidate: refreshConnectedAccounts
+});
 
 app.get("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, (_req, res) => res.json(gptLogin.status()));
 app.post("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, async (_req, res) => {
@@ -976,6 +1132,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
   return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
+    for (const profile of await claudeLogin.profileSources()) {
+      localSources.claudeCode.push(defaultHomeSource("claudeCode", "Claude Code", profile.configDir, [
+        { role: "projects", path: path.join(profile.configDir, "projects"), kind: "directory" }
+      ]));
+    }
     // Resolve the account registry before the parallel provider readers so the
     // Codex account and rate-limit probes reuse one initialized app-server.
     const gptAccounts = await readGptAccounts({
@@ -1001,7 +1162,8 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       glmRaw,
       ollamaRaw,
       openaiRaw,
-      anthropicRaw
+      anthropicRaw,
+      connectedAccounts
     ] = await Promise.all([
       readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
       readAccountBillingSnapshots().catch(() =>
@@ -1021,7 +1183,8 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       readGlmUsage({ sources: localSources.glm }).catch((error) => providerError("glm", error)),
       readOllamaUsage({ sources: localSources.ollama }).catch((error) => providerError("ollama", error)),
       readOpenAiUsage().catch((error) => providerError("openai", error)),
-      readAnthropicUsage().catch((error) => providerError("anthropic", error))
+      readAnthropicUsage().catch((error) => providerError("anthropic", error)),
+      readConnectedAccountSnapshots().catch(() => [])
     ]);
 
     const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex", officialPricing, accountBilling);
@@ -1034,7 +1197,10 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       accountBilling
     );
     const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini", officialPricing, accountBilling);
-    const glm = glmRaw;
+    const glm = applyConnectedAccountQuota(glmRaw, connectedAccounts.filter((account) => account.provider === "glm"));
+    const kimi = applyConnectedAccountQuota({ id: "kimi", status: "not_configured", updatedAt: new Date().toISOString(),
+      totals: null, daily: [], byModel: [], limits: null, usageQuality: "unavailable", _usageEvents: [],
+      source: { hasConfiguredSource: false, eventCount: 0, protocol: "kimi_code_quota" } }, connectedAccounts.filter((account) => account.provider === "kimi"));
     const openCode = openCodeRaw;
     const ollama = ollamaRaw;
     const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai", officialPricing, accountBilling);
@@ -1045,12 +1211,12 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       officialPricing,
       accountBilling
     );
-    const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, openai, anthropic]).catch(() => []);
+    const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
     const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
-    const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, ollama]);
+    const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama]);
     if (deviceSync.config.enabled) {
       try {
-        await deviceSync.capture({ ...exportUsageEvents([codex, openCode, copilot, claudeCode, gemini, glm, ollama]), accounts: gptAccounts.accounts });
+        await deviceSync.capture({ ...exportUsageEvents([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama]), accounts: gptAccounts.accounts, connections: connectedAccounts });
         if (deviceSync.error === "capture_failed") deviceSync.error = null;
       } catch { deviceSync.error = "capture_failed"; }
     }
@@ -1065,13 +1231,39 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       claudeCode: stripProviderUsageEvents(claudeCode),
       gemini: stripProviderUsageEvents(gemini),
       glm: stripProviderUsageEvents(glm),
+      kimi: stripProviderUsageEvents(kimi),
       ollama: stripProviderUsageEvents(ollama),
       local,
       gptAccounts,
+      connectedAccounts,
       openai,
       anthropic
     };
   }, { force, maxAgeMs });
+}
+
+let connectedBrowserRefreshAt = 0;
+let connectedBrowserRefresh = null;
+async function readConnectedAccountSnapshots() {
+  if (Date.now() - connectedBrowserRefreshAt > 60_000) {
+    connectedBrowserRefresh ||= kimiLogin.refresh().catch(() => {}).finally(() => { connectedBrowserRefreshAt = Date.now(); connectedBrowserRefresh = null; });
+    await connectedBrowserRefresh;
+  }
+  const browser = await readBrowserConnections();
+  const keys = await connectedAccountStore.refresh();
+  return [...browser.filter((account) => account.managed || !account.accountId || !keys.some((key) => key.accountId === account.accountId)), ...keys];
+}
+
+function applyConnectedAccountQuota(provider, accounts) {
+  const connected = accounts.filter((account) => account.status === "connected" && account.managed);
+  if (!connected.length) return provider;
+  const latest = connected.slice().sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0));
+  // Account windows are not additive. Multiple accounts remain individually
+  // visible in connectedAccounts; never manufacture one combined percentage.
+  const limits = latest.length === 1 ? latest[0].limits : null;
+  return { ...provider, status: "live", limits, limitsUpdatedAt: latest[0].updatedAt || null,
+    source: { ...provider.source, hasConfiguredSource: true, connectedAccountCount: latest.length },
+    connectedAccountCount: latest.length, planType: latest.length === 1 ? latest[0].planType : null };
 }
 
 const LIVE_METRICS_RESPONSE_CACHE_MS = 4000;
@@ -8148,6 +8340,8 @@ async function probeClaudeAuthStatus() {
       status: "ok",
       planType: extractClaudePlanType(raw),
       loggedIn: parseBoolean(raw.loggedIn ?? raw.logged_in),
+      authMethod: ["claude.ai", "api_key", "oauth_token", "bedrock", "vertex", "foundry", "none"].includes(raw.authMethod) ? raw.authMethod : null,
+      accountId: raw.accountId || raw.email ? `claude-${crypto.createHash("sha256").update(JSON.stringify([raw.accountId || String(raw.email).trim().toLowerCase(), raw.orgId || null])).digest("hex").slice(0, 24)}` : null,
       orgId: firstNonEmptyString(raw.orgId, raw.org_id, raw.organizationUuid, raw.organization_uuid)
     };
   } catch {
@@ -8159,6 +8353,7 @@ function resolveClaudeBinary() {
   const candidates = [
     process.env.CLAUDE_BIN,
     process.env.CLAUDE_CLI_PATH,
+    path.join(os.homedir(), ".local", "bin", process.platform === "win32" ? "claude.exe" : "claude"),
     "/opt/homebrew/bin/claude",
     "/usr/local/bin/claude",
     "/usr/bin/claude"
@@ -8168,8 +8363,9 @@ function resolveClaudeBinary() {
     if (candidate && fs.existsSync(candidate)) return candidate;
   }
 
-  const which = spawnSync("which", ["claude"], { encoding: "utf8" });
-  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
+  const which = spawnSync(process.platform === "win32" ? "where" : "which", ["claude"], { encoding: "utf8", timeout: 1000, windowsHide: true });
+  const found = which.status === 0 ? which.stdout.trim().split(/\r?\n/)[0] : null;
+  if (found && !/\.(cmd|bat)$/i.test(found)) return found;
   return null;
 }
 
@@ -10901,7 +11097,7 @@ function startDashboard(options = {}) {
     finally { syncReading = false; }
   }, 60_000);
   syncCollector.unref?.();
-  dashboardServer.once("close", () => { clearInterval(syncCollector); gptLogin.close(); deviceSync.stop().catch(() => {}); });
+  dashboardServer.once("close", () => { clearInterval(syncCollector); gptLogin.close(); claudeLogin.close().catch(() => {}); kimiRuntime.close().then(() => kimiLogin.close()).catch(() => {}); deviceSync.stop().catch(() => {}); });
   dashboardServer.once("close", stopCodexResetCollector);
   return { dashboardServer, ollamaProxyServer };
 }

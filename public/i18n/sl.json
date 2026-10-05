@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Podatki o uporabi in prijavni podatki se ne pošiljajo razvijalcu. Šifrirane meritve se delijo le z izrecno povezanimi napravami. Odklop ne izbriše že prejetih kopij.",
     "networkLimit": "Neposredne povezave uporabljajo lokalno omrežje ali obstoječi zasebni VPN, brez releja, strežnika za odkrivanje in sprememb usmerjevalnika. Omrežja, ki to blokirajo, preprečijo samodejno sinhronizacijo.",
     "coverage": "{count} različnih zapisov · {duplicates} dvojnikov odstranjenih · {excluded} zapisov ostane lokalnih brez zanesljivega identifikatorja. Omejitve so shranjene meritve; vsote API se ne prištevajo."
+  },
+  "connections": {
+    "accounts": "Računi",
+    "installations": "Namestitve",
+    "general": "Splošno",
+    "advanced": "Napredno",
+    "addAccount": "Dodaj račun",
+    "chooseProvider": "Izberite ponudnika",
+    "detectedDetails": "Zaznani računi GPT in podrobnosti",
+    "back": "Nazaj",
+    "accountLabel": "Ime (neobvezno)",
+    "apiKey": "Ključ API",
+    "adminKey": "Skrbniški ključ API",
+    "region": "Regija",
+    "global": "Mednarodno",
+    "china": "Kitajska",
+    "setupHelp": "Navodila za nastavitev",
+    "connect": "Poveži",
+    "openSignIn": "Odpri prijavo",
+    "connectInstallation": "Poveži namestitev",
+    "haveCode": "Imam kodo",
+    "syncOptions": "Sinhronizacija in zasebnost",
+    "remove": "Odstrani",
+    "automatic": "Samodejno zaznano",
+    "empty": "Ni še povezanih računov.",
+    "apiAccount": "Račun API",
+    "subscription": "Naročnina / paket za programiranje",
+    "thisInstallation": "Ta namestitev",
+    "syncOn": "Sinhronizacija vključena",
+    "syncOff": "Sinhronizacija izključena",
+    "local": "Lokalno",
+    "waitingSync": "Čakanje na prvo sinhronizacijo",
+    "viaPeer": "Prek seznanjene namestitve",
+    "balance": "Stanje",
+    "privacy": "Prijavni podatki ostanejo na tej napravi. Podatki o uporabi se ne pošiljajo razvijalcu.",
+    "installationsHelp": "Povežite svoje namestitve za skupen pregled uporabe.",
+    "pairHelp": "Na drugi napravi odprite Namestitve. Tukaj ustvarite kodo ali prilepite njeno kodo. Napravi morata biti neposredno dosegljivi.",
+    "adminKeyHelp": "Za poročila potrebujete skrbniški ključ API organizacije, ločen od naročnine za klepet.",
+    "glmHelp": "Uporabite ključ GLM Coding Plan in izberite njegovo regijo.",
+    "browserHelp": "Nadaljujte prek uradne prijave ponudnika.",
+    "keyPrivacy": "Ključ je shranjen lokalno in se uporablja samo za zahteve temu ponudniku.",
+    "needsSetup": "Najprej namestite uradni CLI ponudnika in osvežite seznam.",
+    "claudeHelp": "Claude Code upravlja prijavo na tej napravi. Potreben je nameščen Claude Code CLI.",
+    "kimiHelp": "Uporabite uradno prijavo Kimi Code ali ključ paketa Kimi Code.",
+    "moonshotHelp": "S ključem API Moonshot preberite stanje API, ločeno od Kimi Code.",
+    "loginWaiting": "Dokončajte prijavo pri ponudniku. Pustite to okno odprto.",
+    "loginComplete": "Račun je povezan. Meritve se samodejno osvežujejo.",
+    "claudeSignIn": "Poveži prek Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Prijava",
+    "failed": "Prijava ni uspela",
+    "checking": "Povezovanje…",
+    "installation": "Namestitve",
+    "status": {
+      "connected": "Aktiven",
+      "detected": "Zaznan",
+      "historical": "Prejšnji",
+      "auth_required": "Potrebna je prijava",
+      "error": "Napaka",
+      "unavailable": "Ni na voljo",
+      "unknown": "Ni na voljo"
+    },
+    "errors": {
+      "invalid_account": "Račun ni najden. Osvežite seznam računov.",
+      "invalid_key": "Ključ je zavrnjen. Preverite ključ in izbranega ponudnika.",
+      "permission_denied": "Ključ nima dostopa do poročil o uporabi. Uporabite ključ s potrebnimi dovoljenji.",
+      "unsupported_key": "Ta vrsta ključa ne more prebrati uporabe. Upoštevajte navodila ponudnika.",
+      "account_limit": "Dosežena je omejitev računov. Najprej odstranite neuporabljen račun.",
+      "connection_unavailable": "Ponudnik ni dosegljiv. Preverite povezavo in poskusite znova.",
+      "account_storage_unavailable": "Lokalna shramba računov ni na voljo. Preverite dovoljenja aplikacije za datoteke.",
+      "profile_remove_failed": "Shranjene prijave ni bilo mogoče odstraniti. Zaprite prijavno okno in poskusite znova.",
+      "unsupported_platform": "Prijava v brskalniku na tej platformi ni na voljo. Uporabite razpoložljivo metodo s ključem."
+    },
+    "kimiHelperHelp": "Ob prvi prijavi aplikacija prenese uradni pomožni program Kimi neposredno od Kimi. Deluje lokalno; nadzorna plošča ne pošilja telemetrije.",
+    "lastSeen": "Nazadnje viden {time}"
   }
 }

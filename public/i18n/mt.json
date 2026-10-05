@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Data tal-użu u kredenzjali ma jintbagħtux lill-iżviluppatur. Kejl ikkriptat jinqasam biss ma’ apparati mqabbla espliċitament. L-iskonnessjoni ma tħassarx kopji riċevuti.",
     "networkLimit": "Konnessjonijiet diretti jużaw in-netwerk lokali jew VPN privat eżistenti, mingħajr relay, server ta’ skoperta jew bidliet fir-router. Netwerks li jimblokkawhom jipprevjenu sinkronizzazzjoni awtomatika.",
     "coverage": "{count} rekords distinti · {duplicates} duplikati mneħħija · {excluded} rekords jibqgħu lokali mingħajr identifikatur affidabbli. Il-limiti huma kejl salvat; it-totali API ma jiżdiedux."
+  },
+  "connections": {
+    "accounts": "Kontijiet",
+    "installations": "Installazzjonijiet",
+    "general": "Ġenerali",
+    "advanced": "Avvanzat",
+    "addAccount": "Żid kont",
+    "chooseProvider": "Agħżel fornitur",
+    "detectedDetails": "Kontijiet GPT misjuba u dettalji",
+    "back": "Lura",
+    "accountLabel": "Isem (mhux obbligatorju)",
+    "apiKey": "Ċavetta API",
+    "adminKey": "Ċavetta API tal-amministratur",
+    "region": "Reġjun",
+    "global": "Internazzjonali",
+    "china": "Ċina",
+    "setupHelp": "Istruzzjonijiet tas-setup",
+    "connect": "Qabbad",
+    "openSignIn": "Iftaħ id-dħul",
+    "connectInstallation": "Qabbad installazzjoni",
+    "haveCode": "Għandi kodiċi",
+    "syncOptions": "Sinkronizzazzjoni u privatezza",
+    "remove": "Neħħi",
+    "automatic": "Misjub awtomatikament",
+    "empty": "Għad m’hemmx kontijiet konnessi.",
+    "apiAccount": "Kont API",
+    "subscription": "Abbonament / pjan ta’ programmar",
+    "thisInstallation": "Din l-installazzjoni",
+    "syncOn": "Sinkronizzazzjoni attivata",
+    "syncOff": "Sinkronizzazzjoni diżattivata",
+    "local": "Lokali",
+    "waitingSync": "Qed tistenna l-ewwel sinkronizzazzjoni",
+    "viaPeer": "Permezz ta’ installazzjoni mqabbda",
+    "balance": "Bilanċ",
+    "privacy": "Id-dettalji tad-dħul jibqgħu fuq dan l-apparat. L-użu ma jintbagħatx lill-iżviluppatur.",
+    "installationsHelp": "Qabbad l-installazzjonijiet tiegħek biex tara l-użu tagħhom flimkien.",
+    "pairHelp": "Iftaħ Installazzjonijiet fuq l-apparat l-ieħor. Oħloq kodiċi hawn jew waħħal il-kodiċi tiegħu. Iż-żewġ apparati jridu jkunu aċċessibbli direttament.",
+    "adminKeyHelp": "Ir-rapporti jeħtieġu ċavetta API tal-amministratur tal-organizzazzjoni, separata mill-abbonament taċ-chat.",
+    "glmHelp": "Uża ċ-ċavetta GLM Coding Plan tiegħek u agħżel ir-reġjun tagħha.",
+    "browserHelp": "Kompli permezz tad-dħul uffiċjali tal-fornitur.",
+    "keyPrivacy": "Iċ-ċavetta tinħażen lokalment u tintuża biss għal talbiet lil dan il-fornitur.",
+    "needsSetup": "L-ewwel installa s-CLI uffiċjali tal-fornitur u aġġorna l-lista.",
+    "claudeHelp": "Claude Code jimmaniġġja d-dħul fuq dan l-apparat. Jeħtieġ Claude Code CLI installat.",
+    "kimiHelp": "Uża d-dħul uffiċjali ta’ Kimi Code jew ċavetta tal-pjan Kimi Code.",
+    "moonshotHelp": "Uża ċavetta Moonshot API biex taqra l-bilanċ API, separat minn Kimi Code.",
+    "loginWaiting": "Lesti d-dħul tal-fornitur. Żomm din it-tieqa miftuħa.",
+    "loginComplete": "Il-kont huwa konness. Il-kejl jiġi aġġornat awtomatikament.",
+    "claudeSignIn": "Qabbad ma’ Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Idħol",
+    "failed": "Il-login falla",
+    "checking": "Qed jikkonnettja…",
+    "installation": "Installazzjonijiet",
+    "status": {
+      "connected": "Attiv",
+      "detected": "Misjub",
+      "historical": "Preċedenti",
+      "auth_required": "Meħtieġ id-dħul",
+      "error": "Żball",
+      "unavailable": "Mhux disponibbli",
+      "unknown": "Mhux disponibbli"
+    },
+    "errors": {
+      "invalid_account": "Il-kont ma nstabx. Aġġorna l-lista tal-kontijiet.",
+      "invalid_key": "Iċ-ċavetta ġiet miċħuda. Iċċekkja ċ-ċavetta u l-fornitur magħżul.",
+      "permission_denied": "Din iċ-ċavetta m’għandhiex aċċess għar-rapporti tal-użu. Uża ċavetta bil-permessi meħtieġa.",
+      "unsupported_key": "Dan it-tip ta’ ċavetta ma jistax jaqra l-użu. Segwi l-istruzzjonijiet tal-fornitur.",
+      "account_limit": "Intlaħaq il-limitu tal-kontijiet. L-ewwel neħħi kont mhux użat.",
+      "connection_unavailable": "Il-fornitur mhux aċċessibbli. Iċċekkja l-konnessjoni u erġa’ pprova.",
+      "account_storage_unavailable": "Il-ħażna lokali tal-kontijiet mhix disponibbli. Iċċekkja l-permessi tal-fajls tal-app.",
+      "profile_remove_failed": "Id-dħul salvat ma setax jitneħħa. Agħlaq it-tieqa tad-dħul u erġa’ pprova.",
+      "unsupported_platform": "Id-dħul bil-browser mhuwiex disponibbli fuq din il-pjattaforma. Uża metodu disponibbli b’ċavetta."
+    },
+    "kimiHelperHelp": "Fl-ewwel dħul, l-app tniżżel l-għodda uffiċjali ta’ Kimi direttament mingħand Kimi. Taħdem lokalment; id-dashboard ma jibgħatx telemetrija.",
+    "lastSeen": "Deher l-aħħar {time}"
   }
 }

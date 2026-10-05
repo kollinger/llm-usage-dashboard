@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.5.0-preview.1 - 2026-10-05
+
+### Added
+
+- Compact account manager with provider selection, browser sign-in for ChatGPT,
+  Claude Code and Kimi Code, and separate key connections for GLM, Kimi Code,
+  OpenAI API, Anthropic API and Moonshot API.
+- Isolated local provider profiles and encrypted local API-key storage. Kimi
+  prepares its pinned official helper on first browser sign-in.
+- Installation overview with this computer always visible and a guided pairing
+  flow, directly accessible from the dashboard header.
+- Individual provider account quotas/reports and sanitized account snapshots
+  in direct device sync, without adding overlapping API reports to local tokens.
+
+### Improved
+
+- Split settings into Accounts, Installations, General and Advanced tabs.
+- Explain provider-specific access and missing measurements; API admin keys are
+  distinct from consumer subscriptions. Update all 27 interface languages.
+
+### Preview limits
+
+- Claude Code must be installed; its official quota statusline needs actual
+  session activity before values appear. Kimi initially exposes account quotas,
+  not a reconstructed token history. API report coverage varies by provider.
+- Use this version on every paired installation for the expanded account sync.
+  Direct network reachability is still required; no relay is introduced.
+
 ## 1.4.0-preview.2 - 2026-10-04
 
 ### Fixed

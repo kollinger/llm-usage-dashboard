@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Naudojimo ir prisijungimo duomenys nesiunčiami kūrėjui. Šifruoti matavimai bendrinami tik su aiškiai susietais įrenginiais. Atjungimas neištrina gautų kopijų.",
     "networkLimit": "Tiesioginis ryšys naudoja vietinį tinklą arba esamą privatų VPN be perdavimo, paieškos serverio ir maršrutizatoriaus pakeitimų. Ryšį blokuojantys tinklai neleidžia automatiškai sinchronizuoti.",
     "coverage": "{count} unikalių įrašų · pašalinta {duplicates} dublikatų · {excluded} įrašų lieka vietiniai be patikimo identifikatoriaus. Limitai yra išsaugoti matavimai; API sumos nepridedamos."
+  },
+  "connections": {
+    "accounts": "Paskyros",
+    "installations": "Diegimai",
+    "general": "Bendrieji",
+    "advanced": "Išplėstiniai",
+    "addAccount": "Pridėti paskyrą",
+    "chooseProvider": "Pasirinkite teikėją",
+    "detectedDetails": "Aptiktos GPT paskyros ir informacija",
+    "back": "Atgal",
+    "accountLabel": "Pavadinimas (nebūtina)",
+    "apiKey": "API raktas",
+    "adminKey": "Administratoriaus API raktas",
+    "region": "Regionas",
+    "global": "Tarptautinis",
+    "china": "Kinija",
+    "setupHelp": "Sąrankos instrukcijos",
+    "connect": "Prijungti",
+    "openSignIn": "Atidaryti prisijungimą",
+    "connectInstallation": "Susieti diegimą",
+    "haveCode": "Turiu kodą",
+    "syncOptions": "Sinchronizavimas ir privatumas",
+    "remove": "Pašalinti",
+    "automatic": "Aptikta automatiškai",
+    "empty": "Dar nėra prijungtų paskyrų.",
+    "apiAccount": "API paskyra",
+    "subscription": "Prenumerata / programavimo planas",
+    "thisInstallation": "Šis diegimas",
+    "syncOn": "Sinchronizavimas įjungtas",
+    "syncOff": "Sinchronizavimas išjungtas",
+    "local": "Vietinis",
+    "waitingSync": "Laukiama pirmojo sinchronizavimo",
+    "viaPeer": "Per susietą diegimą",
+    "balance": "Likutis",
+    "privacy": "Prisijungimo duomenys lieka šiame įrenginyje. Naudojimo duomenys kūrėjui nesiunčiami.",
+    "installationsHelp": "Susiekite savo diegimus ir matykite bendrą naudojimą.",
+    "pairHelp": "Kitame įrenginyje atidarykite Diegimai. Čia sukurkite kodą arba įklijuokite jo kodą. Įrenginiai turi būti tiesiogiai pasiekiami.",
+    "adminKeyHelp": "Ataskaitoms reikia organizacijos administratoriaus API rakto, atskiro nuo pokalbių prenumeratos.",
+    "glmHelp": "Naudokite GLM Coding Plan raktą ir pasirinkite jo regioną.",
+    "browserHelp": "Tęskite oficialų teikėjo prisijungimą.",
+    "keyPrivacy": "Raktas saugomas vietoje ir naudojamas tik užklausoms šiam teikėjui.",
+    "needsSetup": "Pirmiausia įdiekite oficialų teikėjo CLI, tada atnaujinkite sąrašą.",
+    "claudeHelp": "Claude Code tvarko prisijungimą šiame įrenginyje. Būtinas įdiegtas Claude Code CLI.",
+    "kimiHelp": "Naudokite oficialų Kimi Code prisijungimą arba Kimi Code plano raktą.",
+    "moonshotHelp": "Naudokite Moonshot API raktą API likučiui skaityti, atskirai nuo Kimi Code.",
+    "loginWaiting": "Užbaikite prisijungimą prie teikėjo. Palikite šį langą atidarytą.",
+    "loginComplete": "Paskyra prijungta. Matavimai atnaujinami automatiškai.",
+    "claudeSignIn": "Prisijungti per Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Prisijungti",
+    "failed": "Prisijungti nepavyko",
+    "checking": "Jungiama…",
+    "installation": "Diegimai",
+    "status": {
+      "connected": "Aktyvi",
+      "detected": "Aptikta",
+      "historical": "Ankstesnė",
+      "auth_required": "Reikia prisijungti",
+      "error": "Klaida",
+      "unavailable": "Nepasiekiama",
+      "unknown": "Nepasiekiama"
+    },
+    "errors": {
+      "invalid_account": "Paskyra nerasta. Atnaujinkite paskyrų sąrašą.",
+      "invalid_key": "Raktas atmestas. Patikrinkite raktą ir pasirinktą teikėją.",
+      "permission_denied": "Šis raktas neturi prieigos prie naudojimo ataskaitų. Naudokite raktą su reikiamomis teisėmis.",
+      "unsupported_key": "Šio tipo raktas negali skaityti naudojimo. Vadovaukitės teikėjo sąrankos instrukcijomis.",
+      "account_limit": "Pasiektas paskyrų limitas. Pirmiausia pašalinkite nenaudojamą paskyrą.",
+      "connection_unavailable": "Teikėjas nepasiekiamas. Patikrinkite ryšį ir bandykite dar kartą.",
+      "account_storage_unavailable": "Vietinė paskyrų saugykla nepasiekiama. Patikrinkite programos failų leidimus.",
+      "profile_remove_failed": "Išsaugoto prisijungimo nepavyko pašalinti. Uždarykite prisijungimo langą ir bandykite dar kartą.",
+      "unsupported_platform": "Prisijungimas naršyklėje šioje platformoje nepasiekiamas. Naudokite galimą rakto metodą."
+    },
+    "kimiHelperHelp": "Pirmą kartą prisijungiant programa atsisiunčia oficialų Kimi pagalbinį įrankį tiesiai iš Kimi. Jis veikia vietoje; skydelis nesiunčia telemetrijos.",
+    "lastSeen": "Paskutinį kartą matyta {time}"
   }
 }

@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Não são enviados dados de utilização nem credenciais ao programador. Apenas medições encriptadas são partilhadas com dispositivos explicitamente emparelhados. Desligar não apaga cópias já recebidas.",
     "networkLimit": "As ligações diretas usam a rede local ou uma VPN privada existente, sem relay, servidor de descoberta ou alterações ao router. Redes que bloqueiam estas ligações impedem a sincronização automática.",
     "coverage": "{count} registos únicos · {duplicates} duplicados removidos · {excluded} registos ficam locais sem identificador fiável. Os limites são medições guardadas; os totais API não são adicionados."
+  },
+  "connections": {
+    "accounts": "Contas",
+    "installations": "Instalações",
+    "general": "Geral",
+    "advanced": "Avançado",
+    "addAccount": "Adicionar conta",
+    "chooseProvider": "Escolher fornecedor",
+    "detectedDetails": "Contas GPT detetadas e detalhes",
+    "back": "Voltar",
+    "accountLabel": "Nome (opcional)",
+    "apiKey": "Chave API",
+    "adminKey": "Chave API de administrador",
+    "region": "Região",
+    "global": "Internacional",
+    "china": "China",
+    "setupHelp": "Instruções de configuração",
+    "connect": "Ligar",
+    "openSignIn": "Abrir início de sessão",
+    "connectInstallation": "Ligar instalação",
+    "haveCode": "Tenho um código",
+    "syncOptions": "Sincronização e privacidade",
+    "remove": "Remover",
+    "automatic": "Detetado automaticamente",
+    "empty": "Ainda não existem contas ligadas.",
+    "apiAccount": "Conta API",
+    "subscription": "Subscrição / plano de programação",
+    "thisInstallation": "Esta instalação",
+    "syncOn": "Sincronização ativada",
+    "syncOff": "Sincronização desativada",
+    "local": "Local",
+    "waitingSync": "A aguardar a primeira sincronização",
+    "viaPeer": "Através de uma instalação emparelhada",
+    "balance": "Saldo",
+    "privacy": "As credenciais ficam neste dispositivo. A utilização não é enviada ao programador.",
+    "installationsHelp": "Ligue as suas instalações para ver a utilização em conjunto.",
+    "pairHelp": "Abra Instalações no outro dispositivo. Crie aqui um código ou cole o dele. Ambos devem ser acessíveis diretamente.",
+    "adminKeyHelp": "É necessária uma chave API de administrador da organização para relatórios, independente da subscrição de chat.",
+    "glmHelp": "Use a chave do seu GLM Coding Plan e escolha a respetiva região.",
+    "browserHelp": "Continue através do início de sessão oficial do fornecedor.",
+    "keyPrivacy": "A chave é guardada localmente e usada apenas para pedidos a este fornecedor.",
+    "needsSetup": "Instale primeiro a CLI oficial do fornecedor e atualize esta lista.",
+    "claudeHelp": "O Claude Code gere o início de sessão neste dispositivo. É necessária a CLI do Claude Code.",
+    "kimiHelp": "Use o início de sessão oficial do Kimi Code ou uma chave do plano Kimi Code.",
+    "moonshotHelp": "Use uma chave API Moonshot para consultar o saldo API, independente do Kimi Code.",
+    "loginWaiting": "Conclua o início de sessão no fornecedor. Mantenha esta janela aberta.",
+    "loginComplete": "Conta ligada. As medições são atualizadas automaticamente.",
+    "claudeSignIn": "Ligar com Claude Code",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Iniciar sessão",
+    "failed": "Falha no início de sessão",
+    "checking": "A ligar…",
+    "installation": "Instalações",
+    "status": {
+      "connected": "Ativo",
+      "detected": "Detetado",
+      "historical": "Anterior",
+      "auth_required": "Início de sessão necessário",
+      "error": "Erro",
+      "unavailable": "Indisponível",
+      "unknown": "Indisponível"
+    },
+    "errors": {
+      "invalid_account": "Conta não encontrada. Atualize a lista de contas.",
+      "invalid_key": "Chave rejeitada. Verifique a chave e o fornecedor selecionado.",
+      "permission_denied": "Esta chave não tem acesso a relatórios de utilização. Use uma chave com as permissões necessárias.",
+      "unsupported_key": "Este tipo de chave não permite ler a utilização. Siga as instruções do fornecedor.",
+      "account_limit": "Limite de contas atingido. Remova primeiro uma conta não utilizada.",
+      "connection_unavailable": "Não foi possível contactar o fornecedor. Verifique a ligação e tente novamente.",
+      "account_storage_unavailable": "O armazenamento local de contas não está disponível. Verifique as permissões de ficheiros da aplicação.",
+      "profile_remove_failed": "Não foi possível remover o início de sessão guardado. Feche a janela de início de sessão e tente novamente.",
+      "unsupported_platform": "O início de sessão no navegador não está disponível nesta plataforma. Use um método de chave disponível."
+    },
+    "kimiHelperHelp": "No primeiro início de sessão, a aplicação transfere a ferramenta oficial Kimi diretamente da Kimi. É executada localmente; o painel não envia telemetria.",
+    "lastSeen": "Visto pela última vez {time}"
   }
 }

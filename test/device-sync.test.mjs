@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import http from "node:http";
+import { once } from "node:events";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { DeviceSync, createIdentity, seal, open, signedSnapshot, verifySnapshot, safeEndpoint } = require("../lib/device-sync");
-const { exportUsageEvents, combinedUsage, sanitizeAccounts, hash } = require("../lib/device-sync-data");
+const { exportUsageEvents, combinedUsage, sanitizeAccounts, sanitizeConnections, hash } = require("../lib/device-sync-data");
 
 const identities = [createIdentity(), createIdentity(), createIdentity()];
 const box = seal(identities[0], identities[1], { secret: "test-only" });
@@ -28,6 +30,13 @@ assert(!JSON.stringify(exported).includes("test-session"));
 const accounts = [{ id: `gpt-${"a".repeat(16)}`, label: "private@example.com", accessToken: "SECRET_TOKEN", planType: "pro", lastSeenAt: new Date().toISOString(), sources: [{ id: "codex", usage: { summary: { lifetimeTokens: 123, secret: "SECRET" }, raw: "SECRET" }, active: true, limitsUpdatedAt: new Date().toISOString(), quotaStatus: "ready", profileRefs: ["private-profile"], limits: { rows: [{ key: "weekly", usedPercent: 60, remainingPercent: 40, windowMinutes: 10080, resetsAt: new Date(Date.now() + 60000).toISOString(), label: "SECRET_LABEL" }] } }] }];
 assert(!JSON.stringify(sanitizeAccounts({ accounts })).includes("SECRET"));
 assert(!JSON.stringify(sanitizeAccounts({ accounts })).includes("example.com"));
+const connections = [{ accountId: `kimi-${"b".repeat(16)}`, id: "local-profile", provider: "kimi", label: "private@example.com", apiKey: "SECRET", kind: "subscription", status: "connected", updatedAt: new Date().toISOString(), limits: { rows: [{ key: "limit5h", usedPercent: 20, remainingPercent: 80, windowMinutes: 300 }] }, tokenTotal: null, costTotal: null }];
+const sanitizedConnections = JSON.stringify(sanitizeConnections(connections));
+for (const privateValue of ["SECRET", "example.com", "local-profile"]) assert(!sanitizedConnections.includes(privateValue));
+assert.equal(sanitizeConnections([{ ...connections[0], accountId: "raw@example.com" }]).length, 0);
+const withConnections = signedSnapshot(identities[0], "A", { ...exported, accounts, connections });
+assert.equal(verifySnapshot(withConnections).connections.length, 1);
+assert.throws(() => verifySnapshot({ ...withConnections, connections: [{ ...withConnections.connections[0], tokenTotal: 999 }] }));
 const snapshot = signedSnapshot(identities[0], "A", { ...exported, accounts });
 assert.equal(verifySnapshot(snapshot).events.length, 1);
 assert.throws(() => verifySnapshot({ ...snapshot, events: [{ ...snapshot.events[0], usage: { totalTokens: 999 } }] }));
@@ -43,7 +52,7 @@ try {
     devices.push(device);
   }
   const [a,b,c] = devices;
-  const first = { ...exported, excludedEvents: 0, accounts };
+  const first = { ...exported, excludedEvents: 0, accounts, connections };
   await a.capture(first);
   await b.capture({ ...first, events: [...first.events, ...Array.from({ length: 450 }, (_, i) => ({ ...first.events[0], key: hash(`test-${i}`), usage: { ...first.events[0].usage, totalTokens: 2 } }))] });
   await c.capture({ events: [], excludedEvents: 0, accounts: [] });
@@ -64,6 +73,9 @@ try {
   assert.equal(c.snapshots.size, 3, "a trusted own device can carry an authenticated snapshot from another own device");
   const aggregate = combinedUsage({ gptAccounts: { accounts: [] } }, [...c.snapshots.values()]);
   assert.equal(aggregate.local.totals.allTime.totalTokens, 1000);
+  assert.equal(aggregate.connectedAccounts.length, 1, "repeated account measurements are snapshots, not additive usage");
+  assert.equal(aggregate.connectedAccounts[0].limits.rows[0].usedPercent, 20);
+  assert.equal(aggregate.connectedAccounts[0].status, "saved");
   assert.equal(aggregate.syncCoverage.duplicatesSkipped, 1);
   assert.equal(aggregate.gptAccounts.accounts.length, 1, "the same account and its quota must not multiply across devices");
   assert.equal(aggregate.gptAccounts.accounts[0].sources[0].limits.rows[0].usedPercent, 60);
@@ -112,6 +124,64 @@ try {
   await restarted.configure({ enabled: false, name: "Device 2" });
   assert.equal(restarted.server, null);
   assert.equal(restarted.snapshots.size, 2, "turning sync off keeps already received data local");
+
+  for (const action of ["disable", "restart", "forget"]) {
+    const device = new DeviceSync({ dataDir: path.join(tmp, action), port: 0, discovery: false, host: "127.0.0.1", intervalMs: 1_000_000 });
+    devices.push(device);
+    await device.configure({ enabled: true, name: action });
+    const peer = { ...createIdentity(), name: "Peer", endpoint: "http://127.0.0.1:1" };
+    device.addPeer(peer);
+    const snapshot = signedSnapshot(peer, "Peer", { events: [], accounts: [], excludedEvents: 0 });
+    const calls = [];
+    let releaseManifest, enteredManifest;
+    const manifestGate = new Promise((resolve) => { releaseManifest = resolve; });
+    const manifestEntered = new Promise((resolve) => { enteredManifest = resolve; });
+    device.exchange = async (_peer, request) => {
+      calls.push(request.type);
+      if (request.type === "manifest") {
+        enteredManifest(); await manifestGate;
+        return { type: "manifest", snapshots: [{ ...snapshot, count: 0 }] };
+      }
+      return { type: "pages", hashes: [] };
+    };
+    const syncing = device.sync();
+    await manifestEntered;
+    if (action === "forget") await device.forget(peer.id);
+    else {
+      await device.configure({ enabled: false, name: action });
+      if (action === "restart") await device.configure({ enabled: true, name: action });
+    }
+    releaseManifest(); await syncing;
+    assert.deepEqual(calls, ["manifest"], `${action} prevents follow-up page requests after an in-flight response`);
+    assert(!device.snapshots.has(peer.id), `${action} prevents late snapshot publication`);
+  }
+
+  const hanging = http.createServer((request) => request.resume());
+  hanging.listen(0, "127.0.0.1"); await once(hanging, "listening");
+  try {
+    for (const action of ["stop", "forget", "forget-origin"]) {
+      const device = new DeviceSync({ dataDir: path.join(tmp, action + "-request"), port: 0, discovery: false, host: "127.0.0.1", intervalMs: 1_000_000 });
+      devices.push(device); await device.configure({ enabled: true, name: action });
+      const peer = { ...createIdentity(), name: "Peer", endpoint: `http://127.0.0.1:${hanging.address().port}` };
+      device.addPeer(peer);
+      const originId = createIdentity().id;
+      const arrived = once(hanging, "request");
+      const reply = device.exchange(peer, action === "forget-origin" ? { type: "page", id: originId } : { type: "manifest" });
+      const aborted = assert.rejects(reply, /sync_cancelled/);
+      await arrived;
+      const requestsClosed = Promise.all([...device.requests].map(({ req }) => new Promise((resolve) => req.once("close", resolve))));
+      if (action === "stop") await device.stop();
+      else await device.forget(action === "forget-origin" ? originId : peer.id);
+      let deadline;
+      try {
+        await Promise.race([Promise.all([aborted, requestsClosed]), new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error("outgoing request was not aborted promptly")), 500); })]);
+      } finally { clearTimeout(deadline); }
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(device.requests.size, 0, `${action} releases the tracked HTTP request`);
+    }
+  } finally {
+    hanging.closeAllConnections(); await new Promise((resolve) => hanging.close(resolve));
+  }
 } finally {
   await Promise.all(devices.map((device) => device.stop()));
   await rm(tmp, { recursive: true, force: true });

@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "不会向开发者发送用量数据或凭据。仅向明确配对的设备共享加密的用量和额度测量。断开连接不会删除其他设备已接收的副本。",
     "networkLimit": "直接连接使用本地网络或现有的私有 VPN，不使用中继、发现服务器，也不修改路由器。阻止直接连接的网络无法自动同步。",
     "coverage": "{count} 条唯一记录 · 已去除 {duplicates} 条重复记录 · {excluded} 条记录因缺少可靠标识而留在本地。账户额度是已保存的测量值；不会累加提供商 API 总量。"
+  },
+  "connections": {
+    "accounts": "账户",
+    "installations": "安装实例",
+    "general": "常规",
+    "advanced": "高级",
+    "addAccount": "添加账户",
+    "chooseProvider": "选择服务商",
+    "detectedDetails": "已检测到的 GPT 账户和详细信息",
+    "back": "返回",
+    "accountLabel": "名称（可选）",
+    "apiKey": "API 密钥",
+    "adminKey": "管理员 API 密钥",
+    "region": "区域",
+    "global": "国际",
+    "china": "中国",
+    "setupHelp": "设置说明",
+    "connect": "连接",
+    "openSignIn": "打开登录",
+    "connectInstallation": "连接安装实例",
+    "haveCode": "我有连接码",
+    "syncOptions": "同步设置与隐私",
+    "remove": "移除",
+    "automatic": "自动检测",
+    "empty": "尚未连接任何账户。",
+    "apiAccount": "API 账户",
+    "subscription": "订阅 / 编程套餐",
+    "thisInstallation": "此安装实例",
+    "syncOn": "同步已开启",
+    "syncOff": "同步已关闭",
+    "local": "本地",
+    "waitingSync": "等待首次同步",
+    "viaPeer": "通过已配对的安装实例",
+    "balance": "余额",
+    "privacy": "凭据保留在此设备上。使用数据不会发送给开发者。",
+    "installationsHelp": "连接你自己的安装实例，集中查看使用情况。",
+    "pairHelp": "在另一台设备上打开“安装实例”。在此创建连接码，或粘贴对方的连接码。两台设备必须能够直接互通。",
+    "adminKeyHelp": "使用报告需要组织管理员 API 密钥，与聊天订阅独立。",
+    "glmHelp": "使用你的 GLM Coding Plan 密钥，并选择对应区域。",
+    "browserHelp": "通过服务商的官方登录继续。",
+    "keyPrivacy": "密钥仅存储在本地，并且仅用于向此服务商发送请求。",
+    "needsSetup": "请先安装服务商的官方 CLI，然后刷新此列表。",
+    "claudeHelp": "Claude Code 负责此设备上的登录，需要安装 Claude Code CLI。",
+    "kimiHelp": "使用官方 Kimi Code 登录或 Kimi Code 套餐密钥。",
+    "moonshotHelp": "使用 Moonshot API 密钥读取 API 余额，与 Kimi Code 独立。",
+    "loginWaiting": "请完成服务商登录，并在完成前保持此窗口打开。",
+    "loginComplete": "账户已连接。测量数据会自动刷新。",
+    "claudeSignIn": "通过 Claude Code 连接",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "登录",
+    "failed": "登录失败",
+    "checking": "正在连接…",
+    "installation": "安装实例",
+    "status": {
+      "connected": "活跃",
+      "detected": "已检测",
+      "historical": "历史",
+      "auth_required": "需要登录",
+      "error": "错误",
+      "unavailable": "不可用",
+      "unknown": "不可用"
+    },
+    "errors": {
+      "invalid_account": "未找到账户。请刷新账户列表。",
+      "invalid_key": "密钥被拒绝。请检查密钥和所选服务商。",
+      "permission_denied": "此密钥无权访问使用报告。请使用具备所需权限的密钥。",
+      "unsupported_key": "此类型的密钥无法读取使用情况。请按照服务商的设置说明操作。",
+      "account_limit": "已达到账户数量上限。请先移除不使用的账户。",
+      "connection_unavailable": "无法连接服务商。请检查网络连接并重试。",
+      "account_storage_unavailable": "本地账户存储不可用。请检查应用的文件权限。",
+      "profile_remove_failed": "无法移除已保存的登录。请关闭登录窗口并重试。",
+      "unsupported_platform": "此平台不支持浏览器登录。请使用可用的密钥方式。"
+    },
+    "kimiHelperHelp": "首次登录时，应用会直接从 Kimi 下载官方 Kimi 辅助程序。它在本地运行，仪表板不会发送遥测数据。",
+    "lastSeen": "最后检测 {time}"
   }
 }

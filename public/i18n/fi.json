@@ -396,6 +396,9 @@
     },
     "openCode": {
       "kicker": "OpenCode GPT logs"
+    },
+    "kimi": {
+      "kicker": "Kimi Code"
     }
   },
   "status": {
@@ -1119,5 +1122,88 @@
     "privacy": "Käyttötietoja ja tunnuksia ei lähetetä kehittäjälle. Vain salattuja mittauksia jaetaan erikseen yhdistetyille laitteille. Yhteyden katkaisu ei poista vastaanotettuja kopioita.",
     "networkLimit": "Suorat yhteydet käyttävät lähiverkkoa tai olemassa olevaa yksityistä VPN:ää ilman välityspalvelinta, löytöpalvelinta tai reititinmuutoksia. Estävät verkot estävät automaattisen synkronoinnin.",
     "coverage": "{count} yksilöllistä tietuetta · {duplicates} kaksoiskappaletta poistettu · {excluded} tietuetta säilyy paikallisena ilman luotettavaa tunnistetta. Rajat ovat tallennettuja mittauksia; API-summia ei lisätä."
+  },
+  "connections": {
+    "accounts": "Tilit",
+    "installations": "Asennukset",
+    "general": "Yleiset",
+    "advanced": "Lisäasetukset",
+    "addAccount": "Lisää tili",
+    "chooseProvider": "Valitse palveluntarjoaja",
+    "detectedDetails": "Havaitut GPT-tilit ja tiedot",
+    "back": "Takaisin",
+    "accountLabel": "Nimi (valinnainen)",
+    "apiKey": "API-avain",
+    "adminKey": "Ylläpitäjän API-avain",
+    "region": "Alue",
+    "global": "Kansainvälinen",
+    "china": "Kiina",
+    "setupHelp": "Asennusohjeet",
+    "connect": "Yhdistä",
+    "openSignIn": "Avaa kirjautuminen",
+    "connectInstallation": "Yhdistä asennus",
+    "haveCode": "Minulla on koodi",
+    "syncOptions": "Synkronointi ja tietosuoja",
+    "remove": "Poista",
+    "automatic": "Havaittu automaattisesti",
+    "empty": "Yhtään tiliä ei ole vielä yhdistetty.",
+    "apiAccount": "API-tili",
+    "subscription": "Tilaus / ohjelmointipaketti",
+    "thisInstallation": "Tämä asennus",
+    "syncOn": "Synkronointi käytössä",
+    "syncOff": "Synkronointi pois käytöstä",
+    "local": "Paikallinen",
+    "waitingSync": "Odotetaan ensimmäistä synkronointia",
+    "viaPeer": "Paritetun asennuksen kautta",
+    "balance": "Saldo",
+    "privacy": "Kirjautumistiedot pysyvät tällä laitteella. Käyttötietoja ei lähetetä kehittäjälle.",
+    "installationsHelp": "Yhdistä omat asennuksesi nähdäksesi niiden käytön yhdessä.",
+    "pairHelp": "Avaa Asennukset toisella laitteella. Luo koodi tässä tai liitä sen koodi. Laitteiden on oltava suoraan tavoitettavissa.",
+    "adminKeyHelp": "Käyttöraportit edellyttävät organisaation ylläpitäjän API-avainta, erillään chat-tilauksesta.",
+    "glmHelp": "Käytä GLM Coding Plan -avainta ja valitse sen alue.",
+    "browserHelp": "Jatka palveluntarjoajan virallisen kirjautumisen kautta.",
+    "keyPrivacy": "Avain tallennetaan paikallisesti ja sitä käytetään vain tämän palveluntarjoajan pyyntöihin.",
+    "needsSetup": "Asenna ensin palveluntarjoajan virallinen CLI ja päivitä luettelo.",
+    "claudeHelp": "Claude Code hoitaa kirjautumisen tällä laitteella. Claude Code CLI on asennettava.",
+    "kimiHelp": "Käytä virallista Kimi Code -kirjautumista tai Kimi Code -paketin avainta.",
+    "moonshotHelp": "Käytä Moonshot API -avainta API-saldon lukemiseen, erillään Kimi Codesta.",
+    "loginWaiting": "Viimeistele palveluntarjoajan kirjautuminen. Pidä tämä ikkuna avoinna.",
+    "loginComplete": "Tili yhdistetty. Mittaukset päivittyvät automaattisesti.",
+    "claudeSignIn": "Yhdistä Claude Codella",
+    "providers": {
+      "gpt": "ChatGPT / Codex",
+      "claude": "Claude / Anthropic",
+      "kimi": "Kimi Code",
+      "glm": "GLM / Z.AI",
+      "openai": "OpenAI API",
+      "anthropic": "Anthropic API",
+      "moonshot": "Moonshot API"
+    },
+    "browser": "Kirjaudu sisään",
+    "failed": "Kirjautuminen epäonnistui",
+    "checking": "Yhdistetään…",
+    "installation": "Asennukset",
+    "status": {
+      "connected": "Aktiivinen",
+      "detected": "Havaittu",
+      "historical": "Aiempi",
+      "auth_required": "Kirjautuminen vaaditaan",
+      "error": "Virhe",
+      "unavailable": "Ei saatavilla",
+      "unknown": "Ei saatavilla"
+    },
+    "errors": {
+      "invalid_account": "Tiliä ei löytynyt. Päivitä tililuettelo.",
+      "invalid_key": "Avain hylättiin. Tarkista avain ja valittu palveluntarjoaja.",
+      "permission_denied": "Avaimella ei ole pääsyä käyttöraportteihin. Käytä avainta, jolla on tarvittavat oikeudet.",
+      "unsupported_key": "Tämä avaintyyppi ei voi lukea käyttöä. Noudata palveluntarjoajan asennusohjeita.",
+      "account_limit": "Tilien enimmäismäärä on saavutettu. Poista ensin käyttämätön tili.",
+      "connection_unavailable": "Palveluntarjoajaa ei tavoitettu. Tarkista yhteys ja yritä uudelleen.",
+      "account_storage_unavailable": "Paikallinen tilitallennus ei ole käytettävissä. Tarkista sovelluksen tiedosto-oikeudet.",
+      "profile_remove_failed": "Tallennettua kirjautumista ei voitu poistaa. Sulje kirjautumisikkuna ja yritä uudelleen.",
+      "unsupported_platform": "Selainkirjautuminen ei ole käytettävissä tällä alustalla. Käytä saatavilla olevaa avainmenetelmää."
+    },
+    "kimiHelperHelp": "Ensimmäisellä kirjautumisella sovellus lataa virallisen Kimi-apuohjelman suoraan Kimiltä. Se toimii paikallisesti; hallintapaneeli ei lähetä telemetriaa.",
+    "lastSeen": "Viimeksi nähty {time}"
   }
 }
