@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-preview.8 - 2026-10-05
+
+### Fixed
+
+- Reuse private, compressed token extractions after app restarts instead of
+  rereading unchanged Codex, Claude and Gemini transcripts.
+- Recheck source permissions, file fingerprints and parser versions; safely
+  rebuild missing or damaged caches from the original logs.
+
 ## 1.6.0-preview.7 - 2026-10-05
 
 ### Fixed
