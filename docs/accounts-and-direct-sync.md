@@ -134,6 +134,10 @@ count once; for a revised record the latest collected snapshot wins. This is a
 source-backed aggregation, not proof of complete provider billing coverage.
 Remote quota cards show saved measurements with their age, rather than claiming
 they are a current live query.
+In the all-installations view, provider cards retain this computer's current
+account limits, plan and status alongside the combined log history. Limits are
+never summed across accounts. Selecting one remote installation does not attach
+this computer's live account information to that installation.
 
 Only your explicitly paired devices receive these snapshots. The app's existing
 provider queries go directly to those providers; optional update checks/downloads
