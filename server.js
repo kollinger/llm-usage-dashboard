@@ -22,7 +22,8 @@ const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
 const { DeviceSync } = require("./lib/device-sync");
-const { exportUsageEvents, createCombinedUsageCache, attributeLocalUsageEvents } = require("./lib/device-sync-data");
+const { exportUsageEvents, attributeLocalUsageEvents } = require("./lib/device-sync-data");
+const { createUsageAggregation } = require("./lib/usage-aggregation");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -555,7 +556,7 @@ app.use(express.static(path.join(ROOT, "public")));
 app.use("/vendor/lucide", express.static(path.join(path.dirname(require.resolve("lucide/package.json")), "dist", "umd")));
 
 const deviceSync = new DeviceSync({ dataDir: DATA_DIR });
-const combinedUsageCache = createCombinedUsageCache();
+const usageAggregation = createUsageAggregation();
 const gptLogin = createGptAccountLogin({
   profilesDir: path.join(DATA_DIR, "codex-profiles"),
   clientFactory: createCodexAppServer,
@@ -1006,7 +1007,8 @@ app.get("/auth/oidc/callback", async (req, res) => {
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
     markInteractiveUsageRequest();
-    const usage = await readUsageDashboard({ force: parseBoolean(req.query.force) });
+    const force = parseBoolean(req.query.force);
+    const usage = await readUsageDashboard({ force, staleWhileRefresh: !force });
     const selected = typeof req.query.device === "string" ? req.query.device : "local";
     const sync = deviceSync.status();
     if (sync.enabled && selected !== "local") {
@@ -1014,7 +1016,15 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
       if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
         return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
       }
-      return res.json({ ...combinedUsageCache.get(usage, [...deviceSync.snapshots.values()], selected), deviceSync: sync });
+      const snapshots = [...deviceSync.snapshots.values()];
+      const combined = await usageAggregation.get(usage, snapshots, selected, { force });
+      const currentSync = deviceSync.status();
+      if (!currentSync.enabled) return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: currentSync });
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+      if (snapshots.length !== deviceSync.snapshots.size || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id))) {
+        return res.status(409).json({ error: "device_scope_changed" });
+      }
+      return res.json({ ...combined, deviceSync: currentSync });
     }
     res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
@@ -1128,7 +1138,7 @@ app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
   }
 });
 
-async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
+async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   if (force) prepareForcedGptAccountRefresh();
   return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
@@ -1214,14 +1224,21 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
     );
     const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
     const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
-    const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama], {
+    const providers = [codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama];
+    const aggregateOptions = {
       device: { id: deviceSync.identity?.id || "local", label: deviceSync.config.name },
       snapshots: [...deviceSync.snapshots.values()],
-      accounts: [...(gptAccounts.accounts || []), ...connectedAccounts]
-    });
-    if (deviceSync.config.enabled) {
+      accounts: [...(gptAccounts.accounts || []), ...connectedAccounts],
+      dailyHistoryDays: DAILY_HISTORY_DAYS,
+      exportEvents: deviceSync.config.enabled
+    };
+    const aggregation = providers.some((provider) => provider?._usageEvents?.length)
+      ? await usageAggregation.aggregateLocal(providers, aggregateOptions)
+      : { local: buildLocalAggregate(providers, aggregateOptions), exported: exportUsageEvents(providers) };
+    const local = aggregation.local;
+    if (deviceSync.config.enabled && aggregation.exported) {
       try {
-        await deviceSync.capture({ ...exportUsageEvents([codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama]), accounts: gptAccounts.accounts, connections: connectedAccounts });
+        await deviceSync.capture({ ...aggregation.exported, accounts: gptAccounts.accounts, connections: connectedAccounts });
         if (deviceSync.error === "capture_failed") deviceSync.error = null;
       } catch { deviceSync.error = "capture_failed"; }
     }
@@ -1244,7 +1261,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       openai,
       anthropic
     };
-  }, { force, maxAgeMs });
+  }, { force, maxAgeMs, staleWhileRefresh });
 }
 
 let connectedBrowserRefreshAt = 0;
@@ -2999,13 +3016,15 @@ function createTimedCache() {
   };
 }
 
-async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs = 0 } = {}) {
+async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   const now = Date.now();
   if (!force && cache.value && now < cache.expiresAt) return cache.value;
   // Callers that tolerate staleness (e.g. background notification checks)
   // accept an expired value up to maxAgeMs old instead of triggering a rebuild.
   if (!force && maxAgeMs > 0 && cache.value && now - (cache.updatedAtMs || 0) < maxAgeMs) return cache.value;
-  if (cache.pending) return cache.pending;
+  const refreshingValue = () => ({ ...cache.value, cache: { ...(cache.value.cache || {}), stale: true, refreshing: true,
+    staleReason: "usage_refresh_in_progress", staleAt: new Date().toISOString() } });
+  if (cache.pending) return !force && staleWhileRefresh && cache.value ? refreshingValue() : cache.pending;
 
   const generation = cache.generation || 0;
   const pending = Promise.resolve()
@@ -3040,6 +3059,10 @@ async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs 
     });
 
   cache.pending = pending;
+  if (!force && staleWhileRefresh && cache.value) {
+    pending.catch(() => {});
+    return refreshingValue();
+  }
   return cache.pending;
 }
 
@@ -11114,7 +11137,7 @@ function startDashboard(options = {}) {
     finally { syncReading = false; }
   }, 60_000);
   syncCollector.unref?.();
-  dashboardServer.once("close", () => { clearInterval(syncCollector); gptLogin.close(); claudeLogin.close().catch(() => {}); kimiRuntime.close().then(() => kimiLogin.close()).catch(() => {}); deviceSync.stop().catch(() => {}); });
+  dashboardServer.once("close", () => { clearInterval(syncCollector); usageAggregation.close().catch(() => {}); gptLogin.close(); claudeLogin.close().catch(() => {}); kimiRuntime.close().then(() => kimiLogin.close()).catch(() => {}); deviceSync.stop().catch(() => {}); });
   dashboardServer.once("close", stopCodexResetCollector);
   return { dashboardServer, ollamaProxyServer };
 }

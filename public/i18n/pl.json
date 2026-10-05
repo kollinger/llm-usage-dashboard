@@ -1135,7 +1135,7 @@
     },
     "privacy": "Dane użycia i dane uwierzytelniające nie trafiają do twórcy. Tylko zaszyfrowane pomiary są udostępniane jawnie sparowanym urządzeniom. Odłączenie nie usuwa wcześniej otrzymanych kopii.",
     "networkLimit": "Bezpośrednie połączenia używają sieci lokalnej lub istniejącej prywatnej sieci VPN, bez przekaźnika, serwera wykrywania ani zmian routera. Sieci blokujące takie połączenia uniemożliwiają automatyczną synchronizację.",
-    "coverage": "{count} unikalnych rekordów · usunięto {duplicates} duplikatów · {excluded} rekordów pozostaje lokalnie bez wiarygodnego identyfikatora. Limity są zapisanymi pomiarami; sumy API nie są dodawane."
+    "coverage": "{count} unikalnych rekordów · usunięto {duplicates} duplikatów · {excluded} rekordów pozostaje lokalnie bez wiarygodnego identyfikatora. Limity kont pozostają oddzielne; sumy API nie są dodawane."
   },
   "connections": {
     "accounts": "Konta",

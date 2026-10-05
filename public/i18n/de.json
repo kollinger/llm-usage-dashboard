@@ -1135,7 +1135,7 @@
     },
     "privacy": "Keine Verbrauchsdaten oder Zugangsdaten werden an den Entwickler gesendet. Nur verschlüsselte Verbrauchs- und Limitmessungen werden mit ausdrücklich gekoppelten Geräten geteilt. Das Trennen löscht keine bereits anderswo empfangenen Kopien.",
     "networkLimit": "Direkte Verbindungen nutzen dein lokales Netzwerk oder ein bestehendes privates VPN. Es werden kein Relay, kein Suchserver und keine Routeränderungen verwendet. Netzwerke, die direkte Verbindungen blockieren, können nicht automatisch synchronisieren.",
-    "coverage": "{count} eindeutige Datensätze · {duplicates} Duplikate entfernt · {excluded} Datensätze bleiben mangels verlässlicher Kennung lokal. Kontolimits sind gespeicherte Messungen; Provider-API-Gesamtwerte werden nicht addiert."
+    "coverage": "{count} eindeutige Datensätze · {duplicates} Duplikate entfernt · {excluded} Datensätze bleiben mangels verlässlicher Kennung lokal. Kontolimits bleiben getrennt; Provider-API-Gesamtwerte werden nicht addiert."
   },
   "connections": {
     "accounts": "Konten",

@@ -1135,7 +1135,7 @@
     },
     "privacy": "No se envían datos de uso ni credenciales al desarrollador. Solo se comparten mediciones cifradas con dispositivos vinculados explícitamente. Desconectar no borra las copias ya recibidas.",
     "networkLimit": "Las conexiones directas usan la red local o una VPN privada existente, sin relé, servidor de descubrimiento ni cambios en el router. Las redes que bloquean estas conexiones impiden la sincronización automática.",
-    "coverage": "{count} registros únicos · {duplicates} duplicados eliminados · {excluded} registros siguen locales por falta de identificador fiable. Los límites son mediciones guardadas; no se añaden los totales API."
+    "coverage": "{count} registros únicos · {duplicates} duplicados eliminados · {excluded} registros siguen locales por falta de identificador fiable. Los límites de las cuentas se mantienen separados; no se añaden los totales API."
   },
   "connections": {
     "accounts": "Cuentas",

@@ -1135,7 +1135,7 @@
     },
     "privacy": "Podaci o korištenju i vjerodajnice ne šalju se razvojnom programeru. Šifrirana mjerenja dijele se samo s izričito uparenim uređajima. Odspajanje ne briše primljene kopije.",
     "networkLimit": "Izravne veze koriste lokalnu mrežu ili postojeći privatni VPN, bez releja, poslužitelja za otkrivanje i promjena usmjerivača. Mreže koje ih blokiraju sprječavaju automatsku sinkronizaciju.",
-    "coverage": "{count} jedinstvenih zapisa · uklonjeno {duplicates} duplikata · {excluded} zapisa ostaje lokalno bez pouzdanog identifikatora. Ograničenja su spremljena mjerenja; API zbrojevi se ne dodaju."
+    "coverage": "{count} jedinstvenih zapisa · uklonjeno {duplicates} duplikata · {excluded} zapisa ostaje lokalno bez pouzdanog identifikatora. Ograničenja računa ostaju odvojena; API zbrojevi se ne dodaju."
   },
   "connections": {
     "accounts": "Računi",

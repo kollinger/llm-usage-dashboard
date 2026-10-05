@@ -1135,7 +1135,7 @@
     },
     "privacy": "Használati és hitelesítő adatok nem kerülnek a fejlesztőhöz. Titkosított méréseket csak kifejezetten párosított eszközökkel osztunk meg. A leválasztás nem törli a már megkapott másolatokat.",
     "networkLimit": "A közvetlen kapcsolatok a helyi hálózatot vagy meglévő privát VPN-t használják, közvetítő, keresőszerver és routermódosítás nélkül. Az ezeket blokkoló hálózatok megakadályozzák az automatikus szinkronizálást.",
-    "coverage": "{count} egyedi rekord · {duplicates} ismétlődés eltávolítva · {excluded} rekord helyben marad megbízható azonosító nélkül. A korlátok mentett mérések; az API-összesítések nem adódnak hozzá."
+    "coverage": "{count} egyedi rekord · {duplicates} ismétlődés eltávolítva · {excluded} rekord helyben marad megbízható azonosító nélkül. A fiókkorlátok külön maradnak; az API-összesítések nem adódnak hozzá."
   },
   "connections": {
     "accounts": "Fiókok",

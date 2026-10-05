@@ -1135,7 +1135,7 @@
     },
     "privacy": "Naudojimo ir prisijungimo duomenys nesiunčiami kūrėjui. Šifruoti matavimai bendrinami tik su aiškiai susietais įrenginiais. Atjungimas neištrina gautų kopijų.",
     "networkLimit": "Tiesioginis ryšys naudoja vietinį tinklą arba esamą privatų VPN be perdavimo, paieškos serverio ir maršrutizatoriaus pakeitimų. Ryšį blokuojantys tinklai neleidžia automatiškai sinchronizuoti.",
-    "coverage": "{count} unikalių įrašų · pašalinta {duplicates} dublikatų · {excluded} įrašų lieka vietiniai be patikimo identifikatoriaus. Limitai yra išsaugoti matavimai; API sumos nepridedamos."
+    "coverage": "{count} unikalių įrašų · pašalinta {duplicates} dublikatų · {excluded} įrašų lieka vietiniai be patikimo identifikatoriaus. Paskyrų limitai išlieka atskiri; API sumos nepridedamos."
   },
   "connections": {
     "accounts": "Paskyros",

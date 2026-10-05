@@ -1135,7 +1135,7 @@
     },
     "privacy": "Podatki o uporabi in prijavni podatki se ne pošiljajo razvijalcu. Šifrirane meritve se delijo le z izrecno povezanimi napravami. Odklop ne izbriše že prejetih kopij.",
     "networkLimit": "Neposredne povezave uporabljajo lokalno omrežje ali obstoječi zasebni VPN, brez releja, strežnika za odkrivanje in sprememb usmerjevalnika. Omrežja, ki to blokirajo, preprečijo samodejno sinhronizacijo.",
-    "coverage": "{count} različnih zapisov · {duplicates} dvojnikov odstranjenih · {excluded} zapisov ostane lokalnih brez zanesljivega identifikatorja. Omejitve so shranjene meritve; vsote API se ne prištevajo."
+    "coverage": "{count} različnih zapisov · {duplicates} dvojnikov odstranjenih · {excluded} zapisov ostane lokalnih brez zanesljivega identifikatorja. Omejitve računov ostajajo ločene; vsote API se ne prištevajo."
   },
   "connections": {
     "accounts": "Računi",

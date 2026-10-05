@@ -1135,7 +1135,7 @@
     },
     "privacy": "Aucune donnée d’utilisation ni aucun identifiant n’est envoyé au développeur. Seules des mesures chiffrées sont partagées avec les appareils explicitement associés. Les copies déjà reçues ne sont pas effacées lors de la déconnexion.",
     "networkLimit": "Les connexions directes utilisent le réseau local ou un VPN privé existant, sans relais, serveur de découverte ni modification du routeur. Un réseau bloquant ces connexions empêche la synchronisation automatique.",
-    "coverage": "{count} enregistrements distincts · {duplicates} doublons supprimés · {excluded} enregistrements conservés localement faute d’identifiant fiable. Les limites sont des mesures enregistrées ; les totaux API ne sont pas ajoutés."
+    "coverage": "{count} enregistrements distincts · {duplicates} doublons supprimés · {excluded} enregistrements conservés localement faute d’identifiant fiable. Les limites des comptes restent séparées ; les totaux API ne sont pas ajoutés."
   },
   "connections": {
     "accounts": "Comptes",

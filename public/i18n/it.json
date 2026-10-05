@@ -1135,7 +1135,7 @@
     },
     "privacy": "Nessun dato di utilizzo o credenziale viene inviato allo sviluppatore. Solo misurazioni cifrate vengono condivise con dispositivi abbinati esplicitamente. La disconnessione non elimina le copie già ricevute.",
     "networkLimit": "Le connessioni dirette usano la rete locale o una VPN privata esistente, senza relay, server di rilevamento o modifiche al router. Le reti che bloccano queste connessioni impediscono la sincronizzazione automatica.",
-    "coverage": "{count} record distinti · {duplicates} duplicati rimossi · {excluded} record restano locali senza identificatore affidabile. I limiti sono misurazioni salvate; i totali API non vengono aggiunti."
+    "coverage": "{count} record distinti · {duplicates} duplicati rimossi · {excluded} record restano locali senza identificatore affidabile. I limiti degli account restano separati; i totali API non vengono aggiunti."
   },
   "connections": {
     "accounts": "Account",

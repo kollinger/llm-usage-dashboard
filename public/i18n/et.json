@@ -1135,7 +1135,7 @@
     },
     "privacy": "Kasutusandmeid ja volitusi ei saadeta arendajale. Krüptitud mõõtmisi jagatakse ainult selgelt seotud seadmetega. Ühenduse katkestamine ei kustuta saadud koopiaid.",
     "networkLimit": "Otseühendused kasutavad kohalikku võrku või olemasolevat privaatset VPN-i ilma vahendusserveri, otsinguserveri või ruuterimuudatusteta. Neid blokeerivad võrgud takistavad automaatset sünkroonimist.",
-    "coverage": "{count} unikaalset kirjet · {duplicates} duplikaati eemaldatud · {excluded} kirjet jäävad kohaliku usaldusväärse tunnuseta. Piirangud on salvestatud mõõtmised; API kogusummasid ei lisata."
+    "coverage": "{count} unikaalset kirjet · {duplicates} duplikaati eemaldatud · {excluded} kirjet jäävad kohaliku usaldusväärse tunnuseta. Kontode limiidid hoitakse eraldi; API kogusummasid ei lisata."
   },
   "connections": {
     "accounts": "Kontod",

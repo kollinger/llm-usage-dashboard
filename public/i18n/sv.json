@@ -1135,7 +1135,7 @@
     },
     "privacy": "Användningsdata och inloggningsuppgifter skickas inte till utvecklaren. Endast krypterade mätningar delas med uttryckligen parkopplade enheter. Frånkoppling raderar inte redan mottagna kopior.",
     "networkLimit": "Direkta anslutningar använder det lokala nätverket eller en befintlig privat VPN utan relay, sökserver eller routerändringar. Nätverk som blockerar detta förhindrar automatisk synkronisering.",
-    "coverage": "{count} unika poster · {duplicates} dubbletter borttagna · {excluded} poster förblir lokala utan säker identifiering. Gränser är sparade mätningar; API-totaler läggs inte till."
+    "coverage": "{count} unika poster · {duplicates} dubbletter borttagna · {excluded} poster förblir lokala utan säker identifiering. Kontogränser hålls separata; API-totaler läggs inte till."
   },
   "connections": {
     "accounts": "Konton",
