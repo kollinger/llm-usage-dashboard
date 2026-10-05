@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0-preview.6 - 2026-10-05
+
+### Fixed
+
+- Omit zero minutes from compact whole-hour durations, including recent quota
+  pace measurements; retain actual minute values.
+
 ## 1.6.0-preview.5 - 2026-10-05
 
 ### Fixed

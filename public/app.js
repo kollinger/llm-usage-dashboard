@@ -6915,6 +6915,7 @@ function formatDurationCompact(ms) {
   const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
   const minutes = totalMinutes % 60;
   if (days > 0) return t("limits.duration.daysHours", { days, hours });
+  if (hours > 0 && minutes === 0) return t("settings.notifications.nativeDurationHours", { hours });
   if (hours > 0) return t("limits.duration.hoursMinutes", { hours, minutes });
   return t("limits.duration.minutes", { minutes });
 }

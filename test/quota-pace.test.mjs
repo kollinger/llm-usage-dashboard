@@ -89,5 +89,15 @@ const card = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekl
 assert.match(card, /\+0 Prozentpunkte in 12 Min\./);
 assert.match(card, /aria-pressed="true">2 h<\/button>/);
 
+for (const hours of [1, 2, 5]) {
+  ui.state.usage.quotaPace.codex.weekly[120].observedMinutes = hours * 60;
+  const wholeHourCard = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekly", label: "Woche" })', ui);
+  assert.match(wholeHourCard, new RegExp(`in ${hours} Std\\.`));
+  assert.doesNotMatch(wholeHourCard, /0 Min\./);
+}
+ui.state.usage.quotaPace.codex.weekly[120].observedMinutes = 90;
+const mixedHourCard = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekly", label: "Woche" })', ui);
+assert.match(mixedHourCard, /in 1 Std\. 30 Min\./);
+
 assert.equal(mergeQuotaPaceSamples([], [event(20, 0, reset, 300)], now).length, 0);
 console.log("quota pace scenarios passed");
