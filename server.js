@@ -24,6 +24,7 @@ const { installConnectionsApi } = require("./lib/connections-api");
 const { DeviceSync } = require("./lib/device-sync");
 const { exportUsageEvents, attributeLocalUsageEvents } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
+const { readUsageFileEvents } = require("./lib/usage-file-cache");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -497,6 +498,10 @@ const usageFileScanCaches = {
   claudeCode: new Map(),
   gemini: new Map()
 };
+const usageFileCacheDirectories = new Map(Object.entries(usageFileScanCaches).map(([provider, cache]) =>
+  [cache, path.join(DATA_DIR, "usage-file-cache", provider)]));
+const usageFileCacheVersion = crypto.createHash("sha256").update(fs.readFileSync(__filename))
+  .update(fs.readFileSync(path.join(__dirname, "lib", "usage-events.js"))).digest("hex");
 let quotaEventsLatestByKeyPromise = null;
 let gptAccountAuthWatchTimer = null;
 let gptAccountAuthWatchInitialTimer = null;
@@ -4671,7 +4676,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       isSparkRateLimit: isCodexSparkRateLimit(rateLimits),
       isSparkUsage: isCodexSparkUsageEvent(currentModel, rateLimits)
     });
-  });
+  }, new Set(["session_meta", "turn_context", "event_msg"]));
   return compactCodexFileEvents(events);
 }
 
@@ -7931,20 +7936,9 @@ async function ollamaUsageFileRecords(sources) {
 // Returns the cached per-file extraction when size+mtime are unchanged,
 // otherwise re-parses the file via parseFile(fileRecord) and caches the result.
 async function readCachedFileEvents(cacheMap, fileRecord, parseFile) {
-  let stat;
-  try {
-    stat = await fsp.stat(fileRecord.file);
-  } catch {
-    cacheMap.delete(fileRecord.realPath);
-    return [];
-  }
-  const cached = cacheMap.get(fileRecord.realPath);
-  if (cached && cached.size === stat.size && cached.mtimeMs === stat.mtimeMs) {
-    return cached.events;
-  }
-  const events = await parseFile(fileRecord);
-  cacheMap.set(fileRecord.realPath, { size: stat.size, mtimeMs: stat.mtimeMs, events });
-  return events;
+  return readUsageFileEvents(cacheMap, fileRecord, parseFile, {
+    directory: usageFileCacheDirectories.get(cacheMap), version: usageFileCacheVersion
+  });
 }
 
 function pruneUsageFileScanCache(cacheMap, fileRecords) {
@@ -7955,12 +7949,18 @@ function pruneUsageFileScanCache(cacheMap, fileRecords) {
   }
 }
 
-async function readJsonl(file, onObject) {
+async function readJsonl(file, onObject, acceptedRootTypes = null) {
   const stream = fs.createReadStream(file, { encoding: "utf8" });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
   let lineNumber = 0;
   for await (const line of rl) {
     lineNumber += 1;
+    if (acceptedRootTypes) {
+      // Only recognize the standard top-level header. Other key orders and
+      // escaped values use the complete JSON parser as before.
+      const type = line.slice(0, 256).match(/^[ ]*[{][ ]*(?:"timestamp"[ ]*:[ ]*"[-0-9T:.+Z]*"[ ]*,[ ]*)?"type"[ ]*:[ ]*"([a-z_]+)"[ ]*[,}]/)?.[1];
+      if (type && !acceptedRootTypes.has(type)) continue;
+    }
     if (!line.trim()) continue;
     try {
       onObject(JSON.parse(line), { file, line: lineNumber });

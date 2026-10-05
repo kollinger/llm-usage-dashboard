@@ -16,6 +16,7 @@ const timestamp = new Date(Date.now() - 60_000).toISOString();
 const device = (letter) => ({ id: letter.repeat(32), name: `Computer ${letter}` });
 const accountId = `gpt-${"d".repeat(16)}`;
 const event = (index) => ({ key: index.toString(16).padStart(64, "0"), providerId: "codex", timestamp, model: "fixture-model",
+  accountId,
   usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2, cachedInputTokens: 0, cacheCreationInputTokens: 0, reasoningOutputTokens: 0 },
   sourceGroupId: "codex", reasoningEffort: null });
 const snapshot = (letter, events, revision) => ({ device: device(letter), events, revision, capturedAt: timestamp, excludedEvents: 0,
@@ -83,6 +84,10 @@ try {
   assert.equal(onlyA.codex.limits, null, "remote selection cannot borrow local quotas");
   assert.equal(aggregation.size(), 2);
   assert.equal(workers, 1, "concurrent views use one worker");
+
+  const renamed = await aggregation.get({ ...local(), gptAccounts: { accounts: [{ id: accountId, label: "Renamed account", sources: [] }] } }, changed, "all", { force: true });
+  assert.equal(renamed.local.attribution.accounts[0].label, "Renamed account", "a reused history index must refresh account labels");
+  assert.equal(posts.at(-1).updates, 0, "renaming an account does not resend immutable history");
 
   const raw = events.slice(0, 500).map((row, index) => ({ providerId: "codex", sourceId: "codex", timestampMs: Date.parse(timestamp),
     model: row.model, eventId: String(index), usage: row.usage, evidence: { sessionId: `fixture-${index}` }, metadata: {} }));

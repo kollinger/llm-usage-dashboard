@@ -7,6 +7,8 @@ const state = {
   loadingCodexResetHistory: false,
   codexResetError: false,
   loadingUsage: false,
+  loadingUsageDevice: null,
+  queuedUsageScope: false,
   queuedUsageForce: false,
   queuedUsageIndicator: false,
   refreshIndicator: false,
@@ -4132,6 +4134,7 @@ function systemMetricsPollDelayMs() {
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
   if (state.loadingUsage) {
+    if (connectionState.selectedDevice !== state.loadingUsageDevice) state.queuedUsageScope = true;
     if (force) {
       state.queuedUsageForce = true;
       state.queuedUsageIndicator ||= showIndicator;
@@ -4148,11 +4151,13 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   }
   if (force || Date.now() - (state.codexResetFetchedAt || 0) >= 60000) void loadCodexResetHistory();
   if (force) state.gptAccountScanMessage = "";
+  const requestedDevice = connectionState.selectedDevice;
+  state.loadingUsageDevice = requestedDevice;
   setUsageLoading(true, showIndicator);
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
     params.set("lang", state.language || DEFAULT_LANGUAGE);
-    params.set("device", connectionState.selectedDevice);
+    params.set("device", requestedDevice);
     if (force) params.set("force", "1");
     // Subscription history changes rarely; refresh it on force and on a slow
     // cadence instead of alongside every usage poll.
@@ -4170,6 +4175,10 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
           })
         : Promise.resolve(state.subscriptionHistory)
     ]);
+    if (connectionState.selectedDevice !== requestedDevice) {
+      state.queuedUsageScope = true;
+      return;
+    }
     if (refreshSubscriptionHistory && subscriptionHistory) state.subscriptionHistoryFetchedAt = Date.now();
     state.usage = usage;
     state.subscriptionHistory = subscriptionHistory || state.subscriptionHistory || { version: 1, entries: [] };
@@ -4186,13 +4195,15 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     state.lastUsageRenderSignature = null;
   } finally {
     setUsageLoading(false);
-    if (state.queuedUsageForce) {
+    if (state.queuedUsageForce || state.queuedUsageScope) {
       const shouldRunQueuedUsage = !state.auth || state.auth.authenticated;
       const queuedShowIndicator = state.queuedUsageIndicator;
+      const queuedForce = state.queuedUsageForce;
       state.queuedUsageForce = false;
+      state.queuedUsageScope = false;
       state.queuedUsageIndicator = false;
       if (shouldRunQueuedUsage) {
-        await loadUsage({ showIndicator: queuedShowIndicator, force: true });
+        await loadUsage({ showIndicator: queuedShowIndicator, force: queuedForce });
       }
     }
   }

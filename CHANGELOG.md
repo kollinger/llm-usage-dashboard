@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.6.0-preview.9 - 2026-10-05
+
+### Fixed
+
+- Skip parsing unrelated Codex message payloads while scanning large or active
+  logs. Token events, model context and source line identities are preserved.
+
+## 1.6.0-preview.8 - 2026-10-05
+
+### Fixed
+
+- Reuse private, compressed token extractions after app restarts instead of
+  rereading unchanged Codex, Claude and Gemini transcripts.
+- Recheck source permissions, file fingerprints and parser versions; safely
+  rebuild missing or damaged caches from the original logs.
+
+## 1.6.0-preview.7 - 2026-10-05
+
+### Fixed
+
+- Speed up large token histories by reusing device attribution across views
+  and avoiding repeated daily calculations.
+- Apply device changes made during a pending request immediately afterward,
+  without displaying the previous device's response under the new selection.
+
 ## 1.6.0-preview.6 - 2026-10-05
 
 ### Fixed
