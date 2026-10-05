@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Ar an gcéad síniú isteach, íoslódálann an aip cúntóir oifigiúil Kimi go díreach ó Kimi. Ritheann sé go háitiúil; ní sheolann an deais teiliméadracht.",
     "lastSeen": "Feicthe go deireanach {time}"
+  },
+  "history": {
+    "refreshing": "Stair shábháilte · {time}. Nuashonrú sa chúlra."
   }
 }

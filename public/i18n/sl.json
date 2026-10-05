@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Ob prvi prijavi aplikacija prenese uradni pomožni program Kimi neposredno od Kimi. Deluje lokalno; nadzorna plošča ne pošilja telemetrije.",
     "lastSeen": "Nazadnje viden {time}"
+  },
+  "history": {
+    "refreshing": "Shranjena zgodovina · {time}. Posodabljanje v ozadju."
   }
 }

@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "首次登录时，应用会直接从 Kimi 下载官方 Kimi 辅助程序。它在本地运行，仪表板不会发送遥测数据。",
     "lastSeen": "最后检测 {time}"
+  },
+  "history": {
+    "refreshing": "已保存的历史记录 · {time}。正在后台更新。"
   }
 }

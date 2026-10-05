@@ -22,9 +22,10 @@ const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
 const { DeviceSync } = require("./lib/device-sync");
-const { exportUsageEvents, attributeLocalUsageEvents } = require("./lib/device-sync-data");
+const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
 const { readUsageFileEvents } = require("./lib/usage-file-cache");
+const { createUsageViewCache } = require("./lib/usage-view-cache");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -561,7 +562,22 @@ app.use(express.static(path.join(ROOT, "public")));
 app.use("/vendor/lucide", express.static(path.join(path.dirname(require.resolve("lucide/package.json")), "dist", "umd")));
 
 const deviceSync = new DeviceSync({ dataDir: DATA_DIR });
-const usageAggregation = createUsageAggregation();
+const usageViewCache = createUsageViewCache({ directory: path.join(DATA_DIR, "usage-view-cache"), context: async () => {
+  try {
+    const read = async (file) => JSON.parse(await fsp.readFile(file, "utf8").catch((error) => {
+      if (error.code === "ENOENT") return "null";
+      throw error;
+    }));
+    const [settings, identity, sources] = await Promise.all([
+      read(path.join(DATA_DIR, "device-sync", "settings.json")), read(path.join(DATA_DIR, "device-sync", "identity.json")),
+      read(path.join(DATA_DIR, "connected-sources.json"))
+    ]);
+    return crypto.createHash("sha256").update(JSON.stringify([identity?.id || null, settings?.enabled || false, settings?.name || null,
+      (settings?.peers || []).map(({ id, signingKey, exchangeKey }) => [id, signingKey, exchangeKey]).sort(),
+      (settings?.revoked || []).slice().sort(), sources])).digest("hex");
+  } catch { return null; }
+} });
+const usageAggregation = createUsageAggregation({ viewCache: usageViewCache });
 const gptLogin = createGptAccountLogin({
   profilesDir: path.join(DATA_DIR, "codex-profiles"),
   clientFactory: createCodexAppServer,
@@ -765,7 +781,14 @@ app.delete("/api/gpt-accounts/profiles/:id", authMiddleware, localControlMiddlew
     res.json({ ok: true });
   } catch { res.status(400).json({ error: "profile_remove_failed" }); }
 });
-app.get("/api/device-sync", authMiddleware, localControlMiddleware, (_req, res) => res.json(deviceSync.status()));
+async function readDeviceSyncStatus() {
+  const status = deviceSync.status();
+  if (!status.restoring || !status.enabled) return status;
+  const cached = await usageViewCache.read("all", await usageViewCache.context());
+  return cached?.devices ? { ...status, devices: cached.devices } : status;
+}
+
+app.get("/api/device-sync", authMiddleware, localControlMiddleware, async (_req, res) => res.json(await readDeviceSyncStatus()));
 app.post("/api/device-sync/:action", authMiddleware, localControlMiddleware, async (req, res) => {
   try {
     let result;
@@ -1015,8 +1038,18 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
     const force = parseBoolean(req.query.force);
     const usage = await readUsageDashboard({ force, staleWhileRefresh: !force });
     const selected = typeof req.query.device === "string" ? req.query.device : "local";
-    const sync = deviceSync.status();
+    let sync = await readDeviceSyncStatus();
+    if (sync.enabled && selected !== "local" && sync.restoring && !force) {
+      const cached = await usageViewCache.read(selected, await usageViewCache.context());
+      if (cached && deviceSync.config.enabled && deviceSync.restoringSnapshots &&
+          !cached.devices?.some((device) => deviceSync.config.revoked.includes(device.id)) &&
+          (selected === "all" || cached.devices?.some((device) => device.id === selected))) {
+        const combined = refreshCombinedUsageMetadata(usage, cached.value, [], selected);
+        return res.json({ ...combined, cache: cached.value.cache, deviceSync: sync });
+      }
+    }
     if (sync.enabled && selected !== "local") {
+      if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
       if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
         return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
@@ -1145,7 +1178,15 @@ app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
 
 async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   if (force) prepareForcedGptAccountRefresh();
-  return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
+  if (!force && !usageCache.value) {
+    const restored = await usageViewCache.read("local", await usageViewCache.context());
+    if (restored && !usageCache.value) {
+      usageCache.value = restored.value;
+      usageCache.updatedAtMs = Date.parse(restored.value.generatedAt);
+    }
+  }
+  const usage = await readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
+    const viewFingerprint = await usageViewCache.context();
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
     for (const profile of await claudeLogin.profileSources()) {
@@ -1249,7 +1290,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     }
 
     const now = new Date().toISOString();
-    return {
+    const value = {
       generatedAt: now,
       quotaPace,
       codex: stripProviderUsageEvents(codex),
@@ -1266,7 +1307,19 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
       openai,
       anthropic
     };
+    await usageViewCache.write("local", viewFingerprint, value);
+    return value;
   }, { force, maxAgeMs, staleWhileRefresh });
+  return overlayCurrentCodexQuota(usage, codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs);
+}
+
+function overlayCurrentCodexQuota(usage, live, updatedAtMs, now = Date.now()) {
+  if (!live || !updatedAtMs || now - updatedAtMs > 90_000 || !usage.codex) return usage;
+  const overlay = (provider, snapshot, label) => snapshot ? { ...provider, status: "live",
+    limits: codexRateLimitsFromLive(snapshot, label), limitsUpdatedAt: live.source.updatedAt,
+    liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source } } : provider;
+  const codex = overlay(usage.codex, live.codex, "Codex");
+  return { ...usage, codex: { ...codex, spark: overlay(codex.spark || {}, live.spark, "Codex 5.3 Spark") } };
 }
 
 let connectedBrowserRefreshAt = 0;
@@ -11187,6 +11240,7 @@ module.exports = {
     mergeUpdateSettingsPatch,
     codexBinaryCandidates,
     codexRateLimitsFromLive,
+    overlayCurrentCodexQuota,
     codexRateLimitsFromUsagePayload,
     codexRateLimitsFromEvents,
     codexSparkRateLimitsFromEvents,

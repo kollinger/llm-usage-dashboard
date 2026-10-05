@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Pirmą kartą prisijungiant programa atsisiunčia oficialų Kimi pagalbinį įrankį tiesiai iš Kimi. Jis veikia vietoje; skydelis nesiunčia telemetrijos.",
     "lastSeen": "Paskutinį kartą matyta {time}"
+  },
+  "history": {
+    "refreshing": "Išsaugota istorija · {time}. Atnaujinama fone."
   }
 }

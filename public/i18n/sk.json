@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Pri prvom prihlásení aplikácia stiahne oficiálny pomocný program Kimi priamo od Kimi. Beží lokálne; dashboard neposiela telemetriu.",
     "lastSeen": "Naposledy zaznamenané {time}"
+  },
+  "history": {
+    "refreshing": "Uložená história · {time}. Aktualizácia prebieha na pozadí."
   }
 }

@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Ensimmäisellä kirjautumisella sovellus lataa virallisen Kimi-apuohjelman suoraan Kimiltä. Se toimii paikallisesti; hallintapaneeli ei lähetä telemetriaa.",
     "lastSeen": "Viimeksi nähty {time}"
+  },
+  "history": {
+    "refreshing": "Tallennettu historia · {time}. Päivitetään taustalla."
   }
 }

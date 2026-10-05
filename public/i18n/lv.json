@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Pirmajā pieteikšanās reizē lietotne lejupielādē oficiālo Kimi palīgrīku tieši no Kimi. Tas darbojas lokāli; panelis nesūta telemetriju.",
     "lastSeen": "Pēdējoreiz redzēts {time}"
+  },
+  "history": {
+    "refreshing": "Saglabātā vēsture · {time}. Atjaunināšana fonā."
   }
 }

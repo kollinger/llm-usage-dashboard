@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "Esimesel sisselogimisel laadib rakendus ametliku Kimi abiprogrammi otse Kimilt. See töötab kohapeal; juhtpaneel ei saada telemeetriat.",
     "lastSeen": "Viimati nähtud {time}"
+  },
+  "history": {
+    "refreshing": "Salvestatud ajalugu · {time}. Uuendamine toimub taustal."
   }
 }

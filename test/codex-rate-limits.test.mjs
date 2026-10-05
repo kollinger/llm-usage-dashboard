@@ -358,3 +358,12 @@ function createAppContext() {
     Error
   };
 }
+
+const savedUsage = { codex: { status: "live", updatedAt: "2026-01-01T00:00:00Z", totals: { allTime: { totalTokens: 42 } }, limits: null } };
+const liveQuota = { codex: { primary: { usedPercent: 49, windowDurationMins: 300, resetsAt: fiveHourResetSeconds } },
+  source: { status: "live", updatedAt: new Date().toISOString() } };
+const overlaid = _test.overlayCurrentCodexQuota(savedUsage, liveQuota, 1000, 2000);
+assert.deepEqual(overlaid.codex.limits, _test.codexRateLimitsFromLive(liveQuota.codex, "Codex"));
+assert.equal(overlaid.codex.updatedAt, savedUsage.codex.updatedAt, "fresh quotas must not rewrite the history timestamp");
+assert.equal(overlaid.codex.totals.allTime.totalTokens, 42);
+assert.equal(_test.overlayCurrentCodexQuota(savedUsage, liveQuota, 1000, 92_000), savedUsage, "stale quota probes cannot appear current");

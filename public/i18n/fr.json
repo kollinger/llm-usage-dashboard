@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "À la première connexion, l’application télécharge l’outil officiel Kimi directement auprès de Kimi. Il s’exécute localement ; le tableau de bord n’envoie aucune télémétrie.",
     "lastSeen": "Vu pour la dernière fois {time}"
+  },
+  "history": {
+    "refreshing": "Historique enregistré · {time}. Mise à jour en arrière-plan."
   }
 }

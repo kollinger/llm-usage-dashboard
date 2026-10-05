@@ -1219,5 +1219,8 @@
     },
     "kimiHelperHelp": "No primeiro início de sessão, a aplicação transfere a ferramenta oficial Kimi diretamente da Kimi. É executada localmente; o painel não envia telemetria.",
     "lastSeen": "Visto pela última vez {time}"
+  },
+  "history": {
+    "refreshing": "Histórico guardado · {time}. Atualização em segundo plano."
   }
 }
