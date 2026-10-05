@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-preview.4 - 2026-10-05
+
+### Added
+
+- Show the recorded models and their token totals directly in installation
+  chart tooltips, for the selected day or time window.
+- Keep unknown models and shared observations explicit without counting copied
+  usage twice.
+
 ## 1.6.0-preview.3 - 2026-10-05
 
 ### Fixed
