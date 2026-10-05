@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0-preview.9 - 2026-10-05
+
+### Fixed
+
+- Skip parsing unrelated Codex message payloads while scanning large or active
+  logs. Token events, model context and source line identities are preserved.
+
 ## 1.6.0-preview.8 - 2026-10-05
 
 ### Fixed
