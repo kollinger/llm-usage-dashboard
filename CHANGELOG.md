@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0-preview.2 - 2026-10-05
+
+### Fixed
+
+- Keep recent quota pace available when measurements cover only part of the
+  selected window, and display the duration actually measured.
+- Apply the same freshness limit to every pace window so short refresh delays
+  do not hide only the 30-minute view.
+
 ## 1.5.0-preview.1 - 2026-10-05
 
 ### Added

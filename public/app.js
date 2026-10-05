@@ -6486,7 +6486,6 @@ function renderQuotaPaceCard(provider, row) {
   const card = `${provider.id}:${key}`;
   const minutes = state.quotaPaceWindowMinutesByCard[card] || 120;
   const windows = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]];
-  const windowLabel = windows.find(([value]) => value === minutes)?.[1] || "";
   const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
   const label = row.label;
   let result = t("limits.recentPace.collecting");
@@ -6512,7 +6511,7 @@ function renderQuotaPaceCard(provider, row) {
   const measured = pace?.deltaPercent !== undefined && pace?.observedMinutes
     ? t("limits.recentPace.measured", {
         percent: new Intl.NumberFormat(state.language || "en", { maximumFractionDigits: 1 }).format(pace.deltaPercent),
-        duration: windowLabel
+        duration: formatDurationCompact(pace.observedMinutes * 60_000)
       })
     : "";
   return `
