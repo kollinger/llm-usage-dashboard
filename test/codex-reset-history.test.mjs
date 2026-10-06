@@ -59,6 +59,13 @@ const timelyRegularAfter = snapshot('2026-09-08T12:01:00Z','2026-09-15T12:00:00Z
 assert.equal(buildHistory([timelyRegularBefore,timelyRegularAfter],[],{now:date(timelyRegularAfter.at)}).windows[0].resetCause.type,'scheduled');
 const interruptedHistory = buildHistory([before,{kind:'gap',at:'2026-09-03T12:00:00Z'},noCreditUsed],[],{now:date(after.at)});
 assert.equal(interruptedHistory.windows[0].resetCause.type,'unknown','an interrupted transition cannot exclude credit use');
+const interruptedRedemption = buildHistory([before,{kind:'gap',at:'2026-09-03T12:00:00Z'},after],[],{now:date(after.at)});
+assert.deepEqual(interruptedRedemption.windows[0].resetCause,{type:'manual',confidence:'inferred'},'a short failed poll cannot erase before-expiry credit-redemption evidence');
+assert.equal(interruptedRedemption.summary.manualResets,1);
+assert.equal(interruptedRedemption.summary.recordingGaps,1,'the failed poll remains visible');
+assert.equal(resetCause(before,after,'early',true,true).type,'unknown','overlapping windows still block credit attribution');
+for (const pair of [[incomplete,after],[noExpiry,after],[expiredBefore,after]]) assert.equal(resetCause(...pair,'early',true).type,'unknown');
+
 const regular = buildHistory([before, snapshot('2026-09-08T12:01:00Z', '2026-09-15T12:00:00Z', 1)], [], { now: date('2026-09-08T12:02:00Z') });
 assert.equal(regular.windows[0].resetType, 'regular');
 assert.equal(regular.summary.uncertainWindows, 1, 'long observation gap is explicit');
