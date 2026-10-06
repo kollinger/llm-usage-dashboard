@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0-preview.11 - 2026-10-06
+
+### Fixed
+
+- Recognize manual Codex resets when a non-expired reset credit disappears across
+  a short failed status poll. Keep inferred versus confirmed evidence and recording
+  gaps visible; ambiguous accounts, overlapping windows and expiry stay unknown.
+
 ## 1.6.0-preview.10 - 2026-10-05
 
 ### Fixed
