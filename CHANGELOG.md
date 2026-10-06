@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.6.0-preview.12 - 2026-10-06
+
+### Accounts and devices
+
+- Add and manage multiple ChatGPT/Codex and Claude Code accounts in compact settings.
+- Connect Kimi Code, GLM/Z.AI Coding Plan, OpenAI API, Anthropic API and Moonshot API accounts with their supported sign-in or key methods.
+- Pair trusted installations for encrypted direct usage sync, then inspect all devices together or just one computer.
+- Compare recorded tokens by installation, account, provider and model, with model details in chart tooltips and copied records counted once.
+
+### Resets and performance
+
+- Inspect Codex reset history and credits, with manual, scheduled, provider-inferred and unknown causes distinguished by their evidence.
+- Preserve manual-reset evidence across a short failed status poll.
+- Restore saved charts after restart and refresh in the background; speed up large histories and installation switching.
+- Include Multica Codex session logs and keep this computer's live account limits visible.
+- Refresh compatible desktop/build dependencies, including Electron 42.11.10 and electron-builder 26.15.3, and update proxy-addr to patched 2.0.8.
+
+### Preview notes
+
+- Direct sync needs reachable paired devices on a LAN or existing private network.
+- Kimi Code exposes quotas; Moonshot API exposes balance. Complete token history is unavailable for these connections.
+- macOS is ad-hoc signed without notarization; install the DMG manually. Windows installers are unsigned.
+- Full notes: [1.6 release](docs/releases/1.6.0.md).
+
 ## 1.6.0-preview.11 - 2026-10-06
 
 ### Fixed
