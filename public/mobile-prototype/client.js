@@ -1,6 +1,18 @@
 "use strict";
 
 (async () => {
+  const pairingKey = "mobile-prototype-pairing";
+  let pairingCode = "";
+  if (document.body.dataset.prototype === "pair") {
+    const supplied = location.hash.slice(1) || /^\/pair\/([\w.-]+)$/.exec(location.pathname)?.[1] || "";
+    try {
+      if (supplied) sessionStorage.setItem(pairingKey, supplied);
+      pairingCode = supplied || sessionStorage.getItem(pairingKey) || "";
+    } catch { pairingCode = supplied; }
+    // Remove the one-use secret before any network request. Retain it only in
+    // this tab until redemption, so reloading the cleaned URL still works.
+    history.replaceState(null, "", "/pair");
+  }
   const language = (navigator.language || "en").slice(0, 2);
   let copy;
   try { copy = (await (await fetch(`/i18n/${language}.json`)).json()).mobilePrototype; }
@@ -51,18 +63,20 @@
     });
     await refresh(); await code(); setInterval(refresh, 2000);
   } else if (document.body.dataset.prototype === "pair") {
-    const code = location.hash.slice(1);
-    // The one-use bootstrap secret is not kept in history or the saved URL.
-    history.replaceState(null, "", "/pair");
     const button = document.getElementById("prototypePair");
-    if (!code) { button.disabled = true; message("scanAgain"); }
+    if (!pairingCode) { button.disabled = true; message("scanAgain"); }
     button.addEventListener("click", async () => {
       button.disabled = true;
       try {
-        const response = await fetch("/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+        const response = await fetch("/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: pairingCode }) });
+        if (response.status === 401) {
+          try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }
+          message("scanAgain"); return;
+        }
         if (!response.ok) throw new Error("pair_failed");
+        try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }
         location.replace("/");
-      } catch { message("scanAgain"); }
+      } catch { message("networkError"); button.disabled = false; }
     });
   } else {
     document.body.classList.add("prototype-read-only");

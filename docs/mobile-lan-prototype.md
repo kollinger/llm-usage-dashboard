@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.1
+# Mobile LAN prototype — 1.7.0-lan-prototype.2
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -50,7 +50,14 @@ experiment, not a guarantee across arbitrary routers, VLANs or guest networks.
 
 Phone authorization is an HMAC-signed HttpOnly, SameSite=Strict cookie, accepted
 by all group members. The five-minute QR bootstrap travels in the URL fragment,
-is removed before pairing, and its consumed hash is shared with other members.
+is removed before network requests, and its consumed hash is shared with other members.
+The local control endpoint also returns `linkUrl`, with the same one-use token
+in its path, for clickable links opened by embedded browsers. GET only displays
+the connect page and never consumes a token. The code is retained in tab-scoped
+session storage until pairing, so reloading the cleaned URL does not lose it;
+successful pairing or an invalid/expired response clears it. Both link forms
+use no-store and no-referrer headers. The path form reaches the local HTTP
+server and must not be logged by a proxy.
 Concurrent redemption during a network partition is not fully prevented.
 
 The gateway serves the existing dashboard assets and a small GET allowlist.
@@ -116,3 +123,29 @@ checks alone do not prove browser DNS failover or physical-phone behavior.
   real upstream usage HTTP 200, hidden settings, no JavaScript page errors and no
   horizontal overflow at a mobile viewport. The control view was also checked
   with Arabic locale/RTL. This still does not substitute for a physical phone.
+
+### Pairing-link repair — 1.7.0-lan-prototype.2
+
+- A physical iPhone reached the direct LAN endpoint and displayed the pairing
+  page with its connect button disabled. The screenshot alone does not show
+  whether the fragment was lost on navigation or the cleaned page was reloaded.
+- A reload before pairing reproduced the lost-code state in the original client.
+  The repaired client retains the code for that tab and supports a fragment-free
+  clickable link. Network failures permit retry; expired/used tokens require a
+  fresh link. No transport or access permissions were widened.
+- Repository checks, a fresh Docker build and an isolated Compose smoke passed.
+  A real Chromium browser at 390 px verified the clickable path link, reload
+  before connecting, fragment link, retry after an interrupted request, replay
+  rejection, cleared tab storage and usage HTTP 200. German and Arabic/RTL
+  rendered without horizontal overflow or JavaScript page errors. The Compose
+  instance and browser were stopped after checking.
+- A fresh universal DMG with version 1.7.0-lan-prototype.2 was installed and
+  launched on the M1. Its path link and reload-before-connect worked in the
+  local in-app browser. Its separate cold backend did not return usage within
+  45 seconds, while the already running normal dashboard returned HTTP 200 in
+  38 ms. For the phone trial, the CLI gateway was therefore started against
+  that existing loopback backend with the same prototype group. The paired
+  phone gateway returned usage HTTP 200 in 41 ms; real provider cards and token
+  totals rendered in the browser. The separate prototype app was stopped.
+  This trial requires the normal desktop dashboard and CLI gateway to stay
+  running. Cold-backend startup remains an open prototype limitation.

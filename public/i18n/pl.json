@@ -1238,7 +1238,7 @@
     "offline": "No installation is reachable. Start a paired app on the same local network.",
     "pair": "Connect this phone",
     "expires": "This QR code expires in five minutes and can be used once.",
-    "scanAgain": "Open the QR code in the desktop app and scan a fresh code.",
+    "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
     "readOnly": "Phone access · read only · LAN prototype",
     "servedBy": "Data from",
     "networkError": "The local connection is unavailable. Check the network permission and whether an installation is running.",

@@ -3,9 +3,56 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
+import vm from 'node:vm';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { startMobilePrototype, loadGroup, signToken, verifyToken, sanitize, elect } = require('../lib/mobile-lan-prototype');
+
+const clientSource = await fs.readFile(new URL('../public/mobile-prototype/client.js', import.meta.url), 'utf8');
+const clientStorage = new Map();
+const client = async (url, result = { status: 200, ok: true }) => {
+  const location = new URL(url);
+  let destination, submitted;
+  location.replace = (value) => { destination = value; };
+  const button = { disabled: false, addEventListener: (_event, handler) => { button.click = handler; } };
+  const message = {};
+  const context = {
+    location, navigator: { language: 'de' },
+    sessionStorage: { setItem: (key, value) => clientStorage.set(key, value), getItem: (key) => clientStorage.get(key), removeItem: (key) => clientStorage.delete(key) },
+    history: { replaceState: (_state, _title, value) => { location.href = new URL(value, location).href; } },
+    document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], getElementById: (id) => id === 'prototypePair' ? button : message },
+    fetch: async (value, options) => {
+      assert.equal(location.href, 'http://127.0.0.1/pair', 'bootstrap removed before fetching');
+      if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry' } }) };
+      submitted = JSON.parse(options.body).code;
+      if (result instanceof Error) throw result;
+      return result;
+    }
+  };
+  await vm.runInNewContext(clientSource, context);
+  return { button, message, submitted: () => submitted, destination: () => destination };
+};
+// Reproduce a reload after the fragment was removed, before connecting.
+await client('http://127.0.0.1/pair#fragment-token');
+let phone = await client('http://127.0.0.1/pair');
+assert.equal(phone.button.disabled, false);
+await phone.button.click();
+assert.equal(phone.submitted(), 'fragment-token');
+assert.equal(phone.destination(), '/');
+assert.equal(clientStorage.size, 0);
+phone = await client('http://127.0.0.1/pair/path-token');
+assert.equal(phone.button.disabled, false);
+phone = await client('http://127.0.0.1/pair', new Error('offline'));
+await phone.button.click();
+assert.equal(phone.button.disabled, false);
+assert.equal(phone.message.textContent, 'retry');
+phone = await client('http://127.0.0.1/pair', { status: 401, ok: false });
+await phone.button.click();
+assert.equal(phone.submitted(), 'path-token');
+assert.equal(phone.message.textContent, 'new-link');
+assert.equal(clientStorage.size, 0);
+phone = await client('http://127.0.0.1/pair');
+assert.equal(phone.button.disabled, true);
 
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'llm-mobile-prototype-'));
 const upstream = http.createServer((req, res) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ generatedAt: '2026-01-01T00:00:00Z', local: { totalTokens: 123 }, email: 'private@example.invalid', accessToken: 'private', nested: { file: '/private/source', outputTokens: 42 } })); });
@@ -39,6 +86,15 @@ try {
   assert.equal(new URL(direct.url).hostname, '127.0.0.1');
   assert.equal(Number(new URL(direct.url).port), a.server.address().port);
   assert.match(direct.svg, /<svg/);
+  const linkCode = new URL(direct.linkUrl).pathname.slice('/pair/'.length);
+  assert.equal(linkCode, new URL(direct.url).hash.slice(1));
+  const link = await get(a, `/pair/${linkCode}`);
+  assert.equal(link.status, 200);
+  assert.equal(link.headers.get('referrer-policy'), 'no-referrer');
+  assert.equal(link.headers.get('cache-control'), 'no-store');
+  assert.equal(link.headers.get('set-cookie'), null, 'prefetch never pairs a phone');
+  assert.match(await link.text(), /prototypePair/);
+  assert.equal((await get(a, '/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: linkCode }) })).status, 200);
   const code = signToken(group, 'pair', 60_000);
   assert.equal(verifyToken(group, code, 'phone'), false);
   assert.equal(verifyToken(group, signToken(group, 'pair', 100, Date.now() - 200), 'pair'), false);
@@ -82,7 +138,7 @@ try {
     const data = JSON.parse(await fs.readFile(new URL(`../public/i18n/${locale}`, import.meta.url)));
     const current = Object.keys(data.mobilePrototype).sort(); keys ||= current; assert.deepEqual(current, keys, locale);
   }
-  console.log('mobile LAN prototype: pairing, expiry, replay, read-only API, origin checks, sanitization, survivor session and restart passed');
+  console.log('mobile LAN prototype: fragment/path links, reload, retry, pairing, expiry, replay, read-only API, origin checks, sanitization, survivor session and restart passed');
 } finally {
   await a?.stop(); await b?.stop();
   await new Promise((resolve) => upstream.close(resolve));

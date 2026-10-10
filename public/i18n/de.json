@@ -1238,7 +1238,7 @@
     "offline": "Keine Installation erreichbar. Eine gekoppelte App im selben lokalen Netzwerk starten.",
     "pair": "Dieses Handy verbinden",
     "expires": "Dieser QR-Code ist fünf Minuten gültig und einmal verwendbar.",
-    "scanAgain": "QR-Code in der Desktop-App öffnen und einen neuen Code scannen.",
+    "scanAgain": "Der Kopplungslink fehlt, ist abgelaufen oder wurde bereits verwendet. Öffne einen neuen Link oder scanne einen neuen QR-Code.",
     "readOnly": "Handy-Zugang · nur Lesen · WLAN-Prototyp",
     "servedBy": "Daten von",
     "networkError": "Die lokale Verbindung ist nicht erreichbar. Netzwerkfreigabe und laufende Installation prüfen.",
