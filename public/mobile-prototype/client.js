@@ -9,9 +9,9 @@
       if (supplied) sessionStorage.setItem(pairingKey, supplied);
       pairingCode = supplied || sessionStorage.getItem(pairingKey) || "";
     } catch { pairingCode = supplied; }
-    // Remove the one-use secret before any network request. Retain it only in
-    // this tab until redemption, so reloading the cleaned URL still works.
-    history.replaceState(null, "", "/pair");
+    // Keep the one-use code in the address until pairing so opening this page
+    // in another browser works without sharing cookies or tab storage.
+    if (pairingCode && !location.hash && !/^\/pair\/[\w.-]+\/?$/.test(location.pathname)) history.replaceState(null, "", `/pair/${pairingCode}`);
   }
   const language = (navigator.language || "en").slice(0, 2);
   let copy;
@@ -75,6 +75,7 @@
         const response = await fetch("/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: pairingCode }) });
         if (response.status === 401) {
           try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }
+          history.replaceState(null, "", "/pair");
           const error = await response.json();
           message(pairingMessage(error.error?.replace(/^pair_/, ""))); return;
         }

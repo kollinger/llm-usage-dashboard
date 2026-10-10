@@ -22,7 +22,6 @@ const client = async (url, result = { status: 200, ok: true }, { supplied = '', 
     history: { replaceState: (_state, _title, value) => { location.href = new URL(value, location).href; } },
     document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], querySelector: () => ({ content: state }), getElementById: (id) => id === 'prototypePair' ? button : id === 'prototypeCode' ? { value: supplied } : message },
     fetch: async (value, options) => {
-      assert.equal(location.href, 'http://127.0.0.1/pair', 'bootstrap removed before fetching');
       if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry', missingCode: 'missing', expiredCode: 'expired', usedCode: 'used', invalidCode: 'invalid' } }) };
       submitted = JSON.parse(options.body).code;
       if (result instanceof Error) throw result;
@@ -30,9 +29,20 @@ const client = async (url, result = { status: 200, ok: true }, { supplied = '', 
     }
   };
   await vm.runInNewContext(clientSource, context);
-  return { button, message, submitted: () => submitted, destination: () => destination };
+  return { button, message, submitted: () => submitted, destination: () => destination, url: () => location.href };
 };
-// Reproduce a reload after the fragment was removed, before connecting.
+// A second browser receives the current URL, without the first browser's storage.
+for (const url of ['http://127.0.0.1/pair/handoff-token', 'http://127.0.0.1/pair#handoff-token']) {
+  const embedded = await client(url);
+  assert.equal(embedded.button.disabled, false);
+  clientStorage.clear();
+  const external = await client(embedded.url());
+  assert.equal(external.button.disabled, false, 'Open in another browser retains the pairing code');
+  await external.button.click();
+  assert.equal(external.submitted(), 'handoff-token');
+  assert.equal(external.destination(), '/');
+}
+// Support a cleaned URL restored from the same browser's storage.
 await client('http://127.0.0.1/pair#fragment-token');
 let phone = await client('http://127.0.0.1/pair');
 assert.equal(phone.button.disabled, false);

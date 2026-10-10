@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.3
+# Mobile LAN prototype — 1.7.0-lan-prototype.4
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -49,8 +49,8 @@ Actual browser DNS caching can make takeover slower. This is a local network
 experiment, not a guarantee across arbitrary routers, VLANs or guest networks.
 
 Phone authorization is an HMAC-signed HttpOnly, SameSite=Strict cookie, accepted
-by all group members. The five-minute QR bootstrap travels in the URL fragment,
-is removed before network requests, and its consumed hash is shared with other members.
+by all group members. The five-minute QR bootstrap travels in the URL fragment
+and its consumed hash is shared with other members.
 The local control endpoint also returns `linkUrl`, with the same one-use token
 in its path, for clickable links opened by embedded browsers. GET only displays
 the connect page and never consumes a token. For a path link, the server supplies
@@ -59,7 +59,11 @@ cookie scoped to `/pair`, only until the original five-minute expiry. This
 permits reloading the cleaned URL even when tab storage is blocked. That cookie
 does not authorize dashboard access. Tab-scoped session storage also retains
 fragment codes; successful pairing or an invalid/expired response clears it.
-Successful pairing clears the bootstrap cookie. Both link forms
+The code stays in the address until pairing so a phone's Open in another browser
+action can transfer it without shared cookies or session storage. A code restored
+on the clean `/pair` URL is put back into the path for the same purpose.
+Successful pairing replaces the address with `/` and clears the bootstrap cookie;
+a rejected code is removed from the address. Both link forms
 use no-store and no-referrer headers. The path form reaches the local HTTP
 server and must not be logged by a proxy.
 Concurrent redemption during a network partition is not fully prevented.
@@ -178,3 +182,26 @@ checks alone do not prove browser DNS failover or physical-phone behavior.
   the verified code for a trailing-slash link and restored it on a cleaned-URL
   reload. The review app was then stopped; the phone trial uses the existing
   normal dashboard backend through the separate CLI gateway.
+
+### Open in another phone browser — 1.7.0-lan-prototype.4
+
+- The user confirmed that Connect was enabled in the embedded phone browser,
+  then disabled after opening the page in iPhone Chrome, before any redemption.
+  The gateway recorded a valid mobile link at 20:14:59, followed by requests
+  without a code from 20:15:03 onward. The client had removed the code from the
+  current address before the browser handoff; browser storage was not shared.
+- The address now retains the five-minute one-use code until redemption. A
+  second browser receives the complete link. Success replaces it with `/`;
+  rejection removes the code. The existing no-referrer policy prevents the
+  code from being sent as a Referer. Authorization and expiry are unchanged.
+- The new regression failed against the previous client and passes after the
+  correction. The full repository check and Docker rebuild passed. Chromium
+  verified path and fragment handoffs between separate browser contexts, with
+  blocked storage in the first browser, reload, no code in Referer headers,
+  successful pairing in the second browser, visible provider cards and usage
+  HTTP 200 at 390 px. The first browser remained unpaired. Compose and browser
+  processes were stopped after checking. Physical iPhone confirmation is open.
+- A fresh universal 1.7.0-lan-prototype.4 DMG was installed and launched on the
+  M1. Its control window rendered and the packaged gateway served the corrected
+  browser-handoff client. The app was stopped after checking; the phone trial
+  continues through the CLI gateway and the existing normal desktop backend.
