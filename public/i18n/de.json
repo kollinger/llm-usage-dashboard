@@ -1222,5 +1222,38 @@
   },
   "history": {
     "refreshing": "Gespeicherter Verlauf · {time}. Aktualisierung läuft im Hintergrund."
+  },
+  "mobilePrototype": {
+    "prototype": "WLAN-Prototyp",
+    "title": "Am Handy öffnen",
+    "intro": "QR-Code einmal scannen und das Handy verbinden. Dieser Prototyp nutzt ausschließlich dein lokales Netzwerk.",
+    "httpWarning": "Nur im vertrauenswürdigen WLAN: Dieser Prototyp verwendet unverschlüsseltes HTTP. Nicht in öffentlichen oder Gastnetzen verwenden.",
+    "save": "Nach dem Verbinden das Dashboard auf dem Home-Bildschirm speichern.",
+    "address": "Kopplungslink",
+    "newCode": "Neuen QR-Code erzeugen",
+    "network": "Erreichbare Installationen",
+    "leader": "Aktueller Gastgeber",
+    "waiting": "Warte auf eine Installation",
+    "remote": "Fernzugriff ist in diesem Prototyp noch nicht eingebaut. Dafür ist später eine eigene private Verbindung wie Tailscale vorgesehen; wir betreiben keinen Vermittlungsdienst.",
+    "offline": "Keine Installation erreichbar. Eine gekoppelte App im selben lokalen Netzwerk starten.",
+    "pair": "Dieses Handy verbinden",
+    "expires": "Dieser QR-Code ist fünf Minuten gültig und einmal verwendbar.",
+    "scanAgain": "Der Kopplungslink fehlt, ist abgelaufen oder wurde bereits verwendet. Öffne einen neuen Link oder scanne einen neuen QR-Code.",
+    "missingCode": "Der Kopplungscode ist auf dieser Seite nicht angekommen. Öffne den vollständigen Kopplungslink.",
+    "expiredCode": "Dieser Kopplungslink ist abgelaufen. Öffne einen neuen Link oder scanne einen neuen QR-Code.",
+    "usedCode": "Dieser Kopplungslink wurde bereits verwendet. Öffne das Dashboard im Browser, in dem du verbunden hast, oder verwende einen neuen Link.",
+    "invalidCode": "Dieser Kopplungscode ist ungültig. Öffne den vollständigen Kopplungslink.",
+    "readOnly": "Handy-Zugang · nur Lesen · WLAN-Prototyp",
+    "servedBy": "Daten von",
+    "networkError": "Die lokale Verbindung ist nicht erreichbar. Netzwerkfreigabe und laufende Installation prüfen.",
+    "joinTitle": "Installationen verbinden",
+    "joinHelp": "Auf der ersten Installation einen Code erzeugen und innerhalb von fünf Minuten am weiteren Rechner hier einfügen. Der Code gewährt Zugang zur Gruppe: nur mit eigenen, vertrauenswürdigen Installationen teilen. Dieser Prototyp koppelt den Handy-Zugang; die Desktop-Datensynchronisierung bleibt separat.",
+    "groupCode": "Installationscode erzeugen",
+    "joinLabel": "Code von der ersten Installation",
+    "join": "Dieser Gruppe beitreten",
+    "joining": "Wird verbunden. Der Prototyp startet automatisch neu.",
+    "joinError": "Installationscode ungültig oder abgelaufen. Auf der ersten Installation einen neuen erzeugen.",
+    "directCode": "Direkten WLAN-QR-Code erzeugen",
+    "directHelp": "Falls die gemeinsame .local-Adresse nicht öffnet: Direkten QR-Code ausprobieren. Dieser Zugang gilt nur für diesen Rechner; die gespeicherte Adresse wechselt dann nicht mit."
   }
 }

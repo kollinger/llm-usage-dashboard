@@ -3341,7 +3341,7 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
       status: explicitStatus,
       parserStatus: explicitStatus,
       unavailableReason: accountBillingReasonCode(
-        raw.reason || raw.error,
+        raw.reason || raw.unavailableReason || raw.error,
         `account_billing_source_${explicitStatus}`
       )
     };
@@ -3370,7 +3370,7 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
       ...base,
       status: "missing",
       parserStatus: parserStatus === "parsed" ? "missing" : parserStatus,
-      unavailableReason: accountBillingReasonCode(raw.reason || raw.error, "account_billing_amount_missing")
+      unavailableReason: accountBillingReasonCode(raw.reason || raw.unavailableReason || raw.error, "account_billing_amount_missing")
     };
   }
 
