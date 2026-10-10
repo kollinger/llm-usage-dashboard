@@ -19,3 +19,16 @@
 .prototype-read-only #loginBtn, .prototype-read-only #logoutBtn, .prototype-read-only #settingsDialog,
 .prototype-read-only .claude-statusline-setup-btn, .prototype-read-only .source-connect-btn { display: none !important; }
 @media (max-width: 480px) { .prototype-card { padding: 20px; } .mobile-prototype-page { padding: 12px; } }
+@media (max-width: 680px) {
+  .prototype-read-only .provider-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .prototype-read-only .provider-card { min-width: 0; padding-inline: 10px; gap: 12px; }
+  .prototype-read-only .provider-head { flex-direction: column; gap: 8px; }
+  .prototype-read-only .provider-identity { gap: 6px; }
+  .prototype-read-only .provider-name { font-size: 1rem; overflow-wrap: anywhere; }
+  .prototype-read-only .plan-badge { margin-inline: 0; }
+  .prototype-read-only .provider-foot,
+  .prototype-read-only .credit-row-top { grid-template-columns: minmax(0, 1fr); }
+  .prototype-read-only .credit-row-top span,
+  .prototype-read-only .credit-row-top strong { white-space: normal; overflow-wrap: anywhere; }
+  .prototype-read-only .quota-pace-card { padding: 10px; overflow-wrap: anywhere; }
+}
