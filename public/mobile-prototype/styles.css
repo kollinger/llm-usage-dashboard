@@ -1,0 +1,21 @@
+.mobile-prototype-page { margin: 0; padding: 24px 16px; color: #17241f; background: #f5f7f5; font-family: system-ui, sans-serif; line-height: 1.55; }
+.prototype-card { max-width: 620px; margin: 0 auto; padding: 28px; background: white; border-radius: 20px; border: 1px solid #dce6df; }
+.prototype-card h1 { font-size: clamp(24px, 5vw, 34px); margin: 14px 0; line-height: 1.2; }
+.prototype-card h2 { font-size: 20px; }
+.prototype-tag { color: #335b47; padding: 4px 10px; background: #e8f2eb; border-radius: 8px; font-weight: 650; }
+.prototype-warning { border-inline-start: 4px solid #ad7731; padding: 12px 16px; background: #fff8eb; border-radius: 6px; }
+.prototype-qr { max-width: 320px; margin: 16px auto; background: white; }
+.prototype-qr svg { width: 100%; height: auto; display: block; }
+.prototype-card label { display: grid; gap: 6px; }
+.prototype-card input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #c7d6cd; border-radius: 8px; font: inherit; }
+.prototype-card textarea { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px; min-height: 72px; border: 1px solid #c7d6cd; border-radius: 8px; font: inherit; resize: vertical; }
+.prototype-card details { margin: 20px 0; }
+.prototype-card summary { cursor: pointer; font-weight: 650; }
+.prototype-card button { padding: 12px 18px; margin-top: 16px; color: white; background: #285f43; border: 0; border-radius: 10px; font: inherit; cursor: pointer; }
+.prototype-card button:disabled { opacity: .5; cursor: default; }
+.prototype-card hr { border: 0; border-top: 1px solid #dce6df; margin: 24px 0; }
+.prototype-mobile-banner { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 12px 20px; background: #e8f2eb; color: #224b35; font: 14px/1.4 system-ui, sans-serif; }
+.prototype-read-only #settingsBtn, .prototype-read-only #accountsManagerBtn, .prototype-read-only #installationsManagerBtn,
+.prototype-read-only #loginBtn, .prototype-read-only #logoutBtn, .prototype-read-only #settingsDialog,
+.prototype-read-only .claude-statusline-setup-btn, .prototype-read-only .source-connect-btn { display: none !important; }
+@media (max-width: 480px) { .prototype-card { padding: 20px; } .mobile-prototype-page { padding: 12px; } }
