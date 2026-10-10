@@ -10,7 +10,7 @@ const { startMobilePrototype, loadGroup, signToken, verifyToken, sanitize, elect
 
 const clientSource = await fs.readFile(new URL('../public/mobile-prototype/client.js', import.meta.url), 'utf8');
 const clientStorage = new Map();
-const client = async (url, result = { status: 200, ok: true }) => {
+const client = async (url, result = { status: 200, ok: true }, { supplied = '', state = 'missing', storageBlocked = false } = {}) => {
   const location = new URL(url);
   let destination, submitted;
   location.replace = (value) => { destination = value; };
@@ -18,12 +18,12 @@ const client = async (url, result = { status: 200, ok: true }) => {
   const message = {};
   const context = {
     location, navigator: { language: 'de' },
-    sessionStorage: { setItem: (key, value) => clientStorage.set(key, value), getItem: (key) => clientStorage.get(key), removeItem: (key) => clientStorage.delete(key) },
+    sessionStorage: { setItem: (key, value) => { if (storageBlocked) throw Error('blocked'); clientStorage.set(key, value); }, getItem: (key) => clientStorage.get(key), removeItem: (key) => clientStorage.delete(key) },
     history: { replaceState: (_state, _title, value) => { location.href = new URL(value, location).href; } },
-    document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], getElementById: (id) => id === 'prototypePair' ? button : message },
+    document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], querySelector: () => ({ content: state }), getElementById: (id) => id === 'prototypePair' ? button : id === 'prototypeCode' ? { value: supplied } : message },
     fetch: async (value, options) => {
       assert.equal(location.href, 'http://127.0.0.1/pair', 'bootstrap removed before fetching');
-      if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry' } }) };
+      if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry', missingCode: 'missing', expiredCode: 'expired', usedCode: 'used', invalidCode: 'invalid' } }) };
       submitted = JSON.parse(options.body).code;
       if (result instanceof Error) throw result;
       return result;
@@ -46,13 +46,22 @@ phone = await client('http://127.0.0.1/pair', new Error('offline'));
 await phone.button.click();
 assert.equal(phone.button.disabled, false);
 assert.equal(phone.message.textContent, 'retry');
-phone = await client('http://127.0.0.1/pair', { status: 401, ok: false });
+phone = await client('http://127.0.0.1/pair', { status: 401, ok: false, json: async () => ({ error: 'pair_expired' }) });
 await phone.button.click();
 assert.equal(phone.submitted(), 'path-token');
-assert.equal(phone.message.textContent, 'new-link');
+assert.equal(phone.message.textContent, 'expired');
 assert.equal(clientStorage.size, 0);
 phone = await client('http://127.0.0.1/pair');
 assert.equal(phone.button.disabled, true);
+assert.equal(phone.message.textContent, 'missing');
+phone = await client('http://127.0.0.1/pair/path-token/');
+assert.equal(phone.button.disabled, false);
+await phone.button.click();
+assert.equal(phone.submitted(), 'path-token');
+phone = await client('http://127.0.0.1/pair', undefined, { supplied: 'server-token', state: 'valid', storageBlocked: true });
+assert.equal(phone.button.disabled, false);
+await phone.button.click();
+assert.equal(phone.submitted(), 'server-token');
 
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'llm-mobile-prototype-'));
 const upstream = http.createServer((req, res) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ generatedAt: '2026-01-01T00:00:00Z', local: { totalTokens: 123 }, email: 'private@example.invalid', accessToken: 'private', nested: { file: '/private/source', outputTokens: 42 } })); });
@@ -92,9 +101,18 @@ try {
   assert.equal(link.status, 200);
   assert.equal(link.headers.get('referrer-policy'), 'no-referrer');
   assert.equal(link.headers.get('cache-control'), 'no-store');
-  assert.equal(link.headers.get('set-cookie'), null, 'prefetch never pairs a phone');
-  assert.match(await link.text(), /prototypePair/);
+  const bootstrap = link.headers.get('set-cookie').split(';')[0];
+  assert.match(bootstrap, /^llm_mobile_bootstrap=/);
+  assert.equal((await get(a, '/api/usage', { headers: { Cookie: bootstrap } })).status, 401, 'bootstrap cookie never grants dashboard access');
+  assert.ok((await link.text()).includes(`id="prototypeCode" value="${linkCode}"`));
+  const reload = await get(a, '/pair', { headers: { Cookie: bootstrap } });
+  assert.ok((await reload.text()).includes(`id="prototypeCode" value="${linkCode}"`), 'server restores code even without session storage');
+  assert.ok((await (await get(a, `/pair/${linkCode}/`)).text()).includes(`id="prototypeCode" value="${linkCode}"`));
   assert.equal((await get(a, '/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: linkCode }) })).status, 200);
+  assert.equal((await (await get(a, '/pair', { method: 'POST', headers: { Cookie: bootstrap, 'Content-Type': 'application/json' }, body: '{}' })).json()).error, 'pair_used');
+  const expired = signToken(group, 'pair', 100, Date.now() - 200);
+  assert.equal((await (await get(a, '/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: expired }) })).json()).error, 'pair_expired');
+  assert.equal((await (await get(a, '/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()).error, 'pair_missing');
   const code = signToken(group, 'pair', 60_000);
   assert.equal(verifyToken(group, code, 'phone'), false);
   assert.equal(verifyToken(group, signToken(group, 'pair', 100, Date.now() - 200), 'pair'), false);
@@ -103,6 +121,8 @@ try {
   const cookie = response.headers.get('set-cookie').split(';')[0];
   assert.match(response.headers.get('set-cookie'), /HttpOnly/);
   assert.match(response.headers.get('set-cookie'), /SameSite=Strict/);
+  assert.match(response.headers.get('set-cookie'), /llm_mobile_bootstrap=;/);
+  assert.equal((await get(a, '/pair', { headers: { Cookie: cookie } })).headers.get('location'), '/');
   assert.equal((await get(a, '/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })).status, 401);
   const usage = await (await get(a, '/api/usage', { headers: { Cookie: cookie } })).json();
   assert.equal(usage.local.totalTokens, 123); assert.equal(usage.nested.outputTokens, 42);
@@ -110,6 +130,11 @@ try {
   assert.equal((await get(a, '/api/updates/check', { method: 'POST', headers: { Cookie: cookie } })).status, 405);
   assert.equal((await get(a, '/api/support/report', { headers: { Cookie: cookie } })).status, 403);
   assert.equal((await get(a, '/api/group-code', { headers: { Cookie: cookie } })).status, 403);
+  const events = (await (await fetch(`${a.controlUrl}/api/status`)).json()).pairing;
+  assert.ok(events.some(event => event.action === 'link' && event.state === 'valid'));
+  assert.ok(events.some(event => event.action === 'connect' && event.state === 'used'));
+  assert.ok(!JSON.stringify(events).includes(linkCode), 'local diagnostics contain no codes');
+  assert.equal((await (await get(a, '/api/mobile-prototype/status', { headers: { Cookie: cookie } })).json()).pairing, undefined);
   assert.equal((await get(a, '/api/usage', { headers: { Cookie: cookie.slice(0, -1) + 'X' } })).status, 401);
   const html = await (await get(a, '/', { headers: { Cookie: cookie } })).text();
   assert.match(html, /mobile-prototype\/client.js/); assert.match(html, /dashboardLayout/);

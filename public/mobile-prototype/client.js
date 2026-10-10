@@ -4,7 +4,7 @@
   const pairingKey = "mobile-prototype-pairing";
   let pairingCode = "";
   if (document.body.dataset.prototype === "pair") {
-    const supplied = location.hash.slice(1) || /^\/pair\/([\w.-]+)$/.exec(location.pathname)?.[1] || "";
+    const supplied = location.hash.slice(1) || document.getElementById("prototypeCode")?.value || /^\/pair\/([\w.-]+)\/?$/.exec(location.pathname)?.[1] || "";
     try {
       if (supplied) sessionStorage.setItem(pairingKey, supplied);
       pairingCode = supplied || sessionStorage.getItem(pairingKey) || "";
@@ -24,6 +24,7 @@
   document.querySelectorAll("[data-copy-aria]").forEach((item) => { item.setAttribute("aria-label", text(item.dataset.copyAria)); });
   document.querySelectorAll("[data-copy]").forEach((item) => { item.textContent = text(item.dataset.copy); });
   const message = (key) => { document.getElementById("prototypeMessage").textContent = text(key); };
+  const pairingMessage = (state) => ({ missing: "missingCode", expired: "expiredCode", used: "usedCode", invalid: "invalidCode" })[state] || "scanAgain";
   if (document.body.dataset.prototype === "control") {
     const refresh = async () => {
       try {
@@ -64,14 +65,18 @@
     await refresh(); await code(); setInterval(refresh, 2000);
   } else if (document.body.dataset.prototype === "pair") {
     const button = document.getElementById("prototypePair");
-    if (!pairingCode) { button.disabled = true; message("scanAgain"); }
+    if (!pairingCode) {
+      button.disabled = true;
+      message(pairingMessage(document.querySelector('meta[name="mobile-prototype-pairing-state"]')?.content || "missing"));
+    }
     button.addEventListener("click", async () => {
       button.disabled = true;
       try {
         const response = await fetch("/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: pairingCode }) });
         if (response.status === 401) {
           try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }
-          message("scanAgain"); return;
+          const error = await response.json();
+          message(pairingMessage(error.error?.replace(/^pair_/, ""))); return;
         }
         if (!response.ok) throw new Error("pair_failed");
         try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }

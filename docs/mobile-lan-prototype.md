@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.2
+# Mobile LAN prototype — 1.7.0-lan-prototype.3
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -53,12 +53,20 @@ by all group members. The five-minute QR bootstrap travels in the URL fragment,
 is removed before network requests, and its consumed hash is shared with other members.
 The local control endpoint also returns `linkUrl`, with the same one-use token
 in its path, for clickable links opened by embedded browsers. GET only displays
-the connect page and never consumes a token. The code is retained in tab-scoped
-session storage until pairing, so reloading the cleaned URL does not lose it;
-successful pairing or an invalid/expired response clears it. Both link forms
+the connect page and never consumes a token. For a path link, the server supplies
+the verified code in the page and retains it in an HttpOnly, SameSite=Strict
+cookie scoped to `/pair`, only until the original five-minute expiry. This
+permits reloading the cleaned URL even when tab storage is blocked. That cookie
+does not authorize dashboard access. Tab-scoped session storage also retains
+fragment codes; successful pairing or an invalid/expired response clears it.
+Successful pairing clears the bootstrap cookie. Both link forms
 use no-store and no-referrer headers. The path form reaches the local HTTP
 server and must not be logged by a proxy.
 Concurrent redemption during a network partition is not fully prevented.
+Missing, invalid, expired and already-used codes have separate error messages.
+The loopback control status keeps only the last twelve pairing events in memory:
+time, action, code state and mobile/other client class. It does not retain tokens,
+IP addresses or raw browser identifiers; the phone status never exposes them.
 
 The gateway serves the existing dashboard assets and a small GET allowlist.
 It removes sensitive source fields from JSON, rejects mutations and avoids
@@ -149,3 +157,24 @@ checks alone do not prove browser DNS failover or physical-phone behavior.
   totals rendered in the browser. The separate prototype app was stopped.
   This trial requires the normal desktop dashboard and CLI gateway to stay
   running. Cold-backend startup remains an open prototype limitation.
+
+### Server-supplied pairing code — 1.7.0-lan-prototype.3
+
+- The iPhone's 20:00 screenshot arrived while the preceding code was valid and
+  unspent. Expiry and successful redemption do not explain that attempt. The
+  screenshot cannot establish whether the code was absent on first load or
+  rejected after pressing Connect.
+- An accepted path with a trailing slash reproduced a disabled button in the
+  previous client. The client now accepts that path and the server delivers the
+  code directly, with a short-lived bootstrap cookie for cleaned-URL reloads.
+- The full repository check and Docker rebuild passed. An isolated Compose
+  instance and Chromium at 390 px verified a trailing-slash link with blocked
+  session storage, reload before pairing, successful connection, bootstrap
+  cookie removal, usage HTTP 200, retry, replay rejection and Arabic RTL. No
+  JavaScript errors or horizontal overflow were observed. Compose and the
+  browser were stopped afterward.
+- A fresh universal 1.7.0-lan-prototype.3 DMG was installed and launched on the
+  M1. Its QR control window rendered and its packaged HTTP server delivered
+  the verified code for a trailing-slash link and restored it on a cleaned-URL
+  reload. The review app was then stopped; the phone trial uses the existing
+  normal dashboard backend through the separate CLI gateway.
