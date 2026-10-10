@@ -112,6 +112,25 @@ assert.equal(unsafeReasonOutput.includes("bearer"), false);
 assert.equal(unsafeReasonBilling.reason, null);
 assert.equal(unsafeReasonBilling.providers.openai.unavailableReason, "account_billing_source_parse_failed");
 
+// Stored snapshots use unavailableReason. Re-reading an unchanged background
+// billing result must not change its cache key and clear current quotas.
+for (const status of ["missing", "expired", "unavailable", "parse_failed"]) {
+  const snapshot = _test.sanitizeAccountBillingSnapshots({ status, providers: {
+    codex: { status, reason: "account_billing_source_unavailable", sourceType: "browser", fetchedAt: new Date(nowMs).toISOString() }
+  } }, { nowMs });
+  assert.deepEqual(_test.sanitizeAccountBillingSnapshots(JSON.parse(JSON.stringify(snapshot)), { nowMs }), snapshot,
+    `unchanged ${status} billing snapshot survives a storage round trip`);
+}
+const amountMissingSnapshot = _test.sanitizeAccountBillingSnapshots({ providers: {
+  codex: { reason: "account_billing_amount_missing", sourceType: "browser", fetchedAt: new Date(nowMs).toISOString() }
+} }, { nowMs });
+assert.deepEqual(_test.sanitizeAccountBillingSnapshots(JSON.parse(JSON.stringify(amountMissingSnapshot)), { nowMs }), amountMissingSnapshot);
+const unsafeStoredReason = _test.sanitizeAccountBillingSnapshots({ providers: {
+  codex: { status: "missing", unavailableReason: "cookie abc123 and bearer secret-value leaked by parser" }
+} }, { nowMs });
+assert.equal(unsafeStoredReason.providers.codex.unavailableReason, "account_billing_source_missing");
+assert.equal(JSON.stringify(unsafeStoredReason).includes("secret-value"), false);
+
 const codexWithAccountBilling = _test.mergeProviderSubscription(
   { id: "codex", status: "live", planType: "Pro" },
   { planType: "Pro", monthlyCost: 125, currency: "USD" },
