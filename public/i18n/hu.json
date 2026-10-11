@@ -448,7 +448,16 @@
     "autoTopUp": "Automatikus feltöltés",
     "default": "Kreditek",
     "on": "Be",
-    "off": "Ki"
+    "off": "Ki",
+    "expiryEdit": "Lejárat szerkesztése",
+    "expiryHelp": "Saját dátum ehhez a Codex-fiókhoz. Figyelmeztetés 30, 7 és 1 nappal előtte, ha az értesítések be vannak kapcsolva. Törléshez ürítsd ki a mezőt.",
+    "expiryDate": "Lejárati dátum",
+    "expirySave": "Mentés",
+    "expiryError": "Nem sikerült betölteni vagy menteni. A Codex-fiók megváltozhatott; zárd be és nyisd meg újra az ablakot.",
+    "expiryManual": "Érvényes: {date} · saját adat",
+    "expiryUnknown": "A Codex nem ad meg lejárati dátumot",
+    "expiryAlertTitle": "A kreditek hamarosan lejárnak",
+    "expiryAlertBody": "Codex: {balance} kredit lejár ekkor: {date} (megadott dátum)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} kredit lejár ekkor: {date} (megadott dátum)."
   }
 }

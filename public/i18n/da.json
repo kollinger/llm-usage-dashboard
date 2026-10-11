@@ -448,7 +448,16 @@
     "autoTopUp": "Automatisk optankning",
     "default": "Kreditter",
     "on": "Til",
-    "off": "Fra"
+    "off": "Fra",
+    "expiryEdit": "Rediger udløbsdato",
+    "expiryHelp": "Egen dato for denne Codex-konto. Advarsler 30, 7 og 1 dag før, når notifikationer er aktiveret. Ryd feltet for at fjerne datoen.",
+    "expiryDate": "Udløbsdato",
+    "expirySave": "Gem",
+    "expiryError": "Kunne ikke indlæse eller gemme. Codex-kontoen kan være ændret; luk og åbn dialogen igen.",
+    "expiryManual": "Udløber {date} · egen angivelse",
+    "expiryUnknown": "Codex oplyser ingen udløbsdato",
+    "expiryAlertTitle": "Credits udløber snart",
+    "expiryAlertBody": "Codex: {balance} credits udløber {date} (angivet dato)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} credits udløber {date} (angivet dato)."
   }
 }

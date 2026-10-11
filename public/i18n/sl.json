@@ -448,7 +448,16 @@
     "autoTopUp": "Samodejno polnjenje",
     "default": "Krediti",
     "on": "Vklopljeno",
-    "off": "Izklopljeno"
+    "off": "Izklopljeno",
+    "expiryEdit": "Uredi datum poteka",
+    "expiryHelp": "Lastni datum za ta račun Codex. Opozorila 30, 7 in 1 dan prej, če so obvestila vklopljena. Izpraznite polje za odstranitev.",
+    "expiryDate": "Datum poteka",
+    "expirySave": "Shrani",
+    "expiryError": "Nalaganje ali shranjevanje ni uspelo. Račun Codex se je morda spremenil; zaprite in znova odprite pogovorno okno.",
+    "expiryManual": "Velja do {date} · lastni vnos",
+    "expiryUnknown": "Codex ne poda datuma poteka",
+    "expiryAlertTitle": "Krediti kmalu potečejo",
+    "expiryAlertBody": "Codex: {balance} kreditov poteče {date} (vneseni datum)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} kreditov poteče {date} (vneseni datum)."
   }
 }

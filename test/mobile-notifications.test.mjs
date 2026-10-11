@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { resetNotifications, subscriptionValue, createMobilePush } = require('../lib/mobile-notifications');
+const { resetNotifications, subscriptionValue, createMobilePush, notificationMessage } = require('../lib/mobile-notifications');
 const { startMobilePrototype, signToken } = require('../lib/mobile-lan-prototype');
 const root = new URL('..', import.meta.url);
 let now = Date.parse('2026-10-11T12:00:00Z');
@@ -30,6 +30,10 @@ for (const endpoint of ['http://web.push.apple.com/a', 'https://127.0.0.1/a', 'h
   assert.throws(() => subscriptionValue({ ...subscription, endpoint }));
 }
 assert.throws(() => subscriptionValue({ ...subscription, keys: { ...subscription.keys, p256dh: Buffer.alloc(65).toString('base64url') } }));
+
+const creditCopy = JSON.parse(await fs.readFile(new URL('public/i18n/de.json', root), 'utf8')).mobilePrototype;
+const creditMessage = notificationMessage({ type: 'credit_expiry', provider: 'codex', balance: 63000, expiresOn: '2026-12-31' }, creditCopy, 'de');
+assert.match(creditMessage.body, /63.000.*31.12.2026.*eigene Angabe/);
 
 const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'mobile-notifications-'));
 let gateway, lan, upstream;
@@ -82,6 +86,19 @@ try {
   await gone.publish({ enabled: true, alerts: [alert] });
   assert.equal(gone.status('phone').subscribed, false);
 
+  let creditNow = now; const creditSent = [];
+  const creditFile = path.join(directory, 'credit-push.json');
+  let creditPush = await createMobilePush({ file: creditFile, origin: 'https://credits.example.invalid', now: () => creditNow, send: async (_, payload) => creditSent.push(JSON.parse(payload)) });
+  await creditPush.subscribe('credit-phone', creditNow + 365 * 86400000, subscription, 'de');
+  const creditAlert = { type: 'credit_expiry', provider: 'codex', balance: 63000, expiresOn: '2026-12-31', id: 'credit-expiry:2026-12-31:30' };
+  await creditPush.publish({ enabled: true, alerts: [creditAlert] });
+  creditNow += 2 * 86400000;
+  creditPush = await createMobilePush({ file: creditFile, origin: 'https://credits.example.invalid', now: () => creditNow, send: async (_, payload) => creditSent.push(JSON.parse(payload)) });
+  await creditPush.publish({ enabled: true, alerts: [creditAlert] });
+  assert.equal(creditSent.length, 1, 'credit expiry stage stays deduplicated across days and restart');
+  await creditPush.publish({ enabled: true, alerts: [{ ...creditAlert, id: 'credit-expiry:2026-12-31:7' }] });
+  assert.equal(creditSent.length, 2, 'the next expiry stage produces a new warning');
+
   upstream = http.createServer((_req, res) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ enabled: true, alerts: [alert], events: [] })); });
   await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
   const common = { testing: true, address: '127.0.0.1', port: 0, upstream: `http://127.0.0.1:${upstream.address().port}` };
@@ -110,7 +127,15 @@ try {
   const pushFile = path.join(directory, 'https', `mobile-push-${gateway.group.id}.json`);
   const originalToken = cookie.split('=')[1];
   const owner = crypto.createHash('sha256').update(originalToken).digest('hex');
-  const beforeGatewayRenew = JSON.parse(await fs.readFile(pushFile, 'utf8')).phones[owner];
+  // The send callback returns before the queued durable write completes.
+  let beforeGatewayRenew;
+  const persistenceDeadline = Date.now() + 2000;
+  do {
+    beforeGatewayRenew = JSON.parse(await fs.readFile(pushFile, 'utf8')).phones[owner];
+    if (Object.keys(beforeGatewayRenew.sent).length) break;
+    await new Promise(resolve => setTimeout(resolve, 10));
+  } while (Date.now() < persistenceDeadline);
+  assert.ok(Object.keys(beforeGatewayRenew.sent).length, 'background warning is durable before renewal');
   const oldValue = JSON.parse(Buffer.from(originalToken.split('.')[0], 'base64url').toString());
   const renewedBody = Buffer.from(JSON.stringify({ ...oldValue, owner, expires: Date.now() + 3600000 })).toString('base64url');
   const renewedMac = crypto.createHmac('sha256', Buffer.from(gateway.group.key, 'base64url')).update(renewedBody).digest('base64url');

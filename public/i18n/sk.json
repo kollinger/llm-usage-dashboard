@@ -448,7 +448,16 @@
     "autoTopUp": "Automatické dobitie",
     "default": "Kredity",
     "on": "Zap.",
-    "off": "Vyp."
+    "off": "Vyp.",
+    "expiryEdit": "Upraviť dátum vypršania",
+    "expiryHelp": "Vlastný dátum pre tento účet Codex. Upozornenia 30, 7 a 1 deň vopred pri zapnutých oznámeniach. Vymazaním poľa dátum odstránite.",
+    "expiryDate": "Dátum vypršania",
+    "expirySave": "Uložiť",
+    "expiryError": "Načítanie alebo uloženie zlyhalo. Účet Codex sa mohol zmeniť; zatvorte a znova otvorte dialóg.",
+    "expiryManual": "Platí do {date} · vlastný údaj",
+    "expiryUnknown": "Codex neposkytuje dátum vypršania",
+    "expiryAlertTitle": "Kredity čoskoro vypršia",
+    "expiryAlertBody": "Codex: {balance} kreditov vyprší {date} (zadaný dátum)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} kreditov vyprší {date} (zadaný dátum)."
   }
 }

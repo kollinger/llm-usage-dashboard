@@ -448,7 +448,16 @@
     "autoTopUp": "自动充值",
     "default": "额度",
     "on": "开",
-    "off": "关"
+    "off": "关",
+    "expiryEdit": "编辑到期日期",
+    "expiryHelp": "此 Codex 账户的手动日期。启用通知后，会在到期前 30、7 和 1 天提醒。清空字段可删除日期。",
+    "expiryDate": "到期日期",
+    "expirySave": "保存",
+    "expiryError": "加载或保存失败。Codex 账户可能已更改；请关闭并重新打开此对话框。",
+    "expiryManual": "有效期至 {date} · 手动填写",
+    "expiryUnknown": "Codex 未提供到期日期",
+    "expiryAlertTitle": "额度即将到期",
+    "expiryAlertBody": "Codex：{balance} 额度将于 {date} 到期（手动填写的日期）。"
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex：{balance} 额度将于 {date} 到期（手动填写的日期）。"
   }
 }

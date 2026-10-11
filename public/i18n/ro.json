@@ -448,7 +448,16 @@
     "autoTopUp": "Reîncărcare automată",
     "default": "Credite",
     "on": "Pornit",
-    "off": "Oprit"
+    "off": "Oprit",
+    "expiryEdit": "Editează expirarea",
+    "expiryHelp": "Dată introdusă pentru acest cont Codex. Avertizări cu 30, 7 și 1 zi înainte dacă notificările sunt active. Golește câmpul pentru eliminare.",
+    "expiryDate": "Data expirării",
+    "expirySave": "Salvează",
+    "expiryError": "Încărcarea sau salvarea a eșuat. Contul Codex s-ar putea fi schimbat; închide și redeschide dialogul.",
+    "expiryManual": "Valabil până la {date} · dată introdusă",
+    "expiryUnknown": "Codex nu oferă o dată de expirare",
+    "expiryAlertTitle": "Creditele expiră în curând",
+    "expiryAlertBody": "Codex: {balance} credite expiră la {date} (dată introdusă)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} credite expiră la {date} (dată introdusă)."
   }
 }

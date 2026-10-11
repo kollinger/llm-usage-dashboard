@@ -448,7 +448,16 @@
     "autoTopUp": "Automatyczne doładowanie",
     "default": "Kredyty",
     "on": "Wł.",
-    "off": "Wył."
+    "off": "Wył.",
+    "expiryEdit": "Edytuj datę wygaśnięcia",
+    "expiryHelp": "Własna data dla tego konta Codex. Ostrzeżenia 30, 7 i 1 dzień wcześniej, jeśli powiadomienia są włączone. Wyczyść pole, aby usunąć.",
+    "expiryDate": "Data wygaśnięcia",
+    "expirySave": "Zapisz",
+    "expiryError": "Nie udało się wczytać lub zapisać. Konto Codex mogło się zmienić; zamknij i ponownie otwórz okno.",
+    "expiryManual": "Ważne do {date} · własny wpis",
+    "expiryUnknown": "Codex nie podaje daty wygaśnięcia",
+    "expiryAlertTitle": "Kredyty wkrótce wygasną",
+    "expiryAlertBody": "Codex: {balance} kredytów wygasa {date} (wpisana data)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} kredytów wygasa {date} (wpisana data)."
   }
 }

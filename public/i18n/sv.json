@@ -448,7 +448,16 @@
     "autoTopUp": "Automatisk påfyllning",
     "default": "Krediter",
     "on": "På",
-    "off": "Av"
+    "off": "Av",
+    "expiryEdit": "Ändra utgångsdatum",
+    "expiryHelp": "Eget datum för detta Codex-konto. Varningar 30, 7 och 1 dag före om aviseringar är aktiverade. Töm fältet för att ta bort.",
+    "expiryDate": "Utgångsdatum",
+    "expirySave": "Spara",
+    "expiryError": "Kunde inte läsa in eller spara. Codex-kontot kan ha ändrats; stäng och öppna dialogen igen.",
+    "expiryManual": "Gäller till {date} · egen uppgift",
+    "expiryUnknown": "Codex anger inget utgångsdatum",
+    "expiryAlertTitle": "Credits går snart ut",
+    "expiryAlertBody": "Codex: {balance} credits går ut {date} (angivet datum)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} credits går ut {date} (angivet datum)."
   }
 }

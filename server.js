@@ -15,6 +15,7 @@ const express = require("express");
 const session = require("express-session");
 const packageInfo = require("./package.json");
 const { createGptAccountLogin } = require("./lib/gpt-account-login");
+const { createCreditExpiryStore, creditExpiryAlert, validDate: validCreditExpiryDate } = require("./lib/credit-expiry");
 const { createClaudeAccountLogin } = require("./lib/claude-account-login");
 const { createKimiAccountLogin, readKimiKeyUsage, readMoonshotBalance } = require("./lib/kimi-accounts");
 const { createProviderAccountStore, safeMeasurement, providerAccountIdentity } = require("./lib/provider-account-store");
@@ -63,6 +64,7 @@ const CODEX_RESET_SNAPSHOTS_FILE = path.join(DATA_DIR, "codex-reset-snapshots.js
 const CODEX_RESET_IMPORT_FILE = path.join(DATA_DIR, "codex-reset-history-import.json");
 const QUOTA_PACE_SAMPLES_FILE = path.join(DATA_DIR, "quota-pace-samples.json");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
+const creditExpiryStore = createCreditExpiryStore(path.join(DATA_DIR, "credit-expiry.json"));
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
@@ -1310,14 +1312,33 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     await usageViewCache.write("local", viewFingerprint, value);
     return value;
   }, { force, maxAgeMs, staleWhileRefresh });
-  return overlayCurrentCodexQuota(usage, codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs);
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(usage, codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+}
+
+async function currentCodexCreditScope() {
+  try {
+    const auth = JSON.parse(await fsp.readFile(path.join(CODEX_HOME, "auth.json"), "utf8"));
+    const claims = parseJwtClaims(auth.tokens?.access_token) || parseJwtClaims(auth.tokens?.id_token);
+    const identity = auth.tokens?.account_id || claims?.["https://api.openai.com/auth"]?.chatgpt_account_id;
+    return identity ? crypto.createHash("sha256").update(`codex-credits:${identity}`).digest("hex") : null;
+  } catch { return null; }
+}
+
+async function applyCodexCreditExpiry(usage) {
+  if (!usage.codex?.creditRows?.length) return usage;
+  const scope = await currentCodexCreditScope();
+  const expiresOn = scope && usage.codex.creditScope === scope ? await creditExpiryStore.get(scope) : null;
+  return { ...usage, codex: { ...usage.codex, creditRows: usage.codex.creditRows.map((row) =>
+    row.key === "codexCredits" && Number.isFinite(row.balance)
+      ? { ...row, expiresOn, expirySource: expiresOn ? "manual" : null } : row) } };
 }
 
 function overlayCurrentCodexQuota(usage, live, updatedAtMs, now = Date.now()) {
   if (!live || !updatedAtMs || now - updatedAtMs > 90_000 || !usage.codex) return usage;
   const overlay = (provider, snapshot, label) => snapshot ? { ...provider, status: "live",
     limits: codexRateLimitsFromLive(snapshot, label), limitsUpdatedAt: live.source.updatedAt,
-    liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source } } : provider;
+    liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source },
+    ...(label === "Codex" ? { creditRows: codexCreditRowsFromLive(snapshot), creditScope: live.source.creditScope || null } : {}) } : provider;
   const codex = overlay(usage.codex, live.codex, "Codex");
   return { ...usage, codex: { ...codex, spark: overlay(codex.spark || {}, live.spark, "Codex 5.3 Spark") } };
 }
@@ -1968,6 +1989,24 @@ app.get("/api/quota-history", authMiddleware, async (req, res) => {
   } catch (error) {
     sendApiError(res, error, "quota_history_read_failed");
   }
+});
+
+app.get("/api/credits/codex-expiry", authMiddleware, async (_req, res) => {
+  try {
+    const scope = await currentCodexCreditScope();
+    res.json({ context: scope, expiresOn: scope ? await creditExpiryStore.get(scope) : null });
+  } catch (error) { sendApiError(res, error, "credit_expiry_read_failed"); }
+});
+
+app.post("/api/credits/codex-expiry", authMiddleware, async (req, res) => {
+  try {
+    const scope = await currentCodexCreditScope();
+    if (!scope || req.body?.context !== scope) return res.status(409).json({ error: "credit_account_changed" });
+    const expiresOn = req.body?.expiresOn;
+    if (expiresOn !== null && !validCreditExpiryDate(expiresOn)) return res.status(400).json({ error: "invalid_credit_expiry" });
+    await creditExpiryStore.set(scope, expiresOn);
+    res.json({ expiresOn });
+  } catch (error) { sendApiError(res, error, "credit_expiry_save_failed"); }
 });
 
 app.get("/api/subscriptions/settings", authMiddleware, async (_req, res) => {
@@ -4672,6 +4711,7 @@ async function readCodexUsage(options = {}) {
     planType: codexPlan.planType,
     planSource: codexPlan.source,
     creditRows: liveCodexCreditRows,
+    creditScope: liveRateLimits?.source?.creditScope || null,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
       ? {
@@ -9316,8 +9356,10 @@ async function readCodexLiveRateLimits() {
   return readThroughCache(codexLiveRateLimitsCache, cacheTtlMs, async () => {
     try {
       const client = await getCodexAppServer();
+      const creditScope = await currentCodexCreditScope();
       const response = await client.request("account/rateLimits/read", undefined);
       const normalized = normalizeCodexLiveRateLimits(response);
+      normalized.source.creditScope = creditScope === await currentCodexCreditScope() ? creditScope : null;
       await recordCodexResetSnapshot(normalized.historySnapshot);
       return normalized;
     } catch (error) {
@@ -9473,7 +9515,7 @@ function codexCreditRowsFromLive(snapshot) {
   }
   const balance = Number(credits.balance);
   if (!Number.isFinite(balance)) return [];
-  return [{ key: "codexCredits", label: "Codex credits", valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
+  return [{ key: "codexCredits", label: "Codex credits", balance, valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
 }
 
 function formatCodexCreditBalance(value) {
@@ -10998,6 +11040,10 @@ function clampPercent(value) {
 function buildNotificationAlerts(settings, usageMap) {
   const alerts = [];
   const now = Date.now();
+  for (const row of usageMap.codex?.creditRows || []) {
+    const alert = creditExpiryAlert(row, new Date(now));
+    if (alert) alerts.push(alert);
+  }
   const windows = collectNotificationWindows(usageMap);
   for (const win of windows) {
     const { key: windowKey, label, usedPercent, windowMinutes, resetsAt } = win;
@@ -11257,6 +11303,8 @@ module.exports = {
     mergeUpdateSettingsPatch,
     codexBinaryCandidates,
     codexRateLimitsFromLive,
+    codexCreditRowsFromLive,
+    applyCodexCreditExpiry,
     overlayCurrentCodexQuota,
     codexRateLimitsFromUsagePayload,
     codexRateLimitsFromEvents,

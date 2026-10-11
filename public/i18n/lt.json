@@ -448,7 +448,16 @@
     "autoTopUp": "Automatinis papildymas",
     "default": "Kreditai",
     "on": "Įjungta",
-    "off": "Išjungta"
+    "off": "Išjungta",
+    "expiryEdit": "Keisti galiojimo datą",
+    "expiryHelp": "Jūsų įvesta data šiai Codex paskyrai. Įjungus pranešimus įspėjama prieš 30, 7 ir 1 dieną. Išvalykite lauką, kad pašalintumėte.",
+    "expiryDate": "Galiojimo data",
+    "expirySave": "Išsaugoti",
+    "expiryError": "Nepavyko įkelti arba išsaugoti. Codex paskyra galėjo pasikeisti; uždarykite ir vėl atverkite dialogą.",
+    "expiryManual": "Galioja iki {date} · jūsų įvesta",
+    "expiryUnknown": "Codex nepateikia galiojimo datos",
+    "expiryAlertTitle": "Kreditai netrukus baigs galioti",
+    "expiryAlertBody": "Codex: {balance} kreditų galiojimas baigiasi {date} (įvesta data)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} kreditų galiojimas baigiasi {date} (įvesta data)."
   }
 }

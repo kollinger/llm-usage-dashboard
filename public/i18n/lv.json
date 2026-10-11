@@ -448,7 +448,16 @@
     "autoTopUp": "Automātiska papildināšana",
     "default": "Kredīti",
     "on": "Ieslēgts",
-    "off": "Izslēgts"
+    "off": "Izslēgts",
+    "expiryEdit": "Rediģēt termiņu",
+    "expiryHelp": "Paša ievadīts datums šim Codex kontam. Brīdinājumi 30, 7 un 1 dienu iepriekš, ja paziņojumi ir ieslēgti. Iztukšojiet lauku, lai noņemtu.",
+    "expiryDate": "Derīguma termiņš",
+    "expirySave": "Saglabāt",
+    "expiryError": "Neizdevās ielādēt vai saglabāt. Codex konts var būt mainīts; aizveriet un atveriet dialogu vēlreiz.",
+    "expiryManual": "Derīgs līdz {date} · paša ievadīts",
+    "expiryUnknown": "Codex nesniedz derīguma termiņu",
+    "expiryAlertTitle": "Kredīti drīz beigsies",
+    "expiryAlertBody": "Codex: {balance} kredītu derīgums beidzas {date} (ievadīts datums)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} kredītu derīgums beidzas {date} (ievadīts datums)."
   }
 }

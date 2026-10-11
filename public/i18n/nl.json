@@ -448,7 +448,16 @@
     "autoTopUp": "Automatisch opwaarderen",
     "default": "Credits",
     "on": "Aan",
-    "off": "Uit"
+    "off": "Uit",
+    "expiryEdit": "Vervaldatum bewerken",
+    "expiryHelp": "Zelf ingevoerde datum voor dit Codex-account. Waarschuwingen 30, 7 en 1 dag vooraf als meldingen aanstaan. Maak leeg om te verwijderen.",
+    "expiryDate": "Vervaldatum",
+    "expirySave": "Opslaan",
+    "expiryError": "Laden of opslaan mislukt. Het Codex-account kan zijn gewijzigd; sluit en heropen dit venster.",
+    "expiryManual": "Geldig tot {date} · zelf ingevoerd",
+    "expiryUnknown": "Codex geeft geen vervaldatum",
+    "expiryAlertTitle": "Credits vervallen binnenkort",
+    "expiryAlertBody": "Codex: {balance} credits vervallen op {date} (ingevoerde datum)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} credits vervallen op {date} (ingevoerde datum)."
   }
 }

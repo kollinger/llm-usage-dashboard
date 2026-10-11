@@ -448,7 +448,16 @@
     "autoTopUp": "Carregamento automático",
     "default": "Créditos",
     "on": "Ligado",
-    "off": "Desligado"
+    "off": "Desligado",
+    "expiryEdit": "Editar validade",
+    "expiryHelp": "Data introduzida para esta conta Codex. Avisos 30, 7 e 1 dia antes se as notificações estiverem ativadas. Esvazie o campo para remover.",
+    "expiryDate": "Data de validade",
+    "expirySave": "Guardar",
+    "expiryError": "Não foi possível carregar ou guardar. A conta Codex pode ter mudado; feche e reabra este diálogo.",
+    "expiryManual": "Expira em {date} · data introduzida",
+    "expiryUnknown": "O Codex não fornece uma data de validade",
+    "expiryAlertTitle": "Os créditos expiram em breve",
+    "expiryAlertBody": "Codex: {balance} créditos expiram em {date} (data introduzida)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} créditos expiram em {date} (data introduzida)."
   }
 }

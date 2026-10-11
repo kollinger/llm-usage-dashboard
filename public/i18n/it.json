@@ -448,7 +448,16 @@
     "autoTopUp": "Ricarica automatica",
     "default": "Crediti",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "expiryEdit": "Modifica scadenza",
+    "expiryHelp": "Data inserita per questo account Codex. Avvisi 30, 7 e 1 giorno prima se le notifiche sono attive. Svuota il campo per rimuoverla.",
+    "expiryDate": "Data di scadenza",
+    "expirySave": "Salva",
+    "expiryError": "Caricamento o salvataggio non riuscito. L’account Codex potrebbe essere cambiato; chiudi e riapri questa finestra.",
+    "expiryManual": "Scade il {date} · data inserita",
+    "expiryUnknown": "Codex non fornisce una data di scadenza",
+    "expiryAlertTitle": "I crediti scadono presto",
+    "expiryAlertBody": "Codex: {balance} crediti scadono il {date} (data inserita)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} crediti scadono il {date} (data inserita)."
   }
 }

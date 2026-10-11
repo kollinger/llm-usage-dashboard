@@ -484,7 +484,16 @@
     "autoTopUp": "Automatisch aufladen",
     "default": "Guthaben",
     "on": "An",
-    "off": "Aus"
+    "off": "Aus",
+    "expiryEdit": "Ablaufdatum bearbeiten",
+    "expiryHelp": "Eigene Angabe für dieses Codex-Konto. Bei aktivierten Benachrichtigungen wird 30, 7 und 1 Tag vorher gewarnt. Zum Entfernen das Feld leeren.",
+    "expiryDate": "Ablaufdatum",
+    "expirySave": "Speichern",
+    "expiryError": "Laden oder Speichern fehlgeschlagen. Das Codex-Konto könnte gewechselt haben; Dialog schließen und erneut öffnen.",
+    "expiryManual": "Gültig bis {date} · eigene Angabe",
+    "expiryUnknown": "Codex liefert kein Ablaufdatum",
+    "expiryAlertTitle": "Credits laufen bald ab",
+    "expiryAlertBody": "Codex: {balance} Credits laufen am {date} ab (eigene Angabe)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "Kontingent",
     "notificationHardLimit": "{provider} · {window}: {percent} % verbraucht. Das Limit ist fast ausgeschöpft.",
     "notificationPacing": "{provider} · {window}: {percent} % verbraucht; bei diesem Tempo sind bis zum Reset {projected} % zu erwarten.",
-    "notificationReset": "{provider} · {window}: Ein neues Kontingentfenster wurde früher als erwartet beobachtet. Vorheriger Planreset: {time}."
+    "notificationReset": "{provider} · {window}: Ein neues Kontingentfenster wurde früher als erwartet beobachtet. Vorheriger Planreset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} Credits laufen am {date} ab (eigene Angabe)."
   }
 }

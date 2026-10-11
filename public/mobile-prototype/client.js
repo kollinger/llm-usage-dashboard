@@ -134,8 +134,10 @@
           if (seen.has(identity)) continue; seen.add(identity);
           const provider = { codex: "Codex", claudeCode: "Claude", copilot: "Copilot" }[item.provider] || "LLM";
           const values = { provider, window: text(item.windowKey === "five_hour" ? "notificationFiveHour" : item.windowKey === "weekly" ? "notificationWeekly" : "notificationWindow"),
-            percent: Math.round(item.usedPercent || 0), projected: Math.round(item.projectedPercent || 0), time: item.previousResetAt ? new Date(item.previousResetAt).toLocaleString(language) : "" };
-          const key = item.type === "unexpected_reset" ? "notificationReset" : item.type === "hard_limit" ? "notificationHardLimit" : "notificationPacing";
+            percent: Math.round(item.usedPercent || 0), projected: Math.round(item.projectedPercent || 0), time: item.previousResetAt ? new Date(item.previousResetAt).toLocaleString(language) : "",
+            balance: new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(item.balance || 0),
+            date: item.expiresOn ? new Date(`${item.expiresOn}T12:00:00`).toLocaleDateString(language) : "" };
+          const key = item.type === "credit_expiry" ? "notificationCreditsExpiry" : item.type === "unexpected_reset" ? "notificationReset" : item.type === "hard_limit" ? "notificationHardLimit" : "notificationPacing";
           const row = document.createElement("li"); row.textContent = text(key).replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? "")); list.append(row);
         }
         summary.textContent = text("notificationsTitle") + (seen.size ? ` (${seen.size})` : "");

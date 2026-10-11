@@ -448,7 +448,16 @@
     "autoTopUp": "شحن تلقائي",
     "default": "الرصيد",
     "on": "تشغيل",
-    "off": "إيقاف"
+    "off": "إيقاف",
+    "expiryEdit": "تعديل تاريخ الانتهاء",
+    "expiryHelp": "تاريخ أدخلته لهذا الحساب في Codex. تحذيرات قبل 30 و7 ويوم واحد عند تفعيل الإشعارات. اترك الحقل فارغًا للإزالة.",
+    "expiryDate": "تاريخ الانتهاء",
+    "expirySave": "حفظ",
+    "expiryError": "تعذر التحميل أو الحفظ. ربما تغير حساب Codex؛ أغلق الحوار وافتحه مجددًا.",
+    "expiryManual": "صالح حتى {date} · إدخال يدوي",
+    "expiryUnknown": "لا يوفر Codex تاريخ انتهاء",
+    "expiryAlertTitle": "ستنتهي الأرصدة قريبًا",
+    "expiryAlertBody": "Codex: تنتهي صلاحية {balance} من الأرصدة في {date} (تاريخ مُدخل يدويًا)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: تنتهي صلاحية {balance} من الأرصدة في {date} (تاريخ مُدخل يدويًا)."
   }
 }

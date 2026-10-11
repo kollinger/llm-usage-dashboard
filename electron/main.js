@@ -377,6 +377,7 @@ function closeServer(server) {
 }
 
 function alertKey(alert) {
+  if (alert.type === "credit_expiry") return alert.id;
   return `${alert.windowLabel}:${alert.type}`;
 }
 
@@ -499,12 +500,17 @@ function formatNotificationDuration(minutes, language) {
 }
 
 function buildNotificationTitle(alert, language) {
+  if (alert.type === "credit_expiry") return notificationT(language, "credits.expiryAlertTitle");
   return notificationT(language, "settings.notifications.nativeAlertTitle", {
     window: localizedNotificationWindowLabel(alert, language)
   });
 }
 
 function buildNotificationBody(alert, language) {
+  if (alert.type === "credit_expiry") return notificationT(language, "credits.expiryAlertBody", {
+    balance: new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(alert.balance),
+    date: new Date(`${alert.expiresOn}T12:00:00`).toLocaleDateString(language)
+  });
   const usedPercent = Math.round(Number(alert.usedPercent) || 0);
   if (alert.type === "hard_limit") {
     return [
@@ -974,7 +980,7 @@ async function checkNotifications(port) {
     for (const alert of data.alerts) {
       const key = alertKey(alert);
       const lastShown = notificationCooldowns.get(key) || 0;
-      if (now - lastShown < NOTIFICATION_COOLDOWN_MS) {
+      if (alert.type === "credit_expiry" ? lastShown > 0 : now - lastShown < NOTIFICATION_COOLDOWN_MS) {
         lastSkippedReason = `cooldown:${key}`;
         continue;
       }

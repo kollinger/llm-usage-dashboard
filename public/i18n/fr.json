@@ -448,7 +448,16 @@
     "autoTopUp": "Recharge automatique",
     "default": "Crédits",
     "on": "Activé",
-    "off": "Désactivé"
+    "off": "Désactivé",
+    "expiryEdit": "Modifier la date d’expiration",
+    "expiryHelp": "Date saisie pour ce compte Codex. Alertes 30, 7 et 1 jour avant l’expiration si les notifications sont activées. Videz le champ pour supprimer.",
+    "expiryDate": "Date d’expiration",
+    "expirySave": "Enregistrer",
+    "expiryError": "Chargement ou enregistrement impossible. Le compte Codex a peut-être changé ; fermez puis rouvrez cette fenêtre.",
+    "expiryManual": "Expire le {date} · date saisie",
+    "expiryUnknown": "Codex ne fournit pas de date d’expiration",
+    "expiryAlertTitle": "Les crédits expirent bientôt",
+    "expiryAlertBody": "Codex : {balance} crédits expirent le {date} (date saisie)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex : {balance} crédits expirent le {date} (date saisie)."
   }
 }

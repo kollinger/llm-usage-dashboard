@@ -448,7 +448,16 @@
     "autoTopUp": "Αυτόματη ανανέωση",
     "default": "Πιστώσεις",
     "on": "Ενεργό",
-    "off": "Ανενεργό"
+    "off": "Ανενεργό",
+    "expiryEdit": "Επεξεργασία λήξης",
+    "expiryHelp": "Δική σας ημερομηνία για αυτόν τον λογαριασμό Codex. Προειδοποιήσεις 30, 7 και 1 ημέρα πριν με ενεργές ειδοποιήσεις. Αδειάστε το πεδίο για αφαίρεση.",
+    "expiryDate": "Ημερομηνία λήξης",
+    "expirySave": "Αποθήκευση",
+    "expiryError": "Αποτυχία φόρτωσης ή αποθήκευσης. Ο λογαριασμός Codex ίσως άλλαξε· κλείστε και ανοίξτε ξανά το παράθυρο.",
+    "expiryManual": "Ισχύει έως {date} · δική σας καταχώριση",
+    "expiryUnknown": "Το Codex δεν παρέχει ημερομηνία λήξης",
+    "expiryAlertTitle": "Οι πιστώσεις λήγουν σύντομα",
+    "expiryAlertBody": "Codex: {balance} πιστώσεις λήγουν στις {date} (καταχωρισμένη ημερομηνία)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} πιστώσεις λήγουν στις {date} (καταχωρισμένη ημερομηνία)."
   }
 }

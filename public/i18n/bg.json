@@ -448,7 +448,16 @@
     "autoTopUp": "Автоматично зареждане",
     "default": "Кредити",
     "on": "Вкл.",
-    "off": "Изкл."
+    "off": "Изкл.",
+    "expiryEdit": "Редактиране на срока",
+    "expiryHelp": "Въведена дата за този Codex акаунт. Предупреждения 30, 7 и 1 ден по-рано при включени известия. Изчистете полето за премахване.",
+    "expiryDate": "Дата на изтичане",
+    "expirySave": "Запазване",
+    "expiryError": "Зареждането или запазването е неуспешно. Codex акаунтът може да е сменен; затворете и отворете диалога отново.",
+    "expiryManual": "Валидни до {date} · въведена дата",
+    "expiryUnknown": "Codex не предоставя дата на изтичане",
+    "expiryAlertTitle": "Кредитите скоро изтичат",
+    "expiryAlertBody": "Codex: {balance} кредита изтичат на {date} (въведена дата)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} кредита изтичат на {date} (въведена дата)."
   }
 }

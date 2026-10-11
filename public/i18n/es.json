@@ -448,7 +448,16 @@
     "autoTopUp": "Recarga automática",
     "default": "Créditos",
     "on": "Activado",
-    "off": "Desactivado"
+    "off": "Desactivado",
+    "expiryEdit": "Editar vencimiento",
+    "expiryHelp": "Fecha introducida para esta cuenta de Codex. Avisos 30, 7 y 1 día antes si las notificaciones están activadas. Vacía el campo para eliminarla.",
+    "expiryDate": "Fecha de vencimiento",
+    "expirySave": "Guardar",
+    "expiryError": "No se pudo cargar o guardar. Puede que la cuenta de Codex haya cambiado; cierra y vuelve a abrir este diálogo.",
+    "expiryManual": "Vence el {date} · fecha introducida",
+    "expiryUnknown": "Codex no proporciona fecha de vencimiento",
+    "expiryAlertTitle": "Los créditos vencen pronto",
+    "expiryAlertBody": "Codex: {balance} créditos vencen el {date} (fecha introducida)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} créditos vencen el {date} (fecha introducida)."
   }
 }

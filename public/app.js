@@ -2451,6 +2451,9 @@ function bindEvents() {
   els.providerGrid?.addEventListener("pointerup", handleProviderPointerUp);
   els.providerGrid?.addEventListener("pointercancel", cancelProviderPointerDrag);
   els.providerGrid?.addEventListener("click", handleSubscriptionConnectionClick);
+  els.providerGrid?.addEventListener("click", openCreditExpiry);
+  document.getElementById("creditExpiryClose")?.addEventListener("click", () => document.getElementById("creditExpiryDialog").close());
+  document.getElementById("creditExpiryForm")?.addEventListener("submit", saveCreditExpiry);
   els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
   els.chart?.addEventListener("scroll", handleChartScroll, { passive: true });
   [els.chart, els.overviewHistoryChart].forEach((chart) => {
@@ -5721,7 +5724,10 @@ function normalizeCreditRow(row) {
     percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : null,
     valueLabel: creditValueLabel(row),
     resetsAt: row.resetsAt || null,
-    resetLabel: row.resetLabel || null
+    resetLabel: row.resetLabel || null,
+    balance: row.balance ?? null,
+    expiresOn: row.expiresOn || null,
+    expirySource: row.expirySource || null
   };
 }
 
@@ -6474,7 +6480,11 @@ function renderCreditRow(row, accent) {
   const value =
     row.valueLabel ||
     (row.amount === null || row.amount === undefined ? "--" : formatMoney(row.amount, row.currency || "EUR"));
-  const detail = row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
+  const codexBalance = row.key === "codexCredits" && Number.isFinite(row.balance);
+  const detail = codexBalance ? row.expiresOn
+    ? t("credits.expiryManual", { date: new Date(`${row.expiresOn}T12:00:00`).toLocaleDateString(state.language) })
+    : t("credits.expiryUnknown")
+    : row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
   const bar =
     row.percent === null || row.percent === undefined
       ? ""
@@ -6489,8 +6499,37 @@ function renderCreditRow(row, accent) {
       </div>
       ${bar}
       ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
+      ${codexBalance ? `<button type="button" class="credit-expiry-edit text-button ghost" data-credit-expiry>${escapeHtml(t("credits.expiryEdit"))}</button>` : ""}
     </div>
   `;
+}
+
+async function openCreditExpiry(event) {
+  if (!event.target.closest("[data-credit-expiry]")) return;
+  const dialog = document.getElementById("creditExpiryDialog");
+  const status = document.getElementById("creditExpiryStatus");
+  const save = document.getElementById("creditExpirySave");
+  save.disabled = true; status.textContent = ""; dialog.showModal();
+  try {
+    const value = await fetchJson("/api/credits/codex-expiry");
+    dialog.dataset.context = value.context || "";
+    document.getElementById("creditExpiryDate").value = value.expiresOn || "";
+    save.disabled = !value.context;
+    if (!value.context) status.textContent = t("credits.expiryError");
+  } catch { status.textContent = t("credits.expiryError"); }
+}
+
+async function saveCreditExpiry(event) {
+  event.preventDefault();
+  const dialog = document.getElementById("creditExpiryDialog");
+  const save = document.getElementById("creditExpirySave");
+  save.disabled = true;
+  try {
+    await fetchJson("/api/credits/codex-expiry", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ context: dialog.dataset.context, expiresOn: document.getElementById("creditExpiryDate").value || null }) });
+    dialog.close(); await loadUsage();
+  } catch { document.getElementById("creditExpiryStatus").textContent = t("credits.expiryError"); }
+  finally { save.disabled = false; }
 }
 
 function renderLimitBars(provider) {

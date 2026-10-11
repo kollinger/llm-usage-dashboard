@@ -448,7 +448,16 @@
     "autoTopUp": "Автопополнение",
     "default": "Кредиты",
     "on": "Вкл.",
-    "off": "Выкл."
+    "off": "Выкл.",
+    "expiryEdit": "Изменить срок действия",
+    "expiryHelp": "Ваша дата для этого аккаунта Codex. Предупреждения за 30, 7 и 1 день при включённых уведомлениях. Очистите поле для удаления.",
+    "expiryDate": "Дата окончания",
+    "expirySave": "Сохранить",
+    "expiryError": "Не удалось загрузить или сохранить. Аккаунт Codex мог измениться; закройте и снова откройте окно.",
+    "expiryManual": "Действуют до {date} · введено вами",
+    "expiryUnknown": "Codex не сообщает срок действия",
+    "expiryAlertTitle": "Срок кредитов скоро истекает",
+    "expiryAlertBody": "Codex: {balance} кредитов истекают {date} (введённая дата)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} кредитов истекают {date} (введённая дата)."
   }
 }

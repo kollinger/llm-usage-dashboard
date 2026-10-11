@@ -236,6 +236,18 @@
       </form>
     </dialog>
 
+    <dialog id="creditExpiryDialog" class="modal">
+      <form class="modal-body" id="creditExpiryForm">
+        <div class="modal-heading">
+          <h2 data-i18n="credits.expiryEdit"></h2>
+          <button type="button" class="icon-button" id="creditExpiryClose" data-i18n-aria-label="actions.close"><i data-lucide="x"></i></button>
+        </div>
+        <p data-i18n="credits.expiryHelp"></p>
+        <label class="field"><span data-i18n="credits.expiryDate"></span><input type="date" id="creditExpiryDate" /></label>
+        <p id="creditExpiryStatus" role="status"></p>
+        <div class="modal-actions"><button type="submit" class="text-button" id="creditExpirySave" data-i18n="credits.expirySave"></button></div>
+      </form>
+    </dialog>
     <dialog id="settingsDialog" class="modal">
       <div class="modal-body settings-modal-body">
         <div class="settings-sticky">

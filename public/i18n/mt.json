@@ -448,7 +448,16 @@
     "autoTopUp": "Top-up awtomatiku",
     "default": "Krediti",
     "on": "Mixgħul",
-    "off": "Mitfi"
+    "off": "Mitfi",
+    "expiryEdit": "Editja d-data ta’ skadenza",
+    "expiryHelp": "Data mdaħħla minnek għal dan il-kont Codex. Twissijiet 30, 7 u 1 jum qabel jekk in-notifiki huma attivi. Ħalli vojt biex tneħħiha.",
+    "expiryDate": "Data ta’ skadenza",
+    "expirySave": "Issejvja",
+    "expiryError": "Ma setax jitgħabba jew jiġi ssejvjat. Il-kont Codex seta’ nbidel; agħlaq u erġa’ iftaħ id-djalogu.",
+    "expiryManual": "Validu sa {date} · data mdaħħla",
+    "expiryUnknown": "Codex ma jipprovdix data ta’ skadenza",
+    "expiryAlertTitle": "Il-krediti jiskadu dalwaqt",
+    "expiryAlertBody": "Codex: {balance} krediti jiskadu fi {date} (data mdaħħla)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} krediti jiskadu fi {date} (data mdaħħla)."
   }
 }

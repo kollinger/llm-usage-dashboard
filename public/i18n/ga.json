@@ -448,7 +448,16 @@
     "autoTopUp": "Breisiú uathoibríoch",
     "default": "Creidmheasanna",
     "on": "Ar siúl",
-    "off": "As"
+    "off": "As",
+    "expiryEdit": "Cuir an dáta éaga in eagar",
+    "expiryHelp": "Dáta a chuir tú isteach don chuntas Codex seo. Rabhaidh 30, 7 agus 1 lá roimh ré má tá fógraí cumasaithe. Fág folamh chun é a bhaint.",
+    "expiryDate": "Dáta éaga",
+    "expirySave": "Sábháil",
+    "expiryError": "Níorbh fhéidir lódáil ná sábháil. Seans gur athraigh an cuntas Codex; dún agus athoscail an dialóg.",
+    "expiryManual": "Bailí go {date} · do iontráil",
+    "expiryUnknown": "Ní thugann Codex dáta éaga",
+    "expiryAlertTitle": "Rachaidh na creidmheasanna in éag go luath",
+    "expiryAlertBody": "Codex: rachaidh {balance} creidmheas in éag ar {date} (dáta iontráilte)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: rachaidh {balance} creidmheas in éag ar {date} (dáta iontráilte)."
   }
 }

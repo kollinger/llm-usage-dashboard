@@ -448,7 +448,16 @@
     "autoTopUp": "Automaatne laadimine",
     "default": "Krediidid",
     "on": "Sees",
-    "off": "Väljas"
+    "off": "Väljas",
+    "expiryEdit": "Muuda aegumiskuupäeva",
+    "expiryHelp": "Enda sisestatud kuupäev selle Codexi konto jaoks. Hoiatused 30, 7 ja 1 päev enne, kui teavitused on lubatud. Eemaldamiseks tühjenda väli.",
+    "expiryDate": "Aegumiskuupäev",
+    "expirySave": "Salvesta",
+    "expiryError": "Laadimine või salvestamine ebaõnnestus. Codexi konto võis muutuda; sulge ja ava dialoog uuesti.",
+    "expiryManual": "Kehtib kuni {date} · enda sisestatud",
+    "expiryUnknown": "Codex ei anna aegumiskuupäeva",
+    "expiryAlertTitle": "Krediidid aeguvad peagi",
+    "expiryAlertBody": "Codex: {balance} krediiti aegub {date} (sisestatud kuupäev)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} krediiti aegub {date} (sisestatud kuupäev)."
   }
 }

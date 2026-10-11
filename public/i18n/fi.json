@@ -448,7 +448,16 @@
     "autoTopUp": "Automaattinen lisäys",
     "default": "Krediitit",
     "on": "Päällä",
-    "off": "Pois"
+    "off": "Pois",
+    "expiryEdit": "Muokkaa vanhenemispäivää",
+    "expiryHelp": "Itse annettu päivämäärä tälle Codex-tilille. Varoitukset 30, 7 ja 1 päivää ennen, kun ilmoitukset ovat käytössä. Tyhjennä kenttä poistaaksesi päivämäärän.",
+    "expiryDate": "Vanhenemispäivä",
+    "expirySave": "Tallenna",
+    "expiryError": "Lataus tai tallennus epäonnistui. Codex-tili on voinut vaihtua; sulje ja avaa ikkuna uudelleen.",
+    "expiryManual": "Voimassa {date} asti · itse annettu",
+    "expiryUnknown": "Codex ei ilmoita vanhenemispäivää",
+    "expiryAlertTitle": "Krediitit vanhenevat pian",
+    "expiryAlertBody": "Codex: {balance} krediittiä vanhenee {date} (annettu päivämäärä)."
   },
   "limits": {
     "recentPace": {
@@ -1278,6 +1287,7 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}."
+    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
+    "notificationCreditsExpiry": "Codex: {balance} krediittiä vanhenee {date} (annettu päivämäärä)."
   }
 }
