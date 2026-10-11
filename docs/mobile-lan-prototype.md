@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.4
+# Mobile LAN prototype — 1.7.0-lan-prototype.6
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -81,8 +81,9 @@ checks. This reduces exposure; it does not provide encrypted transport.
 ## Deliberate limits
 
 - **HTTP only on a trusted LAN.** QR possession does not stop LAN interception.
-  No secure-context PWA/service worker or reliable offline home-screen app is
-  claimed. [Service workers require a secure context](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API).
+  This remains the default, with warnings inside the open dashboard. Background
+  push is available only through an explicitly configured HTTPS origin, below.
+  [Service workers require a secure context](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API).
 - No relay, hosted landing page, DNS account, router configuration or external
   service is created. No remote access is implemented. A user-owned private
   VPN and HTTPS endpoint is a later integration, with separate authorization.
@@ -96,6 +97,62 @@ checks. This reduces exposure; it does not provide encrypted transport.
 - German and English prototype text is supplied. Other supported locales have
   explicit English prototype fallback text; normal dashboard translations stay
   intact. The prototype page supports RTL layout.
+
+## Notifications
+
+The phone uses `/api/notifications/mobile` on the running dashboard backend.
+It reuses the native app's enabled setting, hard-limit threshold and pacing
+projection for Codex, Claude and Copilot. Provider identity stays in each alert.
+The phone does not change desktop settings. Recent early Codex **weekly** window
+changes come from the existing account-scoped reset history. Historical,
+stale, overlapping and uncertain observations are excluded. The message reports
+the observed new window and prior planned reset; it does not invent a reset
+cause. Other unexpected quota changes, Claude reset detection, and a full
+equivalent of the separate Matrix monitor are still open.
+
+The mobile page has a notification invitation, current warnings and optional
+connection guidance. Over LAN HTTP it clearly says that warnings require an
+open page. Tailscale is optional; the basic Wi-Fi dashboard never requires it.
+
+For a future user-owned HTTPS connection, the CLI accepts `--https-origin`
+and `--https-proxy-port`. They create an additional **loopback-only** listener.
+They do not install Tailscale, change Serve routes, create TLS certificates,
+open a tunnel or expose a public service. A trusted local HTTPS proxy must
+preserve the exact configured Host and set `X-Forwarded-Proto: https`.
+Forwarded headers on the LAN socket cannot enable push. A local operator can
+request a new HTTPS pairing link from the loopback `/api/code` endpoint with
+`{"https":true}`. HTTPS pairing cookies use Secure; the new origin requires
+separate phone pairing and a new Home Screen shortcut.
+
+On iPhone, the HTTPS dashboard must be installed on the Home Screen and opened
+from its icon. Only an explicit tap on Enable notifications requests permission.
+This follows [WebKit's iOS Web Push requirements](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
+The worker handles push and notification clicks; it never caches usage data.
+Subscription, unsubscribe and test mutations are paired, same-origin, JSON-only
+phone routes. All existing dashboard mutations remain blocked.
+
+VAPID keys, encrypted-push subscription material, expiry and deduplication are
+stored privately alongside the group file in a mode-0600 `mobile-push-*.json`.
+Only Apple, Google and Mozilla HTTPS push endpoints with valid encryption keys
+are accepted. The running host checks the feed every 30 seconds, even with no
+phone page open; the backend uses the same freshness policy as native alerts.
+Warnings have a 30-minute cooldown per provider/window/type/reset; events send
+once. Enrollment skips earlier reset events, and restart/reopening keeps the
+deduplication history. Removed subscriptions and expired phone pairing stop
+delivery. A test is rate-limited to once per minute per phone. A successful send
+means push-service acceptance, not verified delivery to a physical phone.
+
+**Open:** no real HTTPS connection or locked-iPhone delivery has been configured
+or verified for this review. Push state is local to its HTTPS host and is not
+transferred during LAN host takeover. That host must stay awake and online.
+Automatic HTTPS setup, remote onboarding and push takeover remain open.
+
+Review .6 adds notification guidance, shared quota warnings, recent early Codex
+weekly reset observations and the optional push transport. Validation covers
+encrypted request construction, pairing/origin isolation, persistence and
+deduplication, a worker push without an open page, disabled desktop settings,
+Docker/Compose, and narrow mobile/RTL browser states. Permission and subscription
+UI tests use mocks; they are not physical push-delivery evidence.
 
 The protocol follows the relevant cache-flush, goodbye and negative-answer
 mechanisms in [RFC 6762](https://www.rfc-editor.org/rfc/rfc6762.html). Production
