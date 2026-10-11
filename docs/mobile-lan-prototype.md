@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.9
+# Mobile LAN prototype — 1.7.0-lan-prototype.10
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -18,7 +18,14 @@ the signed cookie is renewed at most once a day for another year. Existing valid
 scan. Expired sessions still require a new scan; clearing browser storage also
 removes the pairing. New phone QR codes and links are valid for 24 hours and can
 be used once. iPhone home-screen storage and physical Android/iPhone
-compatibility still need device verification.
+compatibility still need device verification. Pairing belongs to the browser
+that connected; an embedded chat browser does not inherit Chrome's session.
+
+Version `1.7.0-lan-prototype.10` restores an existing session after opening a
+dashboard link from another site. The Strict cookie can be absent on the
+initial navigation. The pairing page now checks the authenticated status with
+a same-origin request and returns an already paired browser to the dashboard.
+This does not grant access to an unpaired browser or consume an enrollment code.
 
 To connect another installation, expand Connect installations on the first
 computer, create an installation code, and paste it into the same section on
@@ -328,3 +335,30 @@ the regular host review app with the same group and browser authorization. A
 live check after background collection confirms that the credit scope still
 matches the date editor. Desktop notifications remain disabled in the existing
 settings; no real date or push subscription was added for QA.
+
+## External-link session recovery review (2026-10-11)
+
+Product source: `6fcc0ef`, branch `codex/mobile-lan-prototype`. Separate Mac
+review build: `1.7.0-lan-prototype.10`. The unchanged direct phone URL remains
+the current LAN host's address on port 41780; no hosted service was added.
+
+The mobile requests at 19:32 UTC reached the running gateway but showed neither
+a valid browser session nor an enrollment code. Independently, the test browser
+reproduced a surviving session that opened correctly by direct navigation but
+landed on the missing-code page when following a link from another origin.
+The same external link now returns that browser to the dashboard, with both
+Claude and Codex cards, without consuming another enrollment code.
+
+Verification: regression check failed before the fix and passed afterward;
+full `npm run check` passed locally and on Linux; Docker rebuild and isolated
+Compose smoke passed, including valid/absent sessions and read-only protection.
+The Compose container was stopped. The fresh universal DMG was installed and
+launched directly, its packaged client matches the source, and the QR control
+page rendered. The CLI gateway was restored against the regular desktop app;
+its group file is unchanged and the existing test-browser pairing still works.
+All temporary browser tabs were closed.
+
+The physical iPhone's current Chrome session has not yet been rechecked. Its
+embedded chat browser is a separate session; session recovery cannot transfer
+Chrome authorization into an unpaired browser. No expiry or deleted phone
+cookie was inferred from the missing-code page.
