@@ -105,6 +105,26 @@ try {
   assert.equal((await fs.stat(groupA)).mode & 0o777, 0o600);
   assert.equal((await get(a, '/api/usage')).status, 401);
   assert.equal((await get(a, '/')).status, 302);
+  const appIcon = await fs.readFile(new URL('../build/icon.iconset/icon_512x512.png', import.meta.url));
+  for (const iconPath of ['/apple-touch-icon.png', '/apple-touch-icon-precomposed.png', '/mobile-prototype/icon.png']) {
+    const icon = await get(a, iconPath);
+    assert.equal(icon.status, 200, 'home-screen installers can fetch the icon without a phone cookie');
+    assert.match(icon.headers.get('content-type'), /^image\/png/);
+    assert.deepEqual(Buffer.from(await icon.arrayBuffer()), appIcon, 'use the desktop app symbol');
+    const head = await get(a, iconPath, { method: 'HEAD' });
+    assert.equal(head.status, 200);
+    assert.equal(Number(head.headers.get('content-length')), appIcon.length);
+  }
+  const manifestResponse = await get(a, '/mobile-prototype/manifest.webmanifest');
+  assert.equal(manifestResponse.status, 200, 'installation metadata does not need phone authorization');
+  assert.match(manifestResponse.headers.get('content-type'), /^application\/manifest\+json/);
+  const manifest = await manifestResponse.json();
+  assert.equal(manifest.start_url, '/');
+  assert.equal(manifest.icons[0].sizes, '512x512');
+  assert.equal((await get(a, manifest.icons[0].src)).status, 200);
+  const unpairedPage = await (await get(a, '/pair')).text();
+  assert.match(unpairedPage, /rel="apple-touch-icon"[^>]*href="\/apple-touch-icon\.png"/);
+  assert.equal((await get(a, '/api/usage')).status, 401, 'install assets do not grant access to data');
   const badHost = await new Promise((resolve, reject) => {
     const request = http.get({ host: '127.0.0.1', port: a.server.address().port, path: '/api/usage', headers: { Host: 'attacker.invalid' } }, (response) => { response.resume(); resolve(response.statusCode); });
     request.on('error', reject);
@@ -179,6 +199,7 @@ try {
   assert.equal((await get(a, '/api/usage', { headers: { Cookie: cookie.slice(0, -1) + 'X' } })).status, 401);
   const html = await (await get(a, '/', { headers: { Cookie: cookie } })).text();
   assert.match(html, /mobile-prototype\/client.js/); assert.match(html, /dashboardLayout/);
+  assert.match(html, /rel="apple-touch-icon"[^>]*href="\/apple-touch-icon\.png"/);
   assert.equal((await get(b, '/api/usage', { headers: { Cookie: cookie } })).status, 401);
   assert.equal((await fetch(`${b.controlUrl}/api/join`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: 'invalid' }) })).status, 400);
   const invitation = await (await fetch(`${a.controlUrl}/api/group-code`, { method: 'POST' })).json();
