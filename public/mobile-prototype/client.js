@@ -64,6 +64,14 @@
     });
     await refresh(); await code(); setInterval(refresh, 2000);
   } else if (document.body.dataset.prototype === "pair") {
+    // External navigation can omit the Strict cookie. Check again from this
+    // origin before asking an already paired browser to connect another time.
+    try {
+      if ((await fetch("/api/mobile-prototype/status")).ok) {
+        try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }
+        location.replace("/"); return;
+      }
+    } catch { /* Keep the pairing page usable when the server is unreachable. */ }
     const button = document.getElementById("prototypePair");
     if (!pairingCode) {
       button.disabled = true;

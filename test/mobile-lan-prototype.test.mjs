@@ -11,7 +11,7 @@ const { startMobilePrototype, loadGroup, signToken, verifyToken, sanitize, elect
 
 const clientSource = await fs.readFile(new URL('../public/mobile-prototype/client.js', import.meta.url), 'utf8');
 const clientStorage = new Map();
-const client = async (url, result = { status: 200, ok: true }, { supplied = '', state = 'missing', storageBlocked = false } = {}) => {
+const client = async (url, result = { status: 200, ok: true }, { supplied = '', state = 'missing', storageBlocked = false, paired = false } = {}) => {
   const location = new URL(url);
   let destination, submitted;
   location.replace = (value) => { destination = value; };
@@ -23,6 +23,7 @@ const client = async (url, result = { status: 200, ok: true }, { supplied = '', 
     history: { replaceState: (_state, _title, value) => { location.href = new URL(value, location).href; } },
     document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], querySelector: () => ({ content: state }), getElementById: (id) => id === 'prototypePair' ? button : id === 'prototypeCode' ? { value: supplied } : message },
     fetch: async (value, options) => {
+      if (value === '/api/mobile-prototype/status') return { ok: paired, status: paired ? 200 : 401 };
       if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry', missingCode: 'missing', expiredCode: 'expired', usedCode: 'used', invalidCode: 'invalid' } }) };
       submitted = JSON.parse(options.body).code;
       if (result instanceof Error) throw result;
@@ -73,6 +74,15 @@ phone = await client('http://127.0.0.1/pair', undefined, { supplied: 'server-tok
 assert.equal(phone.button.disabled, false);
 await phone.button.click();
 assert.equal(phone.submitted(), 'server-token');
+
+// An external navigation can omit the Strict cookie even though same-origin
+// requests from the landing page still carry the existing phone session.
+for (const url of ['http://127.0.0.1/pair', 'http://127.0.0.1/pair/used-token']) {
+  clientStorage.clear();
+  phone = await client(url, undefined, { paired: true, state: 'used' });
+  assert.equal(phone.destination(), '/', 'recover an existing browser session after an external link');
+  assert.equal(phone.submitted(), undefined, 'do not consume a new pairing code');
+}
 
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'llm-mobile-prototype-'));
 const upstream = http.createServer((req, res) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ generatedAt: '2026-01-01T00:00:00Z', local: { totalTokens: 123 }, email: 'private@example.invalid', accessToken: 'private', nested: { file: '/private/source', outputTokens: 42 } })); });
