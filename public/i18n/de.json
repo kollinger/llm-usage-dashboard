@@ -1237,7 +1237,7 @@
     "remote": "Fernzugriff ist in diesem Prototyp noch nicht eingebaut. Dafür ist später eine eigene private Verbindung wie Tailscale vorgesehen; wir betreiben keinen Vermittlungsdienst.",
     "offline": "Keine Installation erreichbar. Eine gekoppelte App im selben lokalen Netzwerk starten.",
     "pair": "Dieses Handy verbinden",
-    "expires": "Dieser QR-Code ist fünf Minuten gültig und einmal verwendbar.",
+    "expires": "Dieser Kopplungslink und QR-Code ist 24 Stunden gültig und einmal verwendbar.",
     "scanAgain": "Der Kopplungslink fehlt, ist abgelaufen oder wurde bereits verwendet. Öffne einen neuen Link oder scanne einen neuen QR-Code.",
     "missingCode": "Der Kopplungscode ist auf dieser Seite nicht angekommen. Öffne den vollständigen Kopplungslink.",
     "expiredCode": "Dieser Kopplungslink ist abgelaufen. Öffne einen neuen Link oder scanne einen neuen QR-Code.",

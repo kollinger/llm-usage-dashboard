@@ -1237,7 +1237,7 @@
     "remote": "Remote access is not included in this prototype. A user-owned private connection such as Tailscale is planned; we operate no relay service.",
     "offline": "No installation is reachable. Start a paired app on the same local network.",
     "pair": "Connect this phone",
-    "expires": "This QR code expires in five minutes and can be used once.",
+    "expires": "This pairing link and QR code expires in 24 hours and can be used once.",
     "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
     "missingCode": "The pairing code did not reach this page. Open the complete pairing link.",
     "expiredCode": "This pairing link has expired. Open a new link or scan a new QR code.",
