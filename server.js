@@ -9356,10 +9356,7 @@ async function readCodexLiveRateLimits() {
   return readThroughCache(codexLiveRateLimitsCache, cacheTtlMs, async () => {
     try {
       const client = await getCodexAppServer();
-      const creditScope = await currentCodexCreditScope();
-      const response = await client.request("account/rateLimits/read", undefined);
-      const normalized = normalizeCodexLiveRateLimits(response);
-      normalized.source.creditScope = creditScope === await currentCodexCreditScope() ? creditScope : null;
+      const normalized = await readScopedCodexLiveRateLimits(client);
       await recordCodexResetSnapshot(normalized.historySnapshot);
       return normalized;
     } catch (error) {
@@ -9373,6 +9370,14 @@ async function readCodexLiveRateLimits() {
       };
     }
   });
+}
+
+async function readScopedCodexLiveRateLimits(client) {
+  const creditScope = await currentCodexCreditScope();
+  const response = await client.request("account/rateLimits/read", undefined);
+  const normalized = normalizeCodexLiveRateLimits(response);
+  normalized.source.creditScope = creditScope === await currentCodexCreditScope() ? creditScope : null;
+  return normalized;
 }
 
 function preferredCodexPlan(livePlanType) {
@@ -11211,8 +11216,7 @@ function startCodexResetCollector() {
     running = true;
     try {
       const client = await getCodexAppServer();
-      const response = await client.request("account/rateLimits/read", undefined);
-      const normalized = normalizeCodexLiveRateLimits(response);
+      const normalized = await readScopedCodexLiveRateLimits(client);
       if (!normalized.historySnapshot) throw new Error("Codex quota unavailable");
       await recordCodexResetSnapshot(normalized.historySnapshot);
       codexLiveRateLimitsCache.value = normalized;
@@ -11305,6 +11309,7 @@ module.exports = {
     codexRateLimitsFromLive,
     codexCreditRowsFromLive,
     applyCodexCreditExpiry,
+    readScopedCodexLiveRateLimits,
     overlayCurrentCodexQuota,
     codexRateLimitsFromUsagePayload,
     codexRateLimitsFromEvents,

@@ -43,6 +43,8 @@ try {
   server = await new Promise((resolve) => { const listening = app.listen(0, "127.0.0.1", () => resolve(listening)); });
   const url = `http://127.0.0.1:${server.address().port}/api/credits/codex-expiry`;
   const first = await (await fetch(url)).json();
+  const live = await _test.readScopedCodexLiveRateLimits({ request: async () => ({ rateLimits: { credits: { balance: "63000" } } }) });
+  assert.equal(live.source.creditScope, first.context, "interactive and background credit reads retain the current account scope");
   const save = (context, expiresOn) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ context, expiresOn }) });
   assert.equal((await save(first.context, "2026-02-30")).status, 400);
   assert.equal((await save(first.context, "2026-12-31")).status, 200);
