@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.6
+# Mobile LAN prototype — 1.7.0-lan-prototype.7
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -11,9 +11,14 @@ Build `npm run dist:mobile-prototype:mac`, install the separate
 Scan the displayed QR code on a phone in the same trusted LAN, press Connect,
 and save the resulting dashboard URL to the home screen. If the shared name
 fails, create a direct Wi-Fi QR code instead. That fallback is bound to the
-current computer and its IP; it does not provide takeover by another host. The phone session lasts
-30 days; after expiry a new QR scan is required. iPhone home-screen storage and
-physical Android/iPhone compatibility still need device verification.
+current computer and its IP; it does not provide takeover by another host.
+The phone session lasts one year of inactivity. While the dashboard is used,
+the signed cookie is renewed at most once a day for another year. Existing valid
+30-day sessions upgrade on their next authenticated request without another QR
+scan. Expired sessions still require a new scan; clearing browser storage also
+removes the pairing. New phone QR codes and links are valid for 24 hours and can
+be used once. iPhone home-screen storage and physical Android/iPhone
+compatibility still need device verification.
 
 To connect another installation, expand Connect installations on the first
 computer, create an installation code, and paste it into the same section on
@@ -49,13 +54,13 @@ Actual browser DNS caching can make takeover slower. This is a local network
 experiment, not a guarantee across arbitrary routers, VLANs or guest networks.
 
 Phone authorization is an HMAC-signed HttpOnly, SameSite=Strict cookie, accepted
-by all group members. The five-minute QR bootstrap travels in the URL fragment
+by all group members. The 24-hour phone QR bootstrap travels in the URL fragment
 and its consumed hash is shared with other members.
 The local control endpoint also returns `linkUrl`, with the same one-use token
 in its path, for clickable links opened by embedded browsers. GET only displays
 the connect page and never consumes a token. For a path link, the server supplies
 the verified code in the page and retains it in an HttpOnly, SameSite=Strict
-cookie scoped to `/pair`, only until the original five-minute expiry. This
+cookie scoped to `/pair`, only until the original 24-hour expiry. This
 permits reloading the cleaned URL even when tab storage is blocked. That cookie
 does not authorize dashboard access. Tab-scoped session storage also retains
 fragment codes; successful pairing or an invalid/expired response clears it.
@@ -262,3 +267,20 @@ checks alone do not prove browser DNS failover or physical-phone behavior.
   M1. Its control window rendered and the packaged gateway served the corrected
   browser-handoff client. The app was stopped after checking; the phone trial
   continues through the CLI gateway and the existing normal desktop backend.
+
+## Pairing duration review — 1.7.0-lan-prototype.7
+
+Phone links and QR codes last 24 hours. Active remembered phones renew a
+one-year session, including upgrades from existing valid 30-day pairings.
+Renewal keeps the push subscription owner and warning deduplication history.
+Implementation: `c0b57c9`, branch `codex/mobile-lan-prototype`.
+
+Focused tests cover 23-hour link validity, expiry, one-year cookies, legacy
+session renewal, expired-session rejection, preserved push subscriptions,
+host takeover and restart. Full `npm run check`, Docker rebuild and an isolated
+Compose smoke passed. The fresh universal DMG was installed as the separate
+prototype app and launched directly; its ASAR files match the source, and its
+control page visibly reports the 24-hour limit. The CLI phone trial then
+resumes against the normal host with the original group file. It runs detached
+from the command session; automatic app integration and service supervision
+remain open. This duration change does not address those lifecycle limits.
