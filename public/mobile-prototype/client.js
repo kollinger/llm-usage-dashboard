@@ -89,6 +89,95 @@
     const banner = document.createElement("aside"); banner.className = "prototype-mobile-banner";
     const heading = document.createElement("strong"); heading.textContent = text("readOnly"); banner.append(heading);
     const node = document.createElement("span"); banner.append(node); document.body.prepend(banner);
+    const notices = document.createElement("details"); notices.className = "prototype-notifications";
+    const summary = document.createElement("summary"); summary.textContent = text("notificationsTitle"); notices.append(summary);
+    const state = document.createElement("p"); state.setAttribute("role", "status"); notices.append(state);
+    const help = document.createElement("details");
+    const helpTitle = document.createElement("summary"); helpTitle.textContent = text("notificationsConnectionHelp"); help.append(helpTitle);
+    const helpBody = document.createElement("p"); helpBody.textContent = text("notificationsHelp"); help.append(helpBody); notices.append(help);
+    const enable = document.createElement("button"); enable.type = "button"; enable.textContent = text("notificationsEnable"); enable.disabled = true;
+    const testButton = document.createElement("button"); testButton.type = "button"; testButton.textContent = text("notificationsTest"); testButton.hidden = true;
+    const disable = document.createElement("button"); disable.type = "button"; disable.textContent = text("notificationsDisable"); disable.hidden = true;
+    notices.append(enable, testButton, disable);
+    const list = document.createElement("ul"); notices.append(list); banner.after(notices);
+    let feed, registration, busy = false, lastWarningCount = 0;
+    const standalone = () => navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const updateNotifications = () => {
+      enable.disabled = true; testButton.hidden = true; disable.hidden = true;
+      if (!feed) { state.textContent = text("notificationsUnavailable"); return; }
+      if (!feed.enabled) { state.textContent = text("notificationsDesktopDisabled"); return; }
+      if (!window.isSecureContext || !feed.pushAvailable) state.textContent = text("notificationsLan");
+      else if (ios && !standalone()) state.textContent = text("notificationsInstall");
+      else if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) state.textContent = text("notificationsUnsupported");
+      else if (Notification.permission === "denied") state.textContent = text("notificationsDenied");
+      else if (feed.subscribed && Notification.permission === "granted") {
+        state.textContent = text(feed.lastError ? "notificationsError" : "notificationsActive");
+        testButton.hidden = false; disable.hidden = false;
+      } else { state.textContent = text("notificationsInvite"); enable.disabled = busy; }
+    };
+    const post = async (action, body = {}) => {
+      const response = await fetch(`/api/mobile-prototype/push/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!response.ok) throw new Error("push_failed");
+      return response.json();
+    };
+    const refreshNotifications = async () => {
+      try {
+        const response = await fetch("/api/mobile-prototype/notifications");
+        if (!response.ok) throw new Error("unavailable");
+        feed = await response.json();
+        list.replaceChildren();
+        const items = [...(feed.alerts || []), ...(feed.events || [])];
+        const seen = new Set();
+        for (const item of items) {
+          const identity = item.id || `${item.provider}:${item.type}:${item.windowKey}`;
+          if (seen.has(identity)) continue; seen.add(identity);
+          const provider = { codex: "Codex", claudeCode: "Claude", copilot: "Copilot" }[item.provider] || "LLM";
+          const values = { provider, window: text(item.windowKey === "five_hour" ? "notificationFiveHour" : item.windowKey === "weekly" ? "notificationWeekly" : "notificationWindow"),
+            percent: Math.round(item.usedPercent || 0), projected: Math.round(item.projectedPercent || 0), time: item.previousResetAt ? new Date(item.previousResetAt).toLocaleString(language) : "" };
+          const key = item.type === "unexpected_reset" ? "notificationReset" : item.type === "hard_limit" ? "notificationHardLimit" : "notificationPacing";
+          const row = document.createElement("li"); row.textContent = text(key).replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? "")); list.append(row);
+        }
+        summary.textContent = text("notificationsTitle") + (seen.size ? ` (${seen.size})` : "");
+        if (seen.size && !lastWarningCount) notices.open = true;
+        lastWarningCount = seen.size;
+        if (!items.length) { const row = document.createElement("li"); row.textContent = text("notificationsEmpty"); list.append(row); }
+        updateNotifications();
+      } catch { feed = null; list.replaceChildren(); updateNotifications(); }
+    };
+    enable.addEventListener("click", async () => {
+      busy = true; enable.disabled = true;
+      try {
+        // Permission is requested only from this explicit user gesture.
+        if (await Notification.requestPermission() !== "granted") { updateNotifications(); return; }
+        registration = await navigator.serviceWorker.register("/mobile-prototype/sw.js", { scope: "/" });
+        await navigator.serviceWorker.ready;
+        const raw = atob(feed.publicKey.replace(/-/g, "+").replace(/_/g, "/"));
+        const publicKey = Uint8Array.from(raw, (value) => value.charCodeAt(0));
+        const subscription = await registration.pushManager.getSubscription() || await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: publicKey });
+        await post("subscribe", { subscription: subscription.toJSON(), language });
+        await refreshNotifications();
+      } catch { state.textContent = text("notificationsError"); }
+      finally { busy = false; enable.disabled = !!feed?.subscribed || Notification.permission === "denied"; }
+    });
+    testButton.addEventListener("click", async () => {
+      testButton.disabled = true;
+      try { const result = await post("test"); state.textContent = text(result.accepted ? "notificationsTestAccepted" : "notificationsError"); }
+      catch { state.textContent = text("notificationsError"); }
+      testButton.disabled = false;
+    });
+    disable.addEventListener("click", async () => {
+      disable.disabled = true;
+      try {
+        await post("unsubscribe");
+        registration ||= await navigator.serviceWorker.getRegistration("/");
+        await (await registration?.pushManager.getSubscription())?.unsubscribe();
+        await refreshNotifications();
+      } catch { state.textContent = text("notificationsError"); }
+      disable.disabled = false;
+    });
+    if (standalone()) notices.open = true;
+    await refreshNotifications(); setInterval(refreshNotifications, 30000);
     const refresh = async () => {
       try {
         const response = await fetch("/api/mobile-prototype/status");

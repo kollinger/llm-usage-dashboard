@@ -2100,6 +2100,23 @@ app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) =>
   }
 });
 
+// The paired phone gateway consumes the same thresholds as native alerts.
+// Return only notification metadata, never account or provider credentials.
+app.get("/api/notifications/mobile", authMiddleware, async (_req, res) => {
+  try {
+    const settings = await readNotificationSettings();
+    if (!settings.enabled) return res.json({ enabled: false, alerts: [], events: [] });
+    const usage = await readUsageDashboard({ maxAgeMs: NOTIFICATION_USAGE_MAX_AGE_MS });
+    const alerts = Object.entries({ codex: usage.codex, claudeCode: usage.claudeCode, copilot: usage.copilot })
+      .flatMap(([provider, value]) => buildNotificationAlerts(settings, { [provider]: value }).map((alert) => ({ ...alert, provider })));
+    const history = await readCodexResetHistory(10);
+    const { resetNotifications } = require("./lib/mobile-notifications");
+    res.json({ enabled: true, alerts, events: resetNotifications(history) });
+  } catch (error) {
+    sendApiError(res, error, "mobile_notifications_unavailable");
+  }
+});
+
 app.get("/api/notifications/status", authMiddleware, async (_req, res) => {
   try {
     const text = await fsp.readFile(NOTIFICATION_STATUS_FILE, "utf8");

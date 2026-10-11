@@ -15,6 +15,12 @@
 .prototype-card button:disabled { opacity: .5; cursor: default; }
 .prototype-card hr { border: 0; border-top: 1px solid #dce6df; margin: 24px 0; }
 .prototype-mobile-banner { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 12px 20px; background: #e8f2eb; color: #224b35; font: 14px/1.4 system-ui, sans-serif; }
+.prototype-notifications { padding: 12px 20px; border-bottom: 1px solid var(--border, #dce6df); font: 14px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
+.prototype-notifications summary { cursor: pointer; font-weight: 650; }
+.prototype-notifications p { max-width: 70ch; }
+.prototype-notifications button { padding: 10px 14px; margin: 12px 8px 0 0; border: 1px solid var(--border, #c7d6cd); border-radius: 8px; font: inherit; cursor: pointer; }
+.prototype-notifications button:disabled { opacity: .5; cursor: default; }
+.prototype-notifications ul { padding-inline-start: 20px; max-width: 70ch; }
 .prototype-read-only #settingsBtn, .prototype-read-only #accountsManagerBtn, .prototype-read-only #installationsManagerBtn,
 .prototype-read-only #loginBtn, .prototype-read-only #logoutBtn, .prototype-read-only #settingsDialog,
 .prototype-read-only .claude-statusline-setup-btn, .prototype-read-only .source-connect-btn { display: none !important; }

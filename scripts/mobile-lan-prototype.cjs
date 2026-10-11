@@ -16,12 +16,14 @@ async function main() {
     groupFile: flag("--group-file") || path.join(os.homedir(), ".llm-usage-mobile-prototype", "group.json"),
     label: flag("--label") || os.hostname(), nodeId: flag("--node-id") || undefined,
     controlPort,
+    httpsOrigin: flag("--https-origin"), httpsProxyPort: Number(flag("--https-proxy-port") || 0),
     onJoin: async () => { await prototype.stop(); prototype = await start(); }
   });
   prototype = await start();
   controlPort = Number(new URL(prototype.controlUrl).port);
   // Pairing secrets and group credentials deliberately never enter stdout.
-  console.log(JSON.stringify({ controlUrl: prototype.controlUrl, url: prototype.url, transport: "http_trusted_lan_prototype" }));
+  console.log(JSON.stringify({ controlUrl: prototype.controlUrl, url: prototype.url, transport: "http_trusted_lan_prototype",
+    httpsProxyPort: prototype.proxyServer?.address().port || null }));
   for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => prototype.stop().then(() => process.exit(0)));
 }
 

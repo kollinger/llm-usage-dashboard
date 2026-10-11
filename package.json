@@ -27,7 +27,7 @@
     "dist:dir": "electron-builder --dir",
     "test:sync-large": "node test/device-sync-large.test.mjs",
     "prototype:mobile": "node scripts/mobile-lan-prototype.cjs",
-    "test:mobile-prototype": "node test/mobile-lan-prototype.test.mjs",
+    "test:mobile-prototype": "node test/mobile-lan-prototype.test.mjs && node test/mobile-notifications.test.mjs",
     "dist:mobile-prototype:mac": "electron-builder --mac dmg zip --universal --config.extraMetadata.main=electron/mobile-prototype.js --config.extraMetadata.version=1.7.0-lan-prototype.1 --config.productName=\"LLM Usage Dashboard LAN Prototype\" --config.appId=local.llm-usage-dashboard.lan-prototype --config.directories.output=dist/mobile-prototype --publish never"
   },
   "dependencies": {
@@ -37,7 +37,8 @@
     "lucide": "^1.52.0",
     "multicast-dns": "7.2.5",
     "openid-client": "^5.7.1",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "electron": "^42.3.0",
