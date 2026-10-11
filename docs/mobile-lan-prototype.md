@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.10
+# Mobile LAN prototype — 1.7.0-lan-prototype.11
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -20,6 +20,11 @@ removes the pairing. New phone QR codes and links are valid for 24 hours and can
 be used once. iPhone home-screen storage and physical Android/iPhone
 compatibility still need device verification. Pairing belongs to the browser
 that connected; an embedded chat browser does not inherit Chrome's session.
+
+Version `1.7.0-lan-prototype.11` supplies the desktop app symbol when saving
+the dashboard to the home screen. Icon GET/HEAD requests and the web manifest
+do not require a browser cookie, while dashboard data still does. Both the
+dashboard and pairing page declare the Apple touch icon and app title.
 
 Version `1.7.0-lan-prototype.10` restores an existing session after opening a
 dashboard link from another site. The Strict cookie can be absent on the
@@ -362,3 +367,29 @@ The physical iPhone's current Chrome session has not yet been rechecked. Its
 embedded chat browser is a separate session; session recovery cannot transfer
 Chrome authorization into an unpaired browser. No expiry or deleted phone
 cookie was inferred from the missing-code page.
+
+## Home-screen icon review (2026-10-11)
+
+Product source: `0e9e18b`, branch `codex/mobile-lan-prototype`. Local Mac
+review build: `1.7.0-lan-prototype.11`; no public release was created.
+
+The original unauthenticated icon and manifest requests redirected to the
+pairing page and returned HTML. Home-screen installers therefore could not
+retrieve the icon without the browser session. The icon routes now return the
+existing 512-pixel desktop app PNG for GET and HEAD requests, before the phone
+authorization gate. The standard root Apple icon paths and explicit page links
+follow [Apple's web-clip icon guidance](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html).
+The normal network/origin restrictions and dashboard authorization remain.
+
+The regression failed before the fix. Full checks passed locally and on Linux;
+Docker rebuild and isolated Compose smoke verified the exact desktop image,
+PNG/manifest content types, cookie-free GET/HEAD access, authenticated data and
+continued rejection of unauthenticated data. The container was stopped.
+The fresh universal DMG was installed and launched directly; its icon routes,
+pairing page and PNG match the source. The installed app's icon decoded in the
+browser at 512 by 512 pixels. The normal-host CLI gateway was restored with the
+original group, and its icon/manifest endpoints work without cookies.
+
+Physical iPhone home-screen installation remains a user/device check. Reload
+the dashboard in the paired browser and add it to the home screen again to
+request the current icon; this is not proof that an existing shortcut updates.
