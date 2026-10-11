@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.7
+# Mobile LAN prototype — 1.7.0-lan-prototype.9
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -284,3 +284,47 @@ control page visibly reports the 24-hour limit. The CLI phone trial then
 resumes against the normal host with the original group file. It runs detached
 from the command session; automatic app integration and service supervision
 remain open. This duration change does not address those lifecycle limits.
+
+
+## Credit expiry review (2026-10-11)
+
+Review source: `codex/mobile-lan-prototype`, product commits `06d415d` and
+`6fab418`. Review builds: `1.7.0-lan-host.3` for the installed regular desktop
+app and `1.7.0-lan-prototype.9` for the separate LAN prototype. These are local
+review builds; no release tag or public tunnel was created.
+
+The current Codex app-server returns `hasCredits`, `unlimited` and `balance`,
+but no expiry date. A finite Codex credit balance now shows that the date is
+unknown until the user records one. The desktop card opens a date editor;
+leaving the field empty removes the date. Dates are labelled as a manual entry,
+never as a provider-confirmed expiry. No real expiry date was inferred from a
+rounded balance or an unconfirmed December date.
+
+The private local date is bound to the current Codex workspace identity. A
+stale editor is rejected after an account change, and cached credit balances
+cannot inherit another account's date. Both interactive quota reads and the
+background reset collector retain this binding. Dates are local settings;
+copying them through the encrypted installation sync is not part of this step.
+
+When desktop notifications are enabled, a positive balance with a date produces
+warning stages within 30 days, seven days and the final day. Desktop alerts and
+the paired phone notification feed use the same rule. Phone push retains stage
+deduplication across restarts for 35 days. Wi-Fi HTTP still only displays warnings
+while the page is open; locked-phone delivery still requires the optional HTTPS
+push setup described above. Existing notification enablement is preserved.
+
+Verification: full `npm run check`; all 27 locale keys/placeholders; credit date
+validation, calendar/DST boundaries, warning stages, private persistence, removal,
+account-change rejection, background snapshot scope and push deduplication tests;
+Docker rebuild and isolated Compose API smoke (then stopped). The real Mac/phone
+browser check covered the unknown-date card, editor availability, German copy,
+Arabic RTL and a 390-pixel mobile viewport with the edit control hidden. No real
+user expiry date was saved merely for QA.
+
+Both review DMGs were freshly built, installed and launched directly from
+`/Applications`; their packaged source matches `6fab418`. The prototype control
+page renders the 24-hour pairing copy. The phone gateway was then restored to
+the regular host review app with the same group and browser authorization. A
+live check after background collection confirms that the credit scope still
+matches the date editor. Desktop notifications remain disabled in the existing
+settings; no real date or push subscription was added for QA.
