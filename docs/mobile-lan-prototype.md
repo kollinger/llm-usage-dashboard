@@ -123,18 +123,27 @@ checks. This reduces exposure; it does not provide encrypted transport.
 ## Notifications
 
 The phone uses `/api/notifications/mobile` on the running dashboard backend.
-It reuses the native app's enabled setting, hard-limit threshold and pacing
-projection for Codex, Claude and Copilot. Provider identity stays in each alert.
-The phone does not change desktop settings. Recent early Codex **weekly** window
-changes come from the existing account-scoped reset history. Historical,
-stale, overlapping and uncertain observations are excluded. The message reports
-the observed new window and prior planned reset; it does not invent a reset
-cause. Other unexpected quota changes, Claude reset detection, and a full
-equivalent of the separate Matrix monitor are still open.
+Desktop and phone share thresholds, provider identity and account-scoped quota
+events. Fresh Codex readings cover the five-hour and weekly windows; fresh
+Claude API readings cover their reported windows when account scope is known.
+The detector records reached limits, restored availability, scheduled or early
+resets, and quota adjustments directly, without a Matrix dependency. Events
+include the observation time and prior planned reset, without inventing a
+cause. Initial observations, account/plan switches, interrupted or stale
+readings and moving zero-use deadlines do not produce reset notices.
+
+General warnings and reset/adjustment notices default to on for new settings.
+The desktop has a master switch and a separate reset/adjustment switch;
+explicit existing opt-outs remain intact. The phone reads those settings.
+Recent events appear for ten minutes; bounded local state and persistent
+delivery IDs avoid replay after app or gateway restart. Desktop and phone use
+the same event wording.
 
 The mobile page has a notification invitation, current warnings and optional
 connection guidance. Over LAN HTTP it clearly says that warnings require an
-open page. Tailscale is optional; the basic Wi-Fi dashboard never requires it.
+open page, separately from the warning switch. It hides the push activation
+button when activation is unavailable and explains the reason. Tailscale is
+optional; the basic Wi-Fi dashboard never requires it.
 
 For a future user-owned HTTPS connection, the CLI accepts `--https-origin`
 and `--https-proxy-port`. They create an additional **loopback-only** listener.
@@ -471,3 +480,50 @@ or an unsupported status label; the card also passed a focused 390 px check
 without horizontal overflow. The pairing group and notification settings
 are unchanged. The temporary browser tab was closed. Physical iPhone
 rendering remains a device check.
+
+## Shared reset notification review (2026-10-12)
+
+Product source: `bc314a4`, prepared on `codex/unified-reset-notifications`
+for integration into `codex/mobile-lan-prototype`. Local host review version:
+`1.7.0-lan-host.7`; no public release was created.
+
+The dashboard now observes reached limits, restored availability, scheduled
+and unexpected resets, and other quota changes directly from fresh provider
+readings. The existing Matrix monitor's transition checks were inspected;
+Matrix is not a dependency or a message source. Desktop banners and the LAN
+phone feed use the same persisted events and formatter. Account or plan
+changes, missing windows, stale readings and moving zero-use deadlines cannot
+create a reset notification. Event IDs survive desktop restarts.
+
+New installations default to enabled warnings and enabled reset/change
+notifications. Existing explicit opt-outs are preserved. The reset/change
+checkbox and the master switch are independent. Both were enabled on the
+current review desktop at Gerhard's request, preserving its warning thresholds.
+The phone now distinguishes dashboard warnings from phone push and explains
+the HTTPS prerequisite instead of displaying an unavailable grey button.
+The Claude card explains that logged input, output and reused cache tokens
+are separate from subscription quotas; the two new core labels are translated
+in all 27 supported languages.
+
+Full checks passed locally and on Linux. Docker was rebuilt, and isolated
+Compose verified identical desktop/phone event feeds, both default switches,
+persisted opt-outs and the exact served assets before stopping. Tests cover
+transition guards, persistence, native restart deduplication, identical message
+formatting and encrypted Web Push requests. Observed events request a 24-hour
+push TTL; that requests retention, not guaranteed delivery.
+
+A fresh universal payload was packaged into a native `hdiutil` DMG, installed
+from that DMG and launched directly from Applications. Installed backend,
+notification and frontend sources match the product commit. The original
+pairing group remains intact. The exact paired LAN address rendered meaningful
+content at 390 px without horizontal overflow, with the new German warning
+and HTTPS status. The desktop reset checkbox saved its opt-out and was restored
+to enabled; Arabic RTL labels and the Claude explanation were checked, then
+the normal German review state was restored. The temporary browser tab and
+Compose fixtures were removed.
+
+The current phone address still uses HTTP. No HTTPS endpoint, public tunnel,
+certificate trust or operating-system permission was configured. The desktop
+diagnostic reports that macOS notification permission still needs attention.
+Actual desktop banners and locked/closed iPhone delivery remain device checks;
+the latter requires trusted HTTPS, Home-Screen installation and user permission.
