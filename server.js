@@ -5760,7 +5760,7 @@ function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now()) {
     apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt
   });
   if (!resolvedLimits) return usage;
-  return { ...usage, claudeCode: { ...usage.claudeCode, status: "saved", limits: resolvedLimits,
+  return { ...usage, claudeCode: { ...usage.claudeCode, limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource } };
 }
 

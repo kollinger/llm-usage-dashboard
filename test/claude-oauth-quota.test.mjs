@@ -458,7 +458,7 @@ function assertClaudeQuotaOverlaysRestoredConsumption() {
   const restored = _test.overlayRestoredClaudeQuota(history, probe, now);
   assert.equal(restored.claudeCode.limits.weekly.usedPercent, 2);
   assert.equal(restored.claudeCode.limits.fiveHour, null, "an expired window cannot reappear");
-  assert.equal(restored.claudeCode.status, "saved", "a saved quota must not claim live authentication");
+  assert.equal(restored.claudeCode.status, history.claudeCode.status, "quota restoration preserves the card's existing status");
   assert.equal(restored.claudeCode.limitsUpdatedAt, probe.usage.updatedAt);
   assert.equal(restored.claudeCode.totals, history.claudeCode.totals, "log totals stay independent of quotas");
   assert.equal(_test.overlayRestoredClaudeQuota(history, null, now), history);
