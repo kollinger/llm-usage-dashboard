@@ -99,6 +99,7 @@
     const node = document.createElement("span"); banner.append(node); document.body.prepend(banner);
     const notices = document.createElement("details"); notices.className = "prototype-notifications";
     const summary = document.createElement("summary"); summary.textContent = text("notificationsTitle"); notices.append(summary);
+    const warningsState = document.createElement("p"); notices.append(warningsState);
     const state = document.createElement("p"); state.setAttribute("role", "status"); notices.append(state);
     const help = document.createElement("details");
     const helpTitle = document.createElement("summary"); helpTitle.textContent = text("notificationsConnectionHelp"); help.append(helpTitle);
@@ -112,7 +113,10 @@
     const standalone = () => navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const updateNotifications = () => {
-      enable.disabled = true; testButton.hidden = true; disable.hidden = true;
+      enable.disabled = true; enable.hidden = true; testButton.hidden = true; disable.hidden = true;
+      state.hidden = feed?.enabled === false;
+      warningsState.textContent = feed ? text(feed.enabled ? "notificationsWarningsOn" : "notificationsDesktopDisabled") : "";
+      if (feed?.enabled && feed.resetsEnabled === false) warningsState.textContent += ` ${text("notificationsResetsOff")}`;
       if (!feed) { state.textContent = text("notificationsUnavailable"); return; }
       if (!feed.enabled) { state.textContent = text("notificationsDesktopDisabled"); return; }
       if (!window.isSecureContext || !feed.pushAvailable) state.textContent = text("notificationsLan");
@@ -122,7 +126,7 @@
       else if (feed.subscribed && Notification.permission === "granted") {
         state.textContent = text(feed.lastError ? "notificationsError" : "notificationsActive");
         testButton.hidden = false; disable.hidden = false;
-      } else { state.textContent = text("notificationsInvite"); enable.disabled = busy; }
+      } else { state.textContent = text("notificationsInvite"); enable.hidden = false; enable.disabled = busy; }
     };
     const post = async (action, body = {}) => {
       const response = await fetch(`/api/mobile-prototype/push/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -142,10 +146,13 @@
           if (seen.has(identity)) continue; seen.add(identity);
           const provider = { codex: "Codex", claudeCode: "Claude", copilot: "Copilot" }[item.provider] || "LLM";
           const values = { provider, window: text(item.windowKey === "five_hour" ? "notificationFiveHour" : item.windowKey === "weekly" ? "notificationWeekly" : "notificationWindow"),
+            previous: Math.round(item.previousUsedPercent || 0), observed: item.at ? new Date(item.at).toLocaleString(language) : "",
             percent: Math.round(item.usedPercent || 0), projected: Math.round(item.projectedPercent || 0), time: item.previousResetAt ? new Date(item.previousResetAt).toLocaleString(language) : "",
             balance: new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(item.balance || 0),
             date: item.expiresOn ? new Date(`${item.expiresOn}T12:00:00`).toLocaleDateString(language) : "" };
-          const key = item.type === "credit_expiry" ? "notificationCreditsExpiry" : item.type === "unexpected_reset" ? "notificationReset" : item.type === "hard_limit" ? "notificationHardLimit" : "notificationPacing";
+          const eventKeys = { unexpected_reset: "notificationReset", scheduled_reset: "notificationResetScheduled",
+            limit_reached: "notificationLimitReached", availability_restored: "notificationAvailable", quota_changed: "notificationAdjusted" };
+          const key = item.type === "credit_expiry" ? "notificationCreditsExpiry" : eventKeys[item.type] || (item.type === "hard_limit" ? "notificationHardLimit" : "notificationPacing");
           const row = document.createElement("li"); row.textContent = text(key).replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? "")); list.append(row);
         }
         summary.textContent = text("notificationsTitle") + (seen.size ? ` (${seen.size})` : "");

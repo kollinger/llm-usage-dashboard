@@ -37,6 +37,7 @@ const {
 const { aggregateUsageEvents, hashEvidencePath, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
 const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildHistory: buildCodexResetHistory } = require("./lib/codex-reset-history");
+const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
   codexAccountObservationsFromAuth,
@@ -55,6 +56,7 @@ const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_D
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json");
+const quotaNotifications = createQuotaNotifications(path.join(DATA_DIR, "quota-notifications.json"));
 const UPDATE_SETTINGS_FILE = path.join(DATA_DIR, "update-settings.json");
 const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
@@ -2107,6 +2109,7 @@ app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
     const current = await readNotificationSettings();
     const updated = {
       enabled: typeof body.enabled === "boolean" ? body.enabled : current.enabled,
+      resetsEnabled: typeof body.resetsEnabled === "boolean" ? body.resetsEnabled : current.resetsEnabled,
       pacingPercent: Number.isFinite(Number(body.pacingPercent))
         ? Math.max(50, Math.min(200, Number(body.pacingPercent)))
         : current.pacingPercent,
@@ -2135,8 +2138,8 @@ app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) =>
     const codex = usage?.codex || null;
     const claudeCode = usage?.claudeCode || null;
     const copilot = usage?.copilot || null;
-    const alerts = buildNotificationAlerts(settings, { codex, claudeCode, copilot });
-    res.json({ alerts });
+    const alerts = providerNotificationAlerts(settings, { codex, claudeCode, copilot });
+    res.json({ alerts: [...alerts, ...await quotaNotifications.events(settings)] });
   } catch (error) {
     sendApiError(res, error, "notification_check_failed");
   }
@@ -2149,11 +2152,8 @@ app.get("/api/notifications/mobile", authMiddleware, async (_req, res) => {
     const settings = await readNotificationSettings();
     if (!settings.enabled) return res.json({ enabled: false, alerts: [], events: [] });
     const usage = await readUsageDashboard({ maxAgeMs: NOTIFICATION_USAGE_MAX_AGE_MS });
-    const alerts = Object.entries({ codex: usage.codex, claudeCode: usage.claudeCode, copilot: usage.copilot })
-      .flatMap(([provider, value]) => buildNotificationAlerts(settings, { [provider]: value }).map((alert) => ({ ...alert, provider })));
-    const history = await readCodexResetHistory(10);
-    const { resetNotifications } = require("./lib/mobile-notifications");
-    res.json({ enabled: true, alerts, events: resetNotifications(history) });
+    const alerts = providerNotificationAlerts(settings, { codex: usage.codex, claudeCode: usage.claudeCode, copilot: usage.copilot });
+    res.json({ enabled: true, resetsEnabled: settings.resetsEnabled, alerts, events: await quotaNotifications.events(settings) });
   } catch (error) {
     sendApiError(res, error, "mobile_notifications_unavailable");
   }
@@ -5354,10 +5354,14 @@ async function readClaudeUsageProbe() {
       const value = retainLastKnownClaudeUsageProbe(previous, incoming);
       claudeApiUsageCache.value = value;
       claudeApiUsageCache.expiresAt = Date.now() + (value.usage ? CLAUDE_API_USAGE_CACHE_MS : Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000));
-      if (incoming.usage) saveClaudeUsageSnapshot(incoming).catch(() => {});
+      if (incoming.usage) {
+        saveClaudeUsageSnapshot(incoming).catch(() => {});
+        recordClaudeNotificationSample(incoming, probe.notificationScope).catch(() => {});
+      } else quotaNotifications.observe("claudeCode", null).catch(() => {});
       return value;
     })
     .catch((error) => {
+      quotaNotifications.observe("claudeCode", null).catch(() => {});
       const value = retainLastKnownClaudeUsageProbe(
         previous,
         claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api")
@@ -5417,6 +5421,7 @@ async function fetchClaudeUsageProbe(options = {}) {
     if (oauthProbe.status === "available") {
       return {
         ...oauthProbe,
+        notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
         planType: oauthSession.planType || null,
         auth: summarizeClaudeOauthSession(oauthSession)
       };
@@ -5438,7 +5443,7 @@ async function fetchClaudeUsageProbe(options = {}) {
 async function fetchClaudeUsageWithAppCookies() {
   const cookies = readClaudeAppCookies();
   if (!cookies) return claudeApiProbe("missing", "claude_app_cookie_missing", "claude_app_cookie");
-  return fetchClaudeUsageWithAuth({
+  const probe = await fetchClaudeUsageWithAuth({
     orgId: cookies.lastActiveOrg,
     source: "claude_app_cookie",
     hostname: "claude.ai",
@@ -5446,6 +5451,14 @@ async function fetchClaudeUsageWithAppCookies() {
       Cookie: `sessionKey=${cookies.sessionKey}`
     }
   });
+  return { ...probe, notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
+}
+
+async function recordClaudeNotificationSample(probe, accountKey) {
+  const { resolvedLimits } = resolveClaudeUsageLimits({ apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt });
+  const windows = collectNotificationWindows({ claudeCode: { limits: resolvedLimits } });
+  await quotaNotifications.observe("claudeCode", { accountKey, planType: probe.auth?.planType || null, at: probe.updatedAt,
+    windows: windows.map((win) => ({ ...win, key: win.key })) });
 }
 
 async function readClaudeCliOauthSession(options = {}) {
@@ -9371,7 +9384,7 @@ async function readCodexLiveRateLimits() {
     try {
       const client = await getCodexAppServer();
       const normalized = await readScopedCodexLiveRateLimits(client);
-      await recordCodexResetSnapshot(normalized.historySnapshot);
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
       return normalized;
     } catch (error) {
       if (codexLiveRateLimitsCache.value) throw error;
@@ -9496,6 +9509,7 @@ function normalizeCodexLiveRateLimits(response) {
     codex,
     spark,
     historySnapshot: normalizeResetSnapshot(response),
+    notificationSnapshot: codexNotificationSample(response),
     source: {
       status: codex || spark ? "live" : "empty",
       source: "codex app-server",
@@ -10352,13 +10366,9 @@ async function readNotificationSettings() {
   try {
     const text = await fsp.readFile(NOTIFICATION_SETTINGS_FILE, "utf8");
     const data = JSON.parse(text);
-    return {
-      enabled: typeof data.enabled === "boolean" ? data.enabled : true,
-      pacingPercent: Number.isFinite(Number(data.pacingPercent)) ? Number(data.pacingPercent) : 100,
-      hardLimitPercent: Number.isFinite(Number(data.hardLimitPercent)) ? Number(data.hardLimitPercent) : 95
-    };
+    return notificationSettings(data);
   } catch {
-    return { enabled: true, pacingPercent: 100, hardLimitPercent: 95 };
+    return notificationSettings();
   }
 }
 
@@ -11056,6 +11066,11 @@ function clampPercent(value) {
   return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : null;
 }
 
+function providerNotificationAlerts(settings, usageMap) {
+  return Object.entries(usageMap).flatMap(([provider, value]) =>
+    buildNotificationAlerts(settings, { [provider]: value }).map((alert) => ({ ...alert, provider })));
+}
+
 function buildNotificationAlerts(settings, usageMap) {
   const alerts = [];
   const now = Date.now();
@@ -11167,7 +11182,8 @@ function queueCodexResetWrite(write) {
   return next;
 }
 
-function recordCodexResetSnapshot(snapshot) {
+async function recordCodexResetSnapshot(snapshot, notificationSample) {
+  if (notificationSample || snapshot?.kind === "gap") await quotaNotifications.observe("codex", notificationSample || null);
   if (!snapshot) return Promise.resolve();
   return queueCodexResetWrite(async () => {
     if (lastCodexResetSnapshot) {
@@ -11231,8 +11247,8 @@ function startCodexResetCollector() {
     try {
       const client = await getCodexAppServer();
       const normalized = await readScopedCodexLiveRateLimits(client);
-      if (!normalized.historySnapshot) throw new Error("Codex quota unavailable");
-      await recordCodexResetSnapshot(normalized.historySnapshot);
+      if (!normalized.notificationSnapshot?.windows.length) throw new Error("Codex quota unavailable");
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
       codexLiveRateLimitsCache.value = normalized;
       codexLiveRateLimitsCache.updatedAtMs = Date.now();
       codexLiveRateLimitsCache.expiresAt = Date.now() + CODEX_LIVE_RATE_LIMITS_CACHE_MS;

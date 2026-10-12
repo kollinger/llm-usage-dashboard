@@ -375,6 +375,10 @@
             <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Erlaube Mitteilungen für LLM Usage Dashboard in den Systemeinstellungen, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.</span>
           </div>
           <div id="notificationThresholds" class="notification-thresholds" hidden>
+            <label class="field toggle-field">
+              <input type="checkbox" id="notificationResetsEnabled" />
+              <span data-i18n="settings.notifications.resetsEnabled"></span>
+            </label>
             <p class="settings-desc" data-i18n="settings.notifications.thresholdsHelp">Tempo-Warnung nutzt die aktuelle Verbrauchsrate, harte Grenze nutzt den gemessenen Verbrauch im jeweiligen 5h-/Wochenlimit.</p>
             <label class="field">
               <span data-i18n="settings.notifications.pacingLabel">Tempo-Warnung bei projiziertem Verbrauch (%)</span>

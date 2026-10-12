@@ -10,6 +10,8 @@ const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
 const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain, powerMonitor, nativeTheme } = require("electron");
 const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal } = require("../lib/subscription-plan-detection");
+const { notificationMessage } = require("../lib/mobile-notifications");
+const { EVENT_TYPES } = require("../lib/quota-notifications");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -377,8 +379,8 @@ function closeServer(server) {
 }
 
 function alertKey(alert) {
-  if (alert.type === "credit_expiry") return alert.id;
-  return `${alert.windowLabel}:${alert.type}`;
+  if (alert.id) return alert.id;
+  return `${alert.provider || ""}:${alert.windowKey || alert.windowLabel}:${alert.type}`;
 }
 
 function normalizeNotificationLanguage(language) {
@@ -500,6 +502,7 @@ function formatNotificationDuration(minutes, language) {
 }
 
 function buildNotificationTitle(alert, language) {
+  if (EVENT_TYPES.includes(alert.type)) return notificationT(language, "mobilePrototype.notificationsTitle");
   if (alert.type === "credit_expiry") return notificationT(language, "credits.expiryAlertTitle");
   return notificationT(language, "settings.notifications.nativeAlertTitle", {
     window: localizedNotificationWindowLabel(alert, language)
@@ -507,6 +510,7 @@ function buildNotificationTitle(alert, language) {
 }
 
 function buildNotificationBody(alert, language) {
+  if (EVENT_TYPES.includes(alert.type)) return notificationMessage(alert, readNotificationTranslations(language).mobilePrototype, language).body;
   if (alert.type === "credit_expiry") return notificationT(language, "credits.expiryAlertBody", {
     balance: new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(alert.balance),
     date: new Date(`${alert.expiresOn}T12:00:00`).toLocaleDateString(language)
@@ -975,16 +979,19 @@ async function checkNotifications(port) {
     }
     lastAlertCount = data.alerts.length;
     lastAlerts = data.alerts;
+    let deliveredEventIds = [];
+    try { deliveredEventIds = JSON.parse(await fs.readFile(getNotificationStatusFile(), "utf8")).deliveredEventIds || []; } catch { /* First notification check. */ }
     const now = Date.now();
     const notificationLanguage = await getNotificationLanguage();
     for (const alert of data.alerts) {
       const key = alertKey(alert);
+      if (EVENT_TYPES.includes(alert.type) && deliveredEventIds.includes(key)) continue;
       const lastShown = notificationCooldowns.get(key) || 0;
       if (alert.type === "credit_expiry" ? lastShown > 0 : now - lastShown < NOTIFICATION_COOLDOWN_MS) {
         lastSkippedReason = `cooldown:${key}`;
         continue;
       }
-      notificationCooldowns.set(key, now);
+      if (!EVENT_TYPES.includes(alert.type)) notificationCooldowns.set(key, now);
       if (notificationSupported) {
         const title = buildNotificationTitle(alert, notificationLanguage);
         const body = buildNotificationBody(alert, notificationLanguage);
@@ -994,6 +1001,10 @@ async function checkNotifications(port) {
         if (delivery.result === "error") {
           lastSkippedReason = `notification_failed:${delivery.error}`;
         } else {
+          if (EVENT_TYPES.includes(alert.type)) {
+            deliveredEventIds = [...deliveredEventIds, key].slice(-200);
+            notificationCooldowns.set(key, now);
+          }
           requestNotificationAttention();
           lastShownAt = new Date().toISOString();
           lastShownAlert = alert;
@@ -1012,7 +1023,8 @@ async function checkNotifications(port) {
       lastShownAlert,
       lastSkippedReason,
       lastError: null,
-      notificationSupported
+      notificationSupported,
+      deliveredEventIds
     });
   } catch (err) {
     lastError = err.message || String(err);

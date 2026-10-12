@@ -131,6 +131,7 @@ const els = {
   updateNotice: document.getElementById("updateNotice"),
   updateNoticeBody: document.getElementById("updateNoticeBody"),
   notificationsEnabled: document.getElementById("notificationsEnabled"),
+  notificationResetsEnabled: document.getElementById("notificationResetsEnabled"),
   notificationThresholds: document.getElementById("notificationThresholds"),
   notificationPacingPercent: document.getElementById("notificationPacingPercent"),
   notificationHardLimitPercent: document.getElementById("notificationHardLimitPercent"),
@@ -2482,6 +2483,7 @@ function bindEvents() {
     onNotificationEnabledChange();
     scheduleSettingsAutosave("notifications");
   });
+  els.notificationResetsEnabled?.addEventListener("change", () => scheduleSettingsAutosave("notifications"));
   [els.notificationPacingPercent, els.notificationHardLimitPercent].forEach((field) => {
     field?.addEventListener("input", () => scheduleSettingsAutosave("notifications"));
   });
@@ -6151,6 +6153,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
+      ${provider.id === "claudeCode" ? `<p class="provider-note">${escapeHtml(t("providers.messages.claudeLogTokensHelp"))}</p>` : ""}
       ${footRows.length ? `
         <div class="provider-foot">
           ${footRows.map(renderProviderFootRow).join("")}
@@ -10221,6 +10224,7 @@ async function loadNotificationSettings() {
   try {
     const settings = await fetchJson("/api/notifications/settings");
     els.notificationsEnabled.checked = Boolean(settings.enabled);
+    if (els.notificationResetsEnabled) els.notificationResetsEnabled.checked = settings.resetsEnabled !== false;
     if (els.notificationPacingPercent) els.notificationPacingPercent.value = settings.pacingPercent ?? 100;
     if (els.notificationHardLimitPercent) els.notificationHardLimitPercent.value = settings.hardLimitPercent ?? 95;
     if (els.notificationThresholds) els.notificationThresholds.hidden = !settings.enabled;
@@ -10238,6 +10242,7 @@ async function saveNotificationSettings() {
   showSettingsToast(t("settings.saving"), "loading", { persistMs: 0 });
   const payload = {
     enabled: els.notificationsEnabled.checked,
+    resetsEnabled: els.notificationResetsEnabled?.checked !== false,
     pacingPercent: Number(els.notificationPacingPercent?.value ?? 100),
     hardLimitPercent: Number(els.notificationHardLimitPercent?.value ?? 95)
   };

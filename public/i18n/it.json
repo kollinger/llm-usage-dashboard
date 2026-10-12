@@ -376,7 +376,8 @@
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
       "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
-      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode.",
+      "claudeLogTokensHelp": "Token registrati dalle installazioni selezionate: input, output e contesto riutilizzato (cache). Questo totale è separato dal limite dell’abbonamento."
     },
     "emptyState": {
       "eyebrow": "Provider",
@@ -641,7 +642,8 @@
       "nativeWindowWeekly": "Limite settimanale",
       "nativeWindowSonnetOnly": "Limite solo Sonnet",
       "nativeWindowClaudeDesign": "Limite Claude Design",
-      "nativeWindowGeneric": "Limite"
+      "nativeWindowGeneric": "Limite",
+      "resetsEnabled": "Notifica ripristini e modifiche della quota"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -1265,9 +1267,9 @@
     "directCode": "Create a direct Wi-Fi QR code",
     "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
     "notificationsTitle": "Warnings and notifications",
-    "notificationsLan": "On this Wi-Fi address, warnings appear only while the dashboard is open. Lock-screen notifications need an HTTPS connection.",
+    "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
-    "notificationsHelp": "Wi-Fi access works without Tailscale. For access away from home, you can optionally install Tailscale on your computer and phone. A private HTTPS address must then be configured for this dashboard on the computer. Pair the phone using that new address and save it to the Home Screen again. This prototype does not set up this connection automatically. We do not run a relay service.",
+    "notificationsHelp": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
     "notificationsInstall": "On iPhone, add this HTTPS dashboard to the Home Screen first and open it using that icon. Then tap Enable notifications.",
     "notificationsInvite": "Receive quota warnings and unexpected resets even with the dashboard closed. Enable notifications on this phone. The computer serving this HTTPS address must stay running and have Internet access.",
     "notificationsEnable": "Enable notifications",
@@ -1287,7 +1289,13 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider} · {window}: a new quota window was observed earlier than expected. Previous planned reset: {time}.",
-    "notificationCreditsExpiry": "Codex: {balance} crediti scadono il {date} (data inserita)."
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationCreditsExpiry": "Codex: {balance} crediti scadono il {date} (data inserita).",
+    "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
+    "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
   }
 }

@@ -415,7 +415,8 @@
       "claudeLimitsStale": "Claude-Live-Limits sind veraltet. Öffne Claude Code einmal, damit neue Werte geschrieben werden.",
       "claudeOauthUnavailable": "Claude-CLI/OAuth-Quota nicht verfügbar: {reason}.",
       "claudeBrowserLoginHint": "Bei Claude.ai im Browser anmelden, um die Guthabenanzeige zu aktivieren.",
-      "noOpenCodeGptEvents": "Keine lokalen OpenAI-/GPT-Nutzungsereignisse in OpenCode gefunden."
+      "noOpenCodeGptEvents": "Keine lokalen OpenAI-/GPT-Nutzungsereignisse in OpenCode gefunden.",
+      "claudeLogTokensHelp": "Erfasste Tokens aus den ausgewählten Installationen: Eingaben, Antworten und wiederverwendeter Kontext (Cache). Diese Summe ist vom Abo-Limit getrennt."
     },
     "emptyState": {
       "eyebrow": "Anbieter",
@@ -677,7 +678,8 @@
       "nativeWindowWeekly": "Wochenlimit",
       "nativeWindowSonnetOnly": "Nur-Sonnet-Limit",
       "nativeWindowClaudeDesign": "Claude-Design-Limit",
-      "nativeWindowGeneric": "Limit"
+      "nativeWindowGeneric": "Limit",
+      "resetsEnabled": "Resets und Änderungen am Kontingent melden"
     },
     "subscriptions": {
       "title": "Abo-Kosten",
@@ -1265,9 +1267,9 @@
     "directCode": "Direkten WLAN-QR-Code erzeugen",
     "directHelp": "Falls die gemeinsame .local-Adresse nicht öffnet: Direkten QR-Code ausprobieren. Dieser Zugang gilt nur für diesen Rechner; die gespeicherte Adresse wechselt dann nicht mit.",
     "notificationsTitle": "Warnungen und Benachrichtigungen",
-    "notificationsLan": "Über diese WLAN-Adresse erscheinen Warnungen nur bei geöffneter Seite. Meldungen am Sperrbildschirm brauchen eine HTTPS-Verbindung.",
+    "notificationsLan": "Handy-Push ist über diese HTTP-Adresse nicht eingerichtet. Warnungen erscheinen bei geöffneter Seite. Für Meldungen am Sperrbildschirm brauchst du eine HTTPS-Adresse mit vertrauenswürdigem Zertifikat.",
     "notificationsConnectionHelp": "Optional: Meldungen bei gesperrtem Handy und Zugriff unterwegs",
-    "notificationsHelp": "Im WLAN funktioniert das Dashboard ohne Tailscale. Für Zugriff unterwegs kannst du optional Tailscale auf Rechner und Handy installieren. Anschließend muss am Rechner eine private HTTPS-Adresse für dieses Dashboard eingerichtet werden. Verbinde das Handy über diese neue Adresse und speichere sie erneut auf dem Home-Bildschirm. Dieser Prototyp richtet diese Verbindung noch nicht automatisch ein. Wir betreiben keinen Vermittlungsdienst.",
+    "notificationsHelp": "Das WLAN-Dashboard funktioniert ohne Tailscale. Handy-Push braucht eine HTTPS-Adresse mit vertrauenswürdigem Zertifikat und einen laufenden Rechner mit Internetzugang. Dafür kannst du eine eigene Domain mit Zertifikat oder optional eine private Tailscale-HTTPS-Adresse verwenden. Am iPhone diese HTTPS-Adresse auf dem Home-Bildschirm speichern, über das Symbol öffnen und Benachrichtigungen einmal erlauben. Wir betreiben keinen Dashboard-Vermittlungsdienst.",
     "notificationsInstall": "Am iPhone zuerst dieses HTTPS-Dashboard auf dem Home-Bildschirm speichern und über das Symbol öffnen. Danach auf „Benachrichtigungen aktivieren“ tippen.",
     "notificationsInvite": "Limitwarnungen und unerwartete Resets auch bei geschlossenem Dashboard erhalten. Aktiviere dafür die Benachrichtigungen auf diesem Handy. Der Rechner mit dieser HTTPS-Adresse muss laufen und Internetzugang haben.",
     "notificationsEnable": "Benachrichtigungen aktivieren",
@@ -1287,7 +1289,13 @@
     "notificationWindow": "Kontingent",
     "notificationHardLimit": "{provider} · {window}: {percent} % verbraucht. Das Limit ist fast ausgeschöpft.",
     "notificationPacing": "{provider} · {window}: {percent} % verbraucht; bei diesem Tempo sind bis zum Reset {projected} % zu erwarten.",
-    "notificationReset": "{provider} · {window}: Ein neues Kontingentfenster wurde früher als erwartet beobachtet. Vorheriger Planreset: {time}.",
-    "notificationCreditsExpiry": "Codex: {balance} Credits laufen am {date} ab (eigene Angabe)."
+    "notificationReset": "{provider}: Vorzeitiger Reset für {window} am {observed} beobachtet. Zuvor für {time} angekündigt. Jetzt {percent}% genutzt.",
+    "notificationCreditsExpiry": "Codex: {balance} Credits laufen am {date} ab (eigene Angabe).",
+    "notificationsWarningsOn": "Dashboard-Warnungen sind eingeschaltet. Handy-Push wird darunter separat eingerichtet.",
+    "notificationsResetsOff": "Reset- und Änderungsmeldungen sind in den Desktop-Einstellungen ausgeschaltet.",
+    "notificationResetScheduled": "{provider}: Reset für {window} am {observed} beobachtet. Zuvor für {time} angekündigt. Jetzt {percent}% genutzt.",
+    "notificationLimitReached": "{provider}: Limit für {window} am {observed} erreicht. Angekündigter Reset: {time}.",
+    "notificationAvailable": "{provider}: Nutzung für {window} wieder möglich, am {observed} beobachtet. Zuvor angekündigter Reset: {time}. Jetzt {percent}% genutzt.",
+    "notificationAdjusted": "{provider}: Kontingent für {window} am {observed} geändert: {previous}% → {percent}% genutzt. Zuvor angekündigter Reset: {time}."
   }
 }

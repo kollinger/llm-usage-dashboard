@@ -7,21 +7,12 @@ import crypto from 'node:crypto';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { resetNotifications, subscriptionValue, createMobilePush, notificationMessage } = require('../lib/mobile-notifications');
+const { subscriptionValue, createMobilePush, notificationMessage } = require('../lib/mobile-notifications');
 const { startMobilePrototype, signToken } = require('../lib/mobile-lan-prototype');
 const root = new URL('..', import.meta.url);
 let now = Date.parse('2026-10-11T12:00:00Z');
-const eventWindow = { resetType: 'early', source: 'live', accountScope: 'current_account', confidence: 'observed', gap: false, overlap: false,
-  scheduledResetAt: '2026-10-13T12:00:00Z', resetObservedBetween: { from: '2026-10-11T11:57:00Z', to: '2026-10-11T11:59:00Z' } };
-const history = { liveStatus: 'live', windows: [eventWindow] };
-const events = resetNotifications(history, now);
-assert.equal(events.length, 1);
-assert.equal(events[0].type, 'unexpected_reset');
-assert.equal(events[0].previousResetAt, eventWindow.scheduledResetAt);
-for (const change of [{ gap: true }, { overlap: true }, { confidence: 'uncertain' }, { source: 'historical' }, { accountScope: 'historical_unscoped' }, { resetType: 'regular' }, { resetObservedBetween: { to: '2026-10-10T12:00:00Z' } }]) {
-  assert.equal(resetNotifications({ ...history, windows: [{ ...eventWindow, ...change }] }, now).length, 0);
-}
-assert.equal(resetNotifications({ ...history, liveStatus: 'stale' }, now).length, 0);
+const events = [{ id: 'test-reset', type: 'unexpected_reset', provider: 'codex', windowKey: 'weekly',
+  at: '2026-10-11T11:59:00Z', previousResetAt: '2026-10-13T12:00:00Z', usedPercent: 0 }];
 
 const encryption = crypto.createECDH('prime256v1'); encryption.generateKeys();
 const subscription = { endpoint: 'https://web.push.apple.com/example-test', keys: { p256dh: encryption.getPublicKey().toString('base64url'), auth: crypto.randomBytes(16).toString('base64url') } };
@@ -38,7 +29,7 @@ assert.match(creditMessage.body, /63.000.*31.12.2026.*eigene Angabe/);
 const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'mobile-notifications-'));
 let gateway, lan, upstream;
 try {
-  const file = path.join(directory, 'push.json'), sent = [];
+  const file = path.join(directory, 'push.json'), sent = [], lifetimes = [];
   const send = async (sub, payload, options) => {
     // Exercise the real encryption and VAPID request builder without sending.
     const request = require('web-push').generateRequestDetails(sub, payload, options);
@@ -46,6 +37,7 @@ try {
     assert.ok(request.body.length > Buffer.byteLength(payload));
     assert.match(request.headers.Authorization, /^vapid /);
     sent.push(JSON.parse(payload));
+    lifetimes.push(options.TTL);
   };
   let push = await createMobilePush({ file, origin: 'https://dashboard.example.invalid', send, now: () => now });
   await push.subscribe('phone', now + 3600000, subscription, 'de');
@@ -70,6 +62,8 @@ try {
   const recent = { ...events[0], at: new Date(now).toISOString(), id: 'new-observation' };
   await push.publish({ enabled: true, events: [recent] });
   assert.equal(sent.length, 2, 'push delivery runs without a browser page');
+  assert.equal(lifetimes[0], 300, 'current warnings expire quickly');
+  assert.equal(lifetimes[1], 86400, 'observed events can wait while a phone is offline');
   await push.publish({ enabled: true, events: [recent] });
   await push.publish({ enabled: false, alerts: [{ ...alert, windowKey: 'five_hour' }] });
   assert.equal(sent.length, 2);
