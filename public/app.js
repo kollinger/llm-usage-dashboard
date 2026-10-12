@@ -6459,7 +6459,8 @@ function renderProviderFootRow(row) {
 function renderClaudeCreditHint(provider) {
   if (provider.id !== "claudeCode" || provider.creditRows?.length) return "";
   if (provider.subscription?.planType || provider.subscriptionConnectionAction?.rereadOnly) return "";
-  const status = provider.claudeBrowserCredits?.status || "missing";
+  if (!provider.claudeBrowserCredits) return "";
+  const status = provider.claudeBrowserCredits.status;
   if (status === "available") return "";
   const hint = t("providers.messages.claudeBrowserLoginHint");
   return `

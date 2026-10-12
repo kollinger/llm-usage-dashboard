@@ -1312,7 +1312,10 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     await usageViewCache.write("local", viewFingerprint, value);
     return value;
   }, { force, maxAgeMs, staleWhileRefresh });
-  return applyCodexCreditExpiry(overlayCurrentCodexQuota(usage, codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+  const claudeProbe = usage.cache?.restored
+    ? claudeApiUsageCache.value || await readClaudeUsageSnapshot()
+    : null;
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
 async function currentCodexCreditScope() {
@@ -5748,6 +5751,17 @@ function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
       hasCurrentWindow(usage?.seven_day_sonnet, "Nur Sonnet", 10080) ||
       claudeApiFableLimitRows(usage).length
   );
+}
+
+function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now()) {
+  if (!usage.cache?.restored || !usage.claudeCode || usage.claudeCode.limits || !probe?.usage ||
+      !hasCurrentClaudeUsageSnapshot(probe.usage, nowMs)) return usage;
+  const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
+    apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt
+  });
+  if (!resolvedLimits) return usage;
+  return { ...usage, claudeCode: { ...usage.claudeCode, status: "saved", limits: resolvedLimits,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource } };
 }
 
 function summarizeClaudeApiUsageProbe(probe) {
@@ -11328,6 +11342,7 @@ module.exports = {
     readClaudeUsageSnapshot,
     saveClaudeUsageSnapshot,
     retainLastKnownClaudeUsageProbe,
+    overlayRestoredClaudeQuota,
     summarizeClaudeApiUsageProbe,
     resolveClaudeUsageLimits,
     buildNotificationAlerts,
