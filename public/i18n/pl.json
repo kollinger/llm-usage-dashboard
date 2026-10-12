@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Czas do limitu: {duration}",
+      "timeToLimit": "Szacowany czas do limitu: {duration}",
       "title": "Ostatnie tempo",
       "measured": "+{percent} punktów procentowych w {duration}",
       "collecting": "Brakuje jeszcze pomiarów dla tego okresu.",
       "flat": "Brak mierzalnego wzrostu w tym okresie.",
       "stale": "Ostatni odczyt limitu jest zbyt stary.",
       "changed": "Odczyty się zmieniły; brak prognozy.",
-      "possible": "Limit może zostać osiągnięty przed resetem; szacunek jest niepewny.",
+      "possible": "Ze względu na zaokrąglenie nie jest pewne, czy limit zostanie osiągnięty przed resetem.",
       "note": "Szacunek z zaokrąglonych procentów przy stałym tempie."
     },
     "fiveHour": "5h",

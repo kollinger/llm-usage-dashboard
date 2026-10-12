@@ -6560,10 +6560,12 @@ function renderQuotaPaceCard(provider, row) {
   if (pace?.status === "flat") result = t("limits.recentPace.flat");
   if (pace?.status === "stale") result = t("limits.recentPace.stale");
   if (pace?.status === "changed") result = t("limits.recentPace.changed");
-  if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
+  if (["risk", "safe", "possible"].includes(pace?.status) && pace.hitAt) {
     timeToLimit = t("limits.recentPace.timeToLimit", {
       duration: formatDurationCompact(Date.parse(pace.hitAt) - Date.now())
     });
+  }
+  if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
     result = t("limits.pace.hitBeforeReset", {
       time: formatDateTime(pace.hitAt),
       duration: formatDurationCompact(Date.parse(pace.resetsAt) - Date.parse(pace.hitAt))

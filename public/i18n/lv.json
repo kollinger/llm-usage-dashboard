@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Laiks līdz limitam: {duration}",
+      "timeToLimit": "Aptuvenais laiks līdz limitam: {duration}",
       "title": "Nesenais temps",
       "measured": "+{percent} procentpunkti {duration} laikā",
       "collecting": "Šim periodam vēl nav pietiekami daudz mērījumu.",
       "flat": "Šajā periodā nav izmērāma pieauguma.",
       "stale": "Pēdējais kvotas mērījums ir pārāk vecs.",
       "changed": "Mērījumi mainījās; prognoze nav pieejama.",
-      "possible": "Limits var tikt sasniegts pirms atiestatīšanas; aplēse ir neskaidra.",
+      "possible": "Noapaļošanas dēļ nav skaidrs, vai limits tiks sasniegts pirms atiestatīšanas.",
       "note": "Aplēse no noapaļotiem procentiem pie nemainīga tempa."
     },
     "fiveHour": "5h",

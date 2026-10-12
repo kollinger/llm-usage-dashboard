@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Tempo até ao limite: {duration}",
+      "timeToLimit": "Tempo estimado até ao limite: {duration}",
       "title": "Ritmo recente",
       "measured": "+{percent} pontos percentuais em {duration}",
       "collecting": "Ainda não há medições suficientes para este período.",
       "flat": "Sem aumento mensurável neste período.",
       "stale": "A última leitura da quota é demasiado antiga.",
       "changed": "As leituras mudaram; não há previsão.",
-      "possible": "O limite pode ser atingido antes da reposição; a estimativa é incerta.",
+      "possible": "O arredondamento deixa incerto se o limite será atingido antes da reposição.",
       "note": "Estimativa com percentagens arredondadas e ritmo constante."
     },
     "fiveHour": "5h",

@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Čas do omejitve: {duration}",
+      "timeToLimit": "Ocenjeni čas do omejitve: {duration}",
       "title": "Nedavni tempo",
       "measured": "+{percent} odstotnih točk v {duration}",
       "collecting": "Za to obdobje še ni dovolj meritev.",
       "flat": "V tem obdobju ni merljivega povečanja.",
       "stale": "Zadnja meritev kvote je prestara.",
       "changed": "Meritve so se spremenile; napoved ni na voljo.",
-      "possible": "Omejitev je mogoče doseči pred ponastavitvijo; ocena je negotova.",
+      "possible": "Zaradi zaokroževanja ni gotovo, ali bo omejitev dosežena pred ponastavitvijo.",
       "note": "Ocena iz zaokroženih odstotkov ob stalnem tempu."
     },
     "fiveHour": "5h",

@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Timp până la limită: {duration}",
+      "timeToLimit": "Timp estimat până la limită: {duration}",
       "title": "Ritm recent",
       "measured": "+{percent} puncte procentuale în {duration}",
       "collecting": "Nu sunt încă suficiente măsurători pentru această perioadă.",
       "flat": "Nicio creștere măsurabilă în această perioadă.",
       "stale": "Ultima citire a cotei este prea veche.",
       "changed": "Citirile s-au schimbat; nu există prognoză.",
-      "possible": "Limita ar putea fi atinsă înainte de resetare; estimarea este incertă.",
+      "possible": "Din cauza rotunjirii, nu este sigur dacă limita va fi atinsă înainte de resetare.",
       "note": "Estimare din procente rotunjite, presupunând un ritm constant."
     },
     "fiveHour": "5h",

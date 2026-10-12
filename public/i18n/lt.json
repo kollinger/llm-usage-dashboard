@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Laikas iki limito: {duration}",
+      "timeToLimit": "Numatomas laikas iki limito: {duration}",
       "title": "Pastarasis tempas",
       "measured": "+{percent} procentinio punkto per {duration}",
       "collecting": "Šiam laikotarpiui dar nepakanka matavimų.",
       "flat": "Šiuo laikotarpiu nėra išmatuojamo augimo.",
       "stale": "Paskutinis kvotos rodmuo per senas.",
       "changed": "Rodmenys pasikeitė; prognozės nėra.",
-      "possible": "Limitas gali būti pasiektas iki atnaujinimo; įvertis nepatikimas.",
+      "possible": "Dėl apvalinimo neaišku, ar limitas bus pasiektas iki atnaujinimo.",
       "note": "Įvertis pagal suapvalintus procentus, darant pastovaus tempo prielaidą."
     },
     "fiveHour": "5h",

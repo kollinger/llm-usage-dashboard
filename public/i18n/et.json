@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Aeg limiidini: {duration}",
+      "timeToLimit": "Hinnanguline aeg limiidini: {duration}",
       "title": "Hiljutine tempo",
       "measured": "+{percent} protsendipunkti ajaga {duration}",
       "collecting": "Selle perioodi kohta pole veel piisavalt mõõtmisi.",
       "flat": "Sel perioodil pole mõõdetavat kasvu.",
       "stale": "Viimane kvoodinäit on liiga vana.",
       "changed": "Näidud muutusid; prognoos puudub.",
-      "possible": "Limiit võib täituda enne lähtestamist; hinnang on ebakindel.",
+      "possible": "Ümardamise tõttu pole kindel, kas limiit täitub enne lähtestamist.",
       "note": "Hinnang ümardatud protsentide ja püsiva tempo põhjal."
     },
     "fiveHour": "5h",

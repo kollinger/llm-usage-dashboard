@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Tid til grænsen nås: {duration}",
+      "timeToLimit": "Anslået tid til grænsen nås: {duration}",
       "title": "Seneste tempo",
       "measured": "+{percent} procentpoint på {duration}",
       "collecting": "Endnu ikke nok målinger for denne periode.",
       "flat": "Ingen målbar stigning i denne periode.",
       "stale": "Den seneste kvotemåling er for gammel.",
       "changed": "Målingerne ændrede sig; intet estimat.",
-      "possible": "Grænsen kan nås før nulstilling; estimatet er usikkert.",
+      "possible": "Afrundingen gør det usikkert, om grænsen nås før nulstilling.",
       "note": "Estimat fra afrundede procenter ved uændret tempo."
     },
     "fiveHour": "5h",

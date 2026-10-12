@@ -461,14 +461,14 @@
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Čas do dosiahnutia limitu: {duration}",
+      "timeToLimit": "Odhadovaný čas do dosiahnutia limitu: {duration}",
       "title": "Nedávne tempo",
       "measured": "+{percent} percentuálnych bodov za {duration}",
       "collecting": "Pre toto obdobie zatiaľ nie je dosť meraní.",
       "flat": "V tomto období nie je merateľný nárast.",
       "stale": "Posledný údaj o limite je zastaraný.",
       "changed": "Údaje sa zmenili; odhad nie je k dispozícii.",
-      "possible": "Limit môže byť dosiahnutý pred obnovením; odhad je neistý.",
+      "possible": "Pre zaokrúhlenie nie je isté, či sa limit dosiahne pred obnovením.",
       "note": "Odhad zo zaokrúhlených percent pri stálom tempe."
     },
     "fiveHour": "5h",
