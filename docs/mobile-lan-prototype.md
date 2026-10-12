@@ -1,4 +1,4 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.11
+# Mobile LAN prototype — 1.7.0-lan-prototype.12
 
 An explicitly started experiment for a phone dashboard without a hosted service.
 The regular desktop application and its saved accounts are not modified. This
@@ -20,6 +20,11 @@ removes the pairing. New phone QR codes and links are valid for 24 hours and can
 be used once. iPhone home-screen storage and physical Android/iPhone
 compatibility still need device verification. Pairing belongs to the browser
 that connected; an embedded chat browser does not inherit Chrome's session.
+
+Version `1.7.0-lan-prototype.12` keeps the estimated time to the limit
+visible when rounded readings leave a before/after-reset comparison uncertain.
+The shared desktop/phone card labels this as an estimate; stale readings,
+missing samples and unchanged readings do not produce a fabricated time.
 
 Version `1.7.0-lan-prototype.11` supplies the desktop app symbol when saving
 the dashboard to the home screen. Icon GET/HEAD requests and the web manifest
@@ -393,3 +398,44 @@ original group, and its icon/manifest endpoints work without cookies.
 Physical iPhone home-screen installation remains a user/device check. Reload
 the dashboard in the paired browser and add it to the home screen again to
 request the current icon; this is not proof that an existing shortcut updates.
+
+
+## Recent-pace estimate review (2026-10-12)
+
+Product source: `ca2b41b`, integrated into `codex/mobile-lan-prototype` from
+`codex/recent-pace-estimate`. Local review versions: `1.7.0-lan-host.4` and
+`1.7.0-lan-prototype.12`; no public release was created.
+
+The existing calculation already supplied a central `hitAt` estimate, but the
+card hid it for `possible` results. That classification means rounded readings
+allow the limit to fall on either side of reset; it does not mean there is no
+measurable pace. The card now shows an explicitly estimated duration for risk,
+safe and possible results. Its reset comparison remains cautious, with the
+rounding explanation updated in all 27 languages. The backend formula, quota
+classification and notification rules were not changed.
+
+The screenshot regression uses 20 to 23 percent over 300 minutes and a reset
+131 hours away. It is classified possible, yet its 77 remaining points at
+0.6 points per hour yield 128 hours 20 minutes. The card displays about five
+days and eight hours. Missing, stale, flat and changed-reading cases still
+show their original state without an invented duration.
+
+The regression failed before the fix. Full checks passed locally and on Linux;
+translation keys and placeholders are consistent across all 27 languages. A
+fresh Docker image and isolated Compose smoke check verified the dashboard and
+exact served JavaScript, German and Arabic translations. Compose was stopped.
+The 390-pixel, two-column browser check displays the five-day/eight-hour
+estimate in German and Arabic RTL without overflowing the card.
+
+Fresh universal Mac packages were installed from new DMGs and launched
+directly. Both installed apps' JavaScript and checked translations match the
+product commit. The automatic host DMG step stalled in a macOS sync helper;
+its temporary image was converted with `hdiutil`, and the fresh prototype
+universal payload was packaged into a DMG with the same macOS tool. The
+cancelled build helper has exited. No packaging source was changed.
+
+The normal host and LAN gateway are running again with the original pairing
+group and unchanged notification settings. An existing paired browser opened
+the dashboard and both provider cards, including the new estimate. Temporary
+browser fixtures and the test tab were removed; the separate native prototype
+was stopped. Physical iPhone rendering remains a device check.
