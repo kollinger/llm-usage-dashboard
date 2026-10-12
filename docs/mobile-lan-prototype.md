@@ -439,3 +439,35 @@ group and unchanged notification settings. An existing paired browser opened
 the dashboard and both provider cards, including the new estimate. Temporary
 browser fixtures and the test tab were removed; the separate native prototype
 was stopped. Physical iPhone rendering remains a device check.
+
+## Claude restored-history quota review (2026-10-12)
+
+Product source: `4f851bc` plus status-preservation follow-up `73b1956`,
+integrated into `codex/mobile-lan-prototype` from
+`codex/claude-history-status`. Local host review version:
+`1.7.0-lan-host.6`; no public release was created.
+
+The persisted consumption view intentionally omits account metadata and
+quotas. During restoration, that absence was incorrectly interpreted as a
+missing browser login. A still-valid saved Claude quota now overlays the
+history view while current readers refresh, preserving its original timestamp
+and existing card status. Expired windows and unreported weekly windows
+remain unavailable. Log totals remain independent of the quota overlay; the
+fallback token display is not a conversion to subscription consumption.
+
+The login hint now requires actual browser-credit status instead of assuming
+missing authentication from absent metadata. The screenshot regression failed
+before the fix and passes afterward. Tests also cover partial windows,
+expired snapshots, unchanged log totals and the authority of current readers.
+Full checks passed locally and on Linux. Docker was rebuilt; isolated Compose
+smoke verified the exact served assets and was stopped afterward.
+
+A fresh universal host payload was packaged into a DMG with native
+`hdiutil`, installed from that DMG, and launched directly from Applications.
+The installed server and frontend sources match `73b1956`. The running API
+retained the dated weekly quota while its consumption cache was restored.
+An existing paired LAN browser displayed the quota without the login hint
+or an unsupported status label; the card also passed a focused 390 px check
+without horizontal overflow. The pairing group and notification settings
+are unchanged. The temporary browser tab was closed. Physical iPhone
+rendering remains a device check.
