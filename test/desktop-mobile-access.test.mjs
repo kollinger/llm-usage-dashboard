@@ -79,6 +79,8 @@ try {
   const context = vm.createContext({ URL, mainWindow: { webContents: sender }, dashboardPort: 1234 });
   vm.runInContext(`${trusted}; this.validate = trustedMobileRequest;`, context);
   assert.doesNotThrow(() => context.validate({ sender, senderFrame: { url: "http://127.0.0.1:1234/" } }));
+  assert.doesNotThrow(() => context.validate({ sender, senderFrame: { url: "http://localhost:1234/" } }), "the installed dashboard uses localhost");
+  assert.throws(() => context.validate({ sender, senderFrame: { url: "http://localhost:9876/" } }), /untrusted/);
   assert.throws(() => context.validate({ sender: {}, senderFrame: { url: "http://127.0.0.1:1234/" } }), /untrusted/);
   assert.throws(() => context.validate({ sender, senderFrame: { url: "https://example.com/" } }), /untrusted/);
   const english = JSON.parse(await fs.readFile(new URL("../public/i18n/en.json", import.meta.url), "utf8"));

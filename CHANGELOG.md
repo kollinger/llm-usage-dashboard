@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0-preview.2 - 2026-10-15
+
+- Accept the installed desktop window’s localhost address when opening phone setup, while continuing to reject other windows, ports and origins.
+
 ## 1.7.0-preview.1 - 2026-10-15
 
 ### Phone access in the desktop app

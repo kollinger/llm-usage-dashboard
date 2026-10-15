@@ -122,8 +122,10 @@ ipcMain.handle("subscription:refresh", async (_event, payload = {}) => {
 });
 
 function trustedMobileRequest(event) {
+  const url = new URL(event.senderFrame.url);
   if (!mainWindow || event.sender !== mainWindow.webContents ||
-      new URL(event.senderFrame.url).origin !== `http://127.0.0.1:${dashboardPort}`) throw new Error("untrusted_mobile_request");
+      url.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(url.hostname) ||
+      url.port !== String(dashboardPort)) throw new Error("untrusted_mobile_request");
 }
 
 ipcMain.handle("mobile:status", async (event) => {
