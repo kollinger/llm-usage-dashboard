@@ -12,11 +12,13 @@ const { app, BrowserWindow, shell, Notification, dialog, session: electronSessio
 const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal } = require("../lib/subscription-plan-detection");
 const { notificationMessage } = require("../lib/mobile-notifications");
 const { EVENT_TYPES } = require("../lib/quota-notifications");
+const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
 let mainWindow = null;
 let dashboardPort = null;
+let mobileAccess = null, mobileWindow = null, mobileRefreshTimer = null, mobileShutdown = false;
 let openWindowWhenReady = false;
 let claudeBrowserSyncPending = null;
 let accountBillingSyncPending = null;
@@ -117,6 +119,39 @@ if (!hasSingleInstanceLock) {
 
 ipcMain.handle("subscription:refresh", async (_event, payload = {}) => {
   return refreshSubscriptionSources(payload?.provider);
+});
+
+function trustedMobileRequest(event) {
+  if (!mainWindow || event.sender !== mainWindow.webContents ||
+      new URL(event.senderFrame.url).origin !== `http://127.0.0.1:${dashboardPort}`) throw new Error("untrusted_mobile_request");
+}
+
+ipcMain.handle("mobile:status", async (event) => {
+  trustedMobileRequest(event); return mobileAccess.status();
+});
+ipcMain.handle("mobile:enabled", async (event, enabled) => {
+  trustedMobileRequest(event);
+  const status = await mobileAccess.setEnabled(enabled);
+  if (!enabled && mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  return status;
+});
+ipcMain.handle("mobile:open", async (event) => {
+  trustedMobileRequest(event);
+  const status = await mobileAccess.setEnabled(true);
+  if (!status.running) return status;
+  if (mobileWindow && !mobileWindow.isDestroyed()) { mobileWindow.show(); mobileWindow.focus(); return status; }
+  const target = new URL(status.controlUrl);
+  if (languagePreference) target.searchParams.set("lang", languagePreference);
+  target.searchParams.set("desktop", "1");
+  mobileWindow = new BrowserWindow({ width: 680, height: 850, parent: mainWindow,
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true } });
+  mobileWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  mobileWindow.webContents.on("will-navigate", (navigation, url) => {
+    if (new URL(url).origin !== target.origin) navigation.preventDefault();
+  });
+  mobileWindow.on("closed", () => { mobileWindow = null; });
+  await mobileWindow.loadURL(target.href);
+  return status;
 });
 
 ipcMain.handle("theme:set-preference", async (_event, preference) => {
@@ -2497,6 +2532,11 @@ app.whenReady().then(async () => {
   nativeTheme.on("updated", updateNativeWindowTheme);
   const port = await startBackend();
   dashboardPort = port;
+  mobileAccess = createDesktopMobileAccess({ dataDir: process.env.LLM_USAGE_DATA_DIR,
+    upstream: `http://127.0.0.1:${port}`, label: os.hostname(),
+    legacyDirectory: path.join(app.getPath("appData"), "LLM Usage Dashboard LAN Prototype", "mobile-prototype") });
+  await mobileAccess.init();
+  mobileRefreshTimer = setInterval(() => { if (!systemSuspended) mobileAccess.refresh().catch(() => {}); }, 20000);
   await writeInstanceMarker(port).catch(() => {});
   await configureBackgroundLoginItem();
   if (shouldOpenInitialWindow() || openWindowWhenReady) showDashboardWindow(port);
@@ -2509,6 +2549,7 @@ app.whenReady().then(async () => {
   });
   powerMonitor.on("resume", () => {
     systemSuspended = false;
+    mobileAccess.refresh().catch(() => {});
     pollNotifications(port).catch(() => {});
   });
 
@@ -2529,7 +2570,11 @@ app.on("window-all-closed", () => {
   // Keep the backend alive for background quota sync; a later app launch reopens the window.
 });
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
+  if (mobileAccess && !mobileShutdown) {
+    event.preventDefault(); mobileShutdown = true; clearInterval(mobileRefreshTimer);
+    mobileAccess.stop().catch(() => {}).finally(() => app.quit()); return;
+  }
   removeInstanceMarker().catch(() => {});
   closeServer(dashboardServer);
   closeServer(ollamaProxyServer);

@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefon",
+      "help": "Připojte telefon jednou pomocí QR kódu. Poté otevřete přehled ve stejné síti Wi-Fi.",
+      "open": "Zobrazit QR kód a odkaz",
+      "stop": "Vypnout přístup z telefonu",
+      "on": "Přístup z telefonu je zapnutý a obnoví se při spuštění aplikace.",
+      "off": "Přístup z telefonu je vypnutý.",
+      "desktopOnly": "Dostupné v nainstalované aplikaci pro počítač.",
+      "noLan": "Připojte počítač k soukromé Wi-Fi nebo místní síti a zkuste to znovu.",
+      "portBusy": "Port používá jiná služba. Ukončete ji a zkuste to znovu.",
+      "failed": "Přístup z telefonu se nepodařilo spustit. Zkuste to znovu.",
+      "address": "Adresa přehledu"
+    }
   },
   "errors": {
     "loadUsage": "Chyba"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Kopírovat odkaz",
+    "copied": "Odkaz zkopírován.",
+    "copyError": "Zkopírujte odkaz z pole adresy.",
+    "desktopTitle": "Zobrazit QR kód a odkaz"
   }
 }

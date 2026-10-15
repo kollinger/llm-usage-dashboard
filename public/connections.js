@@ -7,6 +7,7 @@ const connectionText = (key, values) => t(`connections.${key}`, values);
 const connectionJson = (body) => ({ headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
 function selectSettingsTab(name) {
+  if (name === "mobile") loadMobileAccess();
   const tabs = [...document.querySelectorAll("[data-settings-tab]")];
   if (!tabs.some((tab) => tab.dataset.settingsTab === name)) name = "accounts";
   for (const tab of tabs) {

@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefonas",
+      "help": "Vieną kartą susiekite telefoną QR kodu. Tada atverkite skydelį tame pačiame Wi-Fi tinkle.",
+      "open": "Rodyti QR kodą ir nuorodą",
+      "stop": "Išjungti prieigą telefonu",
+      "on": "Prieiga telefonu įjungta ir atnaujinama paleidus programą.",
+      "off": "Prieiga telefonu išjungta.",
+      "desktopOnly": "Pasiekiama įdiegtoje darbalaukio programoje.",
+      "noLan": "Prijunkite kompiuterį prie privataus Wi-Fi ar vietinio tinklo ir bandykite dar kartą.",
+      "portBusy": "Prievadą naudoja kita paslauga. Uždarykite ją ir bandykite dar kartą.",
+      "failed": "Nepavyko paleisti prieigos telefonu. Bandykite dar kartą.",
+      "address": "Skydelio adresas"
+    }
   },
   "errors": {
     "loadUsage": "Klaida"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Kopijuoti nuorodą",
+    "copied": "Nuoroda nukopijuota.",
+    "copyError": "Nukopijuokite nuorodą iš adreso lauko.",
+    "desktopTitle": "Rodyti QR kodą ir nuorodą"
   }
 }

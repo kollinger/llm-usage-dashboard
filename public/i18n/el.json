@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Τηλέφωνο",
+      "help": "Συνδέστε το τηλέφωνο μία φορά με κωδικό QR. Μετά ανοίξτε τον πίνακα στο ίδιο δίκτυο Wi-Fi.",
+      "open": "Εμφάνιση κωδικού QR και συνδέσμου",
+      "stop": "Απενεργοποίηση πρόσβασης τηλεφώνου",
+      "on": "Η πρόσβαση τηλεφώνου είναι ενεργή και συνεχίζεται όταν ξεκινά η εφαρμογή.",
+      "off": "Η πρόσβαση τηλεφώνου είναι ανενεργή.",
+      "desktopOnly": "Διαθέσιμο στην εγκατεστημένη εφαρμογή υπολογιστή.",
+      "noLan": "Συνδέστε τον υπολογιστή σε ιδιωτικό Wi-Fi ή τοπικό δίκτυο και δοκιμάστε ξανά.",
+      "portBusy": "Μια άλλη υπηρεσία χρησιμοποιεί τη θύρα. Κλείστε την και δοκιμάστε ξανά.",
+      "failed": "Δεν ήταν δυνατή η έναρξη πρόσβασης τηλεφώνου. Δοκιμάστε ξανά.",
+      "address": "Διεύθυνση πίνακα"
+    }
   },
   "errors": {
     "loadUsage": "Σφάλμα"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Αντιγραφή συνδέσμου",
+    "copied": "Ο σύνδεσμος αντιγράφηκε.",
+    "copyError": "Αντιγράψτε τον σύνδεσμο από το πεδίο διεύθυνσης.",
+    "desktopTitle": "Εμφάνιση κωδικού QR και συνδέσμου"
   }
 }

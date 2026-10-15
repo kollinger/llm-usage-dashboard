@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Tālrunis",
+      "help": "Vienreiz savienojiet tālruni ar QR kodu. Pēc tam atveriet paneli tajā pašā Wi-Fi tīklā.",
+      "open": "Rādīt QR kodu un saiti",
+      "stop": "Izslēgt piekļuvi no tālruņa",
+      "on": "Piekļuve no tālruņa ir ieslēgta un atsākas, palaižot lietotni.",
+      "off": "Piekļuve no tālruņa ir izslēgta.",
+      "desktopOnly": "Pieejams instalētajā darbvirsmas lietotnē.",
+      "noLan": "Savienojiet datoru ar privātu Wi-Fi vai lokālo tīklu un mēģiniet vēlreiz.",
+      "portBusy": "Portu izmanto cits pakalpojums. Aizveriet to un mēģiniet vēlreiz.",
+      "failed": "Neizdevās sākt piekļuvi no tālruņa. Mēģiniet vēlreiz.",
+      "address": "Paneļa adrese"
+    }
   },
   "errors": {
     "loadUsage": "Kļūda"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Kopēt saiti",
+    "copied": "Saite nokopēta.",
+    "copyError": "Kopējiet saiti no adreses lauka.",
+    "desktopTitle": "Rādīt QR kodu un saiti"
   }
 }

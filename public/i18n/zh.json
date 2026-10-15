@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "手机",
+      "help": "用二维码连接手机一次，然后在同一 Wi-Fi 网络中打开此仪表盘。",
+      "open": "显示二维码和链接",
+      "stop": "关闭手机访问",
+      "on": "手机访问已启用，应用启动时会恢复。",
+      "off": "手机访问已关闭。",
+      "desktopOnly": "可在已安装的桌面应用中使用。",
+      "noLan": "请将此电脑连接到私人 Wi-Fi 或局域网后重试。",
+      "portBusy": "其他服务正在使用此端口。请关闭该服务后重试。",
+      "failed": "无法启动手机访问，请重试。",
+      "address": "仪表盘地址"
+    }
   },
   "errors": {
     "loadUsage": "错误"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "复制链接",
+    "copied": "链接已复制。",
+    "copyError": "请从地址栏复制链接。",
+    "desktopTitle": "显示二维码和链接"
   }
 }

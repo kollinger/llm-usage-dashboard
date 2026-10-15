@@ -107,6 +107,11 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
+  mobileAccessOpen: document.getElementById("mobileAccessOpen"),
+  mobileAccessDisable: document.getElementById("mobileAccessDisable"),
+  mobileAccessStatus: document.getElementById("mobileAccessStatus"),
+  mobileAccessAddress: document.getElementById("mobileAccessAddress"),
+  mobileAccessAddressField: document.getElementById("mobileAccessAddressField"),
   settingsSourcesRecheckBtn: document.getElementById("settingsSourcesRecheckBtn"),
   settingsSourcesStatus: document.getElementById("settingsSourcesStatus"),
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
@@ -2413,6 +2418,8 @@ function bindEvents() {
   els.layoutResetBtn?.addEventListener("click", resetLayoutOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
+  els.mobileAccessOpen.addEventListener("click", () => changeMobileAccess(true));
+  els.mobileAccessDisable.addEventListener("click", () => changeMobileAccess(false));
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
@@ -2673,6 +2680,7 @@ function renderLanguageOptions() {
 }
 
 function rerenderLanguageSensitiveViews() {
+  renderMobileAccess(state.mobileAccess);
   renderAuth();
   renderConnectionAccounts();
   if (state.usage) {
@@ -9934,8 +9942,33 @@ async function openSettings(tab = "accounts") {
     loadNotificationSettings(),
     loadNotificationStatus(),
     loadSourceDiagnostics(),
-    loadConnectionSettings()
+    loadConnectionSettings(),
+    loadMobileAccess()
   ]);
+}
+
+function renderMobileAccess(value = {}, busy = false) {
+  if (!busy) state.mobileAccess = value;
+  const available = !!window.llmUsageDashboard?.mobileAccess;
+  els.mobileAccessStatus.textContent = t(`settings.mobile.${!available ? "desktopOnly" : value.reason || (value.running ? "on" : "off")}`);
+  els.mobileAccessOpen.disabled = busy || !available;
+  els.mobileAccessDisable.disabled = busy;
+  els.mobileAccessDisable.hidden = !value.enabled;
+  els.mobileAccessAddressField.hidden = !value.running;
+  els.mobileAccessAddress.value = value.url || "";
+}
+
+async function loadMobileAccess() {
+  try { renderMobileAccess(await window.llmUsageDashboard?.mobileAccess?.status()); }
+  catch { renderMobileAccess({ reason: "failed" }); }
+}
+
+async function changeMobileAccess(enable) {
+  renderMobileAccess({}, true);
+  try {
+    const api = window.llmUsageDashboard.mobileAccess;
+    renderMobileAccess(await (enable ? api.openPairing() : api.setEnabled(false)));
+  } catch { renderMobileAccess({ reason: "failed" }); }
 }
 
 async function loadSupportReport() {

@@ -260,6 +260,7 @@
         <nav class="settings-tabs" role="tablist" aria-label="Settings" data-i18n-aria-label="settings.heading">
           <button type="button" class="settings-tab" id="settingsTabAccounts" role="tab" aria-controls="settingsPanelAccounts" aria-selected="true" tabindex="0" data-settings-tab="accounts" data-i18n="connections.accounts"></button>
           <button type="button" class="settings-tab" id="settingsTabInstallations" role="tab" aria-controls="settingsPanelInstallations" aria-selected="false" tabindex="-1" data-settings-tab="installations" data-i18n="connections.installations"></button>
+          <button type="button" class="settings-tab" id="settingsTabMobile" role="tab" aria-controls="settingsPanelMobile" aria-selected="false" tabindex="-1" data-settings-tab="mobile" data-i18n="settings.mobile.title"></button>
           <button type="button" class="settings-tab" id="settingsTabGeneral" role="tab" aria-controls="settingsPanelGeneral" aria-selected="false" tabindex="-1" data-settings-tab="general" data-i18n="connections.general"></button>
           <button type="button" class="settings-tab" id="settingsTabAdvanced" role="tab" aria-controls="settingsPanelAdvanced" aria-selected="false" tabindex="-1" data-settings-tab="advanced" data-i18n="connections.advanced"></button>
         </nav>
@@ -347,6 +348,18 @@
               <p class="settings-desc" data-i18n="deviceSync.networkLimit"></p>
             </details>
           </section>
+        </section>
+        <section class="settings-tab-panel" id="settingsPanelMobile" role="tabpanel" aria-labelledby="settingsTabMobile" data-settings-panel="mobile" hidden>
+          <h3 data-i18n="settings.mobile.title"></h3>
+          <p class="settings-desc" data-i18n="settings.mobile.help"></p>
+          <p class="settings-desc" data-i18n="mobilePrototype.httpWarning"></p>
+          <p id="mobileAccessStatus" class="settings-desc" role="status" aria-live="polite"></p>
+          <div class="connection-actions">
+            <button type="button" class="text-button" id="mobileAccessOpen" data-i18n="settings.mobile.open"></button>
+            <button type="button" class="text-button ghost" id="mobileAccessDisable" data-i18n="settings.mobile.stop" hidden></button>
+          </div>
+          <label class="field" id="mobileAccessAddressField" hidden><span data-i18n="settings.mobile.address"></span><input id="mobileAccessAddress" type="url" readonly /></label>
+          <p class="settings-desc" data-i18n="mobilePrototype.remote"></p>
         </section>
         <section class="settings-tab-panel" id="settingsPanelGeneral" role="tabpanel" aria-labelledby="settingsTabGeneral" data-settings-panel="general" hidden>
         <div class="settings-preferences">

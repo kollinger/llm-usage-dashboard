@@ -13,7 +13,8 @@
     // in another browser works without sharing cookies or tab storage.
     if (pairingCode && !location.hash && !/^\/pair\/[\w.-]+\/?$/.test(location.pathname)) history.replaceState(null, "", `/pair/${pairingCode}`);
   }
-  const language = (navigator.language || "en").slice(0, 2);
+  const requestedLanguage = new URLSearchParams(location.search).get("lang");
+  const language = (/^[a-z]{2}$/.test(requestedLanguage || "") ? requestedLanguage : navigator.language || "en").slice(0, 2);
   let copy;
   try { copy = (await (await fetch(`/i18n/${language}.json`)).json()).mobilePrototype; }
   catch { copy = (await (await fetch("/i18n/en.json")).json()).mobilePrototype; }
@@ -23,6 +24,10 @@
   if (document.body.dataset.prototype) document.title = text("prototype");
   document.querySelectorAll("[data-copy-aria]").forEach((item) => { item.setAttribute("aria-label", text(item.dataset.copyAria)); });
   document.querySelectorAll("[data-copy]").forEach((item) => { item.textContent = text(item.dataset.copy); });
+  if (document.body.dataset.prototype === "control" && new URLSearchParams(location.search).get("desktop") === "1") {
+    document.title = copy.desktopTitle;
+    document.querySelector('[data-copy="prototype"]').textContent = copy.desktopTitle;
+  }
   const message = (key) => { document.getElementById("prototypeMessage").textContent = text(key); };
   const pairingMessage = (state) => ({ missing: "missingCode", expired: "expiredCode", used: "usedCode", invalid: "invalidCode" })[state] || "scanAgain";
   if (document.body.dataset.prototype === "control") {
@@ -42,12 +47,16 @@
         if (!response.ok) throw new Error("code_unavailable");
         const value = await response.json();
         document.getElementById("prototypeQr").innerHTML = value.svg;
-        document.getElementById("prototypeUrl").value = value.url;
+        document.getElementById("prototypeUrl").value = value.linkUrl || value.url;
         message("expires");
       } catch { message("networkError"); }
       button.disabled = false;
     };
     document.getElementById("prototypeNewCode").addEventListener("click", () => code());
+    document.getElementById("prototypeCopyLink").addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(document.getElementById("prototypeUrl").value); message("copied"); }
+      catch { message("copyError"); }
+    });
     document.getElementById("prototypeDirectCode").addEventListener("click", () => code(true));
     document.getElementById("prototypeGroupCode").addEventListener("click", async () => {
       try {

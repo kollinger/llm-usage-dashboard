@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0-preview.1 - 2026-10-15
+
+### Phone access in the desktop app
+
+- Connect a phone from Settings → Phone using a QR code or a copied link.
+- Keep phone access running with the desktop app, restore it after restarts, and recover when a local network returns.
+- Preserve existing prototype phone pairings while giving new installations their own private pairing group.
+- Add an off switch and clear messages for unavailable networks or a conflicting local service.
+- Keep phone access on the trusted local network; HTTPS push and access away from home remain separately configured.
+
+This new desktop feature advances the unreleased mobile work from the 1.6 baseline to the 1.7 minor version. This preview is a local review build, not a published release.
+
 ## 1.6.0-preview.12 - 2026-10-06
 
 ### Accounts and devices

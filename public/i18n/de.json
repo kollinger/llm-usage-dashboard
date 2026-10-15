@@ -816,7 +816,20 @@
       "state_electron_updater_missing": "Updater-Paket fehlt",
       "alwaysOn": "Automatische Update-Prüfung ist immer aktiv."
     },
-    "saving": "Speichert..."
+    "saving": "Speichert...",
+    "mobile": {
+      "title": "Handy",
+      "help": "Verbinde dein Handy einmal per QR-Code. Danach kannst du dieses Dashboard im gleichen WLAN öffnen.",
+      "open": "QR-Code und Link anzeigen",
+      "stop": "Handy-Zugang ausschalten",
+      "on": "Handy-Zugang ist aktiv und startet mit der App wieder.",
+      "off": "Handy-Zugang ist ausgeschaltet.",
+      "desktopOnly": "Verfügbar in der installierten Desktop-App.",
+      "noLan": "Verbinde diesen Rechner mit einem privaten WLAN oder lokalen Netzwerk und versuche es erneut.",
+      "portBusy": "Ein anderer Handy-Dienst verwendet bereits den Anschluss. Beende ihn und versuche es erneut.",
+      "failed": "Der Handy-Zugang konnte nicht starten. Versuche es erneut.",
+      "address": "Dashboard-Adresse"
+    }
   },
   "errors": {
     "loadUsage": "Fehler"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: Reset für {window} am {observed} beobachtet. Zuvor für {time} angekündigt. Jetzt {percent}% genutzt.",
     "notificationLimitReached": "{provider}: Limit für {window} am {observed} erreicht. Angekündigter Reset: {time}.",
     "notificationAvailable": "{provider}: Nutzung für {window} wieder möglich, am {observed} beobachtet. Zuvor angekündigter Reset: {time}. Jetzt {percent}% genutzt.",
-    "notificationAdjusted": "{provider}: Kontingent für {window} am {observed} geändert: {previous}% → {percent}% genutzt. Zuvor angekündigter Reset: {time}."
+    "notificationAdjusted": "{provider}: Kontingent für {window} am {observed} geändert: {previous}% → {percent}% genutzt. Zuvor angekündigter Reset: {time}.",
+    "copyLink": "Link kopieren",
+    "copied": "Link kopiert.",
+    "copyError": "Kopiere den Link aus dem Adressfeld.",
+    "desktopTitle": "QR-Code und Link anzeigen"
   }
 }

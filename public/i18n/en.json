@@ -816,7 +816,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Phone",
+      "help": "Connect your phone once with a QR code. Then open this dashboard on the same Wi-Fi network.",
+      "open": "Show QR code and link",
+      "stop": "Turn off phone access",
+      "on": "Phone access is on and resumes when the app starts.",
+      "off": "Phone access is off.",
+      "desktopOnly": "Available in the installed desktop app.",
+      "noLan": "Connect this computer to a private Wi-Fi or local network and try again.",
+      "portBusy": "Another phone service is using the port. Close it and try again.",
+      "failed": "Phone access could not start. Try again.",
+      "address": "Dashboard address"
+    }
   },
   "errors": {
     "loadUsage": "Error"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Copy link",
+    "copied": "Link copied.",
+    "copyError": "Copy the link from the address field.",
+    "desktopTitle": "Show QR code and link"
   }
 }

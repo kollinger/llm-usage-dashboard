@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Телефон",
+      "help": "Свържете телефона си веднъж с QR код. След това отворете таблото в същата Wi-Fi мрежа.",
+      "open": "Показване на QR код и връзка",
+      "stop": "Изключване на достъпа от телефон",
+      "on": "Достъпът от телефон е включен и се възстановява при стартиране на приложението.",
+      "off": "Достъпът от телефон е изключен.",
+      "desktopOnly": "Достъпно в инсталираното настолно приложение.",
+      "noLan": "Свържете компютъра с частна Wi-Fi или локална мрежа и опитайте отново.",
+      "portBusy": "Друга услуга използва порта. Затворете я и опитайте отново.",
+      "failed": "Достъпът от телефон не можа да стартира. Опитайте отново.",
+      "address": "Адрес на таблото"
+    }
   },
   "errors": {
     "loadUsage": "Грешка"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Копиране на връзката",
+    "copied": "Връзката е копирана.",
+    "copyError": "Копирайте връзката от полето за адрес.",
+    "desktopTitle": "Показване на QR код и връзка"
   }
 }

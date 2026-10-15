@@ -12,6 +12,11 @@ const initialLanguagePreference = process.argv
 contextBridge.exposeInMainWorld("llmUsageDashboard", {
   initialThemePreference,
   initialLanguagePreference,
+  mobileAccess: {
+    status: () => ipcRenderer.invoke("mobile:status"),
+    setEnabled: (enabled) => ipcRenderer.invoke("mobile:enabled", enabled),
+    openPairing: () => ipcRenderer.invoke("mobile:open")
+  },
   setLanguagePreference(language) {
     return ipcRenderer.invoke("language:set-preference", String(language || ""));
   },

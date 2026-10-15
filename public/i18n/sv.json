@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefon",
+      "help": "Anslut telefonen en gång med en QR-kod. Öppna sedan översikten på samma Wi-Fi-nätverk.",
+      "open": "Visa QR-kod och länk",
+      "stop": "Stäng av telefonåtkomst",
+      "on": "Telefonåtkomst är på och återupptas när appen startar.",
+      "off": "Telefonåtkomst är avstängd.",
+      "desktopOnly": "Tillgängligt i den installerade skrivbordsappen.",
+      "noLan": "Anslut datorn till ett privat Wi-Fi- eller lokalt nätverk och försök igen.",
+      "portBusy": "En annan tjänst använder porten. Stäng den och försök igen.",
+      "failed": "Telefonåtkomst kunde inte starta. Försök igen.",
+      "address": "Översiktens adress"
+    }
   },
   "errors": {
     "loadUsage": "Fel"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Kopiera länk",
+    "copied": "Länk kopierad.",
+    "copyError": "Kopiera länken från adressfältet.",
+    "desktopTitle": "Visa QR-kod och länk"
   }
 }

@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telemóvel",
+      "help": "Ligue o telemóvel uma vez com um código QR. Depois abra o painel na mesma rede Wi-Fi.",
+      "open": "Mostrar código QR e ligação",
+      "stop": "Desativar acesso do telemóvel",
+      "on": "O acesso do telemóvel está ativo e é retomado ao iniciar a aplicação.",
+      "off": "O acesso do telemóvel está desativado.",
+      "desktopOnly": "Disponível na aplicação de computador instalada.",
+      "noLan": "Ligue este computador a uma rede Wi-Fi privada ou local e tente novamente.",
+      "portBusy": "Outro serviço está a usar a porta. Feche-o e tente novamente.",
+      "failed": "Não foi possível iniciar o acesso do telemóvel. Tente novamente.",
+      "address": "Endereço do painel"
+    }
   },
   "errors": {
     "loadUsage": "Erro"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Copiar ligação",
+    "copied": "Ligação copiada.",
+    "copyError": "Copie a ligação do campo de endereço.",
+    "desktopTitle": "Mostrar código QR e ligação"
   }
 }

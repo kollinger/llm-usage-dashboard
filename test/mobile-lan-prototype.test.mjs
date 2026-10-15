@@ -18,7 +18,7 @@ const client = async (url, result = { status: 200, ok: true }, { supplied = '', 
   const button = { disabled: false, addEventListener: (_event, handler) => { button.click = handler; } };
   const message = {};
   const context = {
-    location, navigator: { language: 'de' },
+    location, URLSearchParams, navigator: { language: 'de' },
     sessionStorage: { setItem: (key, value) => { if (storageBlocked) throw Error('blocked'); clientStorage.set(key, value); }, getItem: (key) => clientStorage.get(key), removeItem: (key) => clientStorage.delete(key) },
     history: { replaceState: (_state, _title, value) => { location.href = new URL(value, location).href; } },
     document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], querySelector: () => ({ content: state }), getElementById: (id) => id === 'prototypePair' ? button : id === 'prototypeCode' ? { value: supplied } : message },

@@ -780,7 +780,20 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "الهاتف",
+      "help": "اربط هاتفك مرة واحدة برمز QR. ثم افتح لوحة المعلومات على شبكة Wi-Fi نفسها.",
+      "open": "عرض رمز QR والرابط",
+      "stop": "إيقاف وصول الهاتف",
+      "on": "وصول الهاتف مفعّل ويُستأنف عند بدء التطبيق.",
+      "off": "وصول الهاتف متوقف.",
+      "desktopOnly": "متاح في تطبيق سطح المكتب المثبّت.",
+      "noLan": "صل هذا الكمبيوتر بشبكة Wi-Fi خاصة أو شبكة محلية وحاول مجددًا.",
+      "portBusy": "خدمة هاتف أخرى تستخدم المنفذ. أغلقها وحاول مجددًا.",
+      "failed": "تعذر بدء وصول الهاتف. حاول مجددًا.",
+      "address": "عنوان لوحة المعلومات"
+    }
   },
   "errors": {
     "loadUsage": "خطأ"
@@ -1296,6 +1309,10 @@
     "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
     "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
-    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}."
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "نسخ الرابط",
+    "copied": "تم نسخ الرابط.",
+    "copyError": "انسخ الرابط من حقل العنوان.",
+    "desktopTitle": "عرض رمز QR والرابط"
   }
 }
