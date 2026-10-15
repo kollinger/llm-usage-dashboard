@@ -1,8 +1,66 @@
-# Mobile LAN prototype — 1.7.0-lan-prototype.12
+# Phone access — 1.7.0-preview.2
 
-An explicitly started experiment for a phone dashboard without a hosted service.
-The regular desktop application and its saved accounts are not modified. This
-prototype is not a release and is not enabled in the normal application.
+## Set up from the desktop app
+
+Open **Settings → Phone → Show QR code and link** in the installed desktop app.
+This activates phone access and opens the pairing window inside that app. Scan
+the QR code or use **Copy link**, connect once on the phone in the same trusted
+LAN, and save the resulting dashboard to its home screen. Each new installation
+creates its own pairing group; no operator-owned host or preconfigured user path
+is required. If local name resolution is unavailable, use the direct Wi-Fi QR
+button. That direct address follows this computer's current LAN IP.
+
+The desktop app owns the gateway and uses its current backend port. Enabled
+access resumes on later app starts and retries when a private network returns
+or its address changes. **Turn off phone access** persists across restarts.
+Fresh installations leave LAN access off until the first explicit setup action.
+Existing prototype group, node and consumed-link files are copied once into the
+app's private mobile state on first activation, preserving phone cookies and
+replay protection. Accounts, usage data and credentials are not copied.
+
+The pairing window also retains the optional installation-group controls for
+the shared local address. Existing encrypted usage sync remains separate. LAN
+access still requires a running computer; Internet access and HTTPS push retain
+their separate prerequisites below. Browser-only dashboard instances show that
+phone setup requires the installed desktop app.
+
+The native setup bridge accepts only the main dashboard window at its own
+loopback origin. The pairing window is sandboxed, has no Node/preload bridge,
+and cannot navigate to another origin. Phone data remains read-only and requires
+pairing. A port conflict produces a visible status and can be retried without
+leaving a partially started gateway behind.
+
+## Desktop settings review — 2026-10-15
+
+Product commits `1e403e0` and `2fde071` add the native setup and accept the
+installed window's `localhost` spelling as well as its numeric loopback address.
+Other windows, ports and origins remain rejected. Version `1.7.0-preview.2` is
+installed locally for review; this work has not published an update for others.
+
+- Full checks passed locally and on Linux. Docker rebuilt, and isolated Compose
+  verified rendered settings, exact served assets and actual gateway pairing;
+  its containers and network were removed afterwards.
+- A fresh universal Mac ZIP and DMG were built. The automatic DMG helper stalled
+  on macOS filesystem sync, so native `hdiutil` packaged the fresh application.
+  The DMG was mounted, copied into Applications and launched directly. Installed
+  runtime files match the product source and the packaged version is correct.
+- Native Settings → Phone opened the sandboxed QR window. Copy link confirmed
+  success; the UI explains the 24-hour, single-use pairing link and direct Wi-Fi
+  fallback. The separate CLI gateway is no longer required.
+- Existing group and consumed-link state survived migration. An already paired
+  browser displayed both provider cards without connecting again. Turning access
+  off stopped the actual LAN listener. Restarting the installed app used a new
+  backend port, resumed the gateway automatically and retained that browser's
+  access. The final review state has phone access enabled.
+- German native UI and Arabic RTL settings were checked. All 27 supported
+  languages contain the new keys. Linux AppImage and Windows portable builds
+  succeeded. The full Windows NSIS build remains unverified because this Linux
+  build environment has no Wine; no physical Windows or iPhone test was added.
+
+## Standalone development prototype
+
+The older separate prototype is retained for isolated development checks. The
+desktop setup above does not require that application or a separately run CLI.
 
 ## Try the desktop prototype
 
