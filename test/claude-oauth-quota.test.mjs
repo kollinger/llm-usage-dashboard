@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import https from "node:https";
 import os from "node:os";
 import path from "node:path";
+import vm from "node:vm";
 import { createRequire } from "node:module";
 
 process.env.CODEX_LIVE_RATE_LIMITS = "false";
@@ -21,6 +22,8 @@ assertClaudeOauthApiLimitsOverrideStaleStatusline();
 assertClaudeFableScopedLimitsSupportMultipleBuckets();
 assertClaudeLastKnownUsageSurvivesTemporaryRefreshFailure();
 await assertClaudeUsageSnapshotSurvivesRestart();
+await assertClaudeHistoryDoesNotImplyLogin();
+assertClaudeQuotaOverlaysRestoredConsumption();
 
 async function assertClaudeOauthSessionReadsTokenAndOrg() {
   const root = await mkdtemp(path.join(os.tmpdir(), "claude-oauth-"));
@@ -430,4 +433,42 @@ async function assertClaudeUsageSnapshotSurvivesRestart() {
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+}
+
+async function assertClaudeHistoryDoesNotImplyLogin() {
+  const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  const code = source.slice(source.indexOf("function renderClaudeCreditHint("), source.indexOf("function renderCreditRows("));
+  const ui = vm.createContext({ t: () => "Sign in to Claude.ai", escapeHtml: (value) => value });
+  vm.runInContext(code, ui);
+  assert.equal(ui.renderClaudeCreditHint({ id: "claudeCode", todayTokens: 8604278 }), "",
+    "a consumption-only restored view has no login evidence");
+  assert.equal(ui.renderClaudeCreditHint({ id: "claudeCode", claudeBrowserCredits: { status: "available" } }), "");
+  assert.match(ui.renderClaudeCreditHint({ id: "claudeCode", claudeBrowserCredits: { status: "expired" } }), /Sign in/);
+}
+
+function assertClaudeQuotaOverlaysRestoredConsumption() {
+  const now = Date.now();
+  const history = { cache: { restored: true, refreshing: true }, claudeCode: {
+    status: "live", limits: null, totals: { last24h: { totalTokens: 8604278 } }
+  } };
+  const probe = _test.normalizeClaudeApiUsageProbe({ status: "available", source: "claude_app_cookie", usage: {
+    five_hour: { utilization: 0, resets_at: new Date(now - 60000).toISOString() },
+    seven_day: { utilization: 2, resets_at: new Date(now + 5 * 86400000).toISOString() }
+  } });
+  const restored = _test.overlayRestoredClaudeQuota(history, probe, now);
+  assert.equal(restored.claudeCode.limits.weekly.usedPercent, 2);
+  assert.equal(restored.claudeCode.limits.fiveHour, null, "an expired window cannot reappear");
+  assert.equal(restored.claudeCode.status, history.claudeCode.status, "quota restoration preserves the card's existing status");
+  assert.equal(restored.claudeCode.limitsUpdatedAt, probe.usage.updatedAt);
+  assert.equal(restored.claudeCode.totals, history.claudeCode.totals, "log totals stay independent of quotas");
+  assert.equal(_test.overlayRestoredClaudeQuota(history, null, now), history);
+  assert.equal(_test.overlayRestoredClaudeQuota(history, probe, now + 9 * 86400000), history);
+  const current = { ...history, cache: {} };
+  assert.equal(_test.overlayRestoredClaudeQuota(current, probe, now), current, "a current reader remains authoritative");
+  const noWeekly = _test.normalizeClaudeApiUsageProbe({ status: "available", source: "claude_oauth", usage: {
+    five_hour: { utilization: 0, resets_at: null }, seven_day: null
+  } });
+  const partial = _test.overlayRestoredClaudeQuota(history, noWeekly, now);
+  assert.equal(partial.claudeCode.limits.fiveHour.usedPercent, 0);
+  assert.equal(partial.claudeCode.limits.weekly, null, "an unreported weekly window must remain unavailable");
 }

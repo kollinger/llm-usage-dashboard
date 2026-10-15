@@ -107,6 +107,11 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
+  mobileAccessOpen: document.getElementById("mobileAccessOpen"),
+  mobileAccessDisable: document.getElementById("mobileAccessDisable"),
+  mobileAccessStatus: document.getElementById("mobileAccessStatus"),
+  mobileAccessAddress: document.getElementById("mobileAccessAddress"),
+  mobileAccessAddressField: document.getElementById("mobileAccessAddressField"),
   settingsSourcesRecheckBtn: document.getElementById("settingsSourcesRecheckBtn"),
   settingsSourcesStatus: document.getElementById("settingsSourcesStatus"),
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
@@ -131,6 +136,7 @@ const els = {
   updateNotice: document.getElementById("updateNotice"),
   updateNoticeBody: document.getElementById("updateNoticeBody"),
   notificationsEnabled: document.getElementById("notificationsEnabled"),
+  notificationResetsEnabled: document.getElementById("notificationResetsEnabled"),
   notificationThresholds: document.getElementById("notificationThresholds"),
   notificationPacingPercent: document.getElementById("notificationPacingPercent"),
   notificationHardLimitPercent: document.getElementById("notificationHardLimitPercent"),
@@ -2412,6 +2418,8 @@ function bindEvents() {
   els.layoutResetBtn?.addEventListener("click", resetLayoutOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
+  els.mobileAccessOpen.addEventListener("click", () => changeMobileAccess(true));
+  els.mobileAccessDisable.addEventListener("click", () => changeMobileAccess(false));
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
@@ -2451,6 +2459,9 @@ function bindEvents() {
   els.providerGrid?.addEventListener("pointerup", handleProviderPointerUp);
   els.providerGrid?.addEventListener("pointercancel", cancelProviderPointerDrag);
   els.providerGrid?.addEventListener("click", handleSubscriptionConnectionClick);
+  els.providerGrid?.addEventListener("click", openCreditExpiry);
+  document.getElementById("creditExpiryClose")?.addEventListener("click", () => document.getElementById("creditExpiryDialog").close());
+  document.getElementById("creditExpiryForm")?.addEventListener("submit", saveCreditExpiry);
   els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
   els.chart?.addEventListener("scroll", handleChartScroll, { passive: true });
   [els.chart, els.overviewHistoryChart].forEach((chart) => {
@@ -2479,6 +2490,7 @@ function bindEvents() {
     onNotificationEnabledChange();
     scheduleSettingsAutosave("notifications");
   });
+  els.notificationResetsEnabled?.addEventListener("change", () => scheduleSettingsAutosave("notifications"));
   [els.notificationPacingPercent, els.notificationHardLimitPercent].forEach((field) => {
     field?.addEventListener("input", () => scheduleSettingsAutosave("notifications"));
   });
@@ -2668,6 +2680,7 @@ function renderLanguageOptions() {
 }
 
 function rerenderLanguageSensitiveViews() {
+  renderMobileAccess(state.mobileAccess);
   renderAuth();
   renderConnectionAccounts();
   if (state.usage) {
@@ -5721,7 +5734,10 @@ function normalizeCreditRow(row) {
     percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : null,
     valueLabel: creditValueLabel(row),
     resetsAt: row.resetsAt || null,
-    resetLabel: row.resetLabel || null
+    resetLabel: row.resetLabel || null,
+    balance: row.balance ?? null,
+    expiresOn: row.expiresOn || null,
+    expirySource: row.expirySource || null
   };
 }
 
@@ -6145,6 +6161,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
+      ${provider.id === "claudeCode" ? `<p class="provider-note">${escapeHtml(t("providers.messages.claudeLogTokensHelp"))}</p>` : ""}
       ${footRows.length ? `
         <div class="provider-foot">
           ${footRows.map(renderProviderFootRow).join("")}
@@ -6453,7 +6470,8 @@ function renderProviderFootRow(row) {
 function renderClaudeCreditHint(provider) {
   if (provider.id !== "claudeCode" || provider.creditRows?.length) return "";
   if (provider.subscription?.planType || provider.subscriptionConnectionAction?.rereadOnly) return "";
-  const status = provider.claudeBrowserCredits?.status || "missing";
+  if (!provider.claudeBrowserCredits) return "";
+  const status = provider.claudeBrowserCredits.status;
   if (status === "available") return "";
   const hint = t("providers.messages.claudeBrowserLoginHint");
   return `
@@ -6474,7 +6492,11 @@ function renderCreditRow(row, accent) {
   const value =
     row.valueLabel ||
     (row.amount === null || row.amount === undefined ? "--" : formatMoney(row.amount, row.currency || "EUR"));
-  const detail = row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
+  const codexBalance = row.key === "codexCredits" && Number.isFinite(row.balance);
+  const detail = codexBalance ? row.expiresOn
+    ? t("credits.expiryManual", { date: new Date(`${row.expiresOn}T12:00:00`).toLocaleDateString(state.language) })
+    : t("credits.expiryUnknown")
+    : row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
   const bar =
     row.percent === null || row.percent === undefined
       ? ""
@@ -6489,8 +6511,37 @@ function renderCreditRow(row, accent) {
       </div>
       ${bar}
       ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
+      ${codexBalance ? `<button type="button" class="credit-expiry-edit text-button ghost" data-credit-expiry>${escapeHtml(t("credits.expiryEdit"))}</button>` : ""}
     </div>
   `;
+}
+
+async function openCreditExpiry(event) {
+  if (!event.target.closest("[data-credit-expiry]")) return;
+  const dialog = document.getElementById("creditExpiryDialog");
+  const status = document.getElementById("creditExpiryStatus");
+  const save = document.getElementById("creditExpirySave");
+  save.disabled = true; status.textContent = ""; dialog.showModal();
+  try {
+    const value = await fetchJson("/api/credits/codex-expiry");
+    dialog.dataset.context = value.context || "";
+    document.getElementById("creditExpiryDate").value = value.expiresOn || "";
+    save.disabled = !value.context;
+    if (!value.context) status.textContent = t("credits.expiryError");
+  } catch { status.textContent = t("credits.expiryError"); }
+}
+
+async function saveCreditExpiry(event) {
+  event.preventDefault();
+  const dialog = document.getElementById("creditExpiryDialog");
+  const save = document.getElementById("creditExpirySave");
+  save.disabled = true;
+  try {
+    await fetchJson("/api/credits/codex-expiry", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ context: dialog.dataset.context, expiresOn: document.getElementById("creditExpiryDate").value || null }) });
+    dialog.close(); await loadUsage();
+  } catch { document.getElementById("creditExpiryStatus").textContent = t("credits.expiryError"); }
+  finally { save.disabled = false; }
 }
 
 function renderLimitBars(provider) {
@@ -6521,10 +6572,12 @@ function renderQuotaPaceCard(provider, row) {
   if (pace?.status === "flat") result = t("limits.recentPace.flat");
   if (pace?.status === "stale") result = t("limits.recentPace.stale");
   if (pace?.status === "changed") result = t("limits.recentPace.changed");
-  if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
+  if (["risk", "safe", "possible"].includes(pace?.status) && pace.hitAt) {
     timeToLimit = t("limits.recentPace.timeToLimit", {
       duration: formatDurationCompact(Date.parse(pace.hitAt) - Date.now())
     });
+  }
+  if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
     result = t("limits.pace.hitBeforeReset", {
       time: formatDateTime(pace.hitAt),
       duration: formatDurationCompact(Date.parse(pace.resetsAt) - Date.parse(pace.hitAt))
@@ -9889,8 +9942,33 @@ async function openSettings(tab = "accounts") {
     loadNotificationSettings(),
     loadNotificationStatus(),
     loadSourceDiagnostics(),
-    loadConnectionSettings()
+    loadConnectionSettings(),
+    loadMobileAccess()
   ]);
+}
+
+function renderMobileAccess(value = {}, busy = false) {
+  if (!busy) state.mobileAccess = value;
+  const available = !!window.llmUsageDashboard?.mobileAccess;
+  els.mobileAccessStatus.textContent = t(`settings.mobile.${!available ? "desktopOnly" : value.reason || (value.running ? "on" : "off")}`);
+  els.mobileAccessOpen.disabled = busy || !available;
+  els.mobileAccessDisable.disabled = busy;
+  els.mobileAccessDisable.hidden = !value.enabled;
+  els.mobileAccessAddressField.hidden = !value.running;
+  els.mobileAccessAddress.value = value.url || "";
+}
+
+async function loadMobileAccess() {
+  try { renderMobileAccess(await window.llmUsageDashboard?.mobileAccess?.status()); }
+  catch { renderMobileAccess({ reason: "failed" }); }
+}
+
+async function changeMobileAccess(enable) {
+  renderMobileAccess({}, true);
+  try {
+    const api = window.llmUsageDashboard.mobileAccess;
+    renderMobileAccess(await (enable ? api.openPairing() : api.setEnabled(false)));
+  } catch { renderMobileAccess({ reason: "failed" }); }
 }
 
 async function loadSupportReport() {
@@ -10179,6 +10257,7 @@ async function loadNotificationSettings() {
   try {
     const settings = await fetchJson("/api/notifications/settings");
     els.notificationsEnabled.checked = Boolean(settings.enabled);
+    if (els.notificationResetsEnabled) els.notificationResetsEnabled.checked = settings.resetsEnabled !== false;
     if (els.notificationPacingPercent) els.notificationPacingPercent.value = settings.pacingPercent ?? 100;
     if (els.notificationHardLimitPercent) els.notificationHardLimitPercent.value = settings.hardLimitPercent ?? 95;
     if (els.notificationThresholds) els.notificationThresholds.hidden = !settings.enabled;
@@ -10196,6 +10275,7 @@ async function saveNotificationSettings() {
   showSettingsToast(t("settings.saving"), "loading", { persistMs: 0 });
   const payload = {
     enabled: els.notificationsEnabled.checked,
+    resetsEnabled: els.notificationResetsEnabled?.checked !== false,
     pacingPercent: Number(els.notificationPacingPercent?.value ?? 100),
     hardLimitPercent: Number(els.notificationHardLimitPercent?.value ?? 95)
   };

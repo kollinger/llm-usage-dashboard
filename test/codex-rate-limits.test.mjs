@@ -244,9 +244,12 @@ const legacy = normalizeCodexProvider({
     ]
   }
 });
+const expiryHtml = renderCreditRow(normalizeCreditRow({ key: "codexCredits", balance: 63000, valueLabel: "63,000 credits", expiresOn: "2026-12-31", expirySource: "manual" }), "#009900");
+const unknownExpiryHtml = renderCreditRow(normalizeCreditRow({ key: "codexCredits", balance: 63000, valueLabel: "63,000 credits" }), "#009900");
 const weeklyOnlyHtml = renderProvider(weeklyOnly);
 const legacyHtml = renderProvider(legacy);
 JSON.stringify({
+  expiryHtml, unknownExpiryHtml,
   weeklyOnlyHasWeek: weeklyOnlyHtml.includes(">Week<") || weeklyOnlyHtml.includes("Week left"),
   weeklyOnlyHasFiveHourLimit: weeklyOnlyHtml.includes("5h Codex limit") || weeklyOnlyHtml.includes("5h left") || weeklyOnlyHtml.includes(">5h<"),
   legacyHasFiveHour: legacyHtml.includes("5h Codex limit") || legacyHtml.includes("5h left") || legacyHtml.includes(">5h<"),
@@ -255,6 +258,9 @@ JSON.stringify({
     createAppContext()
   ));
 
+  assert.match(result.expiryHtml, /Expires on .*2026.*entered by you/);
+  assert.match(result.expiryHtml, /data-credit-expiry/);
+  assert.match(result.unknownExpiryHtml, /Expiry date not provided by Codex/);
   assert.equal(result.weeklyOnlyHasWeek, true);
   assert.equal(result.weeklyOnlyHasFiveHourLimit, false);
   assert.equal(result.legacyHasFiveHour, true);

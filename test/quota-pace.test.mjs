@@ -77,9 +77,12 @@ assert.equal(assessQuotaPace(changedPartialWindow, now).codex.weekly[30].status,
 const appSource = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
 const messages = JSON.parse(readFileSync(new URL("../public/i18n/de.json", import.meta.url), "utf8"));
 const ui = vm.createContext({
+  Date: class extends Date { static now() { return now; } },
   state: { language: "de", quotaPaceWindowMinutesByCard: {}, usage: { quotaPace: assessQuotaPace(flatPartialWindow, now) } },
   isWeeklyLimit: () => true,
   escapeHtml: (text) => text,
+  formatDateTime: (value) => value,
+  formatPacePercent: (value) => Math.round(value),
   t: (key, values = {}) => Object.entries(values).reduce((text, [name, value]) => text.replace(`{${name}}`, value),
     key.split(".").reduce((value, name) => value[name], messages))
 });
@@ -98,6 +101,31 @@ for (const hours of [1, 2, 5]) {
 ui.state.usage.quotaPace.codex.weekly[120].observedMinutes = 90;
 const mixedHourCard = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekly", label: "Woche" })', ui);
 assert.match(mixedHourCard, /in 1 Std\. 30 Min\./);
+
+// A rounded 3-point rise in 5h still has a useful central estimate, even
+// when its rounding interval straddles the planned reset.
+const screenshotReset = new Date(now + 131 * 60 * 60_000).toISOString();
+const screenshotSamples = mergeQuotaPaceSamples([], [event(20, 300, screenshotReset), event(23, 0, screenshotReset)], now);
+const screenshotPace = assessQuotaPace(screenshotSamples, now).codex.weekly[300];
+assert.equal(screenshotPace.status, "possible");
+assert.equal(Date.parse(screenshotPace.hitAt) - now, 77 / 3 * 300 * 60_000);
+ui.state.quotaPaceWindowMinutesByCard["codex:weekly"] = 300;
+ui.state.usage.quotaPace.codex.weekly[300] = screenshotPace;
+const screenshotCard = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekly", label: "Woche", usedPercent: 23 })', ui);
+assert.match(screenshotCard, /\+3 Prozentpunkte in 5 Std\./);
+assert.match(screenshotCard, /Geschätzte Zeit bis zum Limit: 5 T 8 Std\./);
+assert.doesNotMatch(screenshotCard, /zu ungenau/);
+
+for (const positiveStatus of ["risk", "safe"]) {
+  ui.state.usage.quotaPace.codex.weekly[300] = { ...screenshotPace, status: positiveStatus };
+  const estimatedCard = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekly", label: "Woche", usedPercent: 23 })', ui);
+  assert.match(estimatedCard, /Geschätzte Zeit bis zum Limit:/);
+}
+for (const unavailableStatus of ["flat", "stale", "changed", "collecting"]) {
+  ui.state.usage.quotaPace.codex.weekly[300] = { ...screenshotPace, status: unavailableStatus };
+  const unavailableCard = vm.runInContext('renderQuotaPaceCard({ id: "codex" }, { key: "weekly", label: "Woche", usedPercent: 23 })', ui);
+  assert.doesNotMatch(unavailableCard, /Geschätzte Zeit bis zum Limit:/);
+}
 
 assert.equal(mergeQuotaPaceSamples([], [event(20, 0, reset, 300)], now).length, 0);
 console.log("quota pace scenarios passed");
