@@ -1129,7 +1129,10 @@
     "causeConfirmed": "Deimhnithe",
     "causeInferred": "Tátal",
     "causeSummary": "Cúiseanna: {manual} cúpón · {provider} OpenAI (tátal) · {scheduled} sceidealaithe · {unknown} anaithnid",
-    "causeNote": "Ní léiríonn am luath an chúis. Ní dhéantar tátal faoi OpenAI ach nuair nach n-athraíonn an liosta iomlán cúpón le linn athshocrú cuóta a breathnaíodh go dlúth. Ní scarann seanlogaí athshocruithe de láimh ó OpenAI. Ní fios cé a thionscain an t-athshocrú."
+    "causeNote": "Ní léiríonn am luath an chúis. Ní dhéantar tátal faoi OpenAI ach nuair nach n-athraíonn an liosta iomlán cúpón le linn athshocrú cuóta a breathnaíodh go dlúth. Ní scarann seanlogaí athshocruithe de láimh ó OpenAI. Ní fios cé a thionscain an t-athshocrú.",
+    "unassigned": "Gan sannadh do chuntas",
+    "beforeReset": "An tomhas deireanach roimh athshocrú",
+    "latest": "Tomhas deireanach: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Ceangail do ghléasanna",
@@ -1302,13 +1305,13 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. {previous}% úsáidte roimhe seo.",
     "notificationCreditsExpiry": "Codex: rachaidh {balance} creidmheas in éag ar {date} (dáta iontráilte).",
     "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
     "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
-    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. {previous}% úsáidte roimhe seo.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
-    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. {previous}% úsáidte roimhe seo.",
     "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
     "copyLink": "Cóipeáil nasc",
     "copied": "Nasc cóipeáilte.",

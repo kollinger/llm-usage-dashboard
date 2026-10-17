@@ -1129,7 +1129,10 @@
     "causeConfirmed": "Bekräftad",
     "causeInferred": "Härledd",
     "causeSummary": "Orsaker: {manual} kupong · {provider} OpenAI (härledd) · {scheduled} schemalagda · {unknown} okända",
-    "causeNote": "Ett tidigt tillfälle visar inte orsaken. OpenAI härleds bara när den fullständiga kuponglistan är oförändrad vid en noggrant observerad kvotåterställning. Gamla loggar skiljer inte manuella återställningar från OpenAI. Personen som utlöste återställningen är okänd."
+    "causeNote": "Ett tidigt tillfälle visar inte orsaken. OpenAI härleds bara när den fullständiga kuponglistan är oförändrad vid en noggrant observerad kvotåterställning. Gamla loggar skiljer inte manuella återställningar från OpenAI. Personen som utlöste återställningen är okänd.",
+    "unassigned": "Inte kopplat till ett konto",
+    "beforeReset": "Senast före återställning",
+    "latest": "Senast uppmätt: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Anslut dina enheter",
@@ -1302,13 +1305,13 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Tidigare {previous}% använt.",
     "notificationCreditsExpiry": "Codex: {balance} credits går ut {date} (angivet datum).",
     "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
     "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
-    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Tidigare {previous}% använt.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
-    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Tidigare {previous}% använt.",
     "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
     "copyLink": "Kopiera länk",
     "copied": "Länk kopierad.",

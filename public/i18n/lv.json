@@ -1129,7 +1129,10 @@
     "causeConfirmed": "Apstiprināts",
     "causeInferred": "Secināts",
     "causeSummary": "Iemesli: {manual} kupons · {provider} OpenAI (secināts) · {scheduled} plānots · {unknown} nezināms",
-    "causeNote": "Agrīns laiks nenorāda iemeslu. OpenAI secina tikai tad, ja pilns kuponu saraksts paliek nemainīgs cieši novērotas kvotas atiestatīšanas laikā. Vecie žurnāli neatšķir manuālas un OpenAI atiestatīšanas. Persona, kas to izraisīja, nav zināma."
+    "causeNote": "Agrīns laiks nenorāda iemeslu. OpenAI secina tikai tad, ja pilns kuponu saraksts paliek nemainīgs cieši novērotas kvotas atiestatīšanas laikā. Vecie žurnāli neatšķir manuālas un OpenAI atiestatīšanas. Persona, kas to izraisīja, nav zināma.",
+    "unassigned": "Nav piesaistīts kontam",
+    "beforeReset": "Pēdējais mērījums pirms atiestatīšanas",
+    "latest": "Pēdējais mērījums: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Savienojiet savas ierīces",
@@ -1302,13 +1305,13 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Iepriekš izmantoti {previous}%.",
     "notificationCreditsExpiry": "Codex: {balance} kredītu derīgums beidzas {date} (ievadīts datums).",
     "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
     "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
-    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Iepriekš izmantoti {previous}%.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
-    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Iepriekš izmantoti {previous}%.",
     "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
     "copyLink": "Kopēt saiti",
     "copied": "Saite nokopēta.",

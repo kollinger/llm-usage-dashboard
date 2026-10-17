@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0-preview.3 - 2026-10-17
+
+- Fix multi-account Codex reset history: show each account separately, retain independently sampled resets, and label older logs without an account as unassigned.
+- Show the last measured percentage and timestamp before a reset separately from the maximum observed consumption.
+- Keep notification baselines separate for every account and include the account and previous percentage in desktop and phone reset notices.
+- Collect additional signed-in Codex profiles in the background without starting model turns.
+
+This preview fixes the existing multi-account and reset behavior in the unreleased 1.7 feature; the product minor version is unchanged.
+
 ## 1.7.0-preview.2 - 2026-10-15
 
 - Accept the installed desktop window’s localhost address when opening phone setup, while continuing to reject other windows, ports and origins.

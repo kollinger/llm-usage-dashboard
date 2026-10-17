@@ -4464,6 +4464,11 @@ function renderCodexResetHistory() {
 function renderCodexResetHistoryContent(history) {
   const text = (key, params = {}) => escapeHtml(t(`codexResets.${key}`, params));
   if (!history) return `<p class="empty-message">${text(state.codexResetError ? "unavailable" : "loading")}</p>`;
+  if (history.accounts) {
+    const sections = history.accounts.map((account) => `<section class="reset-account"><h3>${escapeHtml(account.label)}</h3>${renderCodexResetHistoryContent(account.history)}</section>`);
+    if (history.unassigned) sections.push(`<section class="reset-account"><h3>${text("unassigned")}</h3>${renderCodexResetHistoryContent(history.unassigned)}</section>`);
+    return sections.length ? sections.join("") : `<p class="empty-message">${text("empty")}</p>`;
+  }
   const summary = history.summary;
   const number = (value) => value === null || value === undefined ? "—" : new Intl.NumberFormat(currentLocale(), { maximumFractionDigits: 1 }).format(value);
   const days = (value) => value === null || value === undefined ? "—" : text("days", { value: number(value) });
@@ -4481,6 +4486,7 @@ function renderCodexResetHistoryContent(history) {
     return `<tr><td>${escapeHtml(formatDateTime(w.startsAt))}</td><td>${escapeHtml(formatDateTime(w.scheduledResetAt))}</td>
       <td title="${escapeHtml(interval)}">${escapeHtml(formatDateTime(w.closedAt))}</td><td>${days(w.durationDays)}</td>
       <td><span class="reset-usage">${number(w.maxUsedPercent)} %</span><div class="reset-usage-track"><i style="width:${Math.max(0, Math.min(100, Number(w.maxUsedPercent)))}%"></i></div></td>
+      <td>${w.previousUsedPercent == null ? "—" : `${number(w.previousUsedPercent)} %`}${w.resetObservedBetween?.from ? `<small>${escapeHtml(formatDateTime(w.resetObservedBetween.from))}</small>` : ""}</td>
       <td><span class="reset-tag ${uncertain ? "reset-uncertain" : w.resetType === "early" ? "reset-early" : ""}">${text(kind)}</span><small>${detail}</small></td>
       <td><strong>${text(causeKey)}</strong><small>${causeDetail}</small></td></tr>`;
   }).join("");
@@ -4503,9 +4509,9 @@ function renderCodexResetHistoryContent(history) {
   ${history.recordingStartedAt ? `<p class="reset-note">${text("recordingSince", { time: formatDateTime(history.recordingStartedAt) })} · ${text("redemptions", { confirmed: summary.confirmedRedemptions, inferred: summary.inferredRedemptions })}</p>` : ""}
   ${expiries ? `<div class="reset-expiries">${expiries}</div>` : ""}
   ${summary.uncertainWindows || summary.recordingGaps ? `<p class="reset-note reset-warning">${text("coverage", { uncertain: summary.uncertainWindows, gaps: summary.recordingGaps })}</p>` : ""}
-  ${history.current ? `<p class="reset-note">${text("current", { time: formatDateTime(history.current.scheduledResetAt), percent: number(history.current.maxUsedPercent) })}</p>` : ""}
+  ${history.current ? `<p class="reset-note">${text("current", { time: formatDateTime(history.current.scheduledResetAt), percent: number(history.current.maxUsedPercent) })} · ${text("latest", { percent: number(history.current.lastUsedPercent), time: formatDateTime(history.current.lastObservedAt) })}</p>` : ""}
   ${events ? `<details class="reset-events"><summary>${text("events")}</summary><ul>${events}</ul></details>` : ""}
-  ${rows ? `<div class="reset-table-wrap"><table class="reset-table"><thead><tr>${["start", "plannedReset", "end", "duration", "usage", "result", "cause"].map((key) => `<th scope="col">${text(key)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty-message">${text("empty")}</p>`}`;
+  ${rows ? `<div class="reset-table-wrap"><table class="reset-table"><thead><tr>${["start", "plannedReset", "end", "duration", "usage", "beforeReset", "result", "cause"].map((key) => `<th scope="col">${text(key)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty-message">${text("empty")}</p>`}`;
 }
 
 function renderGptAccounts(registry) {

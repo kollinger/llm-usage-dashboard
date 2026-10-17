@@ -1129,7 +1129,10 @@
     "causeConfirmed": "Potvrđeno",
     "causeInferred": "Izvedeno",
     "causeSummary": "Uzroci: {manual} kupon · {provider} OpenAI (izvedeno) · {scheduled} planirano · {unknown} nepoznato",
-    "causeNote": "Prerano vrijeme ne otkriva uzrok. OpenAI se izvodi samo kada potpuni popis kupona ostaje isti tijekom pažljivo opaženog resetiranja kvote. Stari zapisi ne razlikuju ručna resetiranja od OpenAI-ja. Osoba koja je pokrenula resetiranje nije poznata."
+    "causeNote": "Prerano vrijeme ne otkriva uzrok. OpenAI se izvodi samo kada potpuni popis kupona ostaje isti tijekom pažljivo opaženog resetiranja kvote. Stari zapisi ne razlikuju ručna resetiranja od OpenAI-ja. Osoba koja je pokrenula resetiranje nije poznata.",
+    "unassigned": "Nije dodijeljeno računu",
+    "beforeReset": "Zadnje prije resetiranja",
+    "latest": "Zadnje izmjereno: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Povežite svoje uređaje",
@@ -1302,13 +1305,13 @@
     "notificationWindow": "quota",
     "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
     "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
-    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Prije je korišteno {previous}%.",
     "notificationCreditsExpiry": "Codex: {balance} kredita istječe {date} (uneseni datum).",
     "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
     "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
-    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Prije je korišteno {previous}%.",
     "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
-    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Prije je korišteno {previous}%.",
     "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
     "copyLink": "Kopiraj poveznicu",
     "copied": "Poveznica je kopirana.",
