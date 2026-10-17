@@ -102,7 +102,7 @@ try {
     b = await startMobilePrototype({ ...common, groupFile: groupB, nodeId: 'b', label: 'B' });
     joined = true;
   } });
-  assert.equal((await fs.stat(groupA)).mode & 0o777, 0o600);
+  if (process.platform !== "win32") assert.equal((await fs.stat(groupA)).mode & 0o777, 0o600);
   assert.equal((await get(a, '/api/usage')).status, 401);
   assert.equal((await get(a, '/')).status, 302);
   const appIcon = await fs.readFile(new URL('../build/icon.iconset/icon_512x512.png', import.meta.url));

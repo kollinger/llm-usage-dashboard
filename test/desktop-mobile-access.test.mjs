@@ -98,7 +98,7 @@ try {
   await migrated.init(); await migrated.setEnabled(true);
   assert.equal((await loadGroup(path.join(temporary, "migrated/mobile-access/group.json"))).key, group.key);
   assert.equal(await fs.readFile(path.join(temporary, "migrated/mobile-access/mobile-prototype-spent.json"), "utf8"), await fs.readFile(path.join(root, "mobile-prototype-spent.json"), "utf8"));
-  assert.equal((await fs.stat(path.join(temporary, "migrated/mobile-access/group.json"))).mode & 0o777, 0o600);
+  if (process.platform !== "win32") assert.equal((await fs.stat(path.join(temporary, "migrated/mobile-access/group.json"))).mode & 0o777, 0o600);
 
   const native = await fs.readFile(new URL("../electron/main.js", import.meta.url), "utf8");
   const trusted = native.match(/function trustedMobileRequest\(event\) \{[\s\S]*?\n\}/)[0];

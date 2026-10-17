@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0-preview.5 - 2026-10-17
+
+- Fix Windows verification of private phone-state files: assert POSIX permission bits on macOS/Linux, matching the existing cross-platform account-store tests. Windows retains the functional pairing and HTTPS checks.
+- Includes the full 1.7 phone, notification and account-reset changes below. Preview.4 was not published because this check failed on Windows.
+
 ## 1.7.0-preview.4 - 2026-10-17
 
 - Connect a phone directly in desktop Settings → Phone, with 24-hour one-use pairing links, renewed long-lived phone sessions, a Home Screen icon and two provider columns.

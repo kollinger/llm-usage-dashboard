@@ -41,7 +41,7 @@ try {
   };
   let push = await createMobilePush({ file, origin: 'https://dashboard.example.invalid', send, now: () => now });
   await push.subscribe('phone', now + 3600000, subscription, 'de');
-  assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
+  if (process.platform !== "win32") assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
   const publicKey = push.publicKey;
   const alert = { provider: 'claudeCode', type: 'hard_limit', windowKey: 'weekly', usedPercent: 96, resetsAt: '2026-10-13T12:00:00Z' };
   await push.publish({ enabled: true, alerts: [alert, alert], events });
