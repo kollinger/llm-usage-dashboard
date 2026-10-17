@@ -143,10 +143,11 @@ handoff so review never comes from an older local Git state or stale artifact.
 
 - The intended WhatsApp review group name is `LLM Usage Dashboard Review`
   unless Gerhard explicitly chooses another name.
-- The review bot runs as GPT-5.6 Sol with maximum reasoning and is addressed
-  with `@Sol`. During the migration, `@Opus` remains a trigger alias so older
-  group habits do not break. Every WhatsApp reply from that bot must start with
-  the truthful visible identity prefix `🤖 [Sol 5.6]`.
+- The review bot runs as GPT-6.1 Sol with maximum reasoning. It accepts ordinary
+  messages from the two allowed group members without a mention by default;
+  `@Sol` and the compatibility alias `@Opus` remain usable. The existing Support
+  Console trigger can switch between all messages and mentions. Every WhatsApp
+  reply uses the truthful identity prefix `🤖 [Sol 6.1]`.
 - The review route must use the shared project-bound Sol admin runner, start in
   `/srv/multica/projects/llm-usage-dashboard`, and have shell/file access to
   that repository. Its live model, workdir, display name, mention, and response
@@ -169,14 +170,15 @@ handoff so review never comes from an older local Git state or stale artifact.
   not grant unrelated machine administration, unrelated project access,
   destructive system changes, secret disclosure, or external sends beyond the
   reviewed route contract.
-- Reinhard may discuss changes with `@Sol` (or the temporary `@Opus` alias),
-  but a Multica issue for this product may be created only after Gerhard
-  explicitly approves the concrete
-  ticket draft in the same WhatsApp group. After approval, implementation
-  should run through Multica on Manjaro with the usual GPT+Opus owner/reviewer
-  pattern and a durable heartbeat/lifecycle watch until the ticket is truthfully
-  done, blocked, cancelled, pushed, released, and announced back to the
-  WhatsApp group.
+- Gerhard and Reinhard may both directly request ordinary product changes.
+  A clear request authorizes ticket creation and delivery without an additional
+  Gerhard approval. Clarify ambiguous product requirements with the requester.
+  Implementation runs through Multica on Manjaro with the configured owner and
+  independent reviewer and a durable lifecycle watch through integration,
+  preview release and group announcement. Do not assign routine product work
+  to Gerhard just to obtain a release or implementation approval. Destructive,
+  account, payment, secret and unrelated-project boundaries remain in force;
+  changing bot permissions retains its separate self-change contract.
 - For approved WhatsApp Review Gateway tickets, release is fully delegated:
   after the ticket reaches truthful `done`, the gateway/heartbeat should
   automatically bump the preview version, update the changelog, commit, tag,

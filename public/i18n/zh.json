@@ -376,7 +376,8 @@
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
       "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
-      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode.",
+      "claudeLogTokensHelp": "所选安装中记录的令牌：输入、输出和重复使用的上下文（缓存）。此总量与订阅额度分开计算。"
     },
     "emptyState": {
       "eyebrow": "提供商",
@@ -448,18 +449,27 @@
     "autoTopUp": "自动充值",
     "default": "额度",
     "on": "开",
-    "off": "关"
+    "off": "关",
+    "expiryEdit": "编辑到期日期",
+    "expiryHelp": "此 Codex 账户的手动日期。启用通知后，会在到期前 30、7 和 1 天提醒。清空字段可删除日期。",
+    "expiryDate": "到期日期",
+    "expirySave": "保存",
+    "expiryError": "加载或保存失败。Codex 账户可能已更改；请关闭并重新打开此对话框。",
+    "expiryManual": "有效期至 {date} · 手动填写",
+    "expiryUnknown": "Codex 未提供到期日期",
+    "expiryAlertTitle": "额度即将到期",
+    "expiryAlertBody": "Codex：{balance} 额度将于 {date} 到期（手动填写的日期）。"
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "距离达到限额还有：{duration}",
+      "timeToLimit": "预计距离达到限额还有：{duration}",
       "title": "近期速率",
       "measured": "{duration} 内增加 {percent} 个百分点",
       "collecting": "这一时段的读数还不够。",
       "flat": "这一时段没有可测量的增长。",
       "stale": "最新额度读数已过期。",
       "changed": "读数发生变化，无法预测。",
-      "possible": "可能在重置前达到限额；目前读数不足以确定。",
+      "possible": "由于数值经过四舍五入，尚不能确定是否会在重置前达到限额。",
       "note": "基于四舍五入的百分比估算，假设速率保持不变。"
     },
     "fiveHour": "5h",
@@ -632,7 +642,8 @@
       "nativeWindowWeekly": "每周限额",
       "nativeWindowSonnetOnly": "仅 Sonnet 限额",
       "nativeWindowClaudeDesign": "Claude Design 限额",
-      "nativeWindowGeneric": "限额"
+      "nativeWindowGeneric": "限额",
+      "resetsEnabled": "通知额度重置和变更"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -769,7 +780,24 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "手机",
+      "help": "用二维码连接手机一次，然后在同一 Wi-Fi 网络中打开此仪表盘。",
+      "open": "显示二维码和链接",
+      "stop": "关闭手机访问",
+      "on": "手机访问已启用，应用启动时会恢复。",
+      "off": "手机访问已关闭。",
+      "desktopOnly": "可在已安装的桌面应用中使用。",
+      "noLan": "请将此电脑连接到私人 Wi-Fi 或局域网后重试。",
+      "portBusy": "其他服务正在使用此端口。请关闭该服务后重试。",
+      "failed": "无法启动手机访问，请重试。",
+      "address": "仪表盘地址",
+      "remoteSetup": "在电脑和手机上连接 Tailscale，并在自己的网络中启用 HTTPS。在电脑上运行以下命令，然后在此保存显示的 HTTPS 地址。请勿替换现有 HTTPS 服务。清空地址可关闭此连接。电脑必须保持运行；局域网 Wi-Fi 访问无需 Tailscale。",
+      "remoteOrigin": "你的私人 HTTPS 地址",
+      "remoteSave": "保存地址",
+      "remoteOpen": "HTTPS 二维码和链接"
+    }
   },
   "errors": {
     "loadUsage": "错误"
@@ -1105,7 +1133,10 @@
     "causeConfirmed": "已确认",
     "causeInferred": "推断",
     "causeSummary": "原因：{manual} 次重置券 · {provider} 次 OpenAI（推断）· {scheduled} 次按计划 · {unknown} 次未知",
-    "causeNote": "提前重置的时间并不能说明原因。只有在密切观察到配额重置且完整重置券清单保持不变时，才推断为 OpenAI 重置。旧日志无法区分手动和 OpenAI 重置。触发重置的人仍然未知。"
+    "causeNote": "提前重置的时间并不能说明原因。只有在密切观察到配额重置且完整重置券清单保持不变时，才推断为 OpenAI 重置。旧日志无法区分手动和 OpenAI 重置。触发重置的人仍然未知。",
+    "unassigned": "未分配到账户",
+    "beforeReset": "重置前的最后测量",
+    "latest": "最后测量：{percent}% · {time}"
   },
   "deviceSync": {
     "heading": "连接自己的设备",
@@ -1222,5 +1253,73 @@
   },
   "history": {
     "refreshing": "已保存的历史记录 · {time}。正在后台更新。"
+  },
+  "mobilePrototype": {
+    "prototype": "LAN prototype",
+    "title": "Open on your phone",
+    "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
+    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "save": "After connecting, save the dashboard to your home screen.",
+    "address": "Pairing link",
+    "newCode": "Create a new QR code",
+    "network": "Available installations",
+    "leader": "Current host",
+    "waiting": "Waiting for an installation",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "offline": "No installation is reachable. Start a paired app on the same local network.",
+    "pair": "Connect this phone",
+    "expires": "This pairing link and QR code expires in 24 hours and can be used once.",
+    "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
+    "missingCode": "The pairing code did not reach this page. Open the complete pairing link.",
+    "expiredCode": "This pairing link has expired. Open a new link or scan a new QR code.",
+    "usedCode": "This pairing link has already been used. Open the dashboard in the browser where you connected, or use a new link.",
+    "invalidCode": "This pairing code is invalid. Open the complete pairing link.",
+    "readOnly": "Phone access · read only · LAN prototype",
+    "servedBy": "Data from",
+    "networkError": "The local connection is unavailable. Check the network permission and whether an installation is running.",
+    "joinTitle": "Connect installations",
+    "joinHelp": "Create a code on your first installation and paste it here on the additional computer within five minutes. The code grants access to this group: share it only with your own trusted installations. This prototype connects the mobile access group; desktop data synchronization is separate.",
+    "groupCode": "Create installation code",
+    "joinLabel": "Code from the first installation",
+    "join": "Join this group",
+    "joining": "Connecting. The prototype restarts automatically.",
+    "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
+    "directCode": "Create a direct Wi-Fi QR code",
+    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "notificationsTitle": "Warnings and notifications",
+    "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
+    "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
+    "notificationsHelp": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "notificationsInstall": "On iPhone, add this HTTPS dashboard to the Home Screen first and open it using that icon. Then tap Enable notifications.",
+    "notificationsInvite": "Receive quota warnings and unexpected resets even with the dashboard closed. Enable notifications on this phone. The computer serving this HTTPS address must stay running and have Internet access.",
+    "notificationsEnable": "Enable notifications",
+    "notificationsTest": "Send test notification",
+    "notificationsDisable": "Disable on this phone",
+    "notificationsActive": "Push is registered for this phone. The computer serving this HTTPS address must stay running and have Internet access. Use a test notification to check reception.",
+    "notificationsDenied": "Notifications are blocked for this web app. Allow them in the phone settings to enable push.",
+    "notificationsUnsupported": "This browser does not support push here. Warnings still appear in the open dashboard.",
+    "notificationsError": "Push could not be registered or sent. Check the connection and try again.",
+    "notificationsUnavailable": "Warnings are currently unavailable. Check the connection to the running desktop app.",
+    "notificationsDesktopDisabled": "Notifications are disabled in the desktop app. Enable them there to receive its warnings here.",
+    "notificationsEmpty": "No current quota warnings or recently observed unexpected resets.",
+    "notificationsTestAccepted": "The push service accepted the test. Check whether the notification arrived on your phone; acceptance does not confirm delivery.",
+    "notificationTestBody": "Test from LLM Usage Dashboard. Quota warnings and unexpected resets will appear here.",
+    "notificationFiveHour": "5-hour limit",
+    "notificationWeekly": "weekly limit",
+    "notificationWindow": "quota",
+    "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
+    "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. 之前已使用 {previous}%。",
+    "notificationCreditsExpiry": "Codex：{balance} 额度将于 {date} 到期（手动填写的日期）。",
+    "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
+    "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. 之前已使用 {previous}%。",
+    "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. 之前已使用 {previous}%。",
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "复制链接",
+    "copied": "链接已复制。",
+    "copyError": "请从地址栏复制链接。",
+    "desktopTitle": "显示二维码和链接"
   }
 }

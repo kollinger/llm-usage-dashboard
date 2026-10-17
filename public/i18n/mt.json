@@ -376,7 +376,8 @@
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
       "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
-      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode.",
+      "claudeLogTokensHelp": "Tokens irreġistrati mill-installazzjonijiet magħżula: input, output u kuntest użat mill-ġdid (cache). Dan it-total huwa separat mil-limitu tal-abbonament."
     },
     "emptyState": {
       "eyebrow": "Fornitur",
@@ -448,18 +449,27 @@
     "autoTopUp": "Top-up awtomatiku",
     "default": "Krediti",
     "on": "Mixgħul",
-    "off": "Mitfi"
+    "off": "Mitfi",
+    "expiryEdit": "Editja d-data ta’ skadenza",
+    "expiryHelp": "Data mdaħħla minnek għal dan il-kont Codex. Twissijiet 30, 7 u 1 jum qabel jekk in-notifiki huma attivi. Ħalli vojt biex tneħħiha.",
+    "expiryDate": "Data ta’ skadenza",
+    "expirySave": "Issejvja",
+    "expiryError": "Ma setax jitgħabba jew jiġi ssejvjat. Il-kont Codex seta’ nbidel; agħlaq u erġa’ iftaħ id-djalogu.",
+    "expiryManual": "Validu sa {date} · data mdaħħla",
+    "expiryUnknown": "Codex ma jipprovdix data ta’ skadenza",
+    "expiryAlertTitle": "Il-krediti jiskadu dalwaqt",
+    "expiryAlertBody": "Codex: {balance} krediti jiskadu fi {date} (data mdaħħla)."
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Ħin sal-limitu: {duration}",
+      "timeToLimit": "Ħin stmat sal-limitu: {duration}",
       "title": "Pass riċenti",
       "measured": "+{percent} punti perċentwali f’{duration}",
       "collecting": "Għad m’hemmx biżżejjed kejl għal dan il-perjodu.",
       "flat": "Ebda żieda li tista’ titkejjel f’dan il-perjodu.",
       "stale": "L-aħħar qari tal-kwota huwa antik wisq.",
       "changed": "Il-qari nbidel; m’hemmx tbassir.",
-      "possible": "Il-limitu jista’ jintlaħaq qabel ir-reset; l-istima mhix ċerta.",
+      "possible": "Minħabba t-tqarrib, mhuwiex ċert jekk il-limitu jintlaħaqx qabel ir-reset.",
       "note": "Stima minn perċentwali mqarrba b’pass kostanti."
     },
     "fiveHour": "5h",
@@ -632,7 +642,8 @@
       "nativeWindowWeekly": "Limitu ta' kull ġimgħa",
       "nativeWindowSonnetOnly": "Limitu Sonnet biss",
       "nativeWindowClaudeDesign": "Limitu Claude Design",
-      "nativeWindowGeneric": "Limitu"
+      "nativeWindowGeneric": "Limitu",
+      "resetsEnabled": "Avża dwar resets u bidliet fil-kwota"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -769,7 +780,24 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefon",
+      "help": "Qabbad it-telefon darba b’kodiċi QR. Imbagħad iftaħ id-dashboard fuq l-istess netwerk Wi-Fi.",
+      "open": "Uri kodiċi QR u link",
+      "stop": "Itfi l-aċċess mit-telefon",
+      "on": "L-aċċess mit-telefon huwa mixgħul u jerġa’ jibda mal-app.",
+      "off": "L-aċċess mit-telefon huwa mitfi.",
+      "desktopOnly": "Disponibbli fl-app tad-desktop installata.",
+      "noLan": "Qabbad il-kompjuter ma’ Wi-Fi privat jew netwerk lokali u erġa’ pprova.",
+      "portBusy": "Servizz ieħor qed juża l-port. Agħlqu u erġa’ pprova.",
+      "failed": "L-aċċess mit-telefon ma setax jibda. Erġa’ pprova.",
+      "address": "Indirizz tad-dashboard",
+      "remoteSetup": "Qabbad Tailscale fuq il-kompjuter u t-telefon u attiva HTTPS fin-netwerk tiegħek. Ħaddem il-kmand hawn taħt u ssejvja hawn l-indirizz HTTPS li jidher. Tissostitwixxix servizz HTTPS eżistenti. Indirizz vojt jitfi din il-konnessjoni. Il-kompjuter irid jibqa’ mixgħul; il-Wi-Fi jaħdem mingħajr Tailscale.",
+      "remoteOrigin": "L-indirizz HTTPS privat tiegħek",
+      "remoteSave": "Issejvja l-indirizz",
+      "remoteOpen": "Kodiċi QR u link HTTPS"
+    }
   },
   "errors": {
     "loadUsage": "Żball"
@@ -1105,7 +1133,10 @@
     "causeConfirmed": "Ikkonfermat",
     "causeInferred": "Inferit",
     "causeSummary": "Kawżi: {manual} kupun · {provider} OpenAI (inferit) · {scheduled} skedat · {unknown} mhux magħrufa",
-    "causeNote": "Reset bikri ma jidentifikax il-kawża. OpenAI jiġi inferit biss meta l-lista sħiħa tal-kupuni tibqa’ l-istess waqt reset tal-kwota osservat mill-qrib. Logs qodma ma jisseparawx resets manwali minn OpenAI. Il-persuna li bdiet ir-reset mhix magħrufa."
+    "causeNote": "Reset bikri ma jidentifikax il-kawża. OpenAI jiġi inferit biss meta l-lista sħiħa tal-kupuni tibqa’ l-istess waqt reset tal-kwota osservat mill-qrib. Logs qodma ma jisseparawx resets manwali minn OpenAI. Il-persuna li bdiet ir-reset mhix magħrufa.",
+    "unassigned": "Mhux assenjat lil kont",
+    "beforeReset": "L-aħħar kejl qabel ir-reset",
+    "latest": "L-aħħar kejl: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Qabbad l-apparati tiegħek",
@@ -1222,5 +1253,73 @@
   },
   "history": {
     "refreshing": "Storja ssejvjata · {time}. Aġġornament fl-isfond."
+  },
+  "mobilePrototype": {
+    "prototype": "LAN prototype",
+    "title": "Open on your phone",
+    "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
+    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "save": "After connecting, save the dashboard to your home screen.",
+    "address": "Pairing link",
+    "newCode": "Create a new QR code",
+    "network": "Available installations",
+    "leader": "Current host",
+    "waiting": "Waiting for an installation",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "offline": "No installation is reachable. Start a paired app on the same local network.",
+    "pair": "Connect this phone",
+    "expires": "This pairing link and QR code expires in 24 hours and can be used once.",
+    "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
+    "missingCode": "The pairing code did not reach this page. Open the complete pairing link.",
+    "expiredCode": "This pairing link has expired. Open a new link or scan a new QR code.",
+    "usedCode": "This pairing link has already been used. Open the dashboard in the browser where you connected, or use a new link.",
+    "invalidCode": "This pairing code is invalid. Open the complete pairing link.",
+    "readOnly": "Phone access · read only · LAN prototype",
+    "servedBy": "Data from",
+    "networkError": "The local connection is unavailable. Check the network permission and whether an installation is running.",
+    "joinTitle": "Connect installations",
+    "joinHelp": "Create a code on your first installation and paste it here on the additional computer within five minutes. The code grants access to this group: share it only with your own trusted installations. This prototype connects the mobile access group; desktop data synchronization is separate.",
+    "groupCode": "Create installation code",
+    "joinLabel": "Code from the first installation",
+    "join": "Join this group",
+    "joining": "Connecting. The prototype restarts automatically.",
+    "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
+    "directCode": "Create a direct Wi-Fi QR code",
+    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "notificationsTitle": "Warnings and notifications",
+    "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
+    "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
+    "notificationsHelp": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "notificationsInstall": "On iPhone, add this HTTPS dashboard to the Home Screen first and open it using that icon. Then tap Enable notifications.",
+    "notificationsInvite": "Receive quota warnings and unexpected resets even with the dashboard closed. Enable notifications on this phone. The computer serving this HTTPS address must stay running and have Internet access.",
+    "notificationsEnable": "Enable notifications",
+    "notificationsTest": "Send test notification",
+    "notificationsDisable": "Disable on this phone",
+    "notificationsActive": "Push is registered for this phone. The computer serving this HTTPS address must stay running and have Internet access. Use a test notification to check reception.",
+    "notificationsDenied": "Notifications are blocked for this web app. Allow them in the phone settings to enable push.",
+    "notificationsUnsupported": "This browser does not support push here. Warnings still appear in the open dashboard.",
+    "notificationsError": "Push could not be registered or sent. Check the connection and try again.",
+    "notificationsUnavailable": "Warnings are currently unavailable. Check the connection to the running desktop app.",
+    "notificationsDesktopDisabled": "Notifications are disabled in the desktop app. Enable them there to receive its warnings here.",
+    "notificationsEmpty": "No current quota warnings or recently observed unexpected resets.",
+    "notificationsTestAccepted": "The push service accepted the test. Check whether the notification arrived on your phone; acceptance does not confirm delivery.",
+    "notificationTestBody": "Test from LLM Usage Dashboard. Quota warnings and unexpected resets will appear here.",
+    "notificationFiveHour": "5-hour limit",
+    "notificationWeekly": "weekly limit",
+    "notificationWindow": "quota",
+    "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
+    "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Qabel intuża {previous}%.",
+    "notificationCreditsExpiry": "Codex: {balance} krediti jiskadu fi {date} (data mdaħħla).",
+    "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
+    "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Qabel intuża {previous}%.",
+    "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Qabel intuża {previous}%.",
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Ikkopja l-link",
+    "copied": "Il-link ġiet ikkupjata.",
+    "copyError": "Ikkopja l-link mill-qasam tal-indirizz.",
+    "desktopTitle": "Uri kodiċi QR u link"
   }
 }

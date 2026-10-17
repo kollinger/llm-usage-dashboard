@@ -15,6 +15,7 @@ const express = require("express");
 const session = require("express-session");
 const packageInfo = require("./package.json");
 const { createGptAccountLogin } = require("./lib/gpt-account-login");
+const { createCreditExpiryStore, creditExpiryAlert, validDate: validCreditExpiryDate } = require("./lib/credit-expiry");
 const { createClaudeAccountLogin } = require("./lib/claude-account-login");
 const { createKimiAccountLogin, readKimiKeyUsage, readMoonshotBalance } = require("./lib/kimi-accounts");
 const { createProviderAccountStore, safeMeasurement, providerAccountIdentity } = require("./lib/provider-account-store");
@@ -35,7 +36,8 @@ const {
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
 const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
-const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildHistory: buildCodexResetHistory } = require("./lib/codex-reset-history");
+const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildAccountHistories } = require("./lib/codex-reset-history");
+const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
   codexAccountObservationsFromAuth,
@@ -54,6 +56,7 @@ const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_D
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json");
+const quotaNotifications = createQuotaNotifications(path.join(DATA_DIR, "quota-notifications.json"));
 const UPDATE_SETTINGS_FILE = path.join(DATA_DIR, "update-settings.json");
 const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
@@ -63,6 +66,7 @@ const CODEX_RESET_SNAPSHOTS_FILE = path.join(DATA_DIR, "codex-reset-snapshots.js
 const CODEX_RESET_IMPORT_FILE = path.join(DATA_DIR, "codex-reset-history-import.json");
 const QUOTA_PACE_SAMPLES_FILE = path.join(DATA_DIR, "quota-pace-samples.json");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
+const creditExpiryStore = createCreditExpiryStore(path.join(DATA_DIR, "credit-expiry.json"));
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
@@ -1310,14 +1314,36 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     await usageViewCache.write("local", viewFingerprint, value);
     return value;
   }, { force, maxAgeMs, staleWhileRefresh });
-  return overlayCurrentCodexQuota(usage, codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs);
+  const claudeProbe = usage.cache?.restored
+    ? claudeApiUsageCache.value || await readClaudeUsageSnapshot()
+    : null;
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+}
+
+async function currentCodexCreditScope() {
+  try {
+    const auth = JSON.parse(await fsp.readFile(path.join(CODEX_HOME, "auth.json"), "utf8"));
+    const claims = parseJwtClaims(auth.tokens?.access_token) || parseJwtClaims(auth.tokens?.id_token);
+    const identity = auth.tokens?.account_id || claims?.["https://api.openai.com/auth"]?.chatgpt_account_id;
+    return identity ? crypto.createHash("sha256").update(`codex-credits:${identity}`).digest("hex") : null;
+  } catch { return null; }
+}
+
+async function applyCodexCreditExpiry(usage) {
+  if (!usage.codex?.creditRows?.length) return usage;
+  const scope = await currentCodexCreditScope();
+  const expiresOn = scope && usage.codex.creditScope === scope ? await creditExpiryStore.get(scope) : null;
+  return { ...usage, codex: { ...usage.codex, creditRows: usage.codex.creditRows.map((row) =>
+    row.key === "codexCredits" && Number.isFinite(row.balance)
+      ? { ...row, expiresOn, expirySource: expiresOn ? "manual" : null } : row) } };
 }
 
 function overlayCurrentCodexQuota(usage, live, updatedAtMs, now = Date.now()) {
   if (!live || !updatedAtMs || now - updatedAtMs > 90_000 || !usage.codex) return usage;
   const overlay = (provider, snapshot, label) => snapshot ? { ...provider, status: "live",
     limits: codexRateLimitsFromLive(snapshot, label), limitsUpdatedAt: live.source.updatedAt,
-    liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source } } : provider;
+    liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source },
+    ...(label === "Codex" ? { creditRows: codexCreditRowsFromLive(snapshot), creditScope: live.source.creditScope || null } : {}) } : provider;
   const codex = overlay(usage.codex, live.codex, "Codex");
   return { ...usage, codex: { ...codex, spark: overlay(codex.spark || {}, live.spark, "Codex 5.3 Spark") } };
 }
@@ -1970,6 +1996,24 @@ app.get("/api/quota-history", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/api/credits/codex-expiry", authMiddleware, async (_req, res) => {
+  try {
+    const scope = await currentCodexCreditScope();
+    res.json({ context: scope, expiresOn: scope ? await creditExpiryStore.get(scope) : null });
+  } catch (error) { sendApiError(res, error, "credit_expiry_read_failed"); }
+});
+
+app.post("/api/credits/codex-expiry", authMiddleware, async (req, res) => {
+  try {
+    const scope = await currentCodexCreditScope();
+    if (!scope || req.body?.context !== scope) return res.status(409).json({ error: "credit_account_changed" });
+    const expiresOn = req.body?.expiresOn;
+    if (expiresOn !== null && !validCreditExpiryDate(expiresOn)) return res.status(400).json({ error: "invalid_credit_expiry" });
+    await creditExpiryStore.set(scope, expiresOn);
+    res.json({ expiresOn });
+  } catch (error) { sendApiError(res, error, "credit_expiry_save_failed"); }
+});
+
 app.get("/api/subscriptions/settings", authMiddleware, async (_req, res) => {
   try {
     res.json(await readSubscriptionSettings());
@@ -2065,6 +2109,7 @@ app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
     const current = await readNotificationSettings();
     const updated = {
       enabled: typeof body.enabled === "boolean" ? body.enabled : current.enabled,
+      resetsEnabled: typeof body.resetsEnabled === "boolean" ? body.resetsEnabled : current.resetsEnabled,
       pacingPercent: Number.isFinite(Number(body.pacingPercent))
         ? Math.max(50, Math.min(200, Number(body.pacingPercent)))
         : current.pacingPercent,
@@ -2093,10 +2138,24 @@ app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) =>
     const codex = usage?.codex || null;
     const claudeCode = usage?.claudeCode || null;
     const copilot = usage?.copilot || null;
-    const alerts = buildNotificationAlerts(settings, { codex, claudeCode, copilot });
-    res.json({ alerts });
+    const alerts = providerNotificationAlerts(settings, { codex, claudeCode, copilot });
+    res.json({ alerts: [...alerts, ...await quotaNotifications.events(settings)] });
   } catch (error) {
     sendApiError(res, error, "notification_check_failed");
+  }
+});
+
+// The paired phone gateway consumes the same thresholds as native alerts.
+// Return only notification metadata, never account or provider credentials.
+app.get("/api/notifications/mobile", authMiddleware, async (_req, res) => {
+  try {
+    const settings = await readNotificationSettings();
+    if (!settings.enabled) return res.json({ enabled: false, alerts: [], events: [] });
+    const usage = await readUsageDashboard({ maxAgeMs: NOTIFICATION_USAGE_MAX_AGE_MS });
+    const alerts = providerNotificationAlerts(settings, { codex: usage.codex, claudeCode: usage.claudeCode, copilot: usage.copilot });
+    res.json({ enabled: true, resetsEnabled: settings.resetsEnabled, alerts, events: await quotaNotifications.events(settings) });
+  } catch (error) {
+    sendApiError(res, error, "mobile_notifications_unavailable");
   }
 });
 
@@ -3341,7 +3400,7 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
       status: explicitStatus,
       parserStatus: explicitStatus,
       unavailableReason: accountBillingReasonCode(
-        raw.reason || raw.error,
+        raw.reason || raw.unavailableReason || raw.error,
         `account_billing_source_${explicitStatus}`
       )
     };
@@ -3370,7 +3429,7 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
       ...base,
       status: "missing",
       parserStatus: parserStatus === "parsed" ? "missing" : parserStatus,
-      unavailableReason: accountBillingReasonCode(raw.reason || raw.error, "account_billing_amount_missing")
+      unavailableReason: accountBillingReasonCode(raw.reason || raw.unavailableReason || raw.error, "account_billing_amount_missing")
     };
   }
 
@@ -4655,6 +4714,7 @@ async function readCodexUsage(options = {}) {
     planType: codexPlan.planType,
     planSource: codexPlan.source,
     creditRows: liveCodexCreditRows,
+    creditScope: liveRateLimits?.source?.creditScope || null,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
       ? {
@@ -5294,10 +5354,14 @@ async function readClaudeUsageProbe() {
       const value = retainLastKnownClaudeUsageProbe(previous, incoming);
       claudeApiUsageCache.value = value;
       claudeApiUsageCache.expiresAt = Date.now() + (value.usage ? CLAUDE_API_USAGE_CACHE_MS : Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000));
-      if (incoming.usage) saveClaudeUsageSnapshot(incoming).catch(() => {});
+      if (incoming.usage) {
+        saveClaudeUsageSnapshot(incoming).catch(() => {});
+        recordClaudeNotificationSample(incoming, probe.notificationScope).catch(() => {});
+      } else quotaNotifications.observe("claudeCode", null).catch(() => {});
       return value;
     })
     .catch((error) => {
+      quotaNotifications.observe("claudeCode", null).catch(() => {});
       const value = retainLastKnownClaudeUsageProbe(
         previous,
         claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api")
@@ -5357,6 +5421,7 @@ async function fetchClaudeUsageProbe(options = {}) {
     if (oauthProbe.status === "available") {
       return {
         ...oauthProbe,
+        notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
         planType: oauthSession.planType || null,
         auth: summarizeClaudeOauthSession(oauthSession)
       };
@@ -5378,7 +5443,7 @@ async function fetchClaudeUsageProbe(options = {}) {
 async function fetchClaudeUsageWithAppCookies() {
   const cookies = readClaudeAppCookies();
   if (!cookies) return claudeApiProbe("missing", "claude_app_cookie_missing", "claude_app_cookie");
-  return fetchClaudeUsageWithAuth({
+  const probe = await fetchClaudeUsageWithAuth({
     orgId: cookies.lastActiveOrg,
     source: "claude_app_cookie",
     hostname: "claude.ai",
@@ -5386,6 +5451,14 @@ async function fetchClaudeUsageWithAppCookies() {
       Cookie: `sessionKey=${cookies.sessionKey}`
     }
   });
+  return { ...probe, notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
+}
+
+async function recordClaudeNotificationSample(probe, accountKey) {
+  const { resolvedLimits } = resolveClaudeUsageLimits({ apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt });
+  const windows = collectNotificationWindows({ claudeCode: { limits: resolvedLimits } });
+  await quotaNotifications.observe("claudeCode", { accountKey, planType: probe.auth?.planType || null, at: probe.updatedAt,
+    windows: windows.map((win) => ({ ...win, key: win.key })) });
 }
 
 async function readClaudeCliOauthSession(options = {}) {
@@ -5691,6 +5764,17 @@ function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
       hasCurrentWindow(usage?.seven_day_sonnet, "Nur Sonnet", 10080) ||
       claudeApiFableLimitRows(usage).length
   );
+}
+
+function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now()) {
+  if (!usage.cache?.restored || !usage.claudeCode || usage.claudeCode.limits || !probe?.usage ||
+      !hasCurrentClaudeUsageSnapshot(probe.usage, nowMs)) return usage;
+  const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
+    apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt
+  });
+  if (!resolvedLimits) return usage;
+  return { ...usage, claudeCode: { ...usage.claudeCode, limits: resolvedLimits,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource } };
 }
 
 function summarizeClaudeApiUsageProbe(probe) {
@@ -9001,7 +9085,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
     const account = response?.account;
     if (!account || !["chatgpt", "chatgptAuthTokens"].includes(String(account.type || ""))) return null;
     const [usageResult, rateLimitsResult] = await Promise.allSettled([
-      lease.client.request("account/usage/read", undefined),
+      options.limitsOnly ? Promise.resolve(null) : lease.client.request("account/usage/read", undefined),
       lease.client.request("account/rateLimits/read", undefined)
     ]);
     const liveLimits = rateLimitsResult.status === "fulfilled"
@@ -9009,10 +9093,11 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
       : null;
     const limits = codexRateLimitsFromLive(liveLimits?.codex, "Codex");
     const quotaCheckedAt = new Date().toISOString();
-    return createGptAccountObservation({
+    const observation = createGptAccountObservation({
       sourceId: "codex",
       sourceRef: codexHome,
       email: account.email,
+      accountId: rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null,
       planType: liveLimits?.codex?.planType || account.planType,
       seenAt: new Date().toISOString(),
       usage: usageResult.status === "fulfilled" ? usageResult.value : null,
@@ -9027,6 +9112,16 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
           ? "identity_and_limits"
           : "identity_only"
     });
+    if (observation && (liveLimits?.historySnapshot || liveLimits?.notificationSnapshot)) {
+      if (liveLimits.historySnapshot) {
+        codexResetProfileAccounts.set(codexHome, liveLimits.historySnapshot.accountKey);
+        liveLimits.historySnapshot.accountRef = observation.id;
+        liveLimits.historySnapshot.accountLabel = observation.label;
+      }
+      if (liveLimits.notificationSnapshot) liveLimits.notificationSnapshot.accountLabel = observation.label;
+      await recordCodexResetSnapshot(liveLimits.historySnapshot, liveLimits.notificationSnapshot);
+    }
+    return observation;
   } finally {
     if (lease.closeWhenDone) lease.client.close();
   }
@@ -9299,9 +9394,8 @@ async function readCodexLiveRateLimits() {
   return readThroughCache(codexLiveRateLimitsCache, cacheTtlMs, async () => {
     try {
       const client = await getCodexAppServer();
-      const response = await client.request("account/rateLimits/read", undefined);
-      const normalized = normalizeCodexLiveRateLimits(response);
-      await recordCodexResetSnapshot(normalized.historySnapshot);
+      const normalized = await readScopedCodexLiveRateLimits(client);
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
       return normalized;
     } catch (error) {
       if (codexLiveRateLimitsCache.value) throw error;
@@ -9314,6 +9408,15 @@ async function readCodexLiveRateLimits() {
       };
     }
   });
+}
+
+async function readScopedCodexLiveRateLimits(client) {
+  const creditScope = await currentCodexCreditScope();
+  const response = await client.request("account/rateLimits/read", undefined);
+  const normalized = normalizeCodexLiveRateLimits(response);
+  primaryCodexResetAccountKey = normalized.historySnapshot?.accountKey || primaryCodexResetAccountKey;
+  normalized.source.creditScope = creditScope === await currentCodexCreditScope() ? creditScope : null;
+  return normalized;
 }
 
 function preferredCodexPlan(livePlanType) {
@@ -9418,6 +9521,7 @@ function normalizeCodexLiveRateLimits(response) {
     codex,
     spark,
     historySnapshot: normalizeResetSnapshot(response),
+    notificationSnapshot: codexNotificationSample(response),
     source: {
       status: codex || spark ? "live" : "empty",
       source: "codex app-server",
@@ -9456,7 +9560,7 @@ function codexCreditRowsFromLive(snapshot) {
   }
   const balance = Number(credits.balance);
   if (!Number.isFinite(balance)) return [];
-  return [{ key: "codexCredits", label: "Codex credits", valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
+  return [{ key: "codexCredits", label: "Codex credits", balance, valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
 }
 
 function formatCodexCreditBalance(value) {
@@ -10274,13 +10378,9 @@ async function readNotificationSettings() {
   try {
     const text = await fsp.readFile(NOTIFICATION_SETTINGS_FILE, "utf8");
     const data = JSON.parse(text);
-    return {
-      enabled: typeof data.enabled === "boolean" ? data.enabled : true,
-      pacingPercent: Number.isFinite(Number(data.pacingPercent)) ? Number(data.pacingPercent) : 100,
-      hardLimitPercent: Number.isFinite(Number(data.hardLimitPercent)) ? Number(data.hardLimitPercent) : 95
-    };
+    return notificationSettings(data);
   } catch {
-    return { enabled: true, pacingPercent: 100, hardLimitPercent: 95 };
+    return notificationSettings();
   }
 }
 
@@ -10978,9 +11078,18 @@ function clampPercent(value) {
   return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : null;
 }
 
+function providerNotificationAlerts(settings, usageMap) {
+  return Object.entries(usageMap).flatMap(([provider, value]) =>
+    buildNotificationAlerts(settings, { [provider]: value }).map((alert) => ({ ...alert, provider })));
+}
+
 function buildNotificationAlerts(settings, usageMap) {
   const alerts = [];
   const now = Date.now();
+  for (const row of usageMap.codex?.creditRows || []) {
+    const alert = creditExpiryAlert(row, new Date(now));
+    if (alert) alerts.push(alert);
+  }
   const windows = collectNotificationWindows(usageMap);
   for (const win of windows) {
     const { key: windowKey, label, usedPercent, windowMinutes, resetsAt } = win;
@@ -11076,6 +11185,9 @@ function collectNotificationWindows(usageMap) {
 
 let codexResetWriteQueue = Promise.resolve();
 let lastCodexResetSnapshot = null;
+const lastCodexResetByAccount = new Map();
+const codexResetProfileAccounts = new Map();
+let primaryCodexResetAccountKey = null;
 let codexHistoricalImport = null;
 let legacyCodexQuotaPromise = null;
 
@@ -11085,11 +11197,14 @@ function queueCodexResetWrite(write) {
   return next;
 }
 
-function recordCodexResetSnapshot(snapshot) {
+async function recordCodexResetSnapshot(snapshot, notificationSample) {
+  if (notificationSample || snapshot?.kind === "gap") await quotaNotifications.observe("codex", notificationSample || null, snapshot?.accountKey);
   if (!snapshot) return Promise.resolve();
   return queueCodexResetWrite(async () => {
-    if (lastCodexResetSnapshot) {
-      const { at: previousAt, ...previous } = lastCodexResetSnapshot;
+    const key = snapshot.accountKey || "unassigned";
+    const previousSnapshot = lastCodexResetByAccount.get(key);
+    if (previousSnapshot) {
+      const { at: previousAt, ...previous } = previousSnapshot;
       if (Date.parse(snapshot.at) < Date.parse(previousAt)) return;
       const { at, ...current } = snapshot;
       if (JSON.stringify(previous) === JSON.stringify(current) && Date.parse(at) - Date.parse(previousAt) < (snapshot.kind === "gap" ? 5 * 60000 : 60000)) return;
@@ -11097,6 +11212,7 @@ function recordCodexResetSnapshot(snapshot) {
     await fsp.mkdir(DATA_DIR, { recursive: true });
     await fsp.appendFile(CODEX_RESET_SNAPSHOTS_FILE, `${JSON.stringify(snapshot)}\n`, { mode: 0o600 });
     lastCodexResetSnapshot = snapshot;
+    lastCodexResetByAccount.set(key, snapshot);
   });
 }
 
@@ -11137,7 +11253,7 @@ async function readCodexResetHistory(limit = 10) {
   try { imported = JSON.parse(await fsp.readFile(CODEX_RESET_IMPORT_FILE, "utf8")); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
   if (lastCodexResetSnapshot && lastCodexResetSnapshot.at > (records.at(-1)?.at || "")) records.push(lastCodexResetSnapshot);
-  return buildCodexResetHistory(records, [...await legacyCodexQuotaPromise, ...imported], { limit });
+  return buildAccountHistories(records, [...await legacyCodexQuotaPromise, ...imported], { limit, accounts: (await readGptAccountRegistry(DATA_DIR)).accounts });
 }
 
 function startCodexResetCollector() {
@@ -11148,15 +11264,25 @@ function startCodexResetCollector() {
     running = true;
     try {
       const client = await getCodexAppServer();
-      const response = await client.request("account/rateLimits/read", undefined);
-      const normalized = normalizeCodexLiveRateLimits(response);
-      if (!normalized.historySnapshot) throw new Error("Codex quota unavailable");
-      await recordCodexResetSnapshot(normalized.historySnapshot);
+      const normalized = await readScopedCodexLiveRateLimits(client);
+      if (!normalized.notificationSnapshot?.windows.length) throw new Error("Codex quota unavailable");
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
       codexLiveRateLimitsCache.value = normalized;
       codexLiveRateLimitsCache.updatedAtMs = Date.now();
       codexLiveRateLimitsCache.expiresAt = Date.now() + CODEX_LIVE_RATE_LIMITS_CACHE_MS;
     } catch {
-      await recordCodexResetSnapshot({ kind: "gap", at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+      await recordCodexResetSnapshot({ kind: "gap", accountKey: primaryCodexResetAccountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+    }
+    try {
+      const homes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR), ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))]);
+      for (const home of homes) {
+        if (stopped) break;
+        try { await readCodexProfileGptAccountObservation(home, { limitsOnly: true }); }
+        catch {
+          const accountKey = codexResetProfileAccounts.get(home);
+          if (accountKey) await recordCodexResetSnapshot({ kind: "gap", accountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+        }
+      }
     } finally { running = false; }
   };
   const first = setTimeout(tick, 1000);
@@ -11240,6 +11366,9 @@ module.exports = {
     mergeUpdateSettingsPatch,
     codexBinaryCandidates,
     codexRateLimitsFromLive,
+    codexCreditRowsFromLive,
+    applyCodexCreditExpiry,
+    readScopedCodexLiveRateLimits,
     overlayCurrentCodexQuota,
     codexRateLimitsFromUsagePayload,
     codexRateLimitsFromEvents,
@@ -11258,6 +11387,7 @@ module.exports = {
     readClaudeUsageSnapshot,
     saveClaudeUsageSnapshot,
     retainLastKnownClaudeUsageProbe,
+    overlayRestoredClaudeQuota,
     summarizeClaudeApiUsageProbe,
     resolveClaudeUsageLimits,
     buildNotificationAlerts,

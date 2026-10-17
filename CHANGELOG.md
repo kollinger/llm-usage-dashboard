@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.7.0-preview.4 - 2026-10-17
+
+- Connect a phone directly in desktop Settings → Phone, with 24-hour one-use pairing links, renewed long-lived phone sessions, a Home Screen icon and two provider columns.
+- Configure an optional user-managed HTTPS origin for private Tailscale access and Web Push. The desktop restores its loopback-only proxy after restarts; LAN access remains independent.
+- Keep reset notices and last measured percentages tied to each Codex account on desktop and phone. Detect provider reset events without Matrix.
+- Preserve Claude quota readings across partial refreshes and improve recent-pace forecasts.
+- Show account-specific credit expiry dates when supplied by a verified source or entered by the user, with advance warnings; do not invent an expiry date.
+- Clarify group delivery: Gerhard and Reinhard can both request ordinary product changes through the bot, independent review and preview release without another Gerhard gate.
+
+This preview completes the unreleased 1.7 phone feature. Private remote access needs user-managed Tailscale Serve (or an equivalent trusted HTTPS proxy). Locked-phone push needs permission and a running computer; physical iPhone delivery remains a device test. macOS is ad-hoc signed and requires manual DMG installation.
+
+Full setup and release notes: [1.7 phone access and account resets](docs/releases/1.7.0.md).
+
+## 1.7.0-preview.3 - 2026-10-17
+
+- Fix multi-account Codex reset history: show each account separately, retain independently sampled resets, and label older logs without an account as unassigned.
+- Show the last measured percentage and timestamp before a reset separately from the maximum observed consumption.
+- Keep notification baselines separate for every account and include the account and previous percentage in desktop and phone reset notices.
+- Collect additional signed-in Codex profiles in the background without starting model turns.
+
+This preview fixes the existing multi-account and reset behavior in the unreleased 1.7 feature; the product minor version is unchanged.
+
+## 1.7.0-preview.2 - 2026-10-15
+
+- Accept the installed desktop window’s localhost address when opening phone setup, while continuing to reject other windows, ports and origins.
+
+## 1.7.0-preview.1 - 2026-10-15
+
+### Phone access in the desktop app
+
+- Connect a phone from Settings → Phone using a QR code or a copied link.
+- Keep phone access running with the desktop app, restore it after restarts, and recover when a local network returns.
+- Preserve existing prototype phone pairings while giving new installations their own private pairing group.
+- Add an off switch and clear messages for unavailable networks or a conflicting local service.
+- Keep phone access on the trusted local network; HTTPS push and access away from home remain separately configured.
+
+This new desktop feature advances the unreleased mobile work from the 1.6 baseline to the 1.7 minor version. This preview is a local review build, not a published release.
+
 ## 1.6.0-preview.12 - 2026-10-06
 
 ### Accounts and devices

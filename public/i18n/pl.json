@@ -376,7 +376,8 @@
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
       "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
-      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode.",
+      "claudeLogTokensHelp": "Zarejestrowane tokeny z wybranych instalacji: dane wejściowe, wyjściowe i ponownie użyty kontekst (pamięć podręczna). Ta suma jest niezależna od limitu subskrypcji."
     },
     "emptyState": {
       "eyebrow": "Dostawca",
@@ -448,18 +449,27 @@
     "autoTopUp": "Automatyczne doładowanie",
     "default": "Kredyty",
     "on": "Wł.",
-    "off": "Wył."
+    "off": "Wył.",
+    "expiryEdit": "Edytuj datę wygaśnięcia",
+    "expiryHelp": "Własna data dla tego konta Codex. Ostrzeżenia 30, 7 i 1 dzień wcześniej, jeśli powiadomienia są włączone. Wyczyść pole, aby usunąć.",
+    "expiryDate": "Data wygaśnięcia",
+    "expirySave": "Zapisz",
+    "expiryError": "Nie udało się wczytać lub zapisać. Konto Codex mogło się zmienić; zamknij i ponownie otwórz okno.",
+    "expiryManual": "Ważne do {date} · własny wpis",
+    "expiryUnknown": "Codex nie podaje daty wygaśnięcia",
+    "expiryAlertTitle": "Kredyty wkrótce wygasną",
+    "expiryAlertBody": "Codex: {balance} kredytów wygasa {date} (wpisana data)."
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Czas do limitu: {duration}",
+      "timeToLimit": "Szacowany czas do limitu: {duration}",
       "title": "Ostatnie tempo",
       "measured": "+{percent} punktów procentowych w {duration}",
       "collecting": "Brakuje jeszcze pomiarów dla tego okresu.",
       "flat": "Brak mierzalnego wzrostu w tym okresie.",
       "stale": "Ostatni odczyt limitu jest zbyt stary.",
       "changed": "Odczyty się zmieniły; brak prognozy.",
-      "possible": "Limit może zostać osiągnięty przed resetem; szacunek jest niepewny.",
+      "possible": "Ze względu na zaokrąglenie nie jest pewne, czy limit zostanie osiągnięty przed resetem.",
       "note": "Szacunek z zaokrąglonych procentów przy stałym tempie."
     },
     "fiveHour": "5h",
@@ -632,7 +642,8 @@
       "nativeWindowWeekly": "Limit tygodniowy",
       "nativeWindowSonnetOnly": "Limit tylko Sonnet",
       "nativeWindowClaudeDesign": "Limit Claude Design",
-      "nativeWindowGeneric": "Limit"
+      "nativeWindowGeneric": "Limit",
+      "resetsEnabled": "Powiadamiaj o resetach i zmianach limitu"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -769,7 +780,24 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefon",
+      "help": "Połącz telefon raz za pomocą kodu QR. Następnie otwórz pulpit w tej samej sieci Wi-Fi.",
+      "open": "Pokaż kod QR i link",
+      "stop": "Wyłącz dostęp z telefonu",
+      "on": "Dostęp z telefonu jest włączony i wznawia się po uruchomieniu aplikacji.",
+      "off": "Dostęp z telefonu jest wyłączony.",
+      "desktopOnly": "Dostępne w zainstalowanej aplikacji komputerowej.",
+      "noLan": "Połącz komputer z prywatną siecią Wi-Fi lub lokalną i spróbuj ponownie.",
+      "portBusy": "Inna usługa używa portu. Zamknij ją i spróbuj ponownie.",
+      "failed": "Nie udało się uruchomić dostępu z telefonu. Spróbuj ponownie.",
+      "address": "Adres pulpitu",
+      "remoteSetup": "Połącz Tailscale na komputerze i telefonie oraz włącz HTTPS w swojej sieci. Uruchom poniższe polecenie i zapisz tutaj wyświetlony adres HTTPS. Nie zastępuj istniejącej usługi HTTPS. Pusty adres wyłącza połączenie. Komputer musi działać; Wi-Fi działa bez Tailscale.",
+      "remoteOrigin": "Twój prywatny adres HTTPS",
+      "remoteSave": "Zapisz adres",
+      "remoteOpen": "Kod QR i link HTTPS"
+    }
   },
   "errors": {
     "loadUsage": "Błąd"
@@ -1105,7 +1133,10 @@
     "causeConfirmed": "Potwierdzone",
     "causeInferred": "Wnioskowane",
     "causeSummary": "Przyczyny: {manual} kupon · {provider} OpenAI (wnioskowane) · {scheduled} planowe · {unknown} nieznane",
-    "causeNote": "Przedwczesny termin nie wskazuje przyczyny. OpenAI jest wnioskowane tylko wtedy, gdy pełna lista kuponów nie zmienia się przy dokładnie obserwowanym resecie limitu. Stare logi nie rozróżniają resetów ręcznych i OpenAI. Osoba uruchamiająca reset jest nieznana."
+    "causeNote": "Przedwczesny termin nie wskazuje przyczyny. OpenAI jest wnioskowane tylko wtedy, gdy pełna lista kuponów nie zmienia się przy dokładnie obserwowanym resecie limitu. Stare logi nie rozróżniają resetów ręcznych i OpenAI. Osoba uruchamiająca reset jest nieznana.",
+    "unassigned": "Nieprzypisane do konta",
+    "beforeReset": "Ostatni pomiar przed resetem",
+    "latest": "Ostatni pomiar: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Połącz swoje urządzenia",
@@ -1222,5 +1253,73 @@
   },
   "history": {
     "refreshing": "Zapisana historia · {time}. Aktualizacja w tle."
+  },
+  "mobilePrototype": {
+    "prototype": "LAN prototype",
+    "title": "Open on your phone",
+    "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
+    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "save": "After connecting, save the dashboard to your home screen.",
+    "address": "Pairing link",
+    "newCode": "Create a new QR code",
+    "network": "Available installations",
+    "leader": "Current host",
+    "waiting": "Waiting for an installation",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "offline": "No installation is reachable. Start a paired app on the same local network.",
+    "pair": "Connect this phone",
+    "expires": "This pairing link and QR code expires in 24 hours and can be used once.",
+    "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
+    "missingCode": "The pairing code did not reach this page. Open the complete pairing link.",
+    "expiredCode": "This pairing link has expired. Open a new link or scan a new QR code.",
+    "usedCode": "This pairing link has already been used. Open the dashboard in the browser where you connected, or use a new link.",
+    "invalidCode": "This pairing code is invalid. Open the complete pairing link.",
+    "readOnly": "Phone access · read only · LAN prototype",
+    "servedBy": "Data from",
+    "networkError": "The local connection is unavailable. Check the network permission and whether an installation is running.",
+    "joinTitle": "Connect installations",
+    "joinHelp": "Create a code on your first installation and paste it here on the additional computer within five minutes. The code grants access to this group: share it only with your own trusted installations. This prototype connects the mobile access group; desktop data synchronization is separate.",
+    "groupCode": "Create installation code",
+    "joinLabel": "Code from the first installation",
+    "join": "Join this group",
+    "joining": "Connecting. The prototype restarts automatically.",
+    "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
+    "directCode": "Create a direct Wi-Fi QR code",
+    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "notificationsTitle": "Warnings and notifications",
+    "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
+    "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
+    "notificationsHelp": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "notificationsInstall": "On iPhone, add this HTTPS dashboard to the Home Screen first and open it using that icon. Then tap Enable notifications.",
+    "notificationsInvite": "Receive quota warnings and unexpected resets even with the dashboard closed. Enable notifications on this phone. The computer serving this HTTPS address must stay running and have Internet access.",
+    "notificationsEnable": "Enable notifications",
+    "notificationsTest": "Send test notification",
+    "notificationsDisable": "Disable on this phone",
+    "notificationsActive": "Push is registered for this phone. The computer serving this HTTPS address must stay running and have Internet access. Use a test notification to check reception.",
+    "notificationsDenied": "Notifications are blocked for this web app. Allow them in the phone settings to enable push.",
+    "notificationsUnsupported": "This browser does not support push here. Warnings still appear in the open dashboard.",
+    "notificationsError": "Push could not be registered or sent. Check the connection and try again.",
+    "notificationsUnavailable": "Warnings are currently unavailable. Check the connection to the running desktop app.",
+    "notificationsDesktopDisabled": "Notifications are disabled in the desktop app. Enable them there to receive its warnings here.",
+    "notificationsEmpty": "No current quota warnings or recently observed unexpected resets.",
+    "notificationsTestAccepted": "The push service accepted the test. Check whether the notification arrived on your phone; acceptance does not confirm delivery.",
+    "notificationTestBody": "Test from LLM Usage Dashboard. Quota warnings and unexpected resets will appear here.",
+    "notificationFiveHour": "5-hour limit",
+    "notificationWeekly": "weekly limit",
+    "notificationWindow": "quota",
+    "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
+    "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Wcześniej wykorzystano {previous}%.",
+    "notificationCreditsExpiry": "Codex: {balance} kredytów wygasa {date} (wpisana data).",
+    "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
+    "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Wcześniej wykorzystano {previous}%.",
+    "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Wcześniej wykorzystano {previous}%.",
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Kopiuj link",
+    "copied": "Link skopiowany.",
+    "copyError": "Skopiuj link z pola adresu.",
+    "desktopTitle": "Pokaż kod QR i link"
   }
 }

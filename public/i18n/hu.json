@@ -376,7 +376,8 @@
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
       "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
-      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode.",
+      "claudeLogTokensHelp": "A kiválasztott telepítések rögzített tokenjei: bemenet, kimenet és újrafelhasznált kontextus (gyorsítótár). Ez az összeg különálló az előfizetési korláttól."
     },
     "emptyState": {
       "eyebrow": "Szolgáltató",
@@ -448,18 +449,27 @@
     "autoTopUp": "Automatikus feltöltés",
     "default": "Kreditek",
     "on": "Be",
-    "off": "Ki"
+    "off": "Ki",
+    "expiryEdit": "Lejárat szerkesztése",
+    "expiryHelp": "Saját dátum ehhez a Codex-fiókhoz. Figyelmeztetés 30, 7 és 1 nappal előtte, ha az értesítések be vannak kapcsolva. Törléshez ürítsd ki a mezőt.",
+    "expiryDate": "Lejárati dátum",
+    "expirySave": "Mentés",
+    "expiryError": "Nem sikerült betölteni vagy menteni. A Codex-fiók megváltozhatott; zárd be és nyisd meg újra az ablakot.",
+    "expiryManual": "Érvényes: {date} · saját adat",
+    "expiryUnknown": "A Codex nem ad meg lejárati dátumot",
+    "expiryAlertTitle": "A kreditek hamarosan lejárnak",
+    "expiryAlertBody": "Codex: {balance} kredit lejár ekkor: {date} (megadott dátum)."
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "A korlát eléréséig: {duration}",
+      "timeToLimit": "Becsült idő a korlát eléréséig: {duration}",
       "title": "Közelmúltbeli ütem",
       "measured": "+{percent} százalékpont {duration} alatt",
       "collecting": "Ehhez az időszakhoz még nincs elég mérés.",
       "flat": "Nincs mérhető növekedés ebben az időszakban.",
       "stale": "A legutóbbi kvótaadat túl régi.",
       "changed": "Az értékek megváltoztak; nincs előrejelzés.",
-      "possible": "A limit a visszaállítás előtt elfogyhat; a becslés bizonytalan.",
+      "possible": "A kerekítés miatt nem biztos, hogy a korlátot a visszaállítás előtt eléri a használat.",
       "note": "Becslés kerekített százalékokból, változatlan ütemmel."
     },
     "fiveHour": "5h",
@@ -632,7 +642,8 @@
       "nativeWindowWeekly": "Heti limit",
       "nativeWindowSonnetOnly": "Csak Sonnet-limit",
       "nativeWindowClaudeDesign": "Claude Design-limit",
-      "nativeWindowGeneric": "Limit"
+      "nativeWindowGeneric": "Limit",
+      "resetsEnabled": "Értesítés a keret visszaállításáról és változásairól"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -769,7 +780,24 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefon",
+      "help": "Csatlakoztasd telefonodat egyszer QR-kóddal. Ezután nyisd meg az irányítópultot ugyanazon a Wi-Fi-hálózaton.",
+      "open": "QR-kód és hivatkozás megjelenítése",
+      "stop": "Telefonos hozzáférés kikapcsolása",
+      "on": "A telefonos hozzáférés be van kapcsolva, és az alkalmazás indításakor folytatódik.",
+      "off": "A telefonos hozzáférés ki van kapcsolva.",
+      "desktopOnly": "A telepített asztali alkalmazásban érhető el.",
+      "noLan": "Csatlakoztasd a számítógépet privát Wi-Fi- vagy helyi hálózathoz, majd próbáld újra.",
+      "portBusy": "Egy másik szolgáltatás használja a portot. Zárd be, majd próbáld újra.",
+      "failed": "Nem sikerült elindítani a telefonos hozzáférést. Próbáld újra.",
+      "address": "Az irányítópult címe",
+      "remoteSetup": "Csatlakoztassa a Tailscale-t a számítógépen és a telefonon, és engedélyezze a HTTPS-t a saját hálózatában. Futtassa az alábbi parancsot, majd mentse ide a megjelenő HTTPS-címet. Meglévő HTTPS-szolgáltatást ne írjon felül. Üres cím kikapcsolja a kapcsolatot. A számítógépnek működnie kell; a Wi-Fi Tailscale nélkül is használható.",
+      "remoteOrigin": "Saját privát HTTPS-cím",
+      "remoteSave": "Cím mentése",
+      "remoteOpen": "HTTPS QR-kód és hivatkozás"
+    }
   },
   "errors": {
     "loadUsage": "Hiba"
@@ -1105,7 +1133,10 @@
     "causeConfirmed": "Megerősített",
     "causeInferred": "Következtetett",
     "causeSummary": "Okok: {manual} kupon · {provider} OpenAI (következtetett) · {scheduled} ütemezett · {unknown} ismeretlen",
-    "causeNote": "A korai időpont nem mutatja az okot. OpenAI csak akkor következtethető, ha a teljes kuponlista változatlan marad egy szorosan megfigyelt kvóta-visszaállítás során. A régi naplók nem választják szét a kézi és OpenAI-visszaállításokat. A kiváltó személy ismeretlen."
+    "causeNote": "A korai időpont nem mutatja az okot. OpenAI csak akkor következtethető, ha a teljes kuponlista változatlan marad egy szorosan megfigyelt kvóta-visszaállítás során. A régi naplók nem választják szét a kézi és OpenAI-visszaállításokat. A kiváltó személy ismeretlen.",
+    "unassigned": "Nincs fiókhoz rendelve",
+    "beforeReset": "Utolsó mérés visszaállítás előtt",
+    "latest": "Utolsó mérés: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Saját eszközök összekapcsolása",
@@ -1222,5 +1253,73 @@
   },
   "history": {
     "refreshing": "Mentett előzmények · {time}. Frissítés a háttérben."
+  },
+  "mobilePrototype": {
+    "prototype": "LAN prototype",
+    "title": "Open on your phone",
+    "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
+    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "save": "After connecting, save the dashboard to your home screen.",
+    "address": "Pairing link",
+    "newCode": "Create a new QR code",
+    "network": "Available installations",
+    "leader": "Current host",
+    "waiting": "Waiting for an installation",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "offline": "No installation is reachable. Start a paired app on the same local network.",
+    "pair": "Connect this phone",
+    "expires": "This pairing link and QR code expires in 24 hours and can be used once.",
+    "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
+    "missingCode": "The pairing code did not reach this page. Open the complete pairing link.",
+    "expiredCode": "This pairing link has expired. Open a new link or scan a new QR code.",
+    "usedCode": "This pairing link has already been used. Open the dashboard in the browser where you connected, or use a new link.",
+    "invalidCode": "This pairing code is invalid. Open the complete pairing link.",
+    "readOnly": "Phone access · read only · LAN prototype",
+    "servedBy": "Data from",
+    "networkError": "The local connection is unavailable. Check the network permission and whether an installation is running.",
+    "joinTitle": "Connect installations",
+    "joinHelp": "Create a code on your first installation and paste it here on the additional computer within five minutes. The code grants access to this group: share it only with your own trusted installations. This prototype connects the mobile access group; desktop data synchronization is separate.",
+    "groupCode": "Create installation code",
+    "joinLabel": "Code from the first installation",
+    "join": "Join this group",
+    "joining": "Connecting. The prototype restarts automatically.",
+    "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
+    "directCode": "Create a direct Wi-Fi QR code",
+    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "notificationsTitle": "Warnings and notifications",
+    "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
+    "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
+    "notificationsHelp": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "notificationsInstall": "On iPhone, add this HTTPS dashboard to the Home Screen first and open it using that icon. Then tap Enable notifications.",
+    "notificationsInvite": "Receive quota warnings and unexpected resets even with the dashboard closed. Enable notifications on this phone. The computer serving this HTTPS address must stay running and have Internet access.",
+    "notificationsEnable": "Enable notifications",
+    "notificationsTest": "Send test notification",
+    "notificationsDisable": "Disable on this phone",
+    "notificationsActive": "Push is registered for this phone. The computer serving this HTTPS address must stay running and have Internet access. Use a test notification to check reception.",
+    "notificationsDenied": "Notifications are blocked for this web app. Allow them in the phone settings to enable push.",
+    "notificationsUnsupported": "This browser does not support push here. Warnings still appear in the open dashboard.",
+    "notificationsError": "Push could not be registered or sent. Check the connection and try again.",
+    "notificationsUnavailable": "Warnings are currently unavailable. Check the connection to the running desktop app.",
+    "notificationsDesktopDisabled": "Notifications are disabled in the desktop app. Enable them there to receive its warnings here.",
+    "notificationsEmpty": "No current quota warnings or recently observed unexpected resets.",
+    "notificationsTestAccepted": "The push service accepted the test. Check whether the notification arrived on your phone; acceptance does not confirm delivery.",
+    "notificationTestBody": "Test from LLM Usage Dashboard. Quota warnings and unexpected resets will appear here.",
+    "notificationFiveHour": "5-hour limit",
+    "notificationWeekly": "weekly limit",
+    "notificationWindow": "quota",
+    "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
+    "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Korábban {previous}% volt használatban.",
+    "notificationCreditsExpiry": "Codex: {balance} kredit lejár ekkor: {date} (megadott dátum).",
+    "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
+    "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Korábban {previous}% volt használatban.",
+    "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Korábban {previous}% volt használatban.",
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Hivatkozás másolása",
+    "copied": "Hivatkozás másolva.",
+    "copyError": "Másold ki a hivatkozást a címmezőből.",
+    "desktopTitle": "QR-kód és hivatkozás megjelenítése"
   }
 }

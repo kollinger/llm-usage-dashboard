@@ -376,7 +376,8 @@
       "claudeBrowserLoginHint": "Log in to Claude.ai in your browser to enable credit tracking.",
       "glmQuotaAvailable": "Official GLM Coding Plan quota from OpenCode.",
       "glmQuotaUnavailableReason": "Official GLM Coding Plan quota unavailable: {reason}.",
-      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode."
+      "noOpenCodeGptEvents": "No local OpenAI/GPT usage events found in OpenCode.",
+      "claudeLogTokensHelp": "Įrašyti žetonai iš pasirinktų diegimų: įvestis, išvestis ir pakartotinai naudojamas kontekstas (podėlis). Ši suma atskirta nuo prenumeratos limito."
     },
     "emptyState": {
       "eyebrow": "Teikėjas",
@@ -448,18 +449,27 @@
     "autoTopUp": "Automatinis papildymas",
     "default": "Kreditai",
     "on": "Įjungta",
-    "off": "Išjungta"
+    "off": "Išjungta",
+    "expiryEdit": "Keisti galiojimo datą",
+    "expiryHelp": "Jūsų įvesta data šiai Codex paskyrai. Įjungus pranešimus įspėjama prieš 30, 7 ir 1 dieną. Išvalykite lauką, kad pašalintumėte.",
+    "expiryDate": "Galiojimo data",
+    "expirySave": "Išsaugoti",
+    "expiryError": "Nepavyko įkelti arba išsaugoti. Codex paskyra galėjo pasikeisti; uždarykite ir vėl atverkite dialogą.",
+    "expiryManual": "Galioja iki {date} · jūsų įvesta",
+    "expiryUnknown": "Codex nepateikia galiojimo datos",
+    "expiryAlertTitle": "Kreditai netrukus baigs galioti",
+    "expiryAlertBody": "Codex: {balance} kreditų galiojimas baigiasi {date} (įvesta data)."
   },
   "limits": {
     "recentPace": {
-      "timeToLimit": "Laikas iki limito: {duration}",
+      "timeToLimit": "Numatomas laikas iki limito: {duration}",
       "title": "Pastarasis tempas",
       "measured": "+{percent} procentinio punkto per {duration}",
       "collecting": "Šiam laikotarpiui dar nepakanka matavimų.",
       "flat": "Šiuo laikotarpiu nėra išmatuojamo augimo.",
       "stale": "Paskutinis kvotos rodmuo per senas.",
       "changed": "Rodmenys pasikeitė; prognozės nėra.",
-      "possible": "Limitas gali būti pasiektas iki atnaujinimo; įvertis nepatikimas.",
+      "possible": "Dėl apvalinimo neaišku, ar limitas bus pasiektas iki atnaujinimo.",
       "note": "Įvertis pagal suapvalintus procentus, darant pastovaus tempo prielaidą."
     },
     "fiveHour": "5h",
@@ -632,7 +642,8 @@
       "nativeWindowWeekly": "Savaitės limitas",
       "nativeWindowSonnetOnly": "Tik Sonnet limitas",
       "nativeWindowClaudeDesign": "Claude Design limitas",
-      "nativeWindowGeneric": "Limitas"
+      "nativeWindowGeneric": "Limitas",
+      "resetsEnabled": "Pranešti apie kvotos atkūrimą ir pakeitimus"
     },
     "subscriptions": {
       "title": "Subscription costs",
@@ -769,7 +780,24 @@
       "state_electron_updater_missing": "Updater package missing",
       "alwaysOn": "Automatic update checks are always active."
     },
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "mobile": {
+      "title": "Telefonas",
+      "help": "Vieną kartą susiekite telefoną QR kodu. Tada atverkite skydelį tame pačiame Wi-Fi tinkle.",
+      "open": "Rodyti QR kodą ir nuorodą",
+      "stop": "Išjungti prieigą telefonu",
+      "on": "Prieiga telefonu įjungta ir atnaujinama paleidus programą.",
+      "off": "Prieiga telefonu išjungta.",
+      "desktopOnly": "Pasiekiama įdiegtoje darbalaukio programoje.",
+      "noLan": "Prijunkite kompiuterį prie privataus Wi-Fi ar vietinio tinklo ir bandykite dar kartą.",
+      "portBusy": "Prievadą naudoja kita paslauga. Uždarykite ją ir bandykite dar kartą.",
+      "failed": "Nepavyko paleisti prieigos telefonu. Bandykite dar kartą.",
+      "address": "Skydelio adresas",
+      "remoteSetup": "Prijunkite Tailscale kompiuteryje ir telefone bei įjunkite HTTPS savo tinkle. Paleiskite toliau pateiktą komandą ir čia išsaugokite rodomą HTTPS adresą. Nepakeiskite esamos HTTPS paslaugos. Tuščias adresas išjungia ryšį. Kompiuteris turi veikti; Wi-Fi veikia be Tailscale.",
+      "remoteOrigin": "Jūsų privatus HTTPS adresas",
+      "remoteSave": "Išsaugoti adresą",
+      "remoteOpen": "HTTPS QR kodas ir nuoroda"
+    }
   },
   "errors": {
     "loadUsage": "Klaida"
@@ -1105,7 +1133,10 @@
     "causeConfirmed": "Patvirtinta",
     "causeInferred": "Išvada",
     "causeSummary": "Priežastys: {manual} kuponas · {provider} OpenAI (išvada) · {scheduled} suplanuota · {unknown} nežinoma",
-    "causeNote": "Ankstyvas laikas neparodo priežasties. OpenAI nustatomas tik pagal išvadą, kai visas kuponų sąrašas lieka nepakitęs per atidžiai stebėtą kvotos atstatymą. Seni žurnalai neatskiria rankinių ir OpenAI atstatymų. Atstatymą inicijavęs asmuo nežinomas."
+    "causeNote": "Ankstyvas laikas neparodo priežasties. OpenAI nustatomas tik pagal išvadą, kai visas kuponų sąrašas lieka nepakitęs per atidžiai stebėtą kvotos atstatymą. Seni žurnalai neatskiria rankinių ir OpenAI atstatymų. Atstatymą inicijavęs asmuo nežinomas.",
+    "unassigned": "Nepriskirta paskyrai",
+    "beforeReset": "Paskutinis matavimas prieš nustatymą iš naujo",
+    "latest": "Paskutinis matavimas: {percent}% · {time}"
   },
   "deviceSync": {
     "heading": "Sujunkite savo įrenginius",
@@ -1222,5 +1253,73 @@
   },
   "history": {
     "refreshing": "Išsaugota istorija · {time}. Atnaujinama fone."
+  },
+  "mobilePrototype": {
+    "prototype": "LAN prototype",
+    "title": "Open on your phone",
+    "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
+    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "save": "After connecting, save the dashboard to your home screen.",
+    "address": "Pairing link",
+    "newCode": "Create a new QR code",
+    "network": "Available installations",
+    "leader": "Current host",
+    "waiting": "Waiting for an installation",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "offline": "No installation is reachable. Start a paired app on the same local network.",
+    "pair": "Connect this phone",
+    "expires": "This pairing link and QR code expires in 24 hours and can be used once.",
+    "scanAgain": "The pairing link is missing, expired or already used. Open a new link or scan a new QR code.",
+    "missingCode": "The pairing code did not reach this page. Open the complete pairing link.",
+    "expiredCode": "This pairing link has expired. Open a new link or scan a new QR code.",
+    "usedCode": "This pairing link has already been used. Open the dashboard in the browser where you connected, or use a new link.",
+    "invalidCode": "This pairing code is invalid. Open the complete pairing link.",
+    "readOnly": "Phone access · read only · LAN prototype",
+    "servedBy": "Data from",
+    "networkError": "The local connection is unavailable. Check the network permission and whether an installation is running.",
+    "joinTitle": "Connect installations",
+    "joinHelp": "Create a code on your first installation and paste it here on the additional computer within five minutes. The code grants access to this group: share it only with your own trusted installations. This prototype connects the mobile access group; desktop data synchronization is separate.",
+    "groupCode": "Create installation code",
+    "joinLabel": "Code from the first installation",
+    "join": "Join this group",
+    "joining": "Connecting. The prototype restarts automatically.",
+    "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
+    "directCode": "Create a direct Wi-Fi QR code",
+    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "notificationsTitle": "Warnings and notifications",
+    "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
+    "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
+    "notificationsHelp": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
+    "notificationsInstall": "On iPhone, add this HTTPS dashboard to the Home Screen first and open it using that icon. Then tap Enable notifications.",
+    "notificationsInvite": "Receive quota warnings and unexpected resets even with the dashboard closed. Enable notifications on this phone. The computer serving this HTTPS address must stay running and have Internet access.",
+    "notificationsEnable": "Enable notifications",
+    "notificationsTest": "Send test notification",
+    "notificationsDisable": "Disable on this phone",
+    "notificationsActive": "Push is registered for this phone. The computer serving this HTTPS address must stay running and have Internet access. Use a test notification to check reception.",
+    "notificationsDenied": "Notifications are blocked for this web app. Allow them in the phone settings to enable push.",
+    "notificationsUnsupported": "This browser does not support push here. Warnings still appear in the open dashboard.",
+    "notificationsError": "Push could not be registered or sent. Check the connection and try again.",
+    "notificationsUnavailable": "Warnings are currently unavailable. Check the connection to the running desktop app.",
+    "notificationsDesktopDisabled": "Notifications are disabled in the desktop app. Enable them there to receive its warnings here.",
+    "notificationsEmpty": "No current quota warnings or recently observed unexpected resets.",
+    "notificationsTestAccepted": "The push service accepted the test. Check whether the notification arrived on your phone; acceptance does not confirm delivery.",
+    "notificationTestBody": "Test from LLM Usage Dashboard. Quota warnings and unexpected resets will appear here.",
+    "notificationFiveHour": "5-hour limit",
+    "notificationWeekly": "weekly limit",
+    "notificationWindow": "quota",
+    "notificationHardLimit": "{provider} · {window}: {percent}% used. The limit is almost exhausted.",
+    "notificationPacing": "{provider} · {window}: {percent}% used; at the current pace, {projected}% is projected before the reset.",
+    "notificationReset": "{provider}: an early {window} reset was observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Anksčiau panaudota {previous}%.",
+    "notificationCreditsExpiry": "Codex: {balance} kreditų galiojimas baigiasi {date} (įvesta data).",
+    "notificationsWarningsOn": "Dashboard warnings are on. Phone push is configured separately below.",
+    "notificationsResetsOff": "Reset and quota-change notices are off in the desktop settings.",
+    "notificationResetScheduled": "{provider}: {window} reset observed at {observed}. Previously scheduled for {time}. Now {percent}% used. Anksčiau panaudota {previous}%.",
+    "notificationLimitReached": "{provider}: {window} limit reached at {observed}. Scheduled reset: {time}.",
+    "notificationAvailable": "{provider}: usage is available again for {window}, observed at {observed}. Previously scheduled reset: {time}. Now {percent}% used. Anksčiau panaudota {previous}%.",
+    "notificationAdjusted": "{provider}: {window} quota changed at {observed}: {previous}% → {percent}% used. Previously scheduled reset: {time}.",
+    "copyLink": "Kopijuoti nuorodą",
+    "copied": "Nuoroda nukopijuota.",
+    "copyError": "Nukopijuokite nuorodą iš adreso lauko.",
+    "desktopTitle": "Rodyti QR kodą ir nuorodą"
   }
 }
