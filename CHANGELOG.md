@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0-preview.6 - 2026-10-17
+
+- Apply the same cross-platform permission check to persisted quota-notification state. Preview.5 was not published because this remaining Unix-only assertion failed on Windows.
+- Includes the full 1.7 phone, notification and account-reset changes below.
+
 ## 1.7.0-preview.5 - 2026-10-17
 
 - Fix Windows verification of private phone-state files: assert POSIX permission bits on macOS/Linux, matching the existing cross-platform account-store tests. Windows retains the functional pairing and HTTPS checks.

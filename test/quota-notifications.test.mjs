@@ -61,7 +61,7 @@ try {
   assert.equal((await feed.observe('claudeCode', { ...early, at: new Date(now).toISOString() }))[0].provider, 'claudeCode');
   now += 11 * 60000;
   assert.deepEqual(await feed.events(notificationSettings()), [], 'old events stop being alerts');
-  assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
+  if (process.platform !== "win32") assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
 
   const copy = JSON.parse(await fs.readFile(new URL('../public/i18n/de.json', import.meta.url), 'utf8'));
   const source = await fs.readFile(new URL('../electron/main.js', import.meta.url), 'utf8');
