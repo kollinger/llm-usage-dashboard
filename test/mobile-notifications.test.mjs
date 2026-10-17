@@ -118,7 +118,7 @@ try {
   const backgroundDeadline = Date.now() + 2000;
   while (sent.length < 4 && Date.now() < backgroundDeadline) await new Promise(resolve => setTimeout(resolve, 10));
   assert.equal(sent.length, 4, 'the gateway checks and sends after enrollment without a browser polling');
-  const pushFile = path.join(directory, 'https', `mobile-push-${gateway.group.id}.json`);
+  const pushFile = path.join(directory, 'https', `mobile-push-${gateway.group.id}-${crypto.createHash('sha256').update('https://dashboard.example.invalid').digest('hex').slice(0, 12)}.json`);
   const originalToken = cookie.split('=')[1];
   const owner = crypto.createHash('sha256').update(originalToken).digest('hex');
   // The send callback returns before the queued durable write completes.

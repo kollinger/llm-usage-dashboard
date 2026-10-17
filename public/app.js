@@ -112,6 +112,9 @@ const els = {
   mobileAccessStatus: document.getElementById("mobileAccessStatus"),
   mobileAccessAddress: document.getElementById("mobileAccessAddress"),
   mobileAccessAddressField: document.getElementById("mobileAccessAddressField"),
+  mobileHttpsOrigin: document.getElementById("mobileHttpsOrigin"),
+  mobileHttpsSave: document.getElementById("mobileHttpsSave"),
+  mobileHttpsOpen: document.getElementById("mobileHttpsOpen"),
   settingsSourcesRecheckBtn: document.getElementById("settingsSourcesRecheckBtn"),
   settingsSourcesStatus: document.getElementById("settingsSourcesStatus"),
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
@@ -2420,6 +2423,17 @@ function bindEvents() {
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.mobileAccessOpen.addEventListener("click", () => changeMobileAccess(true));
   els.mobileAccessDisable.addEventListener("click", () => changeMobileAccess(false));
+  els.mobileHttpsSave.addEventListener("click", async () => {
+    if (!els.mobileHttpsOrigin.reportValidity()) return;
+    const value = els.mobileHttpsOrigin.value.trim();
+    renderMobileAccess(state.mobileAccess, true);
+    try { renderMobileAccess(await window.llmUsageDashboard.mobileAccess.setHttpsOrigin(value)); }
+    catch { renderMobileAccess({ ...state.mobileAccess, reason: "failed" }); }
+  });
+  els.mobileHttpsOpen.addEventListener("click", async () => {
+    try { renderMobileAccess(await window.llmUsageDashboard.mobileAccess.openPairing(true)); }
+    catch { renderMobileAccess({ ...state.mobileAccess, reason: "failed" }); }
+  });
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
@@ -9962,6 +9976,11 @@ function renderMobileAccess(value = {}, busy = false) {
   els.mobileAccessDisable.hidden = !value.enabled;
   els.mobileAccessAddressField.hidden = !value.running;
   els.mobileAccessAddress.value = value.url || "";
+  els.mobileHttpsSave.disabled = busy || !available;
+  els.mobileHttpsOrigin.disabled = busy || !available;
+  if (!busy && document.activeElement !== els.mobileHttpsOrigin) els.mobileHttpsOrigin.value = value.httpsOrigin || "";
+  els.mobileHttpsOpen.hidden = !value.httpsOrigin;
+  els.mobileHttpsOpen.disabled = busy || !available;
 }
 
 async function loadMobileAccess() {

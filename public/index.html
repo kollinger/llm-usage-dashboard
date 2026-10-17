@@ -359,7 +359,16 @@
             <button type="button" class="text-button ghost" id="mobileAccessDisable" data-i18n="settings.mobile.stop" hidden></button>
           </div>
           <label class="field" id="mobileAccessAddressField" hidden><span data-i18n="settings.mobile.address"></span><input id="mobileAccessAddress" type="url" readonly /></label>
-          <p class="settings-desc" data-i18n="mobilePrototype.remote"></p>
+          <details>
+            <summary data-i18n="mobilePrototype.notificationsConnectionHelp"></summary>
+            <p class="settings-desc" data-i18n="settings.mobile.remoteSetup"></p>
+            <div class="source-command-block"><pre dir="ltr">tailscale serve --bg --https=443 http://127.0.0.1:41781</pre></div>
+            <label class="field"><span data-i18n="settings.mobile.remoteOrigin"></span><input id="mobileHttpsOrigin" type="url" placeholder="https://computer.tailnet.ts.net" autocomplete="off" spellcheck="false" /></label>
+            <button type="button" class="text-button" id="mobileHttpsSave" data-i18n="settings.mobile.remoteSave"></button>
+            <button type="button" class="text-button" id="mobileHttpsOpen" data-i18n="settings.mobile.remoteOpen" hidden></button>
+            <p class="settings-desc" data-i18n="mobilePrototype.notificationsHelp"></p>
+            <a href="https://tailscale.com/docs/features/tailscale-serve" target="_blank" rel="noopener noreferrer">Tailscale Serve</a>
+          </details>
         </section>
         <section class="settings-tab-panel" id="settingsPanelGeneral" role="tabpanel" aria-labelledby="settingsTabGeneral" data-settings-panel="general" hidden>
         <div class="settings-preferences">

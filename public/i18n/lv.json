@@ -792,7 +792,11 @@
       "noLan": "Savienojiet datoru ar privātu Wi-Fi vai lokālo tīklu un mēģiniet vēlreiz.",
       "portBusy": "Portu izmanto cits pakalpojums. Aizveriet to un mēģiniet vēlreiz.",
       "failed": "Neizdevās sākt piekļuvi no tālruņa. Mēģiniet vēlreiz.",
-      "address": "Paneļa adrese"
+      "address": "Paneļa adrese",
+      "remoteSetup": "Savienojiet Tailscale datorā un tālrunī un iespējojiet HTTPS savā tīklā. Izpildiet zemāk norādīto komandu un šeit saglabājiet parādīto HTTPS adresi. Neaizstājiet esošu HTTPS pakalpojumu. Tukša adrese izslēdz savienojumu. Datoram jādarbojas; Wi-Fi darbojas bez Tailscale.",
+      "remoteOrigin": "Jūsu privātā HTTPS adrese",
+      "remoteSave": "Saglabāt adresi",
+      "remoteOpen": "HTTPS QR kods un saite"
     }
   },
   "errors": {
@@ -1261,7 +1265,7 @@
     "network": "Available installations",
     "leader": "Current host",
     "waiting": "Waiting for an installation",
-    "remote": "Remote access is not included in this prototype. A user-owned private connection such as Tailscale is planned; we operate no relay service.",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
     "offline": "No installation is reachable. Start a paired app on the same local network.",
     "pair": "Connect this phone",
     "expires": "This pairing link and QR code expires in 24 hours and can be used once.",

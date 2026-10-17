@@ -31,6 +31,12 @@
   const message = (key) => { document.getElementById("prototypeMessage").textContent = text(key); };
   const pairingMessage = (state) => ({ missing: "missingCode", expired: "expiredCode", used: "usedCode", invalid: "invalidCode" })[state] || "scanAgain";
   if (document.body.dataset.prototype === "control") {
+    if (new URLSearchParams(location.search).get("https") === "1") {
+      document.querySelector('[data-copy="intro"]').textContent = text("notificationsHelp");
+      document.querySelector('[data-copy="httpWarning"]').hidden = true;
+      document.querySelector('[data-copy="directHelp"]').hidden = true;
+      document.getElementById("prototypeDirectCode").hidden = true;
+    }
     const refresh = async () => {
       try {
         const status = await (await fetch("/api/status")).json();
@@ -43,7 +49,7 @@
     const code = async (direct = false) => {
       const button = document.getElementById("prototypeNewCode"); button.disabled = true;
       try {
-        const response = await fetch("/api/code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ direct }) });
+        const response = await fetch("/api/code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ direct, https: !direct && new URLSearchParams(location.search).get("https") === "1" }) });
         if (!response.ok) throw new Error("code_unavailable");
         const value = await response.json();
         document.getElementById("prototypeQr").innerHTML = value.svg;
@@ -151,9 +157,10 @@
         const items = [...(feed.alerts || []), ...(feed.events || [])];
         const seen = new Set();
         for (const item of items) {
-          const identity = item.id || `${item.provider}:${item.type}:${item.windowKey}`;
+          const identity = item.id || `${item.provider}:${item.accountKey || ""}:${item.type}:${item.windowKey}`;
           if (seen.has(identity)) continue; seen.add(identity);
-          const provider = { codex: "Codex", claudeCode: "Claude", copilot: "Copilot" }[item.provider] || "LLM";
+          let provider = { codex: "Codex", claudeCode: "Claude", copilot: "Copilot" }[item.provider] || "LLM";
+          if (item.accountKey) provider += ` · ${item.accountLabel || "GPT · " + item.accountKey.slice(0, 6)}`;
           const values = { provider, window: text(item.windowKey === "five_hour" ? "notificationFiveHour" : item.windowKey === "weekly" ? "notificationWeekly" : "notificationWindow"),
             previous: Math.round(item.previousUsedPercent || 0), observed: item.at ? new Date(item.at).toLocaleString(language) : "",
             percent: Math.round(item.usedPercent || 0), projected: Math.round(item.projectedPercent || 0), time: item.previousResetAt ? new Date(item.previousResetAt).toLocaleString(language) : "",

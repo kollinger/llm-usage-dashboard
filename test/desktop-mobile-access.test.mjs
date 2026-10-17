@@ -57,6 +57,33 @@ try {
   assert.equal((await fetch(`${nextOrigin}/api/usage`, { headers: { Cookie: phoneCookie } })).status, 200, "existing phone stays paired after restart");
   const replay = await fetch(`${nextOrigin}/pair`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: new URL(pairing.url).hash.slice(1) }) });
   assert.equal(replay.status, 401, "used pairing link stays consumed after restart");
+  await assert.rejects(restarted.setHttpsOrigin("http://private.example.invalid"), /invalid_https_origin/);
+  await assert.rejects(restarted.setHttpsOrigin("https://private.example.invalid/path"), /invalid_https_origin/);
+  await restarted.setHttpsOrigin("https://private.example.invalid/");
+  gateway = gateways.at(-1);
+  assert.equal(gateway.proxyServer.address().address, "127.0.0.1");
+  assert.equal(gateway.proxyServer.address().port, 41781);
+  const secureCode = await (await fetch(`${restarted.status().controlUrl}/api/code`, { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ https: true }) })).json();
+  assert.equal(new URL(secureCode.linkUrl).origin, "https://private.example.invalid");
+  const proxy = "http://127.0.0.1:41781";
+  assert.equal((await fetch(`${proxy}/api/usage`)).status, 403, "untrusted loopback host is rejected");
+  const securePair = await new Promise((resolve, reject) => {
+    const request = http.request(`${proxy}/pair`, { method: "POST", headers: {
+      Host: "private.example.invalid", "X-Forwarded-Proto": "https", Origin: "https://private.example.invalid",
+      "Content-Type": "application/json" } }, (response) => {
+      response.resume(); response.on("end", () => resolve({ status: response.statusCode,
+        headers: new Headers(response.headers) }));
+    });
+    request.on("error", reject); request.end(JSON.stringify({ code: new URL(secureCode.url).hash.slice(1) }));
+  });
+  assert.equal(securePair.status, 200);
+  assert.match(securePair.headers.get("set-cookie"), /Secure/);
+  assert.equal(JSON.parse(await fs.readFile(path.join(root, "settings.json"))).httpsOrigin, "https://private.example.invalid");
+  await restarted.setHttpsOrigin("https://other.example.invalid");
+  assert.equal(restarted.status().running, true, "changing the private HTTPS host keeps LAN available");
+  await restarted.setHttpsOrigin("");
+  assert.equal(gateways.at(-1).proxyServer, null, "clearing the origin closes the optional proxy");
   address = null; await restarted.refresh(); assert.equal(restarted.status().reason, "noLan");
   address = "127.0.0.1"; await restarted.refresh(); assert.equal(restarted.status().running, true, "recovers after Wi-Fi returns");
   await restarted.setEnabled(false); assert.equal(restarted.status().running, false);

@@ -828,7 +828,11 @@
       "noLan": "Verbinde diesen Rechner mit einem privaten WLAN oder lokalen Netzwerk und versuche es erneut.",
       "portBusy": "Ein anderer Handy-Dienst verwendet bereits den Anschluss. Beende ihn und versuche es erneut.",
       "failed": "Der Handy-Zugang konnte nicht starten. Versuche es erneut.",
-      "address": "Dashboard-Adresse"
+      "address": "Dashboard-Adresse",
+      "remoteSetup": "Tailscale auf Rechner und Handy verbinden und HTTPS im eigenen Tailscale-Netz aktivieren. Den folgenden Befehl am Rechner ausführen, dann die angezeigte HTTPS-Adresse hier speichern. Eine bereits belegte HTTPS-Adresse nicht überschreiben. Eine leere Adresse schaltet diese Anbindung aus. Der Rechner muss laufen; WLAN bleibt ohne Tailscale nutzbar.",
+      "remoteOrigin": "Deine private HTTPS-Adresse",
+      "remoteSave": "Adresse speichern",
+      "remoteOpen": "HTTPS-QR-Code und Link"
     }
   },
   "errors": {
@@ -1261,7 +1265,7 @@
     "network": "Erreichbare Installationen",
     "leader": "Aktueller Gastgeber",
     "waiting": "Warte auf eine Installation",
-    "remote": "Fernzugriff ist in diesem Prototyp noch nicht eingebaut. Dafür ist später eine eigene private Verbindung wie Tailscale vorgesehen; wir betreiben keinen Vermittlungsdienst.",
+    "remote": "Das WLAN-Dashboard funktioniert ohne Tailscale. Handy-Push braucht eine HTTPS-Adresse mit vertrauenswürdigem Zertifikat und einen laufenden Rechner mit Internetzugang. Dafür kannst du eine eigene Domain mit Zertifikat oder optional eine private Tailscale-HTTPS-Adresse verwenden. Am iPhone diese HTTPS-Adresse auf dem Home-Bildschirm speichern, über das Symbol öffnen und Benachrichtigungen einmal erlauben. Wir betreiben keinen Dashboard-Vermittlungsdienst.",
     "offline": "Keine Installation erreichbar. Eine gekoppelte App im selben lokalen Netzwerk starten.",
     "pair": "Dieses Handy verbinden",
     "expires": "Dieser Kopplungslink und QR-Code ist 24 Stunden gültig und einmal verwendbar.",

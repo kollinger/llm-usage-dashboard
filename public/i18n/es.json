@@ -792,7 +792,11 @@
       "noLan": "Conecta este equipo a una red Wi-Fi privada o local e inténtalo de nuevo.",
       "portBusy": "Otro servicio está usando el puerto. Ciérralo e inténtalo de nuevo.",
       "failed": "No se pudo iniciar el acceso del teléfono. Inténtalo de nuevo.",
-      "address": "Dirección del panel"
+      "address": "Dirección del panel",
+      "remoteSetup": "Conecta Tailscale en el ordenador y el móvil y activa HTTPS en tu red. Ejecuta el comando siguiente y guarda aquí la dirección HTTPS que muestre. No sustituyas un servicio HTTPS existente. Una dirección vacía desactiva esta conexión. El ordenador debe estar encendido; el acceso Wi-Fi funciona sin Tailscale.",
+      "remoteOrigin": "Tu dirección HTTPS privada",
+      "remoteSave": "Guardar dirección",
+      "remoteOpen": "Código QR y enlace HTTPS"
     }
   },
   "errors": {
@@ -1261,7 +1265,7 @@
     "network": "Available installations",
     "leader": "Current host",
     "waiting": "Waiting for an installation",
-    "remote": "Remote access is not included in this prototype. A user-owned private connection such as Tailscale is planned; we operate no relay service.",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
     "offline": "No installation is reachable. Start a paired app on the same local network.",
     "pair": "Connect this phone",
     "expires": "This pairing link and QR code expires in 24 hours and can be used once.",

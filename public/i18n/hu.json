@@ -792,7 +792,11 @@
       "noLan": "Csatlakoztasd a számítógépet privát Wi-Fi- vagy helyi hálózathoz, majd próbáld újra.",
       "portBusy": "Egy másik szolgáltatás használja a portot. Zárd be, majd próbáld újra.",
       "failed": "Nem sikerült elindítani a telefonos hozzáférést. Próbáld újra.",
-      "address": "Az irányítópult címe"
+      "address": "Az irányítópult címe",
+      "remoteSetup": "Csatlakoztassa a Tailscale-t a számítógépen és a telefonon, és engedélyezze a HTTPS-t a saját hálózatában. Futtassa az alábbi parancsot, majd mentse ide a megjelenő HTTPS-címet. Meglévő HTTPS-szolgáltatást ne írjon felül. Üres cím kikapcsolja a kapcsolatot. A számítógépnek működnie kell; a Wi-Fi Tailscale nélkül is használható.",
+      "remoteOrigin": "Saját privát HTTPS-cím",
+      "remoteSave": "Cím mentése",
+      "remoteOpen": "HTTPS QR-kód és hivatkozás"
     }
   },
   "errors": {
@@ -1261,7 +1265,7 @@
     "network": "Available installations",
     "leader": "Current host",
     "waiting": "Waiting for an installation",
-    "remote": "Remote access is not included in this prototype. A user-owned private connection such as Tailscale is planned; we operate no relay service.",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
     "offline": "No installation is reachable. Start a paired app on the same local network.",
     "pair": "Connect this phone",
     "expires": "This pairing link and QR code expires in 24 hours and can be used once.",

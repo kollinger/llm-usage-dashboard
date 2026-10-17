@@ -792,7 +792,11 @@
       "noLan": "Pripojte počítač k súkromnej Wi-Fi alebo miestnej sieti a skúste to znova.",
       "portBusy": "Port používa iná služba. Ukončite ju a skúste to znova.",
       "failed": "Prístup z telefónu sa nepodarilo spustiť. Skúste to znova.",
-      "address": "Adresa prehľadu"
+      "address": "Adresa prehľadu",
+      "remoteSetup": "Pripojte Tailscale v počítači aj telefóne a zapnite HTTPS vo svojej sieti. Spustite nasledujúci príkaz a uložte sem zobrazenú HTTPS adresu. Nenahrádzajte existujúcu HTTPS službu. Prázdna adresa pripojenie vypne. Počítač musí bežať; Wi-Fi funguje bez Tailscale.",
+      "remoteOrigin": "Vaša súkromná HTTPS adresa",
+      "remoteSave": "Uložiť adresu",
+      "remoteOpen": "HTTPS QR kód a odkaz"
     }
   },
   "errors": {
@@ -1261,7 +1265,7 @@
     "network": "Available installations",
     "leader": "Current host",
     "waiting": "Waiting for an installation",
-    "remote": "Remote access is not included in this prototype. A user-owned private connection such as Tailscale is planned; we operate no relay service.",
+    "remote": "The Wi-Fi dashboard works without Tailscale. Phone push needs a trusted HTTPS address and a running computer with internet access. You can use your own domain and certificate, or optionally a private Tailscale HTTPS address. On iPhone, save that HTTPS address to the Home Screen, open its icon and allow notifications once. No dashboard relay is operated by us.",
     "offline": "No installation is reachable. Start a paired app on the same local network.",
     "pair": "Connect this phone",
     "expires": "This pairing link and QR code expires in 24 hours and can be used once.",

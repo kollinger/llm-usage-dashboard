@@ -15,7 +15,8 @@ contextBridge.exposeInMainWorld("llmUsageDashboard", {
   mobileAccess: {
     status: () => ipcRenderer.invoke("mobile:status"),
     setEnabled: (enabled) => ipcRenderer.invoke("mobile:enabled", enabled),
-    openPairing: () => ipcRenderer.invoke("mobile:open")
+    openPairing: (https = false) => ipcRenderer.invoke("mobile:open", https),
+    setHttpsOrigin: (origin) => ipcRenderer.invoke("mobile:https", origin)
   },
   setLanguagePreference(language) {
     return ipcRenderer.invoke("language:set-preference", String(language || ""));

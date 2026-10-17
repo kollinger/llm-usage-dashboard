@@ -585,3 +585,35 @@ certificate trust or operating-system permission was configured. The desktop
 diagnostic reports that macOS notification permission still needs attention.
 Actual desktop banners and locked/closed iPhone delivery remain device checks;
 the latter requires trusted HTTPS, Home-Screen installation and user permission.
+
+## Optional private HTTPS in the desktop app (1.7 preview.4)
+
+Settings → Phone now includes the optional connection section. Connect the
+computer and phone to the same user-managed Tailscale network, enable HTTPS
+certificates there, and configure Tailscale Serve on the computer:
+
+```sh
+tailscale serve --bg --https=443 http://127.0.0.1:41781
+```
+
+Preserve any existing service on that HTTPS address; use another Serve port and
+include it in the origin if necessary. Paste the exact HTTPS origin reported by
+Serve into the desktop field and save it. Then use **HTTPS QR code and link**,
+pair the phone at that origin and save that address to the Home Screen. The
+ordinary QR button continues to generate the local Wi-Fi link. Clearing the
+HTTPS field disables the application's optional proxy. Stop only this Serve
+mapping with `tailscale serve --https=443 off` when it is no longer needed.
+
+The app stores the origin alongside the enabled flag and opens port 41781 only
+on IPv4 loopback. The trusted proxy must preserve Host and set
+X-Forwarded-Proto to https; forwarded headers on LAN remain ineffective. No
+public tunnel or owner-operated relay is started. Tailscale configuration and
+certificates remain the user's responsibility. See the official
+[Tailscale Serve documentation](https://tailscale.com/docs/features/tailscale-serve).
+
+The HTTPS origin is tied to one running computer; LAN group takeover does not
+transfer this origin or its push subscriptions. Each origin has a separate
+private push-state file. Existing LAN pairings and the signed group remain
+unchanged. A fresh app restores the chosen origin after restart. Locked-iPhone
+push still requires Home Screen installation, explicit notification permission,
+and a running online computer; physical phone receipt needs a real-device test.

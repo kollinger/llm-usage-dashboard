@@ -137,14 +137,21 @@ ipcMain.handle("mobile:enabled", async (event, enabled) => {
   if (!enabled && mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
   return status;
 });
-ipcMain.handle("mobile:open", async (event) => {
+ipcMain.handle("mobile:https", async (event, origin) => {
+  trustedMobileRequest(event);
+  if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  return mobileAccess.setHttpsOrigin(origin);
+});
+ipcMain.handle("mobile:open", async (event, https = false) => {
   trustedMobileRequest(event);
   const status = await mobileAccess.setEnabled(true);
   if (!status.running) return status;
-  if (mobileWindow && !mobileWindow.isDestroyed()) { mobileWindow.show(); mobileWindow.focus(); return status; }
+  if (https && !status.httpsOrigin) return status;
+  if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
   const target = new URL(status.controlUrl);
   if (languagePreference) target.searchParams.set("lang", languagePreference);
   target.searchParams.set("desktop", "1");
+  if (https) target.searchParams.set("https", "1");
   mobileWindow = new BrowserWindow({ width: 680, height: 850, parent: mainWindow,
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true } });
   mobileWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));

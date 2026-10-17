@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.7.0-preview.4 - 2026-10-17
+
+- Connect a phone directly in desktop Settings → Phone, with 24-hour one-use pairing links, renewed long-lived phone sessions, a Home Screen icon and two provider columns.
+- Configure an optional user-managed HTTPS origin for private Tailscale access and Web Push. The desktop restores its loopback-only proxy after restarts; LAN access remains independent.
+- Keep reset notices and last measured percentages tied to each Codex account on desktop and phone. Detect provider reset events without Matrix.
+- Preserve Claude quota readings across partial refreshes and improve recent-pace forecasts.
+- Show account-specific credit expiry dates when supplied by a verified source or entered by the user, with advance warnings; do not invent an expiry date.
+- Clarify group delivery: Gerhard and Reinhard can both request ordinary product changes through the bot, independent review and preview release without another Gerhard gate.
+
+This preview completes the unreleased 1.7 phone feature. Private remote access needs user-managed Tailscale Serve (or an equivalent trusted HTTPS proxy). Locked-phone push needs permission and a running computer; physical iPhone delivery remains a device test. macOS is ad-hoc signed and requires manual DMG installation.
+
+Full setup and release notes: [1.7 phone access and account resets](docs/releases/1.7.0.md).
+
 ## 1.7.0-preview.3 - 2026-10-17
 
 - Fix multi-account Codex reset history: show each account separately, retain independently sampled resets, and label older logs without an account as unassigned.
