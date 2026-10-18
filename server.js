@@ -1080,7 +1080,7 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
 app.get("/api/chat-usage", authMiddleware, async (req, res) => {
   try {
     res.set("Cache-Control", "no-store");
-    const selected = typeof req.query.device === "string" ? req.query.device : "local";
+    let selected = typeof req.query.device === "string" ? req.query.device : "local";
     const period = typeof req.query.period === "string" ? req.query.period : "all";
     const timeZone = typeof req.query.timeZone === "string" ? req.query.timeZone : "UTC";
     const id = typeof req.query.id === "string" ? req.query.id : null;
@@ -1088,6 +1088,9 @@ app.get("/api/chat-usage", authMiddleware, async (req, res) => {
     catch { return res.status(400).json({ error: "invalid_chat_period" }); }
     if (id && !/^[a-f0-9]{64}$/.test(id)) return res.status(400).json({ error: "invalid_chat_id" });
     let sync = await readDeviceSyncStatus();
+    // The shared desktop/phone frontend defaults to All even without paired
+    // computers. Match /api/usage: All then means this installation's usage.
+    if (selected === "all" && !sync.enabled) selected = "local";
     if (selected !== "local") {
       if (!sync.enabled) return res.status(400).json({ error: "device_sync_disabled" });
       if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }

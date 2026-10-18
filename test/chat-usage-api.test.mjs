@@ -5,6 +5,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
+import http from "node:http";
 
 const root = await mkdtemp(path.join(os.tmpdir(), "llm-chat-api-"));
 // Isolate provider discovery while retaining the real runtime environment.
@@ -42,7 +43,8 @@ childProcess.spawn = () => {
 };
 const nativeFetch = globalThis.fetch;
 let base;
-globalThis.fetch = (url, options) => String(url).startsWith(`${base}/`) ? nativeFetch(url, options) : Promise.resolve(new Response("{}", { status: 503 }));
+const fixtureOrigins = new Set();
+globalThis.fetch = (url, options) => [...fixtureOrigins].some(origin => String(url).startsWith(`${origin}/`)) ? nativeFetch(url, options) : Promise.resolve(new Response("{}", { status: 503 }));
 const session = "11111111-2222-4333-8444-555555555555";
 const codexDir = path.join(root, ".codex", "sessions", "2026", "10", "18");
 const claudeDir = path.join(root, ".claude", "projects", "fixture-project");
@@ -65,9 +67,12 @@ await writeFile(path.join(claudeDir, "claude-session.jsonl"), jsonl([
   } }
 ]));
 const { app } = require("../server");
+const { startMobilePrototype, signToken } = require("../lib/mobile-lan-prototype");
+let phoneGateway, phoneUpstream;
 const server = app.listen(0, "127.0.0.1");
 await new Promise(resolve => server.once("listening", resolve));
 base = `http://127.0.0.1:${server.address().port}`;
+fixtureOrigins.add(base);
 try {
   assert.equal((await fetch(`${base}/api/chat-usage`)).status, 401);
   const login = await fetch(`${base}/api/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: "fixture-password" }) });
@@ -77,7 +82,10 @@ try {
   assert.equal((await get("?period=wrong")).status, 400);
   assert.equal((await get("?timeZone=wrong")).status, 400);
   assert.equal((await get("?id=../secret")).status, 400);
-  assert.equal((await get("?device=all")).status, 400);
+  assert.equal((await get(`?device=${"c".repeat(32)}`)).status, 400);
+  const defaultScope = await get("?device=all");
+  assert.equal(defaultScope.status, 200, "default All view resolves to local usage when device sync is disabled");
+  assert.equal((await defaultScope.json()).coverage.totalTokens, 200);
   const response = await get("?period=all&timeZone=Europe/Vienna");
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
@@ -94,11 +102,36 @@ try {
   assert.equal((await get(`?id=${"f".repeat(64)}`)).status, 404);
   const dashboard = await fetch(`${base}/api/usage`, { headers }).then(response => response.json());
   assert.equal(dashboard.local.totals.allTime.totalTokens, report.coverage.totalTokens, "chat query preserves the established dashboard totals");
+  // Compose the real paired-phone route with the real report handler. The
+  // bridge supplies only this fixture's desktop login to its protected backend.
+  phoneUpstream = http.createServer(async (req, res) => {
+    const upstream = await nativeFetch(`${base}${req.url}`, { headers });
+    res.writeHead(upstream.status, { "Content-Type": "application/json" });
+    res.end(await upstream.text());
+  });
+  await new Promise(resolve => phoneUpstream.listen(0, "127.0.0.1", resolve));
+  fixtureOrigins.add(`http://127.0.0.1:${phoneUpstream.address().port}`);
+  phoneGateway = await startMobilePrototype({ address: "127.0.0.1", port: 0, testing: true,
+    groupFile: path.join(root, "phone", "group.json"), upstream: `http://127.0.0.1:${phoneUpstream.address().port}` });
+  const phoneOrigin = `http://127.0.0.1:${phoneGateway.server.address().port}`;
+  const pair = await nativeFetch(`${phoneOrigin}/pair`, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: signToken(phoneGateway.group, "pair", 60_000) }) });
+  assert.equal(pair.status, 200);
+  const phoneHeaders = { Cookie: pair.headers.get("set-cookie").split(";")[0] };
+  const phoneList = await nativeFetch(`${phoneOrigin}/api/chat-usage?device=all&period=all&timeZone=Europe%2FVienna`, { headers: phoneHeaders });
+  assert.equal(phoneList.status, 200);
+  const phoneReport = await phoneList.json();
+  assert.equal(phoneReport.coverage.totalTokens, 200);
+  assert.equal(phoneReport.timeZone, "Europe/Vienna");
+  const phoneDetail = await nativeFetch(`${phoneOrigin}/api/chat-usage?device=all&id=${phoneReport.rows[0].id}`, { headers: phoneHeaders }).then(response => response.json());
+  assert.equal(phoneDetail.row.runs.length, 1);
   await aggregationWorker.terminate();
   const recovered = await get();
   assert.equal(recovered.status, 200, "a restarted worker rebuilds its index despite a fresh dashboard cache");
   assert.equal((await recovered.json()).coverage.totalTokens, 200);
 } finally {
+  await phoneGateway?.stop();
+  if (phoneUpstream) { phoneUpstream.closeAllConnections(); await new Promise(resolve => phoneUpstream.close(resolve)); }
   server.closeAllConnections();
   await new Promise(resolve => server.close(resolve));
   await aggregationWorker?.terminate();
