@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.0-preview.3 - 2026-10-18
+
+### Chat and ticket usage
+
+- See the top ten chats and tickets by token usage or dated API-price equivalent, with a searchable complete list.
+- Expand Codex, Claude Code and linked Multica tickets to inspect models, input/output/cache tokens and individual runs.
+- Filter by period, source, provider, model and installation; keep copied records and Multica runtime overlap counted once.
+- Use the same ranking and details in the paired phone browser, including the default All installations view when device sync is disabled.
+- Keep missing titles, attribution and pricing coverage visible. API equivalents are reference values, not actual subscription charges.
+
+This new view advances the 1.7 baseline to the 1.8 minor version. Preview.3 includes the phone gateway and default-scope fixes verified during local review. The macOS app was built, installed and checked on the M1; macOS and Windows downloads remain unsigned previews.
+
+Full release notes: [1.8 chat and ticket usage](docs/releases/1.8.0.md).
+
 ## 1.7.0-preview.6 - 2026-10-17
 
 - Apply the same cross-platform permission check to persisted quota-notification state. Preview.5 was not published because this remaining Unix-only assertion failed on Windows.
