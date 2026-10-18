@@ -85,7 +85,19 @@ for (const url of ['http://127.0.0.1/pair', 'http://127.0.0.1/pair/used-token'])
 }
 
 const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'llm-mobile-prototype-'));
-const upstream = http.createServer((req, res) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ generatedAt: '2026-01-01T00:00:00Z', local: { totalTokens: 123 }, email: 'private@example.invalid', accessToken: 'private', nested: { file: '/private/source', outputTokens: 42 } })); });
+const chatRequests = [];
+const upstream = http.createServer((req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  if (req.url.startsWith('/api/chat-usage')) {
+    chatRequests.push(req.url);
+    const row = { id: 'a'.repeat(64), title: 'Paired phone chat', kind: 'codex', usage: { totalTokens: 123 },
+      models: [{ model: 'fixture-model', totalTokens: 123 }], file: '/private/source', prompt: 'private' };
+    return res.end(JSON.stringify(new URL(req.url, 'http://fixture.invalid').searchParams.has('id')
+      ? { row: { ...row, runs: [{ id: 'b'.repeat(64), usage: { totalTokens: 123 } }] } }
+      : { rows: [row], coverage: { totalTokens: 123, assignedTokens: 123 } }));
+  }
+  res.end(JSON.stringify({ generatedAt: '2026-01-01T00:00:00Z', local: { totalTokens: 123 }, email: 'private@example.invalid', accessToken: 'private', nested: { file: '/private/source', outputTokens: 42 } }));
+});
 await new Promise((resolve) => upstream.listen(0, '127.0.0.1', resolve));
 let a, b;
 const get = (node, url, options = {}) => fetch(`http://127.0.0.1:${node.server.address().port}${url}`, { ...options, redirect: 'manual' });
@@ -104,6 +116,7 @@ try {
   } });
   if (process.platform !== "win32") assert.equal((await fs.stat(groupA)).mode & 0o777, 0o600);
   assert.equal((await get(a, '/api/usage')).status, 401);
+  assert.equal((await get(a, '/api/chat-usage')).status, 401);
   assert.equal((await get(a, '/')).status, 302);
   const appIcon = await fs.readFile(new URL('../build/icon.iconset/icon_512x512.png', import.meta.url));
   for (const iconPath of ['/apple-touch-icon.png', '/apple-touch-icon-precomposed.png', '/mobile-prototype/icon.png']) {
@@ -188,6 +201,21 @@ try {
   const usage = await (await get(a, '/api/usage', { headers: { Cookie: cookie } })).json();
   assert.equal(usage.local.totalTokens, 123); assert.equal(usage.nested.outputTokens, 42);
   assert.equal(usage.email, undefined); assert.equal(usage.accessToken, undefined); assert.equal(usage.nested.file, undefined);
+  const chats = await get(a, '/api/chat-usage?period=week&timeZone=Europe%2FVienna&force=1', { headers: { Cookie: cookie } });
+  assert.equal(chats.status, 200, 'paired phone can read the chat ranking');
+  assert.equal(chats.headers.get('cache-control'), 'no-store');
+  const chatList = await chats.json();
+  assert.equal(chatList.rows[0].title, 'Paired phone chat');
+  assert.equal(chatList.rows[0].usage.totalTokens, 123);
+  assert.equal(chatList.rows[0].file, undefined);
+  assert.equal(chatList.rows[0].prompt, undefined);
+  const forwarded = new URL(chatRequests.at(-1), 'http://fixture.invalid');
+  assert.equal(forwarded.searchParams.get('period'), 'week');
+  assert.equal(forwarded.searchParams.get('timeZone'), 'Europe/Vienna');
+  assert.equal(forwarded.searchParams.has('force'), false);
+  const detail = await (await get(a, `/api/chat-usage?id=${'a'.repeat(64)}`, { headers: { Cookie: cookie } })).json();
+  assert.equal(detail.row.runs[0].usage.totalTokens, 123);
+  assert.equal((await get(a, '/api/chat-usage', { method: 'POST', headers: { Cookie: cookie } })).status, 405);
   assert.equal((await get(a, '/api/updates/check', { method: 'POST', headers: { Cookie: cookie } })).status, 405);
   assert.equal((await get(a, '/api/support/report', { headers: { Cookie: cookie } })).status, 403);
   assert.equal((await get(a, '/api/group-code', { headers: { Cookie: cookie } })).status, 403);
