@@ -26,6 +26,8 @@ const { DeviceSync } = require("./lib/device-sync");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
 const { readUsageFileEvents } = require("./lib/usage-file-cache");
+const { conversationDescriptor, periodStart } = require("./lib/chat-usage");
+const { createChatMetadataReader } = require("./lib/chat-metadata");
 const { createUsageViewCache } = require("./lib/usage-view-cache");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
@@ -53,6 +55,7 @@ const {
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
+const chatMetadataReader = createChatMetadataReader();
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json");
@@ -1074,6 +1077,43 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/api/chat-usage", authMiddleware, async (req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const selected = typeof req.query.device === "string" ? req.query.device : "local";
+    const period = typeof req.query.period === "string" ? req.query.period : "all";
+    const timeZone = typeof req.query.timeZone === "string" ? req.query.timeZone : "UTC";
+    const id = typeof req.query.id === "string" ? req.query.id : null;
+    try { periodStart(period, timeZone); }
+    catch { return res.status(400).json({ error: "invalid_chat_period" }); }
+    if (id && !/^[a-f0-9]{64}$/.test(id)) return res.status(400).json({ error: "invalid_chat_id" });
+    let sync = await readDeviceSyncStatus();
+    if (selected !== "local") {
+      if (!sync.enabled) return res.status(400).json({ error: "device_sync_disabled" });
+      if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+    }
+    // Reuse the existing scan and worker; this route never starts a provider
+    // request per chat or sends transcript contents to the browser.
+    await readUsageDashboard({ staleWhileRefresh: false });
+    const snapshots = sync.enabled ? [...deviceSync.snapshots.values()] : [];
+    let report = await usageAggregation.chats(snapshots, selected, { period, timeZone, id });
+    if (!report && selected === "local") {
+      // A worker can restart while the consumption view is still fresh. Rebuild
+      // its private index once, without forcing an account/auth refresh.
+      invalidateTimedCache(usageCache);
+      await readUsageDashboard({ staleWhileRefresh: false });
+      report = await usageAggregation.chats(snapshots, selected, { period, timeZone, id });
+    }
+    if (selected !== "local" && (!deviceSync.status().enabled || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id)))) {
+      return res.status(409).json({ error: "device_scope_changed" });
+    }
+    if (!report) return res.status(503).json({ error: "chat_usage_initializing" });
+    if (id && !report.row) return res.status(404).json({ error: "chat_not_found" });
+    return res.json(report);
+  } catch (error) { sendApiError(res, error, "chat_usage_read_failed"); }
+});
+
 app.get("/api/system/live", authMiddleware, async (_req, res) => {
   try {
     // This endpoint is polled every few seconds; never trigger full log aggregation here.
@@ -1275,16 +1315,40 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
     const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
     const providers = [codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama];
+    const chatCatalog = await chatMetadataReader.read({ codexHomes: uniquePaths([
+      ...CODEX_HOMES, ...sourcePathEntries(localSources.codex, ["sessions", "archived_sessions"])
+        .map((entry) => path.dirname(entry.path))
+    ]), sessions: [...new Map(providers.flatMap((provider) => (provider?._usageEvents || []).flatMap((event) =>
+      event.evidence?.sessionId ? [[`${event.providerId}:${event.evidence.sessionId}`, {
+        providerId: event.providerId, sessionId: event.evidence.sessionId, file: event.evidence.realpath,
+        cwd: event.chatContext?.cwd, originator: event.chatContext?.originator
+      }]] : []))).values()] }).catch(() => ({ sessions: {}, multicaStatus: "unavailable" }));
+    for (const provider of providers) {
+      for (const event of provider?._usageEvents || []) {
+        const sessionId = event.evidence?.sessionId;
+        if (!sessionId) continue;
+        const metadata = chatCatalog.sessions?.[`${event.providerId}:${sessionId}`] || chatCatalog.files?.[event.evidence?.realpath];
+        if (metadata) {
+          const runs = (metadata.runs || []).filter((run) => Number.isFinite(Date.parse(run.startedAt)) &&
+            event.timestampMs >= Date.parse(run.startedAt) && (!run.completedAt || event.timestampMs <= Date.parse(run.completedAt)));
+          const run = runs.length === 1 ? runs[0] : null;
+          event.conversation = conversationDescriptor(event.providerId, sessionId, {
+            kind: event.conversation?.kind, title: event.conversation?.title, ...metadata,
+            ...(metadata.runs?.length ? { runId: run?.id, runTitle: run?.kind } : {})
+          });
+        }
+      }
+    }
     const aggregateOptions = {
       device: { id: deviceSync.identity?.id || "local", label: deviceSync.config.name },
       snapshots: [...deviceSync.snapshots.values()],
       accounts: [...(gptAccounts.accounts || []), ...connectedAccounts],
       dailyHistoryDays: DAILY_HISTORY_DAYS,
-      exportEvents: deviceSync.config.enabled
+      exportEvents: deviceSync.config.enabled,
+      multicaStatus: chatCatalog.multicaStatus
     };
-    const aggregation = providers.some((provider) => provider?._usageEvents?.length)
-      ? await usageAggregation.aggregateLocal(providers, aggregateOptions)
-      : { local: buildLocalAggregate(providers, aggregateOptions), exported: exportUsageEvents(providers) };
+    const aggregation = await usageAggregation.aggregateLocal(providers, aggregateOptions);
+    if (!providers.some((provider) => provider?._usageEvents?.length)) aggregation.local = buildLocalAggregate(providers, aggregateOptions);
     const local = aggregation.local;
     if (deviceSync.config.enabled && aggregation.exported) {
       try {
@@ -4622,6 +4686,8 @@ async function readCodexUsage(options = {}) {
       }
       usageEvents.push({
         providerId: "codex",
+        conversation: conversationDescriptor("codex", entry.chat?.sessionId || fileRecord.sessionId, entry.chat || {}),
+        chatContext: { cwd: entry.chat?.cwd, originator: entry.chat?.originator },
         sourceId: fileRecord.sourceId,
         eventId: entry.eventId,
         timestampMs,
@@ -4632,8 +4698,8 @@ async function readCodexUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
-          sessionId: fileRecord.sessionId,
-          rolloutSessionId: fileRecord.sessionId
+          sessionId: entry.chat?.sessionId || fileRecord.sessionId,
+          rolloutSessionId: entry.chat?.sessionId || fileRecord.sessionId
         },
         metadata: {
           sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex",
@@ -4757,7 +4823,16 @@ async function parseCodexSessionFileEvents(fileRecord) {
   let currentModel = null;
   let currentReasoningEffort = null;
   let sessionAttribution = null;
+  const chat = { sessionId: fileRecord.sessionId || codexSessionId(fileRecord.file),
+    kind: fileRecord.file.split(path.sep).includes("multica-sessions") ? "multica" : "codex" };
   await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type === "session_meta") {
+      chat.sessionId = event.payload?.id || event.payload?.session_id || chat.sessionId;
+      chat.title = event.payload?.thread_name || event.payload?.title || null;
+      chat.cwd = event.payload?.cwd;
+      chat.originator = event.payload?.originator;
+      if (/multica/i.test(event.payload?.originator || "")) chat.kind = "multica";
+    }
     if (event?.type === "session_meta") sessionAttribution = recordedAccountAttribution("codex", event.payload);
     if (event?.type === "turn_context" && event.payload?.model) {
       currentModel = event.payload.model;
@@ -4775,6 +4850,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
     const rateLimits = event.payload.rate_limits || null;
     events.push({
       timestamp: event.timestamp,
+      chat,
       timestampMs,
       model: currentModel,
       reasoningEffort: currentReasoningEffort,
@@ -4875,6 +4951,7 @@ async function readCopilotUsage(options = {}) {
 
       usageEvents.push({
         providerId: "copilot",
+        conversation: conversationDescriptor("copilot", data.sessionId || data.conversationId),
         sourceId: fileRecord.sourceId,
         eventId: data.sessionId || data.conversationId || null,
         timestampMs,
@@ -5959,6 +6036,8 @@ async function readClaudeCodeUsage(options = {}) {
 
       usageEvents.push({
         providerId: "claudeCode",
+        conversation: conversationDescriptor("claudeCode", entry.sessionId || path.basename(fileRecord.file, ".jsonl"), entry.chat || {}),
+        chatContext: { cwd: entry.cwd },
         sourceId: fileRecord.sourceId,
         eventId: entry.requestId || entry.messageId || entry.uuid || null,
         timestampMs,
@@ -5971,7 +6050,8 @@ async function readClaudeCodeUsage(options = {}) {
           line: entry.line,
           requestId: entry.requestId,
           messageId: entry.messageId,
-          uuid: entry.uuid
+          uuid: entry.uuid,
+          sessionId: entry.sessionId || path.basename(fileRecord.file, ".jsonl")
         },
         metadata: {
           sourceGroupId: "claudeCode"
@@ -6098,12 +6178,18 @@ async function readClaudeCodeUsage(options = {}) {
 
 async function parseClaudeTranscriptFileEvents(fileRecord) {
   const events = [];
+  const chat = {};
   await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type === "custom-title" && typeof event.customTitle === "string") chat.title = event.customTitle;
+    if (event?.type === "summary" && !chat.title && typeof event.summary === "string") chat.title = event.summary;
     if (event?.type !== "assistant" || !event?.message?.usage) return;
     const timestampMs = Date.parse(event.timestamp);
     if (Number.isNaN(timestampMs)) return;
     events.push({
       timestamp: event.timestamp,
+      sessionId: event.sessionId || path.basename(fileRecord.file, ".jsonl"),
+      cwd: event.cwd,
+      chat,
       timestampMs,
       model: event.message.model || "unknown",
       usage: normalizeClaudeUsage(event.message.usage),
@@ -6249,6 +6335,7 @@ async function readGeminiUsage(options = {}) {
       const { timestampMs, model, usage: normalized } = entry;
       usageEvents.push({
         providerId: "gemini",
+        conversation: conversationDescriptor("gemini", entry.sessionId),
         sourceId: fileRecord.sourceId,
         eventId: entry.eventId,
         timestampMs,
@@ -6350,6 +6437,7 @@ async function parseGeminiUsageFileEvents(fileRecord) {
       model: findModelName(event) || "gemini",
       usage: normalized,
       eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
+      sessionId: findFirstValue(event, ["sessionId", "session_id", "conversationId", "conversation_id"]) || null,
       line: meta?.line,
       index: meta?.index
     });
@@ -7250,7 +7338,7 @@ function normalizeOpenCodeGptMessageRow(row, fileRecord, index) {
       safeStatMtime(fileRecord.file),
     model: { providerID: row.provider_id, modelID: row.model_id },
     tokens: parseJsonObject(row.tokens),
-    meta: { sourceType: "opencode_message" }
+    meta: { sourceType: "opencode_message", sessionId: row.session_id }
   });
 }
 
@@ -7273,7 +7361,7 @@ function normalizeOpenCodeGptStepUsageRows(rows, fileRecord) {
       timestampMs: findTimestampMs(data) || started.timestampMs || safeStatMtime(fileRecord.file),
       model: started.model || normalizeOpenCodeModelRef(data.model),
       tokens: data.tokens,
-      meta: { seq: row.seq, aggregateId: row.aggregate_id, sourceType: "opencode_step" }
+      meta: { seq: row.seq, aggregateId: row.aggregate_id, sourceType: "opencode_step", sessionId: data.sessionID || row.aggregate_id }
     });
     if (event) events.push(event);
   }
@@ -7295,7 +7383,7 @@ function normalizeOpenCodeGptSessionRow(row, fileRecord, index) {
       reasoning: row.tokens_reasoning,
       cache: { read: row.tokens_cache_read, write: row.tokens_cache_write }
     },
-    meta: { sourceType: "opencode_session" }
+    meta: { sourceType: "opencode_session", sessionId: row.id }
   });
 }
 
@@ -7307,6 +7395,7 @@ function normalizeOpenCodeGptUsageEvent({ fileRecord, eventId, timestampMs, mode
   if (!usage.total_tokens || !Number.isFinite(timestampMs)) return null;
   return {
     providerId: "openCode",
+    conversation: conversationDescriptor("openCode", meta?.sessionId),
     sourceId: fileRecord.sourceId,
     eventId,
     timestampMs,

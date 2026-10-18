@@ -20,9 +20,52 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 - Ollama local token capture through the optional built-in proxy logger.
 - Optional OpenAI and Anthropic admin API usage/cost aggregation when admin keys are provided.
 - Token history chart with per-provider color stacking, source totals, and API price comparison estimates for local/non-API usage.
+- Chat and ticket rankings: top 10 or a searchable paginated list, token/API-equivalent sorting, provider/model filters, and expandable usage and run details.
 - Multilingual UI with system-language detection and a settings language selector.
 - Optional password login and OIDC/SSO.
 - Electron builds for macOS, Linux AppImage, and Windows.
+
+## Chat and ticket usage
+
+The **Chats & Tickets** panel groups recorded usage by native session identity.
+Codex titles come from the local session index; Claude Code titles come from
+explicit session-title metadata. Copilot, OpenCode and Gemini sessions are
+included when their logs identify a session. Message bodies are never used as
+fallback titles. Missing titles, missing session identities, and incomplete
+Multica associations are reported separately from zero usage.
+
+The panel defaults to the top ten by tokens. Its full list uses 50-row pages,
+with search, source/provider/model filters and optional API-equivalent sorting.
+Time filters cover all records, the last 30 or seven days, local today, and the
+last 24 hours. Today uses the browser's timezone, including daylight-saving
+changes. Expanded rows show the same filtered period, model token categories
+and associated provider runs. Reasoning and cached input retain each provider's
+existing billing semantics.
+
+Euro amounts are estimates using the dashboard's explicitly dated price/FX
+catalog, not subscription charges, provider invoices, or historical billed
+costs. Unknown models and mutable aliases remain unpriced; partial amounts show
+their missing token coverage. Only locally available or paired-device usage
+records are covered, so deleted logs and absent web-chat exports cannot be
+reconstructed. Existing provider/quota totals remain independent of this view.
+
+Optional Multica metadata uses the existing local CLI configuration read-only:
+`~/.multica/config.json`, or a selected profile via
+`LLM_USAGE_MULTICA_PROFILE` / `MULTICA_PROFILE`. Configuration can instead be
+selected with `LLM_USAGE_MULTICA_CONFIG_FILE`; explicit overrides are
+`LLM_USAGE_MULTICA_SERVER_URL`, `LLM_USAGE_MULTICA_WORKSPACE_ID`, and
+`LLM_USAGE_MULTICA_TOKEN`. Keep any token only in the existing private config or
+process environment. Set `LLM_USAGE_MULTICA_ENABLED=0` to disable these reads.
+Exact task metadata or matching run/session IDs determine ticket membership;
+directory names only select lookup candidates. Metadata enrichment is cached
+and proceeds in bounded batches; the panel reports incomplete coverage while
+lookups remain. Multica runtime totals are never added again to session usage.
+
+Paired installations exchange only sanitized chat metadata and usage under
+their existing encryption/signature protection. Raw prompts, responses, local
+paths, credentials and native session IDs are excluded from report/sync output.
+Older peers continue exchanging consumption data; their records can show
+missing chat metadata until the producing installation is updated.
 
 ## Quick Start
 

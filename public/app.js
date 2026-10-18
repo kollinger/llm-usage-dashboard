@@ -307,6 +307,7 @@ const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "codex-resets",
   "live",
   "token-history",
+  "chat-usage",
   "token-mix",
   "pricing",
   "diagnostics"
@@ -4161,6 +4162,7 @@ function systemMetricsPollDelayMs() {
 }
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: !state.auth || state.auth.authenticated, force });
   if (state.loadingUsage) {
     if (connectionState.selectedDevice !== state.loadingUsageDevice) {
       state.queuedUsageScope = true;
@@ -4297,6 +4299,7 @@ function renderSkeletonProviderGrid() {
 }
 
 function renderLocked() {
+  globalThis.ChatUsagePanel?.lock();
   state.sourceDiagnostics = null;
   state.sourceDiagnosticsError = "";
   // The locked view replaces dashboard markup, so the next usage load must
@@ -4391,6 +4394,7 @@ function renderUsageIfChanged({ force = false } = {}) {
 }
 
 function render() {
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: !state.auth || state.auth.authenticated });
   const usage = state.usage;
   const historyNotice = document.getElementById("usageRefreshNotice");
   if (historyNotice) {

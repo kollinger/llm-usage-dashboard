@@ -1,0 +1,69 @@
+.chat-usage-panel { min-width: 0; }
+.chat-usage-heading { justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.chat-usage-view { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; }
+.chat-usage-view .text-button { min-height: 34px; padding: 6px 12px; border-radius: 8px; }
+.chat-usage-view .active { background: var(--green); color: var(--panel); }
+.chat-usage-description, .chat-usage-note, .chat-usage-range { color: var(--muted); font-size: 0.8rem; }
+.chat-usage-description { margin: 10px 0 18px; max-width: 78ch; }
+.chat-usage-controls { display: grid; grid-template-columns: minmax(200px, 1.8fr) repeat(2, minmax(120px, 1fr)); gap: 12px; }
+.chat-usage-controls .field { min-width: 0; }
+.chat-usage-controls .field > span { font-size: 0.75rem; }
+.chat-usage-controls input, .chat-usage-controls select { min-width: 0; width: 100%; box-sizing: border-box; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; }
+.chat-usage-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 18px 0 10px; min-height: 25px; color: var(--ink-muted); font-size: 0.8rem; }
+.chat-usage-results { border-block: 1px solid var(--line); }
+.chat-usage-row + .chat-usage-row { border-top: 1px solid var(--line); }
+.chat-usage-row-summary { display: grid; grid-template-columns: 26px minmax(140px, 1fr) minmax(90px, auto) minmax(110px, auto) 18px; align-items: center; gap: 14px; padding: 16px 4px; cursor: pointer; list-style: none; border-radius: 8px; }
+.chat-usage-row-summary::-webkit-details-marker, .chat-usage-run > summary::-webkit-details-marker { display: none; }
+.chat-usage-row-summary:hover, .chat-usage-row[open] > summary { background: var(--panel-subtle); }
+.chat-usage-rank { color: var(--muted); font-size: 0.8rem; text-align: center; font-variant-numeric: tabular-nums; }
+.chat-usage-identity { display: grid; gap: 5px; min-width: 0; }
+.chat-usage-identity > strong { font-size: 0.88rem; overflow-wrap: anywhere; }
+.chat-usage-identity > span { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 8px; color: var(--muted); font-size: 0.72rem; overflow-wrap: anywhere; }
+.chat-usage-kind { border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; color: var(--ink-muted); white-space: nowrap; }
+.chat-usage-models { flex-basis: 100%; }
+.chat-usage-tokens, .chat-usage-cost { text-align: end; font-variant-numeric: tabular-nums; }
+.chat-usage-tokens strong, .chat-usage-cost strong { font-size: 0.92rem; }
+.chat-usage-tokens small, .chat-usage-cost small, .chat-usage-model-table small { display: block; color: var(--muted); font-size: 0.69rem; font-weight: 400; }
+.chat-usage-chevron { color: var(--muted); text-align: center; transition: transform 150ms ease; }
+.chat-usage-row[open] .chat-usage-chevron { transform: rotate(180deg); }
+.chat-usage-details { padding: 0 16px 18px 44px; }
+[dir="rtl"] .chat-usage-details { padding-inline: 44px 16px; }
+.chat-usage-range { margin: 8px 0 14px; overflow-wrap: anywhere; }
+.chat-usage-buckets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.chat-usage-buckets > div { min-width: 0; padding: 12px; background: var(--panel-soft); border-radius: 9px; }
+.chat-usage-buckets dt { color: var(--muted); font-size: 0.7rem; }
+.chat-usage-buckets dd { margin: 5px 0 0; font-size: 0.86rem; font-weight: 700; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.chat-usage-table-scroll { overflow-x: auto; max-width: 100%; }
+.chat-usage-model-table { width: 100%; border-collapse: collapse; margin-block: 12px; font-size: 0.77rem; }
+.chat-usage-model-table th, .chat-usage-model-table td { border-bottom: 1px solid var(--line); padding: 10px 7px; text-align: end; overflow-wrap: anywhere; }
+.chat-usage-model-table th:first-child { text-align: start; font-weight: 500; }
+.chat-usage-model-table thead th { color: var(--muted); font-size: 0.7rem; font-weight: 500; }
+.chat-usage-model-table td { font-variant-numeric: tabular-nums; }
+.chat-usage-missing { color: var(--amber) !important; font-size: 0.75rem; }
+.chat-usage-error { color: var(--rose); }
+.chat-usage-runs { display: grid; gap: 8px; }
+.chat-usage-run { padding: 10px 12px; background: var(--panel-subtle); border: 1px solid var(--line); border-radius: 9px; }
+.chat-usage-run > summary { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px; cursor: pointer; list-style: none; font-size: 0.76rem; }
+.chat-usage-run > summary::before { content: "+"; color: var(--muted); }
+.chat-usage-run[open] > summary::before { content: "−"; }
+.chat-usage-run > summary > span:first-of-type { flex: 1; overflow-wrap: anywhere; }
+.chat-usage-run > summary > span:last-child { color: var(--muted); }
+.chat-usage-empty { color: var(--muted); padding: 24px 8px; text-align: center; }
+.chat-usage-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-block: 10px; color: var(--muted); font-size: 0.75rem; }
+.chat-usage-pagination > div { display: flex; gap: 8px; }
+.chat-usage-pagination button { min-height: 36px; }
+.chat-usage-coverage { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-top: 8px; color: var(--muted); font-size: 0.73rem; }
+.chat-usage-note { margin: 10px 0 0; }
+@media (max-width: 760px) {
+  .chat-usage-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chat-usage-search { grid-column: 1 / -1; }
+  .chat-usage-row-summary { grid-template-columns: 22px minmax(0, 1fr) minmax(85px, auto) 14px; gap: 8px; }
+  .chat-usage-identity { grid-column: 2; }
+  .chat-usage-tokens { grid-column: 2; grid-row: 2; text-align: start; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+  .chat-usage-cost { grid-column: 3; grid-row: 1 / 3; }
+  .chat-usage-chevron { grid-column: 4; grid-row: 1 / 3; }
+  .chat-usage-details { padding-inline: 8px; }
+  [dir="rtl"] .chat-usage-details { padding-inline: 8px; }
+  .chat-usage-buckets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .chat-usage-chevron { transition: none; } }
