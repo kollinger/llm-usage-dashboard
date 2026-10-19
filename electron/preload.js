@@ -1,6 +1,11 @@
 "use strict";
 
 const { contextBridge, ipcRenderer } = require("electron");
+let widgetDashboardCallback = null, widgetDashboardPending = false;
+ipcRenderer.on("widget:open-accounts", () => {
+  if (widgetDashboardCallback) widgetDashboardCallback();
+  else widgetDashboardPending = true;
+});
 
 const initialThemePreference = process.argv
   .find((argument) => argument.startsWith("--llm-usage-theme="))
@@ -12,6 +17,12 @@ const initialLanguagePreference = process.argv
 contextBridge.exposeInMainWorld("llmUsageDashboard", {
   initialThemePreference,
   initialLanguagePreference,
+  desktopWidget: { open: () => ipcRenderer.invoke("widget:open") },
+  onWidgetDashboard(callback) {
+    if (typeof callback !== "function") return;
+    widgetDashboardCallback = callback;
+    if (widgetDashboardPending) { widgetDashboardPending = false; callback(); }
+  },
   mobileAccess: {
     status: () => ipcRenderer.invoke("mobile:status"),
     setEnabled: (enabled) => ipcRenderer.invoke("mobile:enabled", enabled),

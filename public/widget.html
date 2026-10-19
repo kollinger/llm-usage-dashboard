@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f7f4" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'" />
+    <title>LLM Usage Dashboard</title>
+    <script src="/theme-bootstrap.js"></script>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/widget.css" />
+    <script src="/widget.js" defer></script>
+  </head>
+  <body class="desktop-widget">
+    <main class="widget-shell">
+      <header class="widget-header">
+        <h1 data-widget-text="widget.title"></h1>
+        <div class="widget-actions">
+          <button id="widgetRefresh" class="widget-icon" type="button" data-widget-label="actions.refresh">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1" /></svg>
+          </button>
+          <button id="widgetPin" class="widget-icon" type="button" aria-pressed="false" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-4 1-3 5-4 1-1-1 1-4 5-3ZM3 21l7-7" /></svg>
+          </button>
+          <button id="widgetDashboard" class="widget-icon" type="button" data-widget-label="widget.dashboard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M21 3l-9 9M10 3H3v18h18v-7" /></svg>
+          </button>
+        </div>
+      </header>
+      <nav class="widget-toolbar" data-widget-label="widget.filters">
+        <div class="widget-views">
+          <button id="widgetAll" type="button" aria-pressed="true" data-widget-text="widget.all"></button>
+          <button id="widgetFavorites" type="button" aria-pressed="false" data-widget-text="widget.favorites"></button>
+        </div>
+        <select id="widgetProvider" data-widget-label="widget.allProviders"></select>
+        <select id="widgetScale" data-widget-label="widget.textSize">
+          <option value="1">100%</option><option value="1.15">115%</option><option value="1.3">130%</option>
+        </select>
+      </nav>
+      <p id="widgetNotice" class="widget-notice" role="status" hidden></p>
+      <section id="widgetList" class="widget-list" tabindex="0" data-widget-label="connections.accounts" aria-busy="true"></section>
+      <footer class="widget-footer">
+        <span id="widgetCount" role="status"></span>
+        <button id="widgetAccounts" type="button" data-widget-text="widget.manageAccounts"></button>
+      </footer>
+      <p id="widgetWayland" class="widget-platform-note" data-widget-text="widget.wayland" hidden></p>
+    </main>
+  </body>
+</html>
