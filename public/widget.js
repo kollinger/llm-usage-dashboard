@@ -137,8 +137,11 @@
   el("widgetAccounts").addEventListener("click", () => dashboard("accounts"));
   el("widgetRefresh").addEventListener("click", refresh);
   el("widgetPin").addEventListener("click", async () => {
-    try { nativeState = await bridge.setPinned(!nativeState.pinned); render(); }
-    catch { failed = true; render(); }
+    const button = el("widgetPin");
+    button.disabled = true;
+    try { nativeState = await bridge.setPinned(!nativeState.pinned); }
+    catch { failed = true; }
+    finally { render(); button.disabled = false; }
   });
   for (const [id, view] of [["widgetAll", "all"], ["widgetFavorites", "favorites"]]) el(id).addEventListener("click", () => {
     preferences.view = view; list.scrollTop = 0; savePreferences(); render();

@@ -165,9 +165,11 @@ app.on("window-all-closed", () => {});
   if (!wayland) {
     for (let cycle = 0; cycle < 2; cycle++) {
       await evaluate(widget, "document.getElementById('widgetPin').click()");
-      await until(() => controller.state().pinned, "pin on");
+      await until(async () => controller.state().pinned && await evaluate(widget,
+        "document.getElementById('widgetPin').getAttribute('aria-pressed') === 'true' && !document.getElementById('widgetPin').disabled"), "pin on");
       await evaluate(widget, "document.getElementById('widgetPin').click()");
-      await until(() => !controller.state().pinned, "pin off");
+      await until(async () => !controller.state().pinned && await evaluate(widget,
+        "document.getElementById('widgetPin').getAttribute('aria-pressed') === 'false' && !document.getElementById('widgetPin').disabled"), "pin off");
     }
   } else assert.equal(await evaluate(widget, "document.getElementById('widgetPin').hidden"), true);
 
