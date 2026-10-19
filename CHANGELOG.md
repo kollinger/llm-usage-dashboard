@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.0-preview.4 - 2026-10-19
+
+### Improved
+
+- Isolate desktop HTTPS proxy release checks
+- Merge pull request #36 from kollinger/kol-646-dashboard-whatsapp
+- Keep the M1 out of release build gates
+- Keep the M1 out of release build gates
+- Explain existing VPN phone access
+
+### Fixed
+
+- Allow narrowly scoped VPN phone access
+
 ## 1.8.0-preview.3 - 2026-10-18
 
 ### Chat and ticket usage
