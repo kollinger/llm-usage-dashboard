@@ -200,7 +200,7 @@ app.on("window-all-closed", () => {});
   await rogue.loadURL(`${origin}/widget.html`);
   assert.equal(await evaluate(rogue, "window.llmUsageWidget.getState().then(() => false, () => true)"), true, "another same-origin renderer cannot invoke widget IPC");
   rogue.close();
-  console.log(`Desktop widget native: ${process.platform}/${wayland ? "Wayland" : "native"}; 0/1/2/5/10/24 accounts, 27 locales, theme/scale, boundary layouts, zero/missing/stale, controls, isolation and three lifecycle cycles passed.`);
+  console.log(`Desktop widget native: ${process.platform}/${wayland ? "Wayland" : "native"}; ${process.env.WIDGET_NATIVE_NO_SANDBOX === "1" ? "CI OS-sandbox exception; " : "standard launcher; "}0/1/2/5/10/24 accounts, 27 locales, theme/scale, boundary layouts, zero/missing/stale, controls, isolation and three lifecycle cycles passed.`);
 })().then(async () => {
   controller?.dispose(); main?.close(); server.closeAllConnections();
   await new Promise((resolve) => server.close(resolve)); app.exit(0);

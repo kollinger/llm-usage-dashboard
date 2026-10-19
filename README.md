@@ -174,6 +174,9 @@ The existing desktop-build workflow runs the native checks as part of
 `npm run check` on GitHub Actions, including the macOS CI runner, before
 producing its packages. `npm run test:desktop-widget:ci` selects that CI-only
 lane; local native checks use the explicit command above.
+GitHub's Linux UI/IPC lane uses a test-only `--no-sandbox` flag because its
+runner does not provide a usable Electron sandbox helper; normal app launches
+and the internal KDE X11/Wayland tests use the standard sandbox configuration.
 
 ## Docker
 
