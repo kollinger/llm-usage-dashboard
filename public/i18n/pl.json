@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Szacowane",
     "unavailable": "Niedostępne",
     "updated": "Zaktualizowano {time}"
+  },
+  "plasma": {
+    "title": "Widżet KDE Plasma 6",
+    "compact": "Kompaktowe okno",
+    "compactHelp": "Osobne okno aplikacji dla systemów Linux, macOS i Windows.",
+    "install": "Zainstaluj widżet KDE",
+    "update": "Aktualizuj widżet KDE",
+    "installHelp": "Instalacja tylko dla twojego użytkownika. Prawy przycisk na pulpicie → Dodaj elementy interfejsu → LLM Usage Dashboard. Po aktualizacji wyloguj się z Plasma i zaloguj ponownie, aby załadować nową wersję.",
+    "installed": "Zainstalowana wersja: {version}.",
+    "installing": "Instalowanie…",
+    "requirements": "Wymaga Plasma 6, kpackagetool6, Python 3 i dołączonego pakietu widżetu.",
+    "unsupported": "Natywny widżet wymaga systemu Linux z Plasma 6. Tutaj użyj kompaktowego okna.",
+    "installError": "Instalacja nie powiodła się. Sprawdź wymagania Plasma 6 i spróbuj ponownie.",
+    "offline": "Aplikacja niedostępna. Uruchom aplikację komputerową; poprzednie odczyty są nieaktualne.",
+    "bounded": "Limit {count}; użyj ulubionych lub filtra dostawcy."
   }
 }

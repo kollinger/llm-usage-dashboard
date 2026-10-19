@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Odhad",
     "unavailable": "Nie je dostupné",
     "updated": "Aktualizované {time}"
+  },
+  "plasma": {
+    "title": "Widget KDE Plasma 6",
+    "compact": "Kompaktné okno",
+    "compactHelp": "Samostatné okno aplikácie pre Linux, macOS a Windows.",
+    "install": "Nainštalovať widget KDE",
+    "update": "Aktualizovať widget KDE",
+    "installHelp": "Inštalácia iba pre vášho používateľa. Pravým tlačidlom na plochu → Pridať widgety → LLM Usage Dashboard. Po aktualizácii sa odhláste z Plasma a znova prihláste, aby sa načítala nová verzia.",
+    "installed": "Nainštalovaná verzia: {version}.",
+    "installing": "Inštaluje sa…",
+    "requirements": "Vyžaduje Plasma 6, kpackagetool6, Python 3 a priložený balík widgetu.",
+    "unsupported": "Natívny widget vyžaduje Linux s Plasma 6. Tu použite kompaktné okno.",
+    "installError": "Inštalácia zlyhala. Skontrolujte požiadavky Plasma 6 a skúste to znova.",
+    "offline": "Aplikácia nie je dostupná. Spustite počítačovú aplikáciu; predchádzajúce hodnoty sú zastarané.",
+    "bounded": "Obmedzené na {count}; použite obľúbené alebo filter poskytovateľa."
   }
 }

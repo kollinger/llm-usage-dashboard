@@ -2532,12 +2532,34 @@ function bindEvents() {
   els.themeSelect?.addEventListener("change", () => setThemePreference(els.themeSelect.value));
   const widgetButton = document.getElementById("desktopWidgetBtn");
   if (widgetButton && window.llmUsageDashboard?.desktopWidget) {
+    const dialog = document.getElementById("desktopWidgetDialog");
+    const installButton = document.getElementById("plasmaWidgetInstall");
+    const statusElement = document.getElementById("plasmaWidgetStatus");
+    const plasmaBridge = window.llmUsageDashboard.plasmaWidget;
+    const showPlasmaStatus = (status) => {
+      installButton.disabled = !status.supported || status.installedVersion === status.version;
+      installButton.textContent = t(status.installed ? "plasma.update" : "plasma.install");
+      const key = status.success === false ? "plasma.installError" : !status.supported ?
+        status.reason === "unsupported" ? "plasma.unsupported" : "plasma.requirements" : status.installed ? "plasma.installed" : null;
+      statusElement.textContent = key ? t(key, { version: `\u2066${status.installedVersion || status.version}\u2069` }) : "";
+      if (status.supported && !status.connected) statusElement.textContent += ` ${t("plasma.offline")}`;
+    };
     widgetButton.hidden = false;
     widgetButton.addEventListener("click", async () => {
-      widgetButton.disabled = true;
-      try { await window.llmUsageDashboard.desktopWidget.open(); }
-      catch { widgetButton.title = t("widget.error"); }
-      finally { widgetButton.disabled = false; }
+      openModalDialog(dialog);
+      installButton.disabled = true;
+      statusElement.textContent = t("widget.loading");
+      try { showPlasmaStatus(await plasmaBridge?.status() || { supported: false }); }
+      catch { statusElement.textContent = t("plasma.installError"); }
+    });
+    document.getElementById("compactWidgetBtn").addEventListener("click", async () => {
+      try { await window.llmUsageDashboard.desktopWidget.open(); dialog.close(); }
+      catch { statusElement.textContent = t("widget.error"); }
+    });
+    installButton.addEventListener("click", async () => {
+      installButton.disabled = true; statusElement.textContent = t("plasma.installing");
+      try { showPlasmaStatus(await plasmaBridge.install()); }
+      catch { statusElement.textContent = t("plasma.installError"); installButton.disabled = false; }
     });
   }
   window.llmUsageDashboard?.onWidgetDashboard?.(() => openSettings("accounts"));

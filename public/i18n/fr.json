@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Estimé",
     "unavailable": "Indisponible",
     "updated": "Mis à jour {time}"
+  },
+  "plasma": {
+    "title": "Composant KDE Plasma 6",
+    "compact": "Fenêtre compacte",
+    "compactHelp": "Une fenêtre indépendante de l’application pour Linux, macOS et Windows.",
+    "install": "Installer le composant KDE",
+    "update": "Mettre à jour le composant KDE",
+    "installHelp": "Installation pour votre utilisateur uniquement. Clic droit sur le bureau → Ajouter des composants graphiques → LLM Usage Dashboard. Après la mise à jour, déconnectez-vous de Plasma puis reconnectez-vous pour charger la nouvelle version.",
+    "installed": "Version installée : {version}.",
+    "installing": "Installation…",
+    "requirements": "Nécessite Plasma 6, kpackagetool6, Python 3 et le paquet du composant fourni.",
+    "unsupported": "Le composant natif nécessite Linux avec Plasma 6. Utilisez ici la fenêtre compacte.",
+    "installError": "Échec de l’installation. Vérifiez les prérequis de Plasma 6 et réessayez.",
+    "offline": "Application indisponible. Lancez l’application de bureau ; les mesures précédentes sont périmées.",
+    "bounded": "Limité à {count} ; utilisez les favoris ou un filtre de fournisseur."
   }
 }

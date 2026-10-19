@@ -1400,5 +1400,20 @@
     "qualityEstimated": "تقديرية",
     "unavailable": "غير متاح",
     "updated": "آخر تحديث {time}"
+  },
+  "plasma": {
+    "title": "عنصر واجهة KDE Plasma 6",
+    "compact": "نافذة مصغّرة",
+    "compactHelp": "نافذة تطبيق مستقلة متاحة على Linux وmacOS وWindows.",
+    "install": "تثبيت عنصر KDE",
+    "update": "تحديث عنصر KDE",
+    "installHelp": "التثبيت لمستخدمك فقط. انقر بزر الفأرة الأيمن على سطح المكتب ← أضف عناصر واجهة ← LLM Usage Dashboard. بعد التحديث، سجّل الخروج من Plasma ثم سجّل الدخول مجددًا لتحميل الإصدار الجديد.",
+    "installed": "الإصدار المثبّت: {version}.",
+    "installing": "جارٍ التثبيت…",
+    "requirements": "يتطلب Plasma 6 وkpackagetool6 وPython 3 وحزمة العنصر المرفقة.",
+    "unsupported": "يتطلب العنصر الأصلي Linux مع Plasma 6. استخدم النافذة المصغّرة هنا.",
+    "installError": "فشل التثبيت. تحقق من متطلبات Plasma 6 وحاول مجددًا.",
+    "offline": "التطبيق غير متاح. شغّل تطبيق سطح المكتب؛ القراءات السابقة قديمة.",
+    "bounded": "محدود بـ {count}؛ استخدم المفضلة أو مرشّح المزوّد."
   }
 }

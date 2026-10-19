@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Ocenjeno",
     "unavailable": "Ni na voljo",
     "updated": "Posodobljeno {time}"
+  },
+  "plasma": {
+    "title": "Gradnik KDE Plasma 6",
+    "compact": "Kompaktno okno",
+    "compactHelp": "Ločeno okno aplikacije za Linux, macOS in Windows.",
+    "install": "Namesti gradnik KDE",
+    "update": "Posodobi gradnik KDE",
+    "installHelp": "Namestitev samo za vašega uporabnika. Desni klik na namizje → Dodaj gradnike → LLM Usage Dashboard. Po posodobitvi se odjavite iz Plasma in znova prijavite, da se naloži nova različica.",
+    "installed": "Nameščena različica: {version}.",
+    "installing": "Nameščanje…",
+    "requirements": "Zahteva Plasma 6, kpackagetool6, Python 3 in priloženi paket gradnika.",
+    "unsupported": "Izvorni gradnik zahteva Linux s Plasma 6. Tukaj uporabite kompaktno okno.",
+    "installError": "Namestitev ni uspela. Preverite zahteve Plasma 6 in poskusite znova.",
+    "offline": "Aplikacija ni dosegljiva. Zaženite namizno aplikacijo; prejšnji odčitki so zastareli.",
+    "bounded": "Omejeno na {count}; uporabite priljubljene ali filter ponudnika."
   }
 }

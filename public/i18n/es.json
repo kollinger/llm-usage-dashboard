@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Estimado",
     "unavailable": "No disponible",
     "updated": "Actualizado {time}"
+  },
+  "plasma": {
+    "title": "Widget de KDE Plasma 6",
+    "compact": "Ventana compacta",
+    "compactHelp": "Una ventana independiente de la aplicación para Linux, macOS y Windows.",
+    "install": "Instalar widget de KDE",
+    "update": "Actualizar widget de KDE",
+    "installHelp": "Se instala solo para tu usuario. Clic derecho en el escritorio → Añadir elementos gráficos → LLM Usage Dashboard. Tras actualizar, cierra la sesión de Plasma y vuelve a iniciarla para cargar la nueva versión.",
+    "installed": "Versión instalada: {version}.",
+    "installing": "Instalando…",
+    "requirements": "Requiere Plasma 6, kpackagetool6, Python 3 y el paquete del widget incluido.",
+    "unsupported": "El widget nativo requiere Linux con Plasma 6. Aquí puedes usar la ventana compacta.",
+    "installError": "Error de instalación. Comprueba los requisitos de Plasma 6 e inténtalo de nuevo.",
+    "offline": "Aplicación no disponible. Inicia la aplicación de escritorio; los datos anteriores están desactualizados.",
+    "bounded": "Limitado a {count}; usa favoritos o un filtro de proveedor."
   }
 }

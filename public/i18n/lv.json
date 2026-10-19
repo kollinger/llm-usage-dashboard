@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Aptuvens",
     "unavailable": "Nav pieejams",
     "updated": "Atjaunināts {time}"
+  },
+  "plasma": {
+    "title": "KDE Plasma 6 logrīks",
+    "compact": "Kompakts logs",
+    "compactHelp": "Atsevišķs lietotnes logs Linux, macOS un Windows sistēmām.",
+    "install": "Instalēt KDE logrīku",
+    "update": "Atjaunināt KDE logrīku",
+    "installHelp": "Instalē tikai jūsu lietotājam. Labais klikšķis uz darbvirsmas → Pievienot logrīkus → LLM Usage Dashboard. Pēc atjaunināšanas izrakstieties no Plasma un piesakieties vēlreiz, lai ielādētu jauno versiju.",
+    "installed": "Instalētā versija: {version}.",
+    "installing": "Instalē…",
+    "requirements": "Nepieciešams Plasma 6, kpackagetool6, Python 3 un iekļautā logrīka pakotne.",
+    "unsupported": "Vietējam logrīkam nepieciešams Linux ar Plasma 6. Šeit izmantojiet kompakto logu.",
+    "installError": "Instalēšana neizdevās. Pārbaudiet Plasma 6 prasības un mēģiniet vēlreiz.",
+    "offline": "Lietotne nav pieejama. Palaidiet darbvirsmas lietotni; iepriekšējie rādījumi ir novecojuši.",
+    "bounded": "Ierobežots līdz {count}; izmantojiet izlasi vai pakalpojumu sniedzēja filtru."
   }
 }

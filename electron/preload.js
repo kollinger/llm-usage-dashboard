@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld("llmUsageDashboard", {
   initialThemePreference,
   initialLanguagePreference,
   desktopWidget: { open: () => ipcRenderer.invoke("widget:open") },
+  plasmaWidget: {
+    status: () => ipcRenderer.invoke("plasma:status"),
+    install: () => ipcRenderer.invoke("plasma:install")
+  },
   onWidgetDashboard(callback) {
     if (typeof callback !== "function") return;
     widgetDashboardCallback = callback;

@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Becsült",
     "unavailable": "Nem érhető el",
     "updated": "Frissítve: {time}"
+  },
+  "plasma": {
+    "title": "KDE Plasma 6 felületi elem",
+    "compact": "Kompakt ablak",
+    "compactHelp": "Külön alkalmazásablak Linux, macOS és Windows rendszeren.",
+    "install": "KDE-elem telepítése",
+    "update": "KDE-elem frissítése",
+    "installHelp": "Csak a saját felhasználóhoz települ. Jobb kattintás az asztalon → Felületi elemek hozzáadása → LLM Usage Dashboard. Frissítés után jelentkezzen ki a Plasmából, majd vissza az új verzió betöltéséhez.",
+    "installed": "Telepített verzió: {version}.",
+    "installing": "Telepítés…",
+    "requirements": "Plasma 6, kpackagetool6, Python 3 és a mellékelt elemcsomag szükséges.",
+    "unsupported": "A natív elemhez Linux és Plasma 6 szükséges. Itt a kompakt ablakot használhatja.",
+    "installError": "A telepítés sikertelen. Ellenőrizze a Plasma 6 követelményeit, majd próbálja újra.",
+    "offline": "Az alkalmazás nem érhető el. Indítsa el az asztali alkalmazást; a korábbi adatok elavultak.",
+    "bounded": "Legfeljebb {count}; használja a kedvenceket vagy a szolgáltatószűrőt."
   }
 }

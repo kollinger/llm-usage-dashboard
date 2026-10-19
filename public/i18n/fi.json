@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Arvioitu",
     "unavailable": "Ei saatavilla",
     "updated": "Päivitetty {time}"
+  },
+  "plasma": {
+    "title": "KDE Plasma 6 -sovelma",
+    "compact": "Kompakti ikkuna",
+    "compactHelp": "Erillinen sovellusikkuna Linuxille, macOS:lle ja Windowsille.",
+    "install": "Asenna KDE-sovelma",
+    "update": "Päivitä KDE-sovelma",
+    "installHelp": "Asennetaan vain käyttäjällesi. Napsauta työpöytää hiiren oikealla → Lisää sovelmia → LLM Usage Dashboard. Kirjaudu päivityksen jälkeen ulos Plasmasta ja takaisin sisään ladataksesi uuden version.",
+    "installed": "Asennettu versio: {version}.",
+    "installing": "Asennetaan…",
+    "requirements": "Vaatii Plasma 6:n, kpackagetool6:n, Python 3:n ja mukana tulevan sovelmapaketin.",
+    "unsupported": "Natiivi sovelma vaatii Linuxin ja Plasma 6:n. Käytä tässä kompaktia ikkunaa.",
+    "installError": "Asennus epäonnistui. Tarkista Plasma 6:n vaatimukset ja yritä uudelleen.",
+    "offline": "Sovellus ei ole käytettävissä. Käynnistä työpöytäsovellus; aiemmat lukemat ovat vanhentuneita.",
+    "bounded": "Rajoitettu {count} tiliin; käytä suosikkeja tai palveluntarjoajan suodatinta."
   }
 }

@@ -1,0 +1,14 @@
+{
+  "KPlugin": {
+    "Id": "local.llm-usage-dashboard.quotas",
+    "Name": "LLM Usage Dashboard",
+    "Description": "",
+    "Icon": "view-statistics",
+    "Category": "System Information",
+    "License": "MIT",
+    "Version": "0.0.0",
+    "Authors": [{ "Name": "LLM Usage Dashboard contributors" }]
+  },
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0"
+}
