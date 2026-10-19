@@ -17,7 +17,8 @@ const options = { dataDir: path.join(temporary, "first"), upstream: `http://127.
   interfaces: () => address ? [{ address }] : [], start: async (config) => {
     if (fail) throw Object.assign(new Error("busy"), { code: "EADDRINUSE" });
     starts++;
-    const gateway = await startMobilePrototype({ ...config, port: 0, testing: true });
+    if (config.httpsOrigin) assert.equal(config.httpsProxyPort, 41781, "desktop requests the documented HTTPS proxy port");
+    const gateway = await startMobilePrototype({ ...config, port: 0, httpsProxyPort: 0, testing: true });
     gateways.push(gateway); return gateway;
   } };
 const managers = [];
@@ -68,12 +69,13 @@ try {
   await assert.rejects(restarted.setHttpsOrigin("https://private.example.invalid/path"), /invalid_https_origin/);
   await restarted.setHttpsOrigin("https://private.example.invalid/");
   gateway = gateways.at(-1);
+  assert.equal(restarted.status().running, true, "HTTPS gateway started successfully");
   assert.equal(gateway.proxyServer.address().address, "127.0.0.1");
-  assert.equal(gateway.proxyServer.address().port, 41781);
+  assert.ok(gateway.proxyServer.address().port > 0, "test owns an isolated ephemeral proxy port");
   const secureCode = await (await fetch(`${restarted.status().controlUrl}/api/code`, { method: "POST",
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ https: true }) })).json();
   assert.equal(new URL(secureCode.linkUrl).origin, "https://private.example.invalid");
-  const proxy = "http://127.0.0.1:41781";
+  const proxy = `http://127.0.0.1:${gateway.proxyServer.address().port}`;
   assert.equal((await fetch(`${proxy}/api/usage`)).status, 403, "untrusted loopback host is rejected");
   const securePair = await new Promise((resolve, reject) => {
     const request = http.request(`${proxy}/pair`, { method: "POST", headers: {
