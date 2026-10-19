@@ -7,7 +7,7 @@ This activates phone access and opens the pairing window inside that app. Scan
 the QR code or use **Copy link**, connect once on the phone in the same trusted
 LAN, and save the resulting dashboard to its home screen. Each new installation
 creates its own pairing group; no operator-owned host or preconfigured user path
-is required. If local name resolution is unavailable, use the direct Wi-Fi QR
+is required. If local name resolution is unavailable, use the direct IP QR
 button. That direct address follows this computer's current LAN IP.
 
 The desktop app owns the gateway and uses its current backend port. Enabled
@@ -29,6 +29,39 @@ loopback origin. The pairing window is sandboxed, has no Node/preload bridge,
 and cannot navigate to another origin. Phone data remains read-only and requires
 pairing. A port conflict produces a visible status and can be retried without
 leaving a partially started gateway behind.
+
+## Access through an existing private VPN
+
+The default gateway accepts private IPv4 sources on the selected LAN subnet.
+A direct IP QR code avoids `.local` name resolution; it does not grant access
+from a routed subnet. The existing VPN must already route to the computer's
+selected LAN address. This feature does not configure a VPN, firewall, router,
+certificate, public listener, or tunnel, and does not require another VPN.
+
+In the installed app, open **Settings → Phone → Existing VPN**. Enter only the
+phone's private IPv4 source as seen by this computer, or the smallest necessary
+network, one per line. A bare IPv4 address means `/32`. At most eight RFC1918
+entries are accepted, with prefixes `/24` through `/32`. CIDRs must use the
+network address; host bits are rejected instead of silently widening access.
+Public, loopback, link-local, shared-address-space and IPv6 entries are rejected.
+Saving an empty field removes all VPN allowances. Saving does not activate
+phone access when it is off. Allowances persist only in this installation's
+private mobile settings and are not included in installation-group invitations.
+
+With phone access enabled, saving replaces the gateway so removed allowances
+apply to existing phone cookies too. Create a direct IP QR code and pair through
+the existing VPN. Pairing is still required, links remain single-use and expire
+after 24 hours, and the phone remains read-only. Host/Origin/cross-site checks
+still apply. Only the TCP peer address can match a source allowance; client
+`Forwarded` and `X-Forwarded-*` headers cannot grant LAN or VPN access. The
+optional dedicated loopback HTTPS proxy retains its separate trust checks.
+
+Rejected browser navigations show a self-contained translated explanation for
+network, host, or browser-origin rejection. API responses retain `lan_only` and
+add a reason code. Responses never echo addresses, configured ranges, cookies,
+request URLs, or pairing links. HTTP remains unencrypted on this listener; use
+only networks you trust. No actual phone/VPN diagnosis is inferred from these
+synthetic checks.
 
 ## Desktop settings review — 2026-10-15
 
