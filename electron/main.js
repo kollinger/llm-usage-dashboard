@@ -142,6 +142,12 @@ ipcMain.handle("mobile:https", async (event, origin) => {
   if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
   return mobileAccess.setHttpsOrigin(origin);
 });
+ipcMain.handle("mobile:vpn", async (event, networks) => {
+  trustedMobileRequest(event);
+  const status = await mobileAccess.setVpnNetworks(networks);
+  if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  return status;
+});
 ipcMain.handle("mobile:open", async (event, https = false) => {
   trustedMobileRequest(event);
   const status = await mobileAccess.setEnabled(true);

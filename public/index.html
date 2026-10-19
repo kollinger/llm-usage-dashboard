@@ -363,6 +363,13 @@
             <button type="button" class="text-button ghost" id="mobileAccessDisable" data-i18n="settings.mobile.stop" hidden></button>
           </div>
           <label class="field" id="mobileAccessAddressField" hidden><span data-i18n="settings.mobile.address"></span><input id="mobileAccessAddress" type="url" readonly /></label>
+          <details id="mobileVpnSettings">
+            <summary data-i18n="settings.mobile.vpnTitle"></summary>
+            <p class="settings-desc" id="mobileVpnHelp" data-i18n="settings.mobile.vpnHelp"></p>
+            <label class="field"><span data-i18n="settings.mobile.vpnNetworks"></span><textarea id="mobileVpnNetworks" rows="3" maxlength="512" dir="ltr" autocomplete="off" spellcheck="false" aria-describedby="mobileVpnHelp"></textarea></label>
+            <button type="button" class="text-button" id="mobileVpnSave" data-i18n="settings.mobile.vpnSave"></button>
+            <p id="mobileVpnStatus" class="settings-desc" role="status" aria-live="polite"></p>
+          </details>
           <details>
             <summary data-i18n="mobilePrototype.notificationsConnectionHelp"></summary>
             <p class="settings-desc" data-i18n="settings.mobile.remoteSetup"></p>

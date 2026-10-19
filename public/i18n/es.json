@@ -796,7 +796,13 @@
       "remoteSetup": "Conecta Tailscale en el ordenador y el móvil y activa HTTPS en tu red. Ejecuta el comando siguiente y guarda aquí la dirección HTTPS que muestre. No sustituyas un servicio HTTPS existente. Una dirección vacía desactiva esta conexión. El ordenador debe estar encendido; el acceso Wi-Fi funciona sin Tailscale.",
       "remoteOrigin": "Tu dirección HTTPS privada",
       "remoteSave": "Guardar dirección",
-      "remoteOpen": "Código QR y enlace HTTPS"
+      "remoteOpen": "Código QR y enlace HTTPS",
+      "vpnTitle": "VPN existente",
+      "vpnHelp": "Permite hasta 8 direcciones IPv4 privadas (/32) o redes pequeñas (/24–/32), una por línea. Solo para una VPN existente con acceso al equipo. Dejar vacío elimina estos permisos. El emparejamiento sigue siendo necesario.",
+      "vpnNetworks": "Orígenes VPN permitidos",
+      "vpnSave": "Guardar acceso VPN",
+      "vpnSaved": "Ajustes VPN guardados.",
+      "vpnInvalid": "No se pudo guardar. Introduce hasta 8 IPv4 privadas o direcciones de red con /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Solo redes de confianza: esta dirección usa HTTP sin cifrar. Evita redes públicas o de invitados.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Crear QR directo con IP",
+    "directHelp": "El QR directo evita la resolución de nombres .local y queda vinculado a este ordenador. No autoriza otra red. Para una VPN existente, permite primero su origen privado en Ajustes → Teléfono → VPN existente.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Copiar enlace",
     "copied": "Enlace copiado.",
     "copyError": "Copia el enlace del campo de dirección.",
-    "desktopTitle": "Mostrar código QR y enlace"
+    "desktopTitle": "Mostrar código QR y enlace",
+    "accessDenied": "Acceso del teléfono bloqueado",
+    "accessNetwork": "Esta red de origen no está permitida. En el ordenador, abre Ajustes → Teléfono → VPN existente y permite un origen VPN privado y limitado. El QR directo solo resuelve problemas de nombres.",
+    "accessHost": "Esta dirección no está permitida. Abre el enlace QR original del ordenador. Para una VPN existente, usa el QR directo.",
+    "accessOrigin": "Se bloqueó esta solicitud del navegador. Abre el enlace de emparejamiento original directamente en el navegador del teléfono e inténtalo de nuevo."
   },
   "chatUsage": {
     "heading": "Chats y tickets",

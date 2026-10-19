@@ -796,7 +796,13 @@
       "remoteSetup": "Подключите Tailscale на компьютере и телефоне и включите HTTPS в своей сети. Выполните команду ниже и сохраните здесь показанный HTTPS-адрес. Не заменяйте существующий HTTPS-сервис. Пустой адрес отключает соединение. Компьютер должен работать; Wi-Fi доступен без Tailscale.",
       "remoteOrigin": "Ваш частный HTTPS-адрес",
       "remoteSave": "Сохранить адрес",
-      "remoteOpen": "QR-код и ссылка HTTPS"
+      "remoteOpen": "QR-код и ссылка HTTPS",
+      "vpnTitle": "Существующий VPN",
+      "vpnHelp": "Разрешите до 8 частных IPv4-адресов (/32) или небольших сетей (/24–/32), по одному на строку. Только для существующего VPN с доступом к компьютеру. Пустое поле удаляет эти разрешения. Сопряжение телефона по-прежнему необходимо.",
+      "vpnNetworks": "Разрешённые источники VPN",
+      "vpnSave": "Сохранить доступ VPN",
+      "vpnSaved": "Настройки VPN сохранены.",
+      "vpnInvalid": "Не удалось сохранить. Введите до 8 частных IPv4-адресов или адресов сетей с /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Только доверенные сети: этот адрес использует незашифрованный HTTP. Избегайте общедоступных и гостевых сетей.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Создать прямой QR-код с IP",
+    "directHelp": "Прямой QR-код обходит разрешение имени .local и остаётся привязанным к этому компьютеру. Он не разрешает новую сеть. Сначала разрешите частный источник VPN в Настройки → Телефон → Существующий VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Копировать ссылку",
     "copied": "Ссылка скопирована.",
     "copyError": "Скопируйте ссылку из поля адреса.",
-    "desktopTitle": "Показать QR-код и ссылку"
+    "desktopTitle": "Показать QR-код и ссылку",
+    "accessDenied": "Доступ с телефона заблокирован",
+    "accessNetwork": "Эта исходная сеть не разрешена. На компьютере откройте Настройки → Телефон → Существующий VPN и разрешите узкий частный источник VPN. Прямой QR-код решает только проблему имён.",
+    "accessHost": "Этот адрес не разрешён. Откройте исходную QR-ссылку с компьютера. Для существующего VPN используйте прямой QR-код.",
+    "accessOrigin": "Этот запрос браузера заблокирован. Откройте исходную ссылку сопряжения прямо в браузере телефона и повторите попытку."
   },
   "chatUsage": {
     "heading": "Чаты и задачи",

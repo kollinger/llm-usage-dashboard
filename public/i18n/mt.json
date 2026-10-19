@@ -796,7 +796,13 @@
       "remoteSetup": "Qabbad Tailscale fuq il-kompjuter u t-telefon u attiva HTTPS fin-netwerk tiegħek. Ħaddem il-kmand hawn taħt u ssejvja hawn l-indirizz HTTPS li jidher. Tissostitwixxix servizz HTTPS eżistenti. Indirizz vojt jitfi din il-konnessjoni. Il-kompjuter irid jibqa’ mixgħul; il-Wi-Fi jaħdem mingħajr Tailscale.",
       "remoteOrigin": "L-indirizz HTTPS privat tiegħek",
       "remoteSave": "Issejvja l-indirizz",
-      "remoteOpen": "Kodiċi QR u link HTTPS"
+      "remoteOpen": "Kodiċi QR u link HTTPS",
+      "vpnTitle": "VPN eżistenti",
+      "vpnHelp": "Ippermetti sa 8 indirizzi IPv4 privati (/32) jew netwerks żgħar (/24–/32), wieħed kull linja. Għal VPN eżistenti li tista’ tilħaq il-kompjuter biss. Qasam vojt ineħħi dawn il-permessi. It-tqabbil tat-telefon għadu meħtieġ.",
+      "vpnNetworks": "Sorsi VPN permessi",
+      "vpnSave": "Issejvja l-aċċess VPN",
+      "vpnSaved": "Settings tal-VPN issejvjati.",
+      "vpnInvalid": "Ma setax jiġi ssejvjat. Daħħal sa 8 indirizzi IPv4 privati jew indirizzi tan-netwerk b’/24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Netwerks ta’ fiduċja biss: dan l-indirizz juża HTTP mhux kriptat. Evita netwerks pubbliċi jew tal-mistednin.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Oħloq kodiċi QR dirett b’IP",
+    "directHelp": "Il-QR dirett jevita r-riżoluzzjoni tal-isem .local u jibqa’ marbut ma’ dan il-kompjuter. Ma jippermettix netwerk ġdid. L-ewwel ippermetti s-sors privat tal-VPN f’Settings → Telefon → VPN eżistenti.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Ikkopja l-link",
     "copied": "Il-link ġiet ikkupjata.",
     "copyError": "Ikkopja l-link mill-qasam tal-indirizz.",
-    "desktopTitle": "Uri kodiċi QR u link"
+    "desktopTitle": "Uri kodiċi QR u link",
+    "accessDenied": "Aċċess tat-telefon imblukkat",
+    "accessNetwork": "Dan in-netwerk tas-sors mhux permess. Fuq il-kompjuter, iftaħ Settings → Telefon → VPN eżistenti u ppermetti sors VPN privat limitat. Il-QR dirett isolvi biss ir-riżoluzzjoni tal-ismijiet.",
+    "accessHost": "Dan l-indirizz mhux permess. Iftaħ il-link QR oriġinali mill-kompjuter. Għal VPN eżistenti, uża l-QR dirett.",
+    "accessOrigin": "Din it-talba tal-brawżer ġiet imblukkata. Iftaħ il-link oriġinali tat-tqabbil direttament fil-brawżer tat-telefon u erġa’ pprova."
   },
   "chatUsage": {
     "heading": "Konversazzjonijiet u biljetti",

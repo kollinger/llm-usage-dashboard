@@ -30,6 +30,7 @@
   }
   const message = (key) => { document.getElementById("prototypeMessage").textContent = text(key); };
   const pairingMessage = (state) => ({ missing: "missingCode", expired: "expiredCode", used: "usedCode", invalid: "invalidCode" })[state] || "scanAgain";
+  const accessMessage = (reason) => reason === "network_not_allowed" ? "accessNetwork" : ["host_not_allowed", "proxy_not_allowed"].includes(reason) ? "accessHost" : "accessOrigin";
   if (document.body.dataset.prototype === "control") {
     if (new URLSearchParams(location.search).get("https") === "1") {
       document.querySelector('[data-copy="intro"]').textContent = text("notificationsHelp");
@@ -96,6 +97,9 @@
       button.disabled = true;
       try {
         const response = await fetch("/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: pairingCode }) });
+        if (response.status === 403) {
+          message(accessMessage((await response.json()).reason)); button.disabled = false; return;
+        }
         if (response.status === 401) {
           try { sessionStorage.removeItem(pairingKey); } catch { /* Storage may be unavailable. */ }
           history.replaceState(null, "", "/pair");

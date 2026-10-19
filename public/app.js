@@ -115,6 +115,9 @@ const els = {
   mobileHttpsOrigin: document.getElementById("mobileHttpsOrigin"),
   mobileHttpsSave: document.getElementById("mobileHttpsSave"),
   mobileHttpsOpen: document.getElementById("mobileHttpsOpen"),
+  mobileVpnNetworks: document.getElementById("mobileVpnNetworks"),
+  mobileVpnSave: document.getElementById("mobileVpnSave"),
+  mobileVpnStatus: document.getElementById("mobileVpnStatus"),
   settingsSourcesRecheckBtn: document.getElementById("settingsSourcesRecheckBtn"),
   settingsSourcesStatus: document.getElementById("settingsSourcesStatus"),
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
@@ -2434,6 +2437,21 @@ function bindEvents() {
   els.mobileHttpsOpen.addEventListener("click", async () => {
     try { renderMobileAccess(await window.llmUsageDashboard.mobileAccess.openPairing(true)); }
     catch { renderMobileAccess({ ...state.mobileAccess, reason: "failed" }); }
+  });
+  els.mobileVpnSave.addEventListener("click", async () => {
+    const networks = els.mobileVpnNetworks.value;
+    els.mobileVpnStatus.textContent = "";
+    renderMobileAccess(state.mobileAccess, true);
+    try {
+      const value = await window.llmUsageDashboard.mobileAccess.setVpnNetworks(networks);
+      renderMobileAccess(value);
+      els.mobileVpnNetworks.value = (value.vpnNetworks || []).join("\n");
+      els.mobileVpnStatus.textContent = t("settings.mobile.vpnSaved");
+    } catch {
+      renderMobileAccess(state.mobileAccess);
+      els.mobileVpnNetworks.value = networks;
+      els.mobileVpnStatus.textContent = t("settings.mobile.vpnInvalid");
+    }
   });
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
@@ -9985,6 +10003,9 @@ function renderMobileAccess(value = {}, busy = false) {
   if (!busy && document.activeElement !== els.mobileHttpsOrigin) els.mobileHttpsOrigin.value = value.httpsOrigin || "";
   els.mobileHttpsOpen.hidden = !value.httpsOrigin;
   els.mobileHttpsOpen.disabled = busy || !available;
+  els.mobileVpnSave.disabled = busy || !available;
+  els.mobileVpnNetworks.disabled = busy || !available;
+  if (!busy && document.activeElement !== els.mobileVpnNetworks) els.mobileVpnNetworks.value = (value.vpnNetworks || []).join("\n");
 }
 
 async function loadMobileAccess() {

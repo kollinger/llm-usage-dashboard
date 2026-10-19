@@ -832,7 +832,13 @@
       "remoteSetup": "Tailscale auf Rechner und Handy verbinden und HTTPS im eigenen Tailscale-Netz aktivieren. Den folgenden Befehl am Rechner ausführen, dann die angezeigte HTTPS-Adresse hier speichern. Eine bereits belegte HTTPS-Adresse nicht überschreiben. Eine leere Adresse schaltet diese Anbindung aus. Der Rechner muss laufen; WLAN bleibt ohne Tailscale nutzbar.",
       "remoteOrigin": "Deine private HTTPS-Adresse",
       "remoteSave": "Adresse speichern",
-      "remoteOpen": "HTTPS-QR-Code und Link"
+      "remoteOpen": "HTTPS-QR-Code und Link",
+      "vpnTitle": "Vorhandenes VPN",
+      "vpnHelp": "Bis zu 8 private IPv4-Adressen (/32) oder kleine Netze (/24–/32) erlauben, eines pro Zeile. Nur für ein vorhandenes, erreichbares VPN. Ein leeres Feld entfernt diese Freigaben. Die Handy-Kopplung bleibt erforderlich.",
+      "vpnNetworks": "Erlaubte VPN-Quellen",
+      "vpnSave": "VPN-Zugang speichern",
+      "vpnSaved": "VPN-Einstellungen gespeichert.",
+      "vpnInvalid": "Speichern fehlgeschlagen. Bis zu 8 private IPv4-Adressen oder Netzadressen mit /24–/32 eingeben."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "WLAN-Prototyp",
     "title": "Am Handy öffnen",
     "intro": "QR-Code einmal scannen und das Handy verbinden. Dieser Prototyp nutzt ausschließlich dein lokales Netzwerk.",
-    "httpWarning": "Nur im vertrauenswürdigen WLAN: Dieser Prototyp verwendet unverschlüsseltes HTTP. Nicht in öffentlichen oder Gastnetzen verwenden.",
+    "httpWarning": "Nur vertrauenswürdige Netze: Diese Adresse nutzt unverschlüsseltes HTTP. Öffentliche Netze und Gastnetze vermeiden.",
     "save": "Nach dem Verbinden das Dashboard auf dem Home-Bildschirm speichern.",
     "address": "Kopplungslink",
     "newCode": "Neuen QR-Code erzeugen",
@@ -1284,8 +1290,8 @@
     "join": "Dieser Gruppe beitreten",
     "joining": "Wird verbunden. Der Prototyp startet automatisch neu.",
     "joinError": "Installationscode ungültig oder abgelaufen. Auf der ersten Installation einen neuen erzeugen.",
-    "directCode": "Direkten WLAN-QR-Code erzeugen",
-    "directHelp": "Falls die gemeinsame .local-Adresse nicht öffnet: Direkten QR-Code ausprobieren. Dieser Zugang gilt nur für diesen Rechner; die gespeicherte Adresse wechselt dann nicht mit.",
+    "directCode": "Direkten IP-QR-Code erstellen",
+    "directHelp": "Der direkte QR-Code umgeht die .local-Namensauflösung und bleibt an diesen Computer gebunden. Er gibt kein neues Netz frei. Für ein vorhandenes VPN zuerst dessen private Quelle unter Einstellungen → Handy → Vorhandenes VPN erlauben.",
     "notificationsTitle": "Warnungen und Benachrichtigungen",
     "notificationsLan": "Handy-Push ist über diese HTTP-Adresse nicht eingerichtet. Warnungen erscheinen bei geöffneter Seite. Für Meldungen am Sperrbildschirm brauchst du eine HTTPS-Adresse mit vertrauenswürdigem Zertifikat.",
     "notificationsConnectionHelp": "Optional: Meldungen bei gesperrtem Handy und Zugriff unterwegs",
@@ -1320,7 +1326,11 @@
     "copyLink": "Link kopieren",
     "copied": "Link kopiert.",
     "copyError": "Kopiere den Link aus dem Adressfeld.",
-    "desktopTitle": "QR-Code und Link anzeigen"
+    "desktopTitle": "QR-Code und Link anzeigen",
+    "accessDenied": "Handy-Zugang gesperrt",
+    "accessNetwork": "Dieses Quellnetz ist nicht freigegeben. Am Computer unter Einstellungen → Handy → Vorhandenes VPN eine eng begrenzte private VPN-Quelle erlauben. Ein direkter QR-Code behebt nur die Namensauflösung.",
+    "accessHost": "Diese Adresse ist nicht erlaubt. Den ursprünglichen QR-Link vom Computer öffnen. Für ein vorhandenes VPN den direkten QR-Code nutzen.",
+    "accessOrigin": "Diese Browser-Anfrage wurde gesperrt. Den ursprünglichen Kopplungslink direkt im Handy-Browser öffnen und erneut versuchen."
   },
   "chatUsage": {
     "heading": "Chats & Tickets",

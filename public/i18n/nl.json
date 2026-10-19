@@ -796,7 +796,13 @@
       "remoteSetup": "Verbind Tailscale op computer en telefoon en schakel HTTPS in je netwerk in. Voer de onderstaande opdracht uit en sla het getoonde HTTPS-adres hier op. Vervang geen bestaande HTTPS-dienst. Een leeg adres schakelt deze verbinding uit. De computer moet aan blijven; Wi-Fi werkt zonder Tailscale.",
       "remoteOrigin": "Je privé-HTTPS-adres",
       "remoteSave": "Adres opslaan",
-      "remoteOpen": "HTTPS-QR-code en link"
+      "remoteOpen": "HTTPS-QR-code en link",
+      "vpnTitle": "Bestaande VPN",
+      "vpnHelp": "Sta maximaal 8 privé-IPv4-adressen (/32) of kleine netwerken (/24–/32) toe, één per regel. Alleen voor een bestaande VPN die deze computer kan bereiken. Een leeg veld verwijdert deze toestemmingen. Koppelen blijft verplicht.",
+      "vpnNetworks": "Toegestane VPN-bronnen",
+      "vpnSave": "VPN-toegang opslaan",
+      "vpnSaved": "VPN-instellingen opgeslagen.",
+      "vpnInvalid": "Opslaan mislukt. Voer maximaal 8 privé-IPv4- of netwerkadressen met /24–/32 in."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Alleen vertrouwde netwerken: dit adres gebruikt onversleutelde HTTP. Vermijd openbare en gastnetwerken.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Directe IP-QR-code maken",
+    "directHelp": "De directe QR-code omzeilt .local-naamomzetting en blijft aan deze computer gebonden. Hij staat geen nieuw netwerk toe. Sta eerst de privébron van de VPN toe via Instellingen → Telefoon → Bestaande VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Link kopiëren",
     "copied": "Link gekopieerd.",
     "copyError": "Kopieer de link uit het adresveld.",
-    "desktopTitle": "QR-code en link tonen"
+    "desktopTitle": "QR-code en link tonen",
+    "accessDenied": "Telefoontoegang geblokkeerd",
+    "accessNetwork": "Dit bronnetwerk is niet toegestaan. Open op de computer Instellingen → Telefoon → Bestaande VPN en sta een beperkte privé-VPN-bron toe. Een directe QR-code verhelpt alleen naamomzetting.",
+    "accessHost": "Dit adres is niet toegestaan. Open de oorspronkelijke QR-link van de computer. Gebruik voor een bestaande VPN de directe QR-code.",
+    "accessOrigin": "Dit browserverzoek is geblokkeerd. Open de oorspronkelijke koppelingslink rechtstreeks in de telefoonbrowser en probeer opnieuw."
   },
   "chatUsage": {
     "heading": "Chats en tickets",
