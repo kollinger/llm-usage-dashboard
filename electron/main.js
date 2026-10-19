@@ -13,6 +13,7 @@ const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal } = requi
 const { notificationMessage } = require("../lib/mobile-notifications");
 const { EVENT_TYPES } = require("../lib/quota-notifications");
 const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
+const { createDesktopWidget } = require("./desktop-widget");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -35,6 +36,7 @@ let lastNotificationStatusWriteAt = 0;
 let lastNotificationStatusSignature = null;
 let themePreference = "system";
 let languagePreference = null;
+let desktopWidget = null;
 // Plan-probe backoff state per domain: { until, failures, planType, successAt }
 const planProbeBackoff = new Map();
 // Chrome cookie rows cached per domain, keyed by the cookie DB size+mtime.
@@ -180,6 +182,7 @@ ipcMain.handle("language:set-preference", async (_event, language) => {
   if (normalized) {
     languagePreference = normalized;
     await writeLanguagePreference(normalized);
+    desktopWidget?.updateTheme({ preference: themePreference, color: THEME_BACKGROUND_COLORS[resolvedNativeTheme()] });
   }
   return languagePreference;
 });
@@ -256,6 +259,7 @@ function updateNativeWindowTheme() {
     mainWindow.setBackgroundColor(THEME_BACKGROUND_COLORS[resolvedTheme]);
     mainWindow.webContents.send("theme:system-changed", { resolvedTheme });
   }
+  desktopWidget?.updateTheme({ preference: themePreference, color: THEME_BACKGROUND_COLORS[resolvedTheme] });
   return resolvedTheme;
 }
 
@@ -2547,6 +2551,25 @@ app.whenReady().then(async () => {
   nativeTheme.on("updated", updateNativeWindowTheme);
   const port = await startBackend();
   dashboardPort = port;
+  desktopWidget = createDesktopWidget({ BrowserWindow, ipcMain, screen: require("electron").screen,
+    origin: `http://localhost:${port}`, stateFile: path.join(app.getPath("userData"), "desktop-widget.json"),
+    getMainWindow: () => mainWindow, getLanguage: () => languagePreference,
+    getTheme: () => ({ preference: themePreference, color: THEME_BACKGROUND_COLORS[resolvedNativeTheme()] }),
+    isWayland: process.platform === "linux" &&
+      (app.commandLine.getSwitchValue("ozone-platform") === "wayland" ||
+       (!app.commandLine.getSwitchValue("ozone-platform") && Boolean(process.env.WAYLAND_DISPLAY))),
+    showDashboard(target) {
+      showDashboardWindow(port);
+      if (target === "accounts") {
+        const targetWindow = mainWindow;
+        const send = () => {
+          if (mainWindow === targetWindow && !targetWindow.isDestroyed()) targetWindow.webContents.send("widget:open-accounts");
+        };
+        if (targetWindow.webContents.isLoadingMainFrame()) targetWindow.webContents.once("did-finish-load", send);
+        else send();
+      }
+    }
+  });
   mobileAccess = createDesktopMobileAccess({ dataDir: process.env.LLM_USAGE_DATA_DIR,
     upstream: `http://127.0.0.1:${port}`, label: os.hostname(),
     legacyDirectory: path.join(app.getPath("appData"), "LLM Usage Dashboard LAN Prototype", "mobile-prototype") });
@@ -2590,6 +2613,7 @@ app.on("before-quit", (event) => {
     event.preventDefault(); mobileShutdown = true; clearInterval(mobileRefreshTimer);
     mobileAccess.stop().catch(() => {}).finally(() => app.quit()); return;
   }
+  desktopWidget?.dispose(); desktopWidget = null;
   removeInstanceMarker().catch(() => {});
   closeServer(dashboardServer);
   closeServer(ollamaProxyServer);

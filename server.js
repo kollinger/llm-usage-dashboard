@@ -22,6 +22,7 @@ const { createProviderAccountStore, safeMeasurement, providerAccountIdentity } =
 const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
+const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
 const { DeviceSync } = require("./lib/device-sync");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
@@ -1074,6 +1075,16 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
     res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
+  }
+});
+
+app.get("/api/desktop-widget", authMiddleware, localControlMiddleware, async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    markInteractiveUsageRequest();
+    res.json(buildDesktopWidgetSnapshot(await readUsageDashboard({ staleWhileRefresh: true })));
+  } catch {
+    res.status(503).json({ error: "widget_unavailable" });
   }
 });
 

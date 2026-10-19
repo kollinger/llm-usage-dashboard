@@ -2530,6 +2530,17 @@ function bindEvents() {
   els.notificationSettingsBtn?.addEventListener("click", openNotificationSettings);
   els.notificationTestBtn?.addEventListener("click", sendTestNotification);
   els.themeSelect?.addEventListener("change", () => setThemePreference(els.themeSelect.value));
+  const widgetButton = document.getElementById("desktopWidgetBtn");
+  if (widgetButton && window.llmUsageDashboard?.desktopWidget) {
+    widgetButton.hidden = false;
+    widgetButton.addEventListener("click", async () => {
+      widgetButton.disabled = true;
+      try { await window.llmUsageDashboard.desktopWidget.open(); }
+      catch { widgetButton.title = t("widget.error"); }
+      finally { widgetButton.disabled = false; }
+    });
+  }
+  window.llmUsageDashboard?.onWidgetDashboard?.(() => openSettings("accounts"));
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
   els.codexResetPeriod?.addEventListener("change", () => {
     state.codexResetLimit = Number(els.codexResetPeriod.value);

@@ -131,6 +131,50 @@ Version numbers follow Semantic Versioning:
 
 The workflow builds macOS, Linux, and Windows packages on native GitHub-hosted runners, uploads them as workflow artifacts, and attaches them to a GitHub Release. Release artifacts are currently unsigned prereleases; macOS Gatekeeper and Windows SmartScreen may warn until code signing/notarization certificates are configured as repository secrets.
 
+### Desktop quota widget
+
+In the desktop app, choose **Desktop widget** in the dashboard toolbar. The
+separate floating window stays available when the main dashboard is closed;
+closing the widget does not stop the app's existing background collection.
+Open it again from the dashboard. It shares the existing account and quota
+snapshots and does not start another collector or ask for another login.
+
+The default 780 × 700 window shows five accounts together. Accounts are grouped
+by provider; a visible number distinguishes accounts of the same provider even
+when a long name is truncated. Hover the name for its full label. Star accounts
+to use the explicit Favorites view, filter by provider, or scroll the bounded
+list for larger sets. Text size can be increased independently. Each quota
+window keeps its own remaining percentage, reset time and measurement quality.
+Missing values stay unavailable; saved readings older than 15 minutes, failed
+reads and elapsed reset times are marked stale. No combined account quota is
+calculated. **Manage accounts** opens the full dashboard's account settings.
+
+Size, position, pin preference and display preferences are saved privately in
+the app's user-data directory. On macOS and X11, saved bounds are kept inside
+the current monitor work areas and recovered after a monitor is removed. The
+pin button keeps the window above ordinary windows where Electron supports it.
+On native Wayland, KDE controls placement and stacking: use the KDE window
+menu's **Keep Above Others** option. The widget explains this and does not claim
+that Electron can pin or restore global coordinates on Wayland. Window resizing
+remains subject to the compositor ([Electron window API](https://www.electronjs.org/docs/latest/api/browser-window#winsetalwaysontopflag-level-relativelevel)). This is a floating app window, not a Plasma
+plasmoid or an Apple WidgetKit extension.
+
+The widget uses the dashboard's theme and all 27 supported languages, including
+Arabic RTL. It retains Electron's isolated, sandboxed renderer and a separate
+preload exposing only widget controls. Its authenticated loopback-only endpoint
+returns an explicit allowlist of display data, without account identifiers,
+credentials, source paths or raw provider responses. Codex/OpenCode identity and
+quota attribution remain owned by the shared account registry.
+
+Run `npm run test:desktop-widget` for synthetic projection, freshness, API,
+geometry, lifecycle and IPC checks. Run `npm run test:desktop-widget:native` in a
+graphical session for the native window and layout checks (on headless Linux:
+`xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:desktop-widget:native`).
+The existing desktop-build workflow runs the native checks as part of
+`npm run check` on GitHub Actions, including the macOS CI runner, before
+producing its packages. `npm run test:desktop-widget:ci` selects that CI-only
+lane; local native checks use the explicit command above.
+
 ## Docker
 
 Docker mounts the host's local tool folders read-only and persists dashboard-generated data in `./data`:
