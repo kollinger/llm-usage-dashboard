@@ -1329,6 +1329,10 @@
     "desktopTitle": "Näytä QR-koodi ja linkki",
     "accessDenied": "Puhelimen pääsy estetty",
     "accessNetwork": "Tätä lähdeverkkoa ei ole sallittu. Avaa tietokoneella Asetukset → Puhelin → Olemassa oleva VPN ja salli rajattu yksityinen VPN-lähde. Suora QR-koodi korjaa vain nimenselvityksen.",
+    "accessSource": "Tietokoneen havaitsema lähdeosoite",
+    "accessEntry": "VPN-merkintä (valitse ja kopioi)",
+    "accessNat": "Tämä /32-merkintä sallii havaitun lähdeosoitteen. NAT-verkossa se voi olla usean laitteen jakama VPN-yhdyskäytävän osoite.",
+    "accessUnavailable": "Sallimisehdotusta varten ei ole saatavilla yksityistä IPv4-lähdeosoitetta.",
     "accessHost": "Tätä osoitetta ei sallita. Avaa alkuperäinen QR-linkki tietokoneelta. Käytä olemassa olevalle VPN:lle suoraa QR-koodia.",
     "accessOrigin": "Tämä selainpyyntö estettiin. Avaa alkuperäinen pariliitoslinkki suoraan puhelimen selaimessa ja yritä uudelleen."
   },

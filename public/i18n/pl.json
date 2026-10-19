@@ -1329,6 +1329,10 @@
     "desktopTitle": "Pokaż kod QR i link",
     "accessDenied": "Dostęp telefonu zablokowany",
     "accessNetwork": "Ta sieć źródłowa nie jest dozwolona. Na komputerze otwórz Ustawienia → Telefon → Istniejący VPN i zezwól na wąski prywatny zakres VPN. Bezpośredni QR rozwiązuje tylko problem nazw.",
+    "accessSource": "Adres źródłowy widziany przez komputer",
+    "accessEntry": "Wpis VPN (zaznacz i skopiuj)",
+    "accessNat": "Ten wpis /32 zezwala na obserwowany adres źródłowy. Przy NAT może to być adres bramy VPN współdzielony przez kilka urządzeń.",
+    "accessUnavailable": "Brak prywatnego adresu źródłowego IPv4, dla którego można zaproponować wpis zezwolenia.",
     "accessHost": "Ten adres nie jest dozwolony. Otwórz oryginalny link QR z komputera. Dla istniejącego VPN użyj bezpośredniego kodu QR.",
     "accessOrigin": "To żądanie przeglądarki zostało zablokowane. Otwórz oryginalny link parowania bezpośrednio w przeglądarce telefonu i spróbuj ponownie."
   },

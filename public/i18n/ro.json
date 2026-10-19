@@ -1329,6 +1329,10 @@
     "desktopTitle": "Arată codul QR și linkul",
     "accessDenied": "Accesul telefonului este blocat",
     "accessNetwork": "Această rețea sursă nu este permisă. Pe calculator, deschideți Setări → Telefon → VPN existent și permiteți o sursă VPN privată restrânsă. QR-ul direct rezolvă doar numele.",
+    "accessSource": "Adresa sursă observată de calculator",
+    "accessEntry": "Intrare VPN (selectați și copiați)",
+    "accessNat": "Această intrare /32 permite adresa sursă observată. Cu NAT, aceasta poate fi adresa gateway-ului VPN, partajată de mai multe dispozitive.",
+    "accessUnavailable": "Nu este disponibilă o adresă sursă IPv4 privată pentru a propune o permisiune.",
     "accessHost": "Această adresă nu este permisă. Deschideți linkul QR original de pe calculator. Pentru un VPN existent, folosiți QR-ul direct.",
     "accessOrigin": "Această cerere a browserului a fost blocată. Deschideți linkul original de asociere direct în browserul telefonului și încercați din nou."
   },

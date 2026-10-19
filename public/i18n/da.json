@@ -1329,6 +1329,10 @@
     "desktopTitle": "Vis QR-kode og link",
     "accessDenied": "Telefonadgang blokeret",
     "accessNetwork": "Dette kildenetværk er ikke tilladt. Åbn Indstillinger → Telefon → Eksisterende VPN på computeren, og tillad en snæver privat VPN-kilde. En direkte QR-kode løser kun navneopslag.",
+    "accessSource": "Kildeadresse set af computeren",
+    "accessEntry": "VPN-post (markér og kopiér)",
+    "accessNat": "Denne /32-post tillader den observerede kildeadresse. Ved NAT kan det være VPN-gatewayens adresse, som deles af flere enheder.",
+    "accessUnavailable": "Der er ingen privat IPv4-kildeadresse tilgængelig til et forslag om tilladelse.",
     "accessHost": "Denne adresse er ikke tilladt. Åbn det oprindelige QR-link fra computeren. Brug den direkte QR-kode til en eksisterende VPN.",
     "accessOrigin": "Denne browseranmodning blev blokeret. Åbn det oprindelige parringslink direkte i telefonens browser, og prøv igen."
   },

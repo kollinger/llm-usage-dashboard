@@ -1329,6 +1329,10 @@
     "desktopTitle": "Näita QR-koodi ja linki",
     "accessDenied": "Telefoni ligipääs on blokeeritud",
     "accessNetwork": "See lähtevõrk pole lubatud. Ava arvutis Seaded → Telefon → Olemasolev VPN ja luba kitsas privaatne VPN-i allikas. Otsene QR-kood lahendab ainult nimeprobleemi.",
+    "accessSource": "Arvuti nähtud lähteaadress",
+    "accessEntry": "VPN-i kirje (vali ja kopeeri)",
+    "accessNat": "See /32-kirje lubab nähtud lähteaadressi. NAT-i korral võib see olla VPN-lüüsi aadress, mida jagab mitu seadet.",
+    "accessUnavailable": "Lubamise ettepanekuks pole privaatset IPv4-lähteaadressi saadaval.",
     "accessHost": "See aadress pole lubatud. Ava arvutist saadud algne QR-link. Olemasoleva VPN-i korral kasuta otsest QR-koodi.",
     "accessOrigin": "See brauseripäring blokeeriti. Ava algne sidumislink otse telefoni brauseris ja proovi uuesti."
   },

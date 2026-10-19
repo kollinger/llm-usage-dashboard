@@ -1329,6 +1329,10 @@
     "desktopTitle": "Uri kodiċi QR u link",
     "accessDenied": "Aċċess tat-telefon imblukkat",
     "accessNetwork": "Dan in-netwerk tas-sors mhux permess. Fuq il-kompjuter, iftaħ Settings → Telefon → VPN eżistenti u ppermetti sors VPN privat limitat. Il-QR dirett isolvi biss ir-riżoluzzjoni tal-ismijiet.",
+    "accessSource": "Indirizz tas-sors osservat mill-kompjuter",
+    "accessEntry": "Entrata VPN (agħżel u kkopja)",
+    "accessNat": "Din l-entrata /32 tippermetti l-indirizz tas-sors osservat. B’NAT, dan jista’ jkun l-indirizz tal-gateway VPN, kondiviż minn diversi apparati.",
+    "accessUnavailable": "M’hemmx indirizz tas-sors IPv4 privat disponibbli biex tiġi ssuġġerita entrata ta’ permess.",
     "accessHost": "Dan l-indirizz mhux permess. Iftaħ il-link QR oriġinali mill-kompjuter. Għal VPN eżistenti, uża l-QR dirett.",
     "accessOrigin": "Din it-talba tal-brawżer ġiet imblukkata. Iftaħ il-link oriġinali tat-tqabbil direttament fil-brawżer tat-telefon u erġa’ pprova."
   },

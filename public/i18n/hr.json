@@ -1329,6 +1329,10 @@
     "desktopTitle": "Prikaži QR kod i poveznicu",
     "accessDenied": "Pristup telefona blokiran",
     "accessNetwork": "Ova izvorna mreža nije dopuštena. Na računalu otvorite Postavke → Telefon → Postojeći VPN i dopustite usko ograničen privatni VPN izvor. Izravni QR kod rješava samo razlučivanje naziva.",
+    "accessSource": "Izvorišna adresa koju vidi računalo",
+    "accessEntry": "VPN unos (označite i kopirajte)",
+    "accessNat": "Ovaj /32 unos dopušta opaženu izvorišnu adresu. Uz NAT to može biti adresa VPN pristupnika koju dijeli više uređaja.",
+    "accessUnavailable": "Nema dostupne privatne izvorišne IPv4 adrese za prijedlog dopuštenja.",
     "accessHost": "Ova adresa nije dopuštena. Otvorite izvorni QR link s računala. Za postojeći VPN koristite izravni QR kod.",
     "accessOrigin": "Ovaj zahtjev preglednika je blokiran. Otvorite izvorni link za uparivanje izravno u pregledniku telefona i pokušajte ponovno."
   },
