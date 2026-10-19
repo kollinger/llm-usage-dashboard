@@ -50,12 +50,13 @@ Instructions for agents working on this repository.
 - Treat local integration into the current review/integration branch as normal
   delivery work, not as a separate Gerhard gate, as long as it does not cross a
   release, production, account, permission, data-loss, or product-decision gate.
-- Use Gerhard's M1 for Mac-specific desktop builds, installation, launch,
-  notification, and UI-state checks. Do heavier implementation, Docker, and
-  broad QA on the Manjaro runner when available.
-- Batch macOS app builds for meaningful review points instead of rebuilding for
-  every tiny change. When installing a fresh Mac build, state the commit,
-  included tickets, and the exact things Gerhard should look at.
+- Do implementation, Docker, and broad QA on the Manjaro runner. Build release
+  artifacts with the existing GitHub Actions desktop-build workflow on its
+  platform runners, including macOS builds and required native macOS checks.
+- Gerhard's M1 is an update recipient, not a build or release-verification
+  runner. It receives the completed release through the normal app updater.
+  Its availability, SSH access, local DMG creation, installation, or manual
+  review must not block ordinary ticket completion, release, or announcement.
 - Restore review-facing UI state after QA. If a check turns on persisted
   controls such as `Show all` providers, layout edit mode, alternate filters,
   or diagnostic-only views, switch back to the normal review state before
@@ -102,16 +103,17 @@ docker build -t llm-usage-dashboard:local .
 
 Desktop artifacts are written to `dist/` and should normally be published as release artifacts, not committed.
 
-For final macOS desktop verification on Gerhard's machine, build a fresh DMG
-with `npm run dist:mac`, install the app from that DMG into `/Applications`, and
-launch the installed `/Applications/LLM Usage Dashboard.app` directly. Do not
-treat a desktop build as final based only on `npm run electron`, `dist:dir`, or
-an older `dist/` artifact.
+For macOS release verification, use the fresh artifact from the existing macOS
+CI job for the exact release commit/tag. Verify required checks, expected assets,
+checksums, and updater metadata; an older local artifact or `npm run electron`
+does not establish release delivery. Required native/IPC or packaging checks
+belong on an appropriate macOS CI runner, not on Gerhard's M1 by default.
 
-For every review handoff that includes app-visible behavior, create this fresh
-M1 macOS review build even when implementation, Docker, broad builds, or browser
-QA ran on Manjaro. Record the source branch/commit and included tickets with the
-handoff so review never comes from an older local Git state or stale artifact.
+Do not add a fresh M1 DMG build/install/launch gate to app-visible handoffs.
+An optional check of the installed M1 app happens after release and is recorded
+separately from CI/release verification. Do not claim that the M1 installed an
+update unless its actual installed version was observed. Restore review-facing
+UI state after any optional local check.
 
 ## Versioning
 
@@ -209,9 +211,9 @@ handoff so review never comes from an older local Git state or stale artifact.
 - Do not wait for Gerhard before routine ticket commits or ticket-branch pushes
   when the work is reversible in Git and does not cross a release, production,
   account, permission, secret, data-loss, or product-decision gate.
-- Integration on Gerhard's Mac and local Mac-app test builds are allowed without
-  a separate gate when they are useful review builds. Batch them for meaningful
-  updates so the M1 is not kept busy for every tiny change.
+- Routine integration and release preparation stay on the responsible runner;
+  the existing CI builds the desktop artifacts. Do not start local test builds
+  on Gerhard's M1 or wait for its availability as part of ordinary delivery.
 - Still stop for Gerhard before destructive actions, account/signing/permission
   changes, public tunnels, live database writes, or unresolved product
   decisions. For approved WhatsApp Review Gateway tickets in this product,
