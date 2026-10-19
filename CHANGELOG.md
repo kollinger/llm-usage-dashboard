@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.9.0-preview.1 - 2026-10-19
+
+### Added
+
+- Add native Plasma desktop quota widget
+
+### Improved
+
+- Merge pull request #40 from kollinger/kol-652-dashboard-whatsapp
+- Measure widget polling after native close completes
+- Prepare 1.9.0 preview release line
+
+### Fixed
+
+- Explain Plasma session restart after widget updates
+- Publish Plasma archive through existing CI asset pattern
+
 ## 1.8.0-preview.6 - 2026-10-19
 
 ### Improved
