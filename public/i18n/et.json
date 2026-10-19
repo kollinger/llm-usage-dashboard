@@ -796,7 +796,13 @@
       "remoteSetup": "Ühenda Tailscale arvutis ja telefonis ning luba oma võrgus HTTPS. Käivita allolev käsk ja salvesta kuvatud HTTPS-aadress siia. Ära asenda olemasolevat HTTPS-teenust. Tühi aadress lülitab ühenduse välja. Arvuti peab töötama; Wi-Fi toimib ilma Tailscale’ita.",
       "remoteOrigin": "Sinu privaatne HTTPS-aadress",
       "remoteSave": "Salvesta aadress",
-      "remoteOpen": "HTTPS-i QR-kood ja link"
+      "remoteOpen": "HTTPS-i QR-kood ja link",
+      "vpnTitle": "Olemasolev VPN",
+      "vpnHelp": "Luba kuni 8 privaatset IPv4-aadressi (/32) või väikest võrku (/24–/32), üks real. Ainult olemasoleva ja ligipääsetava VPN-i jaoks. Tühi väli eemaldab need load. Telefoni sidumine on endiselt vajalik.",
+      "vpnNetworks": "Lubatud VPN-i lähteaadressid",
+      "vpnSave": "Salvesta VPN-i ligipääs",
+      "vpnSaved": "VPN-i seaded salvestatud.",
+      "vpnInvalid": "Salvestamine ebaõnnestus. Sisesta kuni 8 privaatset IPv4- või võrguaadressi maskiga /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Ainult usaldatud võrgud: see aadress kasutab krüptimata HTTP-d. Väldi avalikke ja külalisvõrke.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Loo otsene IP-ga QR-kood",
+    "directHelp": "Otsene QR-kood väldib .local-nime lahendamist ja jääb seotuks selle arvutiga. See ei luba uut võrku. Olemasoleva VPN-i korral luba esmalt selle privaatne allikas: Seaded → Telefon → Olemasolev VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Kopeeri link",
     "copied": "Link kopeeritud.",
     "copyError": "Kopeeri link aadressiväljalt.",
-    "desktopTitle": "Näita QR-koodi ja linki"
+    "desktopTitle": "Näita QR-koodi ja linki",
+    "accessDenied": "Telefoni ligipääs on blokeeritud",
+    "accessNetwork": "See lähtevõrk pole lubatud. Ava arvutis Seaded → Telefon → Olemasolev VPN ja luba kitsas privaatne VPN-i allikas. Otsene QR-kood lahendab ainult nimeprobleemi.",
+    "accessHost": "See aadress pole lubatud. Ava arvutist saadud algne QR-link. Olemasoleva VPN-i korral kasuta otsest QR-koodi.",
+    "accessOrigin": "See brauseripäring blokeeriti. Ava algne sidumislink otse telefoni brauseris ja proovi uuesti."
   },
   "chatUsage": {
     "heading": "Vestlused ja piletid",

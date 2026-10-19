@@ -33,6 +33,11 @@ try {
   const first = create();
   assert.equal((await first.init()).enabled, false, "fresh installation never exposes LAN before activation");
   assert.equal(starts, 0);
+  assert.deepEqual(first.status().vpnNetworks, [], "VPN sources are disabled on fresh installations");
+  await first.setVpnNetworks("10.73.9.0/24\n172.23.6.5");
+  assert.equal(starts, 0, "saving VPN sources does not enable phone access");
+  assert.deepEqual(first.status().vpnNetworks, ["10.73.9.0/24", "172.23.6.5/32"]);
+  for (const value of ["0.0.0.0/0", "10.0.0.0/8", "10.73.9.1/24", "198.51.100.1", null]) await assert.rejects(first.setVpnNetworks(value), /invalid_vpn_networks/);
   await Promise.all([first.setEnabled(true), first.refresh(), first.refresh()]);
   assert.equal(starts, 1, "concurrent actions start one gateway");
   let status = first.status(), gateway = gateways.at(-1);
@@ -53,6 +58,8 @@ try {
   await restarted.init(); gateway = gateways.at(-1);
   const nextOrigin = `http://127.0.0.1:${gateway.server.address().port}`;
   assert.equal(restarted.status().enabled, true, "activation persists across app restarts");
+  assert.deepEqual(restarted.status().vpnNetworks, ["10.73.9.0/24", "172.23.6.5/32"], "explicit VPN sources persist locally");
+  if (process.platform !== "win32") assert.equal((await fs.stat(path.join(root, "settings.json"))).mode & 0o777, 0o600);
   assert.equal((await loadGroup(path.join(root, "group.json"))).key, group.key);
   assert.equal((await fetch(`${nextOrigin}/api/usage`, { headers: { Cookie: phoneCookie } })).status, 200, "existing phone stays paired after restart");
   const replay = await fetch(`${nextOrigin}/pair`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: new URL(pairing.url).hash.slice(1) }) });
@@ -84,6 +91,10 @@ try {
   assert.equal(restarted.status().running, true, "changing the private HTTPS host keeps LAN available");
   await restarted.setHttpsOrigin("");
   assert.equal(gateways.at(-1).proxyServer, null, "clearing the origin closes the optional proxy");
+  const beforeClear = starts;
+  await restarted.setVpnNetworks("");
+  assert.deepEqual(restarted.status().vpnNetworks, []);
+  assert.equal(starts, beforeClear + 1, "removing VPN sources replaces the running gateway immediately");
   address = null; await restarted.refresh(); assert.equal(restarted.status().reason, "noLan");
   address = "127.0.0.1"; await restarted.refresh(); assert.equal(restarted.status().running, true, "recovers after Wi-Fi returns");
   await restarted.setEnabled(false); assert.equal(restarted.status().running, false);
@@ -116,6 +127,15 @@ try {
     const locale = JSON.parse(await fs.readFile(new URL(`../public/i18n/${file}`, import.meta.url), "utf8"));
     assert.deepEqual(Object.keys(locale.settings.mobile).sort(), Object.keys(english.settings.mobile).sort(), file);
     for (const value of Object.values(locale.settings.mobile)) assert.ok(typeof value === "string" && value.trim(), file);
+    for (const section of ["settings", "mobilePrototype"]) {
+      const translated = section === "settings" ? locale.settings.mobile : locale.mobilePrototype;
+      const reference = section === "settings" ? english.settings.mobile : english.mobilePrototype;
+      assert.deepEqual(Object.keys(translated).sort(), Object.keys(reference).sort(), `${file}:${section}`);
+      for (const [key, value] of Object.entries(reference)) {
+        assert.ok(translated[key]?.trim(), `${file}:${key}`);
+        assert.deepEqual((translated[key].match(/\{\w+\}/g) || []).sort(), (value.match(/\{\w+\}/g) || []).sort(), `${file}:${key}:placeholders`);
+      }
+    }
     for (const key of ["copyLink", "copied", "copyError", "desktopTitle"]) assert.ok(locale.mobilePrototype[key]?.trim(), `${file}:${key}`);
   }
 } finally {

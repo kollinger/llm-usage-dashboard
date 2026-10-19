@@ -796,7 +796,13 @@
       "remoteSetup": "Prijunkite Tailscale kompiuteryje ir telefone bei įjunkite HTTPS savo tinkle. Paleiskite toliau pateiktą komandą ir čia išsaugokite rodomą HTTPS adresą. Nepakeiskite esamos HTTPS paslaugos. Tuščias adresas išjungia ryšį. Kompiuteris turi veikti; Wi-Fi veikia be Tailscale.",
       "remoteOrigin": "Jūsų privatus HTTPS adresas",
       "remoteSave": "Išsaugoti adresą",
-      "remoteOpen": "HTTPS QR kodas ir nuoroda"
+      "remoteOpen": "HTTPS QR kodas ir nuoroda",
+      "vpnTitle": "Esamas VPN",
+      "vpnHelp": "Leiskite iki 8 privačių IPv4 adresų (/32) arba mažų tinklų (/24–/32), po vieną eilutėje. Tik esamam VPN, kuriuo pasiekiamas kompiuteris. Tuščias laukas pašalina šiuos leidimus. Telefono susiejimas vis tiek būtinas.",
+      "vpnNetworks": "Leidžiami VPN šaltiniai",
+      "vpnSave": "Išsaugoti VPN prieigą",
+      "vpnSaved": "VPN nustatymai išsaugoti.",
+      "vpnInvalid": "Nepavyko išsaugoti. Įveskite iki 8 privačių IPv4 arba tinklo adresų su /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Tik patikimi tinklai: šis adresas naudoja nešifruotą HTTP. Venkite viešųjų ir svečių tinklų.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Sukurti tiesioginį IP QR kodą",
+    "directHelp": "Tiesioginis QR kodas apeina .local vardo atpažinimą ir lieka susietas su šiuo kompiuteriu. Jis neleidžia naujo tinklo. Pirmiausia leiskite VPN privatų šaltinį: Nustatymai → Telefonas → Esamas VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Kopijuoti nuorodą",
     "copied": "Nuoroda nukopijuota.",
     "copyError": "Nukopijuokite nuorodą iš adreso lauko.",
-    "desktopTitle": "Rodyti QR kodą ir nuorodą"
+    "desktopTitle": "Rodyti QR kodą ir nuorodą",
+    "accessDenied": "Telefono prieiga užblokuota",
+    "accessNetwork": "Šis šaltinio tinklas neleidžiamas. Kompiuteryje atverkite Nustatymai → Telefonas → Esamas VPN ir leiskite siaurą privatų VPN šaltinį. Tiesioginis QR kodas išsprendžia tik vardų atpažinimą.",
+    "accessHost": "Šis adresas neleidžiamas. Atverkite originalią QR nuorodą iš kompiuterio. Esamam VPN naudokite tiesioginį QR kodą.",
+    "accessOrigin": "Ši naršyklės užklausa užblokuota. Atverkite originalią susiejimo nuorodą tiesiogiai telefono naršyklėje ir bandykite dar kartą."
   },
   "chatUsage": {
     "heading": "Pokalbiai ir užduotys",

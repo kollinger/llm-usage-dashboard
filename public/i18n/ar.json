@@ -796,7 +796,13 @@
       "remoteSetup": "صل Tailscale على الكمبيوتر والهاتف وفعّل HTTPS في شبكتك. نفّذ الأمر التالي على الكمبيوتر ثم احفظ عنوان HTTPS الظاهر هنا. لا تستبدل خدمة HTTPS موجودة. العنوان الفارغ يعطّل هذا الاتصال. يجب أن يبقى الكمبيوتر قيد التشغيل؛ يعمل Wi-Fi دون Tailscale.",
       "remoteOrigin": "عنوان HTTPS الخاص بك",
       "remoteSave": "حفظ العنوان",
-      "remoteOpen": "رمز QR ورابط HTTPS"
+      "remoteOpen": "رمز QR ورابط HTTPS",
+      "vpnTitle": "شبكة VPN موجودة",
+      "vpnHelp": "اسمح بما يصل إلى 8 عناوين IPv4 خاصة (⁦/32⁩) أو شبكات صغيرة (⁦/24–/32⁩)، واحد في كل سطر. استخدم فقط شبكة VPN موجودة ويمكن الوصول عبرها. اترك الحقل فارغًا لإزالة هذه الأذونات. يبقى إقران الهاتف مطلوبًا.",
+      "vpnNetworks": "مصادر VPN المسموح بها",
+      "vpnSave": "حفظ وصول VPN",
+      "vpnSaved": "تم حفظ إعدادات VPN.",
+      "vpnInvalid": "تعذّر الحفظ. أدخل حتى 8 عناوين IPv4 خاصة أو عناوين شبكات مع ⁦/24–/32⁩."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "للشبكات الموثوقة فقط: يستخدم هذا العنوان HTTP غير مشفّر. تجنّب الشبكات العامة وشبكات الضيوف.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "إنشاء رمز QR مباشر بعنوان IP",
+    "directHelp": "يتجاوز رمز QR المباشر حل اسم .local ويظل مرتبطًا بهذا الكمبيوتر. لا يسمح بشبكة جديدة. لشبكة VPN موجودة، اسمح أولًا بمصدرها الخاص في الإعدادات ← الهاتف ← شبكة VPN موجودة.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "نسخ الرابط",
     "copied": "تم نسخ الرابط.",
     "copyError": "انسخ الرابط من حقل العنوان.",
-    "desktopTitle": "عرض رمز QR والرابط"
+    "desktopTitle": "عرض رمز QR والرابط",
+    "accessDenied": "تم حظر وصول الهاتف",
+    "accessNetwork": "شبكة المصدر هذه غير مسموح بها. على الكمبيوتر، افتح الإعدادات ← الهاتف ← شبكة VPN موجودة للسماح بمصدر VPN خاص ومحدود. رمز QR المباشر يحل مشكلة أسماء النطاقات فقط.",
+    "accessHost": "هذا العنوان غير مسموح به. افتح رابط QR الأصلي من الكمبيوتر. لشبكة VPN موجودة، استخدم رمز QR المباشر.",
+    "accessOrigin": "تم حظر طلب المتصفح هذا. افتح رابط الإقران الأصلي مباشرة في متصفح الهاتف وحاول مجددًا."
   },
   "chatUsage": {
     "heading": "المحادثات والتذاكر",

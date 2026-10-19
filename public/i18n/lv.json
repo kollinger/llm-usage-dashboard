@@ -796,7 +796,13 @@
       "remoteSetup": "Savienojiet Tailscale datorā un tālrunī un iespējojiet HTTPS savā tīklā. Izpildiet zemāk norādīto komandu un šeit saglabājiet parādīto HTTPS adresi. Neaizstājiet esošu HTTPS pakalpojumu. Tukša adrese izslēdz savienojumu. Datoram jādarbojas; Wi-Fi darbojas bez Tailscale.",
       "remoteOrigin": "Jūsu privātā HTTPS adrese",
       "remoteSave": "Saglabāt adresi",
-      "remoteOpen": "HTTPS QR kods un saite"
+      "remoteOpen": "HTTPS QR kods un saite",
+      "vpnTitle": "Esošais VPN",
+      "vpnHelp": "Atļaujiet līdz 8 privātām IPv4 adresēm (/32) vai maziem tīkliem (/24–/32), vienu katrā rindā. Tikai esošam VPN, ar kuru dators ir sasniedzams. Tukšs lauks noņem šīs atļaujas. Tālruņa savienošana joprojām ir vajadzīga.",
+      "vpnNetworks": "Atļautie VPN avoti",
+      "vpnSave": "Saglabāt VPN piekļuvi",
+      "vpnSaved": "VPN iestatījumi saglabāti.",
+      "vpnInvalid": "Neizdevās saglabāt. Ievadiet līdz 8 privātām IPv4 vai tīkla adresēm ar /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Tikai uzticami tīkli: šī adrese izmanto nešifrētu HTTP. Izvairieties no publiskiem un viesu tīkliem.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Izveidot tiešo IP QR kodu",
+    "directHelp": "Tiešais QR kods apiet .local nosaukuma noteikšanu un paliek piesaistīts šim datoram. Tas neatļauj jaunu tīklu. Vispirms atļaujiet VPN privāto avotu: Iestatījumi → Tālrunis → Esošais VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Kopēt saiti",
     "copied": "Saite nokopēta.",
     "copyError": "Kopējiet saiti no adreses lauka.",
-    "desktopTitle": "Rādīt QR kodu un saiti"
+    "desktopTitle": "Rādīt QR kodu un saiti",
+    "accessDenied": "Tālruņa piekļuve bloķēta",
+    "accessNetwork": "Šis avota tīkls nav atļauts. Datorā atveriet Iestatījumi → Tālrunis → Esošais VPN un atļaujiet šauru privātu VPN avotu. Tiešais QR kods atrisina tikai nosaukumu noteikšanu.",
+    "accessHost": "Šī adrese nav atļauta. Atveriet sākotnējo QR saiti no datora. Esošam VPN izmantojiet tiešo QR kodu.",
+    "accessOrigin": "Šis pārlūka pieprasījums ir bloķēts. Atveriet sākotnējo savienošanas saiti tieši tālruņa pārlūkā un mēģiniet vēlreiz."
   },
   "chatUsage": {
     "heading": "Sarunas un pieteikumi",

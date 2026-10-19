@@ -796,7 +796,13 @@
       "remoteSetup": "Συνδέστε το Tailscale σε υπολογιστή και τηλέφωνο και ενεργοποιήστε το HTTPS στο δίκτυό σας. Εκτελέστε την παρακάτω εντολή και αποθηκεύστε εδώ τη διεύθυνση HTTPS. Μην αντικαταστήσετε υπάρχουσα υπηρεσία HTTPS. Κενή διεύθυνση απενεργοποιεί τη σύνδεση. Ο υπολογιστής πρέπει να λειτουργεί· το Wi-Fi λειτουργεί χωρίς Tailscale.",
       "remoteOrigin": "Η ιδιωτική σας διεύθυνση HTTPS",
       "remoteSave": "Αποθήκευση διεύθυνσης",
-      "remoteOpen": "Κωδικός QR και σύνδεσμος HTTPS"
+      "remoteOpen": "Κωδικός QR και σύνδεσμος HTTPS",
+      "vpnTitle": "Υπάρχον VPN",
+      "vpnHelp": "Επιτρέψτε έως 8 ιδιωτικές διευθύνσεις IPv4 (/32) ή μικρά δίκτυα (/24–/32), ένα ανά γραμμή. Μόνο για υπάρχον, προσβάσιμο VPN. Κενό πεδίο αφαιρεί αυτές τις άδειες. Η σύζευξη τηλεφώνου παραμένει απαραίτητη.",
+      "vpnNetworks": "Επιτρεπόμενες πηγές VPN",
+      "vpnSave": "Αποθήκευση πρόσβασης VPN",
+      "vpnSaved": "Οι ρυθμίσεις VPN αποθηκεύτηκαν.",
+      "vpnInvalid": "Αποτυχία αποθήκευσης. Εισαγάγετε έως 8 ιδιωτικές IPv4 ή διευθύνσεις δικτύου με /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Μόνο έμπιστα δίκτυα: αυτή η διεύθυνση χρησιμοποιεί μη κρυπτογραφημένο HTTP. Αποφύγετε δημόσια δίκτυα ή δίκτυα επισκεπτών.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Δημιουργία άμεσου QR με IP",
+    "directHelp": "Ο άμεσος QR παρακάμπτει την επίλυση .local και παραμένει δεσμευμένος σε αυτόν τον υπολογιστή. Δεν επιτρέπει νέο δίκτυο. Για υπάρχον VPN, επιτρέψτε πρώτα την ιδιωτική πηγή του στις Ρυθμίσεις → Τηλέφωνο → Υπάρχον VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Αντιγραφή συνδέσμου",
     "copied": "Ο σύνδεσμος αντιγράφηκε.",
     "copyError": "Αντιγράψτε τον σύνδεσμο από το πεδίο διεύθυνσης.",
-    "desktopTitle": "Εμφάνιση κωδικού QR και συνδέσμου"
+    "desktopTitle": "Εμφάνιση κωδικού QR και συνδέσμου",
+    "accessDenied": "Η πρόσβαση τηλεφώνου αποκλείστηκε",
+    "accessNetwork": "Αυτό το δίκτυο προέλευσης δεν επιτρέπεται. Στον υπολογιστή, ανοίξτε Ρυθμίσεις → Τηλέφωνο → Υπάρχον VPN και επιτρέψτε μια περιορισμένη ιδιωτική πηγή VPN. Ο άμεσος QR διορθώνει μόνο την επίλυση ονομάτων.",
+    "accessHost": "Αυτή η διεύθυνση δεν επιτρέπεται. Ανοίξτε τον αρχικό σύνδεσμο QR από τον υπολογιστή. Για υπάρχον VPN, χρησιμοποιήστε τον άμεσο QR.",
+    "accessOrigin": "Αυτό το αίτημα του προγράμματος περιήγησης αποκλείστηκε. Ανοίξτε τον αρχικό σύνδεσμο σύζευξης απευθείας στο πρόγραμμα περιήγησης του τηλεφώνου και δοκιμάστε ξανά."
   },
   "chatUsage": {
     "heading": "Συνομιλίες και αιτήματα",

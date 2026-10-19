@@ -796,7 +796,13 @@
       "remoteSetup": "Csatlakoztassa a Tailscale-t a számítógépen és a telefonon, és engedélyezze a HTTPS-t a saját hálózatában. Futtassa az alábbi parancsot, majd mentse ide a megjelenő HTTPS-címet. Meglévő HTTPS-szolgáltatást ne írjon felül. Üres cím kikapcsolja a kapcsolatot. A számítógépnek működnie kell; a Wi-Fi Tailscale nélkül is használható.",
       "remoteOrigin": "Saját privát HTTPS-cím",
       "remoteSave": "Cím mentése",
-      "remoteOpen": "HTTPS QR-kód és hivatkozás"
+      "remoteOpen": "HTTPS QR-kód és hivatkozás",
+      "vpnTitle": "Meglévő VPN",
+      "vpnHelp": "Legfeljebb 8 privát IPv4-cím (/32) vagy kis hálózat (/24–/32) engedélyezhető, soronként egy. Csak meglévő, elérhető VPN-hez. Az üres mező törli ezeket az engedélyeket. A telefon párosítása továbbra is szükséges.",
+      "vpnNetworks": "Engedélyezett VPN-források",
+      "vpnSave": "VPN-hozzáférés mentése",
+      "vpnSaved": "VPN-beállítások mentve.",
+      "vpnInvalid": "A mentés sikertelen. Adjon meg legfeljebb 8 privát IPv4- vagy hálózati címet /24–/32 előtaggal."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Csak megbízható hálózatok: ez a cím titkosítatlan HTTP-t használ. Kerülje a nyilvános és vendéghálózatokat.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Közvetlen IP QR-kód létrehozása",
+    "directHelp": "A közvetlen QR-kód megkerüli a .local-névfeloldást, és ehhez a számítógéphez kötődik. Nem engedélyez új hálózatot. Először engedélyezze a VPN privát forrását: Beállítások → Telefon → Meglévő VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Hivatkozás másolása",
     "copied": "Hivatkozás másolva.",
     "copyError": "Másold ki a hivatkozást a címmezőből.",
-    "desktopTitle": "QR-kód és hivatkozás megjelenítése"
+    "desktopTitle": "QR-kód és hivatkozás megjelenítése",
+    "accessDenied": "Telefonos hozzáférés letiltva",
+    "accessNetwork": "Ez a forráshálózat nem engedélyezett. A számítógépen nyissa meg a Beállítások → Telefon → Meglévő VPN részt, és engedélyezzen egy szűk privát VPN-forrást. A közvetlen QR-kód csak a névfeloldást javítja.",
+    "accessHost": "Ez a cím nem engedélyezett. Nyissa meg az eredeti QR-hivatkozást a számítógépről. Meglévő VPN-hez használja a közvetlen QR-kódot.",
+    "accessOrigin": "Ez a böngészőkérés le lett tiltva. Nyissa meg az eredeti párosítási hivatkozást közvetlenül a telefon böngészőjében, és próbálja újra."
   },
   "chatUsage": {
     "heading": "Beszélgetések és jegyek",

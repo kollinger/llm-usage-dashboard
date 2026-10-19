@@ -796,7 +796,13 @@
       "remoteSetup": "Свържете Tailscale на компютъра и телефона и включете HTTPS в мрежата си. Изпълнете командата по-долу и запазете показания HTTPS адрес. Не заменяйте съществуваща HTTPS услуга. Празен адрес изключва връзката. Компютърът трябва да работи; Wi-Fi не изисква Tailscale.",
       "remoteOrigin": "Вашият частен HTTPS адрес",
       "remoteSave": "Запазване на адреса",
-      "remoteOpen": "HTTPS QR код и връзка"
+      "remoteOpen": "HTTPS QR код и връзка",
+      "vpnTitle": "Съществуваща VPN",
+      "vpnHelp": "Разрешете до 8 частни IPv4 адреса (/32) или малки мрежи (/24–/32), по един на ред. Само за съществуваща, достъпна VPN. Празно поле премахва разрешенията. Сдвояването на телефона остава задължително.",
+      "vpnNetworks": "Разрешени VPN източници",
+      "vpnSave": "Запазване на VPN достъпа",
+      "vpnSaved": "VPN настройките са запазени.",
+      "vpnInvalid": "Неуспешно запазване. Въведете до 8 частни IPv4 адреса или мрежови адреса с /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Само доверени мрежи: този адрес използва нешифрован HTTP. Избягвайте обществени мрежи и мрежи за гости.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Създаване на директен IP QR код",
+    "directHelp": "Директният QR код заобикаля разрешаването на .local имена и остава свързан с този компютър. Не разрешава нова мрежа. За съществуваща VPN първо разрешете частния ѝ източник в Настройки → Телефон → Съществуваща VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Копиране на връзката",
     "copied": "Връзката е копирана.",
     "copyError": "Копирайте връзката от полето за адрес.",
-    "desktopTitle": "Показване на QR код и връзка"
+    "desktopTitle": "Показване на QR код и връзка",
+    "accessDenied": "Достъпът от телефон е блокиран",
+    "accessNetwork": "Тази изходна мрежа не е разрешена. На компютъра отворете Настройки → Телефон → Съществуваща VPN и разрешете тесен частен VPN източник. Директният QR код решава само проблеми с имената.",
+    "accessHost": "Този адрес не е разрешен. Отворете оригиналната QR връзка от компютъра. За съществуваща VPN използвайте директния QR код.",
+    "accessOrigin": "Тази заявка на браузъра е блокирана. Отворете оригиналната връзка за сдвояване директно в браузъра на телефона и опитайте отново."
   },
   "chatUsage": {
     "heading": "Чатове и задачи",

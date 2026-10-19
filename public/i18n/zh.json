@@ -796,7 +796,13 @@
       "remoteSetup": "在电脑和手机上连接 Tailscale，并在自己的网络中启用 HTTPS。在电脑上运行以下命令，然后在此保存显示的 HTTPS 地址。请勿替换现有 HTTPS 服务。清空地址可关闭此连接。电脑必须保持运行；局域网 Wi-Fi 访问无需 Tailscale。",
       "remoteOrigin": "你的私人 HTTPS 地址",
       "remoteSave": "保存地址",
-      "remoteOpen": "HTTPS 二维码和链接"
+      "remoteOpen": "HTTPS 二维码和链接",
+      "vpnTitle": "现有 VPN",
+      "vpnHelp": "最多允许 8 个私有 IPv4 地址（/32）或小型网段（/24–/32），每行一个。仅用于已存在且可访问此电脑的 VPN。留空可移除这些许可。手机仍须配对。",
+      "vpnNetworks": "允许的 VPN 来源",
+      "vpnSave": "保存 VPN 访问",
+      "vpnSaved": "已保存 VPN 设置。",
+      "vpnInvalid": "无法保存。请输入最多 8 个私有 IPv4 地址或带 /24–/32 的网络地址。"
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "仅限可信网络：此地址使用未加密的 HTTP。请勿使用公共网络或访客网络。",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "生成直连 IP 二维码",
+    "directHelp": "直连二维码可绕过 .local 名称解析，但始终绑定到此电脑，不会允许新网络。使用现有 VPN 时，请先在“设置 → 手机 → 现有 VPN”中允许其私有来源。",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "复制链接",
     "copied": "链接已复制。",
     "copyError": "请从地址栏复制链接。",
-    "desktopTitle": "显示二维码和链接"
+    "desktopTitle": "显示二维码和链接",
+    "accessDenied": "手机访问已被阻止",
+    "accessNetwork": "此来源网络未获许可。请在电脑上打开“设置 → 手机 → 现有 VPN”，仅允许范围较小的私有 VPN 来源。直连二维码只能解决名称解析问题。",
+    "accessHost": "此地址未获许可。请打开电脑提供的原始二维码链接。使用现有 VPN 时，请用直连二维码。",
+    "accessOrigin": "此浏览器请求已被阻止。请直接在手机浏览器中打开原始配对链接，然后重试。"
   },
   "chatUsage": {
     "heading": "聊天与工单",

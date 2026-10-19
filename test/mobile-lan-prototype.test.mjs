@@ -24,7 +24,7 @@ const client = async (url, result = { status: 200, ok: true }, { supplied = '', 
     document: { body: { dataset: { prototype: 'pair' } }, documentElement: {}, querySelectorAll: () => [], querySelector: () => ({ content: state }), getElementById: (id) => id === 'prototypePair' ? button : id === 'prototypeCode' ? { value: supplied } : message },
     fetch: async (value, options) => {
       if (value === '/api/mobile-prototype/status') return { ok: paired, status: paired ? 200 : 401 };
-      if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry', missingCode: 'missing', expiredCode: 'expired', usedCode: 'used', invalidCode: 'invalid' } }) };
+      if (!options) return { json: async () => ({ mobilePrototype: { scanAgain: 'new-link', networkError: 'retry', missingCode: 'missing', expiredCode: 'expired', usedCode: 'used', invalidCode: 'invalid', accessNetwork: 'network-blocked', accessHost: 'host-blocked', accessOrigin: 'origin-blocked' } }) };
       submitted = JSON.parse(options.body).code;
       if (result instanceof Error) throw result;
       return result;
@@ -74,6 +74,12 @@ phone = await client('http://127.0.0.1/pair', undefined, { supplied: 'server-tok
 assert.equal(phone.button.disabled, false);
 await phone.button.click();
 assert.equal(phone.submitted(), 'server-token');
+for (const [reason, message] of [['network_not_allowed', 'network-blocked'], ['host_not_allowed', 'host-blocked'], ['proxy_not_allowed', 'host-blocked'], ['origin_not_allowed', 'origin-blocked']]) {
+  phone = await client('http://127.0.0.1/pair/new-token', { status: 403, ok: false, json: async () => ({ reason }) });
+  await phone.button.click();
+  assert.equal(phone.message.textContent, message);
+  assert.equal(phone.button.disabled, false, 'access rejection remains retryable after local settings are corrected');
+}
 
 // An external navigation can omit the Strict cookie even though same-origin
 // requests from the landing page still carry the existing phone session.

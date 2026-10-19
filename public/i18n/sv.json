@@ -796,7 +796,13 @@
       "remoteSetup": "Anslut Tailscale på datorn och telefonen och aktivera HTTPS i ditt nätverk. Kör kommandot nedan och spara HTTPS-adressen som visas här. Ersätt inte en befintlig HTTPS-tjänst. En tom adress stänger av anslutningen. Datorn måste vara på; Wi-Fi fungerar utan Tailscale.",
       "remoteOrigin": "Din privata HTTPS-adress",
       "remoteSave": "Spara adress",
-      "remoteOpen": "HTTPS-QR-kod och länk"
+      "remoteOpen": "HTTPS-QR-kod och länk",
+      "vpnTitle": "Befintlig VPN",
+      "vpnHelp": "Tillåt upp till 8 privata IPv4-adresser (/32) eller små nätverk (/24–/32), ett per rad. Endast för en befintlig VPN som når datorn. Ett tomt fält tar bort tillstånden. Telefonparkoppling krävs fortfarande.",
+      "vpnNetworks": "Tillåtna VPN-källor",
+      "vpnSave": "Spara VPN-åtkomst",
+      "vpnSaved": "VPN-inställningar sparade.",
+      "vpnInvalid": "Kunde inte spara. Ange upp till 8 privata IPv4- eller nätverksadresser med /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Endast betrodda nätverk: denna adress använder okrypterad HTTP. Undvik offentliga nätverk och gästnätverk.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Skapa en direkt IP-QR-kod",
+    "directHelp": "Den direkta QR-koden kringgår .local-namnuppslagning och förblir bunden till denna dator. Den tillåter inte ett nytt nätverk. Tillåt först VPN-källan i Inställningar → Telefon → Befintlig VPN.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Kopiera länk",
     "copied": "Länk kopierad.",
     "copyError": "Kopiera länken från adressfältet.",
-    "desktopTitle": "Visa QR-kod och länk"
+    "desktopTitle": "Visa QR-kod och länk",
+    "accessDenied": "Telefonåtkomst blockerad",
+    "accessNetwork": "Detta källnätverk är inte tillåtet. Öppna Inställningar → Telefon → Befintlig VPN på datorn och tillåt en begränsad privat VPN-källa. En direkt QR-kod löser bara namnuppslagning.",
+    "accessHost": "Denna adress är inte tillåten. Öppna den ursprungliga QR-länken från datorn. Använd den direkta QR-koden för en befintlig VPN.",
+    "accessOrigin": "Denna webbläsarförfrågan blockerades. Öppna den ursprungliga parkopplingslänken direkt i telefonens webbläsare och försök igen."
   },
   "chatUsage": {
     "heading": "Chattar och ärenden",

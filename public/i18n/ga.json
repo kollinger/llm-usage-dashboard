@@ -796,7 +796,13 @@
       "remoteSetup": "Ceangail Tailscale ar an ríomhaire agus ar an bhfón agus cumasaigh HTTPS i do líonra. Rith an t-ordú thíos agus sábháil an seoladh HTTPS a thaispeántar anseo. Ná cuir seirbhís HTTPS atá ann cheana ina háit. Díchumasaíonn seoladh folamh an nasc. Caithfidh an ríomhaire a bheith ar siúl; oibríonn Wi-Fi gan Tailscale.",
       "remoteOrigin": "Do sheoladh príobháideach HTTPS",
       "remoteSave": "Sábháil an seoladh",
-      "remoteOpen": "Cód QR agus nasc HTTPS"
+      "remoteOpen": "Cód QR agus nasc HTTPS",
+      "vpnTitle": "VPN atá ann cheana",
+      "vpnHelp": "Ceadaigh suas le 8 seoladh IPv4 príobháideach (/32) nó líonra beag (/24–/32), ceann sa líne. Don VPN atá ann cheana agus a shroicheann an ríomhaire amháin. Baintear na ceadanna le réimse folamh. Tá péireáil fóin riachtanach fós.",
+      "vpnNetworks": "Foinsí VPN ceadaithe",
+      "vpnSave": "Sábháil rochtain VPN",
+      "vpnSaved": "Socruithe VPN sábháilte.",
+      "vpnInvalid": "Níorbh fhéidir sábháil. Cuir isteach suas le 8 seoladh IPv4 príobháideach nó seoladh líonra le /24–/32."
     }
   },
   "errors": {
@@ -1258,7 +1264,7 @@
     "prototype": "LAN prototype",
     "title": "Open on your phone",
     "intro": "Scan the QR code once and connect your phone. This prototype uses only your local network.",
-    "httpWarning": "Trusted Wi-Fi only: this prototype uses unencrypted HTTP. Do not use it on public or guest networks.",
+    "httpWarning": "Líonraí iontaofa amháin: úsáideann an seoladh seo HTTP gan chriptiú. Seachain líonraí poiblí nó aoi.",
     "save": "After connecting, save the dashboard to your home screen.",
     "address": "Pairing link",
     "newCode": "Create a new QR code",
@@ -1284,8 +1290,8 @@
     "join": "Join this group",
     "joining": "Connecting. The prototype restarts automatically.",
     "joinError": "Invalid or expired installation code. Create a new code on the first installation.",
-    "directCode": "Create a direct Wi-Fi QR code",
-    "directHelp": "If the shared .local address does not open, try the direct QR code. This access works only with this computer; its saved address cannot switch to another installation.",
+    "directCode": "Cruthaigh cód QR díreach le IP",
+    "directHelp": "Seachnaíonn an QR díreach réiteach ainm .local agus fanann sé ceangailte leis an ríomhaire seo. Ní cheadaíonn sé líonra nua. Ceadaigh foinse phríobháideach an VPN ar dtús i Socruithe → Fón → VPN atá ann cheana.",
     "notificationsTitle": "Warnings and notifications",
     "notificationsLan": "Phone push is not set up on this HTTP address. Warnings appear while this page is open. A trusted HTTPS address is needed for lock-screen notifications.",
     "notificationsConnectionHelp": "Optional: notifications with the phone locked and access away from home",
@@ -1320,7 +1326,11 @@
     "copyLink": "Cóipeáil nasc",
     "copied": "Nasc cóipeáilte.",
     "copyError": "Cóipeáil an nasc ón réimse seolta.",
-    "desktopTitle": "Taispeáin cód QR agus nasc"
+    "desktopTitle": "Taispeáin cód QR agus nasc",
+    "accessDenied": "Rochtain fóin blocáilte",
+    "accessNetwork": "Níl an líonra foinse seo ceadaithe. Ar an ríomhaire, oscail Socruithe → Fón → VPN atá ann cheana agus ceadaigh foinse VPN phríobháideach theoranta. Ní réitíonn QR díreach ach réiteach ainmneacha.",
+    "accessHost": "Níl an seoladh seo ceadaithe. Oscail an nasc QR bunaidh ón ríomhaire. Úsáid an QR díreach don VPN atá ann cheana.",
+    "accessOrigin": "Cuireadh bac ar an iarratas brabhsálaí seo. Oscail an nasc péireála bunaidh go díreach i mbrabhsálaí an fhóin agus bain triail eile as."
   },
   "chatUsage": {
     "heading": "Comhráite agus ticéid",
