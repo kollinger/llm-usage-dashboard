@@ -241,6 +241,22 @@
       </form>
     </dialog>
 
+    <dialog id="desktopWidgetDialog" class="modal" aria-labelledby="desktopWidgetHeading">
+      <form method="dialog" class="modal-body">
+        <div class="modal-heading">
+          <h2 id="desktopWidgetHeading" data-i18n="widget.open"></h2>
+          <button class="icon-button" value="cancel" data-i18n-aria-label="actions.close"><i data-lucide="x"></i></button>
+        </div>
+        <p data-i18n="plasma.compactHelp"></p>
+        <button type="button" class="text-button" id="compactWidgetBtn" data-i18n="plasma.compact"></button>
+        <hr />
+        <h3 data-i18n="plasma.title"></h3>
+        <p data-i18n="plasma.installHelp"></p>
+        <p id="plasmaWidgetStatus" role="status" aria-live="polite"></p>
+        <button type="button" class="text-button" id="plasmaWidgetInstall" data-i18n="plasma.install" disabled></button>
+      </form>
+    </dialog>
+
     <dialog id="creditExpiryDialog" class="modal">
       <form class="modal-body" id="creditExpiryForm">
         <div class="modal-heading">

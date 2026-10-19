@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Anslået",
     "unavailable": "Ikke tilgængelig",
     "updated": "Opdateret {time}"
+  },
+  "plasma": {
+    "title": "Widget til KDE Plasma 6",
+    "compact": "Kompakt vindue",
+    "compactHelp": "Et separat appvindue til Linux, macOS og Windows.",
+    "install": "Installér KDE-widget",
+    "update": "Opdatér KDE-widget",
+    "installHelp": "Installeres kun for din bruger. Højreklik på skrivebordet → Tilføj widgets → LLM Usage Dashboard. Fjern og tilføj widgetten igen efter opdatering.",
+    "installed": "Installeret version: {version}.",
+    "installing": "Installerer…",
+    "requirements": "Kræver Plasma 6, kpackagetool6, Python 3 og den medfølgende widgetpakke.",
+    "unsupported": "Den native widget kræver Linux med Plasma 6. Brug det kompakte vindue her.",
+    "installError": "Installation mislykkedes. Kontrollér kravene til Plasma 6, og prøv igen.",
+    "offline": "Appen er utilgængelig. Start skrivebordsappen; tidligere målinger er forældede.",
+    "bounded": "Begrænset til {count}; brug favoritter eller et udbyderfilter."
   }
 }

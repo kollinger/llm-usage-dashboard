@@ -133,7 +133,7 @@ The workflow builds macOS, Linux, and Windows packages on native GitHub-hosted r
 
 ### Desktop quota widget
 
-In the desktop app, choose **Desktop widget** in the dashboard toolbar. The
+In the desktop app, choose **Desktop widget → Compact window** in the dashboard toolbar. The
 separate floating window stays available when the main dashboard is closed;
 closing the widget does not stop the app's existing background collection.
 Open it again from the dashboard. It shares the existing account and quota
@@ -158,6 +158,50 @@ menu's **Keep Above Others** option. The widget explains this and does not claim
 that Electron can pin or restore global coordinates on Wayland. Window resizing
 remains subject to the compositor ([Electron window API](https://www.electronjs.org/docs/latest/api/browser-window#winsetalwaysontopflag-level-relativelevel)). This is a floating app window, not a Plasma
 plasmoid or an Apple WidgetKit extension.
+
+For a **native KDE Plasma 6 desktop widget**, choose **Desktop widget → Install
+KDE widget** in the Linux app. Installation and updates use `kpackagetool6` for
+your user only; Python 3 and Plasma's `plasma5support` executable data engine
+must be installed. Then right-click the desktop, choose **Add Widgets** (German:
+**Miniprogramme hinzufügen**) and find **LLM Usage Dashboard**. Add it like any
+other Plasma widget, resize it using Plasma's handles, or remove and add it
+again. The default size shows five accounts. Provider groups, favorites,
+provider filtering and independent text scaling handle larger sets; the native
+list is limited to 50 matching accounts. Each provider-local ordinal remains
+visible alongside truncated names. Native colors follow the Plasma theme.
+
+The Linux AppImage bundles the exact-version `.plasmoid`; the same archive is
+also a GitHub release asset. Manual per-user installation is available with
+`kpackagetool6 --type Plasma/Applet --install llm-usage-dashboard.plasmoid`
+(use `--upgrade` for an existing installation). After updating, remove and add
+the widget again so Plasma loads the new package. No root access, system-wide
+installation or additional widget store is used. The compact window remains
+available on every supported desktop platform; macOS WidgetKit is out of scope.
+
+The native widget reads the existing authenticated `/api/desktop-widget`
+projection through an owner-private Unix socket under `$XDG_RUNTIME_DIR`.
+The socket directory is mode `0700`, the socket `0600`; unsafe runtime paths
+are rejected. The app's own Electron session authorizes each read. No session
+cookie, provider credential, port-discovery token or raw account identity is
+included in the widget. The transport opens no TCP port and does not change
+dashboard authentication, host/origin checks or networking. Dynamic dashboard
+ports and closing the main window require no widget reconfiguration. The app
+must keep running; unavailable apps and stale readings are labeled, and signing
+out clears the widget on its next read. Only display preferences and opaque
+favorite handles persist in Plasma configuration; quota snapshots stay in memory.
+
+Run `npm run plasma:build` to build the native archive under `dist/plasma/`.
+`npm run test:plasma` verifies locale, data, bridge, security and installer
+contracts. `npm run test:plasma:native` runs the synthetic Qt rendering suite
+after building the package (a Qt 6 graphical session or `QT_QPA_PLATFORM=offscreen`
+is required). Internal full-desktop checks use
+`xvfb-run -a -s '-screen 0 1600x1100x24' dbus-run-session -- python3 test/plasma-session-smoke.py x11`
+and the same command with `wayland`. They install/update in a temporary user
+profile and exercise actual native add/resize/remove/re-add cycles; Wayland uses
+a nested KWin compositor with host input. These optional tools are development
+dependencies only, not bundled services. Verified session versions and evidence
+are recorded with each release candidate; Plasma 5 and non-KDE sessions do not
+support the native package.
 
 The widget uses the dashboard's theme and all 27 supported languages, including
 Arabic RTL. It retains Electron's isolated, sandboxed renderer and a separate

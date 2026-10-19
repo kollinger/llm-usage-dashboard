@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Hinnanguline",
     "unavailable": "Pole saadaval",
     "updated": "Uuendatud {time}"
+  },
+  "plasma": {
+    "title": "KDE Plasma 6 vidin",
+    "compact": "Kompaktne aken",
+    "compactHelp": "Eraldi rakenduse aken Linuxi, macOS-i ja Windowsi jaoks.",
+    "install": "Paigalda KDE vidin",
+    "update": "Uuenda KDE vidinat",
+    "installHelp": "Paigaldatakse ainult sinu kasutajale. Paremklõps töölaual → Lisa vidinaid → LLM Usage Dashboard. Pärast uuendamist eemalda vidin ja lisa see uuesti.",
+    "installed": "Paigaldatud versioon: {version}.",
+    "installing": "Paigaldamine…",
+    "requirements": "Vajab Plasma 6, kpackagetool6, Python 3 ja kaasasolevat vidinapaketti.",
+    "unsupported": "Oma vidin vajab Linuxit ja Plasma 6. Siin kasuta kompaktset akent.",
+    "installError": "Paigaldamine nurjus. Kontrolli Plasma 6 nõudeid ja proovi uuesti.",
+    "offline": "Rakendus pole saadaval. Käivita töölauarakendus; varasemad näidud on aegunud.",
+    "bounded": "Piiratud {count} kontoga; kasuta lemmikuid või teenusepakkuja filtrit."
   }
 }

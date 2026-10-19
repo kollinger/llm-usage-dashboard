@@ -14,6 +14,7 @@ const { notificationMessage } = require("../lib/mobile-notifications");
 const { EVENT_TYPES } = require("../lib/quota-notifications");
 const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
 const { createDesktopWidget } = require("./desktop-widget");
+const { createPlasmaWidget } = require("./plasma-widget");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -37,6 +38,7 @@ let lastNotificationStatusSignature = null;
 let themePreference = "system";
 let languagePreference = null;
 let desktopWidget = null;
+let plasmaWidget = null;
 // Plan-probe backoff state per domain: { until, failures, planType, successAt }
 const planProbeBackoff = new Map();
 // Chrome cookie rows cached per domain, keyed by the cookie DB size+mtime.
@@ -2551,6 +2553,9 @@ app.whenReady().then(async () => {
   nativeTheme.on("updated", updateNativeWindowTheme);
   const port = await startBackend();
   dashboardPort = port;
+  plasmaWidget = createPlasmaWidget({ app, ipcMain, session: electronSession.defaultSession,
+    origin: `http://localhost:${port}`, getMainWindow: () => mainWindow, getLanguage: () => languagePreference });
+  await plasmaWidget.start();
   desktopWidget = createDesktopWidget({ BrowserWindow, ipcMain, screen: require("electron").screen,
     origin: `http://localhost:${port}`, stateFile: path.join(app.getPath("userData"), "desktop-widget.json"),
     getMainWindow: () => mainWindow, getLanguage: () => languagePreference,
@@ -2609,9 +2614,9 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", (event) => {
-  if (mobileAccess && !mobileShutdown) {
+  if ((mobileAccess || plasmaWidget) && !mobileShutdown) {
     event.preventDefault(); mobileShutdown = true; clearInterval(mobileRefreshTimer);
-    mobileAccess.stop().catch(() => {}).finally(() => app.quit()); return;
+    Promise.allSettled([mobileAccess?.stop(), plasmaWidget?.dispose()]).finally(() => app.quit()); return;
   }
   desktopWidget?.dispose(); desktopWidget = null;
   removeInstanceMarker().catch(() => {});

@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Procijenjeno",
     "unavailable": "Nije dostupno",
     "updated": "Ažurirano {time}"
+  },
+  "plasma": {
+    "title": "KDE Plasma 6 widget",
+    "compact": "Kompaktni prozor",
+    "compactHelp": "Zaseban prozor aplikacije za Linux, macOS i Windows.",
+    "install": "Instaliraj KDE widget",
+    "update": "Ažuriraj KDE widget",
+    "installHelp": "Instalira se samo za vašeg korisnika. Desni klik na radnu površinu → Dodaj widgete → LLM Usage Dashboard. Nakon ažuriranja uklonite i ponovno dodajte widget.",
+    "installed": "Instalirana verzija: {version}.",
+    "installing": "Instaliranje…",
+    "requirements": "Zahtijeva Plasma 6, kpackagetool6, Python 3 i priloženi paket widgeta.",
+    "unsupported": "Izvorni widget zahtijeva Linux s Plasma 6. Ovdje koristite kompaktni prozor.",
+    "installError": "Instalacija nije uspjela. Provjerite zahtjeve Plasma 6 i pokušajte ponovno.",
+    "offline": "Aplikacija nije dostupna. Pokrenite aplikaciju za radnu površinu; prethodna očitanja su zastarjela.",
+    "bounded": "Ograničeno na {count}; koristite favorite ili filtar pružatelja."
   }
 }

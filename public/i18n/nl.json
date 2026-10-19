@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Geschat",
     "unavailable": "Niet beschikbaar",
     "updated": "Bijgewerkt {time}"
+  },
+  "plasma": {
+    "title": "KDE Plasma 6-widget",
+    "compact": "Compact venster",
+    "compactHelp": "Een apart appvenster voor Linux, macOS en Windows.",
+    "install": "KDE-widget installeren",
+    "update": "KDE-widget bijwerken",
+    "installHelp": "Installatie alleen voor jouw gebruiker. Rechtsklik op het bureaublad → Widgets toevoegen → LLM Usage Dashboard. Verwijder de widget na een update en voeg hem opnieuw toe.",
+    "installed": "Geïnstalleerde versie: {version}.",
+    "installing": "Installeren…",
+    "requirements": "Vereist Plasma 6, kpackagetool6, Python 3 en het meegeleverde widgetpakket.",
+    "unsupported": "De native widget vereist Linux met Plasma 6. Gebruik hier het compacte venster.",
+    "installError": "Installatie mislukt. Controleer de vereisten van Plasma 6 en probeer opnieuw.",
+    "offline": "App niet beschikbaar. Start de desktopapp; eerdere metingen zijn verouderd.",
+    "bounded": "Beperkt tot {count}; gebruik favorieten of een providerfilter."
   }
 }

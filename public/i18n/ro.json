@@ -1400,5 +1400,20 @@
     "qualityEstimated": "Estimat",
     "unavailable": "Indisponibil",
     "updated": "Actualizat {time}"
+  },
+  "plasma": {
+    "title": "Widget KDE Plasma 6",
+    "compact": "Fereastră compactă",
+    "compactHelp": "O fereastră separată a aplicației pentru Linux, macOS și Windows.",
+    "install": "Instalează widgetul KDE",
+    "update": "Actualizează widgetul KDE",
+    "installHelp": "Instalare doar pentru utilizatorul tău. Clic dreapta pe desktop → Adaugă widgeturi → LLM Usage Dashboard. După actualizare, elimină și adaugă din nou widgetul.",
+    "installed": "Versiune instalată: {version}.",
+    "installing": "Se instalează…",
+    "requirements": "Necesită Plasma 6, kpackagetool6, Python 3 și pachetul widget inclus.",
+    "unsupported": "Widgetul nativ necesită Linux cu Plasma 6. Aici folosește fereastra compactă.",
+    "installError": "Instalarea a eșuat. Verifică cerințele Plasma 6 și încearcă din nou.",
+    "offline": "Aplicația nu este disponibilă. Pornește aplicația desktop; citirile anterioare sunt învechite.",
+    "bounded": "Limitat la {count}; folosește favoritele sau un filtru de furnizor."
   }
 }
