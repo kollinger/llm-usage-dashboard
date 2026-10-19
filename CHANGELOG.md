@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.0-preview.5 - 2026-10-19
+
+### Added
+
+- Add compact desktop account quota widget
+
+### Improved
+
+- Merge pull request #39 from kollinger/kol-650-dashboard-whatsapp
+
+### Fixed
+
+- Await widget pin state before another toggle
+- Fit desktop widget within native work areas
+
 ## 1.8.0-preview.4 - 2026-10-19
 
 ### Improved
