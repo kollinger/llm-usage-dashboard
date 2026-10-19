@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.0-preview.6 - 2026-10-19
+
+### Improved
+
+- Merge pull request #38 from kollinger/kol-647-dashboard-whatsapp
+
+### Fixed
+
+- Show the rejected private VPN source and exact allowance
+
 ## 1.8.0-preview.5 - 2026-10-19
 
 ### Added
