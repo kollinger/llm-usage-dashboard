@@ -1329,6 +1329,10 @@
     "desktopTitle": "Taispeáin cód QR agus nasc",
     "accessDenied": "Rochtain fóin blocáilte",
     "accessNetwork": "Níl an líonra foinse seo ceadaithe. Ar an ríomhaire, oscail Socruithe → Fón → VPN atá ann cheana agus ceadaigh foinse VPN phríobháideach theoranta. Ní réitíonn QR díreach ach réiteach ainmneacha.",
+    "accessSource": "Seoladh foinse a fheiceann an ríomhaire",
+    "accessEntry": "Iontráil VPN (roghnaigh agus cóipeáil)",
+    "accessNat": "Ceadaíonn an iontráil /32 seo an seoladh foinse a breathnaíodh. Le NAT, d’fhéadfadh sé a bheith ina sheoladh ar gheata VPN a roinneann roinnt gléasanna.",
+    "accessUnavailable": "Níl seoladh foinse IPv4 príobháideach ar fáil chun iontráil cheada a mholadh.",
     "accessHost": "Níl an seoladh seo ceadaithe. Oscail an nasc QR bunaidh ón ríomhaire. Úsáid an QR díreach don VPN atá ann cheana.",
     "accessOrigin": "Cuireadh bac ar an iarratas brabhsálaí seo. Oscail an nasc péireála bunaidh go díreach i mbrabhsálaí an fhóin agus bain triail eile as."
   },

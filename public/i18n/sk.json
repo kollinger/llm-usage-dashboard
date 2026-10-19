@@ -1329,6 +1329,10 @@
     "desktopTitle": "Zobraziť QR kód a odkaz",
     "accessDenied": "Prístup telefónu zablokovaný",
     "accessNetwork": "Táto zdrojová sieť nie je povolená. Na počítači otvorte Nastavenia → Telefón → Existujúca VPN a povoľte úzko vymedzený súkromný zdroj VPN. Priamy QR kód rieši iba preklad názvov.",
+    "accessSource": "Zdrojová adresa pozorovaná počítačom",
+    "accessEntry": "Položka VPN (označte a skopírujte)",
+    "accessNat": "Táto položka /32 povolí pozorovanú zdrojovú adresu. Pri použití NAT môže ísť o adresu brány VPN zdieľanú viacerými zariadeniami.",
+    "accessUnavailable": "Pre návrh povolenia nie je k dispozícii súkromná zdrojová adresa IPv4.",
     "accessHost": "Táto adresa nie je povolená. Otvorte pôvodný QR odkaz z počítača. Pre existujúcu VPN použite priamy QR kód.",
     "accessOrigin": "Táto požiadavka prehliadača bola zablokovaná. Otvorte pôvodný párovací odkaz priamo v prehliadači telefónu a skúste znova."
   },

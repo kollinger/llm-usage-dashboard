@@ -1329,6 +1329,10 @@
     "desktopTitle": "QR-code en link tonen",
     "accessDenied": "Telefoontoegang geblokkeerd",
     "accessNetwork": "Dit bronnetwerk is niet toegestaan. Open op de computer Instellingen → Telefoon → Bestaande VPN en sta een beperkte privé-VPN-bron toe. Een directe QR-code verhelpt alleen naamomzetting.",
+    "accessSource": "Bronadres waargenomen door de computer",
+    "accessEntry": "VPN-vermelding (selecteren en kopiëren)",
+    "accessNat": "Deze /32-vermelding staat het waargenomen bronadres toe. Bij NAT kan dit het adres van de VPN-gateway zijn, dat meerdere apparaten delen.",
+    "accessUnavailable": "Er is geen privé-IPv4-bronadres beschikbaar om een toegangsvermelding voor te stellen.",
     "accessHost": "Dit adres is niet toegestaan. Open de oorspronkelijke QR-link van de computer. Gebruik voor een bestaande VPN de directe QR-code.",
     "accessOrigin": "Dit browserverzoek is geblokkeerd. Open de oorspronkelijke koppelingslink rechtstreeks in de telefoonbrowser en probeer opnieuw."
   },

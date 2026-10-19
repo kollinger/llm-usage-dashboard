@@ -1329,6 +1329,10 @@
     "desktopTitle": "Show QR code and link",
     "accessDenied": "Phone access blocked",
     "accessNetwork": "This source network is not allowed. On the computer, open Settings → Phone → Existing VPN to allow a narrow private VPN source. A direct QR code only fixes name resolution.",
+    "accessSource": "Source address seen by the computer",
+    "accessEntry": "VPN entry (select and copy)",
+    "accessNat": "This /32 allows the observed source address. With NAT, this may be the VPN gateway's address, shared by several devices.",
+    "accessUnavailable": "No private IPv4 source address is available for an allowance suggestion.",
     "accessHost": "This address is not allowed. Open the original QR link from the computer. For an existing VPN, use the direct QR code.",
     "accessOrigin": "This browser request was blocked. Open the original pairing link directly in your phone browser and try again."
   },

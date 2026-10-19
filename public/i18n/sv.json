@@ -1329,6 +1329,10 @@
     "desktopTitle": "Visa QR-kod och länk",
     "accessDenied": "Telefonåtkomst blockerad",
     "accessNetwork": "Detta källnätverk är inte tillåtet. Öppna Inställningar → Telefon → Befintlig VPN på datorn och tillåt en begränsad privat VPN-källa. En direkt QR-kod löser bara namnuppslagning.",
+    "accessSource": "Källadress som datorn ser",
+    "accessEntry": "VPN-post (markera och kopiera)",
+    "accessNat": "Den här /32-posten tillåter den observerade källadressen. Med NAT kan det vara VPN-gatewayens adress, som delas av flera enheter.",
+    "accessUnavailable": "Ingen privat IPv4-källadress är tillgänglig för ett tillåtelseförslag.",
     "accessHost": "Denna adress är inte tillåten. Öppna den ursprungliga QR-länken från datorn. Använd den direkta QR-koden för en befintlig VPN.",
     "accessOrigin": "Denna webbläsarförfrågan blockerades. Öppna den ursprungliga parkopplingslänken direkt i telefonens webbläsare och försök igen."
   },

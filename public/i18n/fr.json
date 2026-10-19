@@ -1329,6 +1329,10 @@
     "desktopTitle": "Afficher le code QR et le lien",
     "accessDenied": "Accès du téléphone bloqué",
     "accessNetwork": "Ce réseau source n’est pas autorisé. Sur l’ordinateur, ouvrez Réglages → Téléphone → VPN existant pour autoriser une source VPN privée limitée. Le QR direct corrige uniquement la résolution de noms.",
+    "accessSource": "Adresse source observée par l’ordinateur",
+    "accessEntry": "Entrée VPN (sélectionner et copier)",
+    "accessNat": "Cette entrée /32 autorise l’adresse source observée. Avec le NAT, il peut s’agir de l’adresse de la passerelle VPN, partagée par plusieurs appareils.",
+    "accessUnavailable": "Aucune adresse source IPv4 privée n’est disponible pour proposer une autorisation.",
     "accessHost": "Cette adresse n’est pas autorisée. Ouvrez le lien QR d’origine depuis l’ordinateur. Pour un VPN existant, utilisez le QR direct.",
     "accessOrigin": "Cette requête du navigateur a été bloquée. Ouvrez le lien d’appairage d’origine directement dans le navigateur du téléphone et réessayez."
   },

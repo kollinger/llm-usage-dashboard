@@ -1329,6 +1329,10 @@
     "desktopTitle": "Rodyti QR kodą ir nuorodą",
     "accessDenied": "Telefono prieiga užblokuota",
     "accessNetwork": "Šis šaltinio tinklas neleidžiamas. Kompiuteryje atverkite Nustatymai → Telefonas → Esamas VPN ir leiskite siaurą privatų VPN šaltinį. Tiesioginis QR kodas išsprendžia tik vardų atpažinimą.",
+    "accessSource": "Kompiuterio matomas šaltinio adresas",
+    "accessEntry": "VPN įrašas (pažymėkite ir nukopijuokite)",
+    "accessNat": "Šis /32 įrašas leidžia stebimą šaltinio adresą. Naudojant NAT, tai gali būti VPN šliuzo adresas, kuriuo dalijasi keli įrenginiai.",
+    "accessUnavailable": "Nėra privataus šaltinio IPv4 adreso, kuriam būtų galima pasiūlyti leidimo įrašą.",
     "accessHost": "Šis adresas neleidžiamas. Atverkite originalią QR nuorodą iš kompiuterio. Esamam VPN naudokite tiesioginį QR kodą.",
     "accessOrigin": "Ši naršyklės užklausa užblokuota. Atverkite originalią susiejimo nuorodą tiesiogiai telefono naršyklėje ir bandykite dar kartą."
   },

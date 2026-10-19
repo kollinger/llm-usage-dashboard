@@ -1329,6 +1329,10 @@
     "desktopTitle": "QR-kód és hivatkozás megjelenítése",
     "accessDenied": "Telefonos hozzáférés letiltva",
     "accessNetwork": "Ez a forráshálózat nem engedélyezett. A számítógépen nyissa meg a Beállítások → Telefon → Meglévő VPN részt, és engedélyezzen egy szűk privát VPN-forrást. A közvetlen QR-kód csak a névfeloldást javítja.",
+    "accessSource": "A számítógép által észlelt forráscím",
+    "accessEntry": "VPN-bejegyzés (kijelölés és másolás)",
+    "accessNat": "Ez a /32 bejegyzés az észlelt forráscímet engedélyezi. NAT esetén ez több eszköz által közösen használt VPN-átjáró címe is lehet.",
+    "accessUnavailable": "Nem áll rendelkezésre privát IPv4-forráscím engedélyezési javaslathoz.",
     "accessHost": "Ez a cím nem engedélyezett. Nyissa meg az eredeti QR-hivatkozást a számítógépről. Meglévő VPN-hez használja a közvetlen QR-kódot.",
     "accessOrigin": "Ez a böngészőkérés le lett tiltva. Nyissa meg az eredeti párosítási hivatkozást közvetlenül a telefon böngészőjében, és próbálja újra."
   },

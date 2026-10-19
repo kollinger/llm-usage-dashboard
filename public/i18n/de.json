@@ -1329,6 +1329,10 @@
     "desktopTitle": "QR-Code und Link anzeigen",
     "accessDenied": "Handy-Zugang gesperrt",
     "accessNetwork": "Dieses Quellnetz ist nicht freigegeben. Am Computer unter Einstellungen → Handy → Vorhandenes VPN eine eng begrenzte private VPN-Quelle erlauben. Ein direkter QR-Code behebt nur die Namensauflösung.",
+    "accessSource": "Vom Computer beobachtete Quelladresse",
+    "accessEntry": "VPN-Eintrag (markieren und kopieren)",
+    "accessNat": "Dieser /32-Eintrag erlaubt die beobachtete Quelladresse. Bei NAT kann dies die Adresse des VPN-Gateways sein, die mehrere Geräte gemeinsam nutzen.",
+    "accessUnavailable": "Es ist keine private IPv4-Quelladresse für einen Freigabevorschlag verfügbar.",
     "accessHost": "Diese Adresse ist nicht erlaubt. Den ursprünglichen QR-Link vom Computer öffnen. Für ein vorhandenes VPN den direkten QR-Code nutzen.",
     "accessOrigin": "Diese Browser-Anfrage wurde gesperrt. Den ursprünglichen Kopplungslink direkt im Handy-Browser öffnen und erneut versuchen."
   },

@@ -1329,6 +1329,10 @@
     "desktopTitle": "Mostrar código QR e ligação",
     "accessDenied": "Acesso do telefone bloqueado",
     "accessNetwork": "Esta rede de origem não é permitida. No computador, abra Definições → Telefone → VPN existente e permita uma origem VPN privada limitada. O QR direto só resolve problemas de nomes.",
+    "accessSource": "Endereço de origem observado pelo computador",
+    "accessEntry": "Entrada VPN (selecionar e copiar)",
+    "accessNat": "Esta entrada /32 permite o endereço de origem observado. Com NAT, pode ser o endereço do gateway VPN, partilhado por vários dispositivos.",
+    "accessUnavailable": "Não está disponível um endereço de origem IPv4 privado para sugerir uma autorização.",
     "accessHost": "Este endereço não é permitido. Abra a ligação QR original do computador. Para uma VPN existente, use o QR direto.",
     "accessOrigin": "Este pedido do navegador foi bloqueado. Abra a ligação original de emparelhamento diretamente no navegador do telefone e tente novamente."
   },

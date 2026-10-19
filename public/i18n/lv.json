@@ -1329,6 +1329,10 @@
     "desktopTitle": "Rādīt QR kodu un saiti",
     "accessDenied": "Tālruņa piekļuve bloķēta",
     "accessNetwork": "Šis avota tīkls nav atļauts. Datorā atveriet Iestatījumi → Tālrunis → Esošais VPN un atļaujiet šauru privātu VPN avotu. Tiešais QR kods atrisina tikai nosaukumu noteikšanu.",
+    "accessSource": "Datora novērotā avota adrese",
+    "accessEntry": "VPN ieraksts (atlasiet un kopējiet)",
+    "accessNat": "Šis /32 ieraksts atļauj novēroto avota adresi. Izmantojot NAT, tā var būt VPN vārtejas adrese, ko koplieto vairākas ierīces.",
+    "accessUnavailable": "Nav pieejama privāta avota IPv4 adrese, kurai ieteikt atļaujas ierakstu.",
     "accessHost": "Šī adrese nav atļauta. Atveriet sākotnējo QR saiti no datora. Esošam VPN izmantojiet tiešo QR kodu.",
     "accessOrigin": "Šis pārlūka pieprasījums ir bloķēts. Atveriet sākotnējo savienošanas saiti tieši tālruņa pārlūkā un mēģiniet vēlreiz."
   },
