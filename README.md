@@ -170,9 +170,10 @@ provider filtering and independent text scaling handle larger sets; the native
 list is limited to 50 matching accounts. Each provider-local ordinal remains
 visible alongside truncated names. Native colors follow the Plasma theme.
 
-The Linux AppImage bundles the exact-version `.plasmoid`; the same archive is
-also a GitHub release asset. Manual per-user installation is available with
-`kpackagetool6 --type Plasma/Applet --install llm-usage-dashboard.plasmoid`
+The Linux AppImage bundles the exact-version `.plasmoid`; the same native archive
+is published as `LLM-Usage-Dashboard-<version>-plasma.zip` through the existing
+desktop-build workflow. KPackage accepts both extensions. Manual per-user installation is available with
+`kpackagetool6 --type Plasma/Applet --install LLM-Usage-Dashboard-<version>-plasma.zip`
 (use `--upgrade` for an existing installation). After updating, remove and add
 the widget again so Plasma loads the new package. No root access, system-wide
 installation or additional widget store is used. The compact window remains

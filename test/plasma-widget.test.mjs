@@ -119,6 +119,9 @@ if (process.platform === "linux") {
 
     // Exercise trusted IPC and exact user-local installer arguments.
     await run(process.execPath, [path.join(root, "scripts/build-plasmoid.mjs")]);
+    assert.deepEqual(await fs.readFile(path.join(root, "dist/plasma/llm-usage-dashboard.plasmoid")),
+      await fs.readFile(path.join(root, "dist", `LLM-Usage-Dashboard-${require("../package.json").version}-plasma.zip`)),
+      "existing CI ZIP asset and bundled native package are identical");
     const handlers = new Map(), commands = [];
     const window = { isDestroyed: () => false, webContents: { mainFrame: { url: "http://localhost:45678/" } } };
     const event = { sender: window.webContents, senderFrame: window.webContents.mainFrame };

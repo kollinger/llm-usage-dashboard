@@ -42,4 +42,9 @@ with zipfile.ZipFile(sys.argv[2], 'w', compression=zipfile.ZIP_DEFLATED) as arch
    info.external_attr=0o100644 << 16
    archive.writestr(info,p.read_bytes())
 `, directory, path.join(output, "llm-usage-dashboard.plasmoid")]);
+// The existing desktop-build workflow already publishes dist/*.zip. KPackage
+// accepts the same native ZIP archive with either extension; keep that workflow
+// contract and bundle the conventional .plasmoid name inside the Linux app.
+await fs.copyFile(path.join(output, "llm-usage-dashboard.plasmoid"),
+  path.join(root, "dist", `LLM-Usage-Dashboard-${pkg.version}-plasma.zip`));
 console.log(`Plasma package built for ${pkg.version}`);
