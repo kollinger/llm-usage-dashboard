@@ -21,7 +21,8 @@ const server = http.createServer(async (req, res) => {
   try {
     if (req.url === "/api/desktop-widget") {
       const id = req.headers["x-widget-test-generation"] || "initial";
-      requests.set(id, (requests.get(id) || 0) + 1);
+      const startedAt = Number(req.headers["x-widget-test-started"]);
+      requests.set(id, [...(requests.get(id) || []), Number.isFinite(startedAt) ? startedAt : Date.now()]);
       const responseStatus = requirePlasmaAuth && !req.headers.cookie?.includes("plasma-fixture=yes") ? 401 : status;
       res.writeHead(responseStatus, { "Content-Type": "application/json", "Cache-Control": "no-store" });
       res.end(JSON.stringify(responseStatus === 200 ? buildDesktopWidgetSnapshot(fixture) : { error: "fixture_unavailable" })); return;
@@ -46,7 +47,7 @@ const server = http.createServer(async (req, res) => {
       // Shorten only the display poll for bounded lifecycle tests. Track each
       // renderer separately to prove destroyed windows stop requesting data.
       const id = String(++generation);
-      body = `const fixtureFetch = window.fetch.bind(window); window.fetch = (input, options = {}) => fixtureFetch(input, { ...options, headers: { ...options.headers, "X-Widget-Test-Generation": "${id}" } });\n` + body.toString().replace("setTimeout(refresh, 60_000)", "setTimeout(refresh, 200)");
+      body = `const fixtureFetch = window.fetch.bind(window); window.fetch = (input, options = {}) => fixtureFetch(input, { ...options, headers: { ...options.headers, "X-Widget-Test-Generation": "${id}", "X-Widget-Test-Started": String(Date.now()) } });\n` + body.toString().replace("setTimeout(refresh, 60_000)", "setTimeout(refresh, 200)");
     }
     const type = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" }[path.extname(file)] || "application/octet-stream";
     res.writeHead(200, { "Content-Type": type }); res.end(body);
@@ -195,13 +196,15 @@ app.on("window-all-closed", () => {});
 
   // The fixture backend stays alive while the main window is gone. Closing and
   // reopening the widget must retire the previous renderer's display timer.
-  main.close(); main = null;
+  await new Promise((resolve) => { main.once("closed", resolve); main.close(); }); main = null;
   for (let cycle = 0; cycle < 3; cycle++) {
     const oldGeneration = String(generation);
-    widget.close();
-    const previous = requests.get(oldGeneration) || 0;
+    await new Promise((resolve) => { widget.once("closed", resolve); widget.close(); });
+    const retiredAt = Date.now();
     await pause(350);
-    assert.equal(requests.get(oldGeneration) || 0, previous, "closed renderer stops polling");
+    // Chromium may finish delivering a request that began before closure.
+    // Observe when a request started, rather than when its server callback ran.
+    assert.equal((requests.get(oldGeneration) || []).filter((startedAt) => startedAt > retiredAt).length, 0, "closed renderer starts no new polls");
     controller.open(); widget = controller.getWindow(); await ready(widget);
     assert.equal(controller.state().preferences.favorites.length, 1);
     assert.equal(BrowserWindow.getAllWindows().length, 1, "only one widget remains without main window");
