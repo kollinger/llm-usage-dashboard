@@ -1407,7 +1407,7 @@
     "compactHelp": "Atsevišķs lietotnes logs Linux, macOS un Windows sistēmām.",
     "install": "Instalēt KDE logrīku",
     "update": "Atjaunināt KDE logrīku",
-    "installHelp": "Instalē tikai jūsu lietotājam. Labais klikšķis uz darbvirsmas → Pievienot logrīkus → LLM Usage Dashboard. Pēc atjaunināšanas noņemiet un pievienojiet logrīku vēlreiz.",
+    "installHelp": "Instalē tikai jūsu lietotājam. Labais klikšķis uz darbvirsmas → Pievienot logrīkus → LLM Usage Dashboard. Pēc atjaunināšanas izrakstieties no Plasma un piesakieties vēlreiz, lai ielādētu jauno versiju.",
     "installed": "Instalētā versija: {version}.",
     "installing": "Instalē…",
     "requirements": "Nepieciešams Plasma 6, kpackagetool6, Python 3 un iekļautā logrīka pakotne.",

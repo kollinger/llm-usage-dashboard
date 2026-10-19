@@ -1407,7 +1407,7 @@
     "compactHelp": "Külön alkalmazásablak Linux, macOS és Windows rendszeren.",
     "install": "KDE-elem telepítése",
     "update": "KDE-elem frissítése",
-    "installHelp": "Csak a saját felhasználóhoz települ. Jobb kattintás az asztalon → Felületi elemek hozzáadása → LLM Usage Dashboard. Frissítés után távolítsa el, majd adja hozzá újra az elemet.",
+    "installHelp": "Csak a saját felhasználóhoz települ. Jobb kattintás az asztalon → Felületi elemek hozzáadása → LLM Usage Dashboard. Frissítés után jelentkezzen ki a Plasmából, majd vissza az új verzió betöltéséhez.",
     "installed": "Telepített verzió: {version}.",
     "installing": "Telepítés…",
     "requirements": "Plasma 6, kpackagetool6, Python 3 és a mellékelt elemcsomag szükséges.",

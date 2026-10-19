@@ -1407,7 +1407,7 @@
     "compactHelp": "Ločeno okno aplikacije za Linux, macOS in Windows.",
     "install": "Namesti gradnik KDE",
     "update": "Posodobi gradnik KDE",
-    "installHelp": "Namestitev samo za vašega uporabnika. Desni klik na namizje → Dodaj gradnike → LLM Usage Dashboard. Po posodobitvi gradnik odstranite in ga znova dodajte.",
+    "installHelp": "Namestitev samo za vašega uporabnika. Desni klik na namizje → Dodaj gradnike → LLM Usage Dashboard. Po posodobitvi se odjavite iz Plasma in znova prijavite, da se naloži nova različica.",
     "installed": "Nameščena različica: {version}.",
     "installing": "Nameščanje…",
     "requirements": "Zahteva Plasma 6, kpackagetool6, Python 3 in priloženi paket gradnika.",

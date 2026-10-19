@@ -1407,7 +1407,7 @@
     "compactHelp": "Erillinen sovellusikkuna Linuxille, macOS:lle ja Windowsille.",
     "install": "Asenna KDE-sovelma",
     "update": "Päivitä KDE-sovelma",
-    "installHelp": "Asennetaan vain käyttäjällesi. Napsauta työpöytää hiiren oikealla → Lisää sovelmia → LLM Usage Dashboard. Poista ja lisää sovelma uudelleen päivityksen jälkeen.",
+    "installHelp": "Asennetaan vain käyttäjällesi. Napsauta työpöytää hiiren oikealla → Lisää sovelmia → LLM Usage Dashboard. Kirjaudu päivityksen jälkeen ulos Plasmasta ja takaisin sisään ladataksesi uuden version.",
     "installed": "Asennettu versio: {version}.",
     "installing": "Asennetaan…",
     "requirements": "Vaatii Plasma 6:n, kpackagetool6:n, Python 3:n ja mukana tulevan sovelmapaketin.",

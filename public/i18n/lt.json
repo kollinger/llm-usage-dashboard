@@ -1407,7 +1407,7 @@
     "compactHelp": "Atskiras programos langas sistemoms Linux, macOS ir Windows.",
     "install": "Įdiegti KDE valdiklį",
     "update": "Atnaujinti KDE valdiklį",
-    "installHelp": "Diegiama tik jūsų naudotojui. Dešiniuoju pelės mygtuku darbalaukyje → Pridėti valdiklių → LLM Usage Dashboard. Atnaujinę pašalinkite ir vėl pridėkite valdiklį.",
+    "installHelp": "Diegiama tik jūsų naudotojui. Dešiniuoju pelės mygtuku darbalaukyje → Pridėti valdiklių → LLM Usage Dashboard. Atnaujinę atsijunkite nuo Plasma ir prisijunkite iš naujo, kad būtų įkelta nauja versija.",
     "installed": "Įdiegta versija: {version}.",
     "installing": "Diegiama…",
     "requirements": "Reikia Plasma 6, kpackagetool6, Python 3 ir pridedamo valdiklio paketo.",

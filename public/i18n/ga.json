@@ -1407,7 +1407,7 @@
     "compactHelp": "Fuinneog ar leith den aip do Linux, macOS agus Windows.",
     "install": "Suiteáil giuirléid KDE",
     "update": "Nuashonraigh giuirléid KDE",
-    "installHelp": "Suiteáil do d’úsáideoir amháin. Deaschliceáil ar an deasc → Cuir Giuirléidí Leis → LLM Usage Dashboard. Tar éis nuashonraithe, bain an ghiuirléid agus cuir leis arís í.",
+    "installHelp": "Suiteáil do d’úsáideoir amháin. Deaschliceáil ar an deasc → Cuir Giuirléidí Leis → LLM Usage Dashboard. Tar éis nuashonraithe, logáil amach as Plasma agus isteach arís chun an leagan nua a lódáil.",
     "installed": "Leagan suiteáilte: {version}.",
     "installing": "Á suiteáil…",
     "requirements": "Teastaíonn Plasma 6, kpackagetool6, Python 3 agus an pacáiste giuirléide atá san áireamh.",

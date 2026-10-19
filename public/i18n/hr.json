@@ -1407,7 +1407,7 @@
     "compactHelp": "Zaseban prozor aplikacije za Linux, macOS i Windows.",
     "install": "Instaliraj KDE widget",
     "update": "Ažuriraj KDE widget",
-    "installHelp": "Instalira se samo za vašeg korisnika. Desni klik na radnu površinu → Dodaj widgete → LLM Usage Dashboard. Nakon ažuriranja uklonite i ponovno dodajte widget.",
+    "installHelp": "Instalira se samo za vašeg korisnika. Desni klik na radnu površinu → Dodaj widgete → LLM Usage Dashboard. Nakon ažuriranja odjavite se iz Plasma i ponovno prijavite kako bi se učitala nova verzija.",
     "installed": "Instalirana verzija: {version}.",
     "installing": "Instaliranje…",
     "requirements": "Zahtijeva Plasma 6, kpackagetool6, Python 3 i priloženi paket widgeta.",

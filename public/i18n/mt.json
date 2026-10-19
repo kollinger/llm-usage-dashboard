@@ -1407,7 +1407,7 @@
     "compactHelp": "Tieqa separata tal-app għal Linux, macOS u Windows.",
     "install": "Installa widget KDE",
     "update": "Aġġorna widget KDE",
-    "installHelp": "Jinstalla għall-utent tiegħek biss. Ikklikkja bil-lemin fuq id-desktop → Żid Widgets → LLM Usage Dashboard. Wara l-aġġornament, neħħi u erġa’ żid il-widget.",
+    "installHelp": "Jinstalla għall-utent tiegħek biss. Ikklikkja bil-lemin fuq id-desktop → Żid Widgets → LLM Usage Dashboard. Wara l-aġġornament, oħroġ minn Plasma u erġa’ idħol biex titgħabba l-verżjoni l-ġdida.",
     "installed": "Verżjoni installata: {version}.",
     "installing": "Qed jinstalla…",
     "requirements": "Jeħtieġ Plasma 6, kpackagetool6, Python 3 u l-pakkett tal-widget inkluż.",

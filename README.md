@@ -174,8 +174,8 @@ The Linux AppImage bundles the exact-version `.plasmoid`; the same native archiv
 is published as `LLM-Usage-Dashboard-<version>-plasma.zip` through the existing
 desktop-build workflow. KPackage accepts both extensions. Manual per-user installation is available with
 `kpackagetool6 --type Plasma/Applet --install LLM-Usage-Dashboard-<version>-plasma.zip`
-(use `--upgrade` for an existing installation). After updating, remove and add
-the widget again so Plasma loads the new package. No root access, system-wide
+(use `--upgrade` for an existing installation). After updating, log out of
+Plasma and sign back in so its widget engine loads the new package. No root access, system-wide
 installation or additional widget store is used. The compact window remains
 available on every supported desktop platform; macOS WidgetKit is out of scope.
 

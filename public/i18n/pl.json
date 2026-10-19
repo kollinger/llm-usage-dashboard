@@ -1407,7 +1407,7 @@
     "compactHelp": "Osobne okno aplikacji dla systemów Linux, macOS i Windows.",
     "install": "Zainstaluj widżet KDE",
     "update": "Aktualizuj widżet KDE",
-    "installHelp": "Instalacja tylko dla twojego użytkownika. Prawy przycisk na pulpicie → Dodaj elementy interfejsu → LLM Usage Dashboard. Po aktualizacji usuń i ponownie dodaj widżet.",
+    "installHelp": "Instalacja tylko dla twojego użytkownika. Prawy przycisk na pulpicie → Dodaj elementy interfejsu → LLM Usage Dashboard. Po aktualizacji wyloguj się z Plasma i zaloguj ponownie, aby załadować nową wersję.",
     "installed": "Zainstalowana wersja: {version}.",
     "installing": "Instalowanie…",
     "requirements": "Wymaga Plasma 6, kpackagetool6, Python 3 i dołączonego pakietu widżetu.",

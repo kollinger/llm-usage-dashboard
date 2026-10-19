@@ -1407,7 +1407,7 @@
     "compactHelp": "Eraldi rakenduse aken Linuxi, macOS-i ja Windowsi jaoks.",
     "install": "Paigalda KDE vidin",
     "update": "Uuenda KDE vidinat",
-    "installHelp": "Paigaldatakse ainult sinu kasutajale. Paremklõps töölaual → Lisa vidinaid → LLM Usage Dashboard. Pärast uuendamist eemalda vidin ja lisa see uuesti.",
+    "installHelp": "Paigaldatakse ainult sinu kasutajale. Paremklõps töölaual → Lisa vidinaid → LLM Usage Dashboard. Pärast uuendamist logi Plasmast välja ja uuesti sisse, et laadida uus versioon.",
     "installed": "Paigaldatud versioon: {version}.",
     "installing": "Paigaldamine…",
     "requirements": "Vajab Plasma 6, kpackagetool6, Python 3 ja kaasasolevat vidinapaketti.",

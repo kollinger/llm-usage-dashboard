@@ -1407,7 +1407,7 @@
     "compactHelp": "نافذة تطبيق مستقلة متاحة على Linux وmacOS وWindows.",
     "install": "تثبيت عنصر KDE",
     "update": "تحديث عنصر KDE",
-    "installHelp": "التثبيت لمستخدمك فقط. انقر بزر الفأرة الأيمن على سطح المكتب ← أضف عناصر واجهة ← LLM Usage Dashboard. بعد التحديث، أزل العنصر وأضفه مجددًا.",
+    "installHelp": "التثبيت لمستخدمك فقط. انقر بزر الفأرة الأيمن على سطح المكتب ← أضف عناصر واجهة ← LLM Usage Dashboard. بعد التحديث، سجّل الخروج من Plasma ثم سجّل الدخول مجددًا لتحميل الإصدار الجديد.",
     "installed": "الإصدار المثبّت: {version}.",
     "installing": "جارٍ التثبيت…",
     "requirements": "يتطلب Plasma 6 وkpackagetool6 وPython 3 وحزمة العنصر المرفقة.",

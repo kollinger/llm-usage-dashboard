@@ -1407,7 +1407,7 @@
     "compactHelp": "Samostatné okno aplikace pro Linux, macOS a Windows.",
     "install": "Nainstalovat widget KDE",
     "update": "Aktualizovat widget KDE",
-    "installHelp": "Instalace pouze pro vašeho uživatele. Pravým tlačítkem na plochu → Přidat widgety → LLM Usage Dashboard. Po aktualizaci widget odeberte a znovu přidejte.",
+    "installHelp": "Instalace pouze pro vašeho uživatele. Pravým tlačítkem na plochu → Přidat widgety → LLM Usage Dashboard. Po aktualizaci se odhlaste z Plasma a znovu přihlaste, aby se načetla nová verze.",
     "installed": "Nainstalovaná verze: {version}.",
     "installing": "Instalace…",
     "requirements": "Vyžaduje Plasma 6, kpackagetool6, Python 3 a přiložený balíček widgetu.",

@@ -1407,7 +1407,7 @@
     "compactHelp": "Une fenêtre indépendante de l’application pour Linux, macOS et Windows.",
     "install": "Installer le composant KDE",
     "update": "Mettre à jour le composant KDE",
-    "installHelp": "Installation pour votre utilisateur uniquement. Clic droit sur le bureau → Ajouter des composants graphiques → LLM Usage Dashboard. Après la mise à jour, retirez puis ajoutez à nouveau le composant.",
+    "installHelp": "Installation pour votre utilisateur uniquement. Clic droit sur le bureau → Ajouter des composants graphiques → LLM Usage Dashboard. Après la mise à jour, déconnectez-vous de Plasma puis reconnectez-vous pour charger la nouvelle version.",
     "installed": "Version installée : {version}.",
     "installing": "Installation…",
     "requirements": "Nécessite Plasma 6, kpackagetool6, Python 3 et le paquet du composant fourni.",

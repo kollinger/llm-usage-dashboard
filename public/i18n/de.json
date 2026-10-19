@@ -1407,7 +1407,7 @@
     "compactHelp": "Ein separates App-Fenster für Linux, macOS und Windows.",
     "install": "KDE-Miniprogramm installieren",
     "update": "KDE-Miniprogramm aktualisieren",
-    "installHelp": "Installation nur für deinen Benutzer. Danach Rechtsklick auf den Desktop → Miniprogramme hinzufügen → LLM Usage Dashboard. Nach einem Update das Miniprogramm entfernen und erneut hinzufügen.",
+    "installHelp": "Installation nur für deinen Benutzer. Danach Rechtsklick auf den Desktop → Miniprogramme hinzufügen → LLM Usage Dashboard. Nach einem Update von Plasma abmelden und wieder anmelden, damit die neue Version geladen wird.",
     "installed": "Installierte Version: {version}.",
     "installing": "Wird installiert…",
     "requirements": "Benötigt Plasma 6, kpackagetool6, Python 3 und das mitgelieferte Miniprogrammpaket.",

@@ -1407,7 +1407,7 @@
     "compactHelp": "Et separat appvindue til Linux, macOS og Windows.",
     "install": "Installér KDE-widget",
     "update": "Opdatér KDE-widget",
-    "installHelp": "Installeres kun for din bruger. Højreklik på skrivebordet → Tilføj widgets → LLM Usage Dashboard. Fjern og tilføj widgetten igen efter opdatering.",
+    "installHelp": "Installeres kun for din bruger. Højreklik på skrivebordet → Tilføj widgets → LLM Usage Dashboard. Log ud af Plasma, og log ind igen efter opdatering for at indlæse den nye version.",
     "installed": "Installeret version: {version}.",
     "installing": "Installerer…",
     "requirements": "Kræver Plasma 6, kpackagetool6, Python 3 og den medfølgende widgetpakke.",

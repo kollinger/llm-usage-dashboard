@@ -1407,7 +1407,7 @@
     "compactHelp": "适用于 Linux、macOS 和 Windows 的独立应用窗口。",
     "install": "安装 KDE 小部件",
     "update": "更新 KDE 小部件",
-    "installHelp": "仅为当前用户安装。然后右键单击桌面 → 添加小部件 → LLM Usage Dashboard。更新后，请移除并重新添加小部件。",
+    "installHelp": "仅为当前用户安装。然后右键单击桌面 → 添加小部件 → LLM Usage Dashboard。更新后，请退出 Plasma 会话并重新登录，以加载新版本。",
     "installed": "已安装版本：{version}。",
     "installing": "正在安装…",
     "requirements": "需要 Plasma 6、kpackagetool6、Python 3 和附带的小部件包。",
