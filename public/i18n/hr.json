@@ -1372,6 +1372,7 @@
     "sessions": "{count} sesija"
   },
   "widget": {
+    "localSource": "Lokalni izvor",
     "open": "Widget radne površine",
     "title": "Kvote po računu",
     "filters": "Filtriranje računa",

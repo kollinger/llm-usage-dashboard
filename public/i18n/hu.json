@@ -1372,6 +1372,7 @@
     "sessions": "{count} munkamenet"
   },
   "widget": {
+    "localSource": "Helyi forrás",
     "open": "Asztali widget",
     "title": "Fiókonkénti kvóták",
     "filters": "Fiókok szűrése",

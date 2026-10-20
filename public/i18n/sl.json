@@ -1372,6 +1372,7 @@
     "sessions": "{count} sej"
   },
   "widget": {
+    "localSource": "Lokalni vir",
     "open": "Namizni gradnik",
     "title": "Kvote po računih",
     "filters": "Filtriraj račune",

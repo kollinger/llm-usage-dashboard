@@ -1372,6 +1372,7 @@
     "sessions": "{count} sesiuni"
   },
   "widget": {
+    "localSource": "Sursă locală",
     "open": "Widget pentru desktop",
     "title": "Cote pe cont",
     "filters": "Filtrare conturi",

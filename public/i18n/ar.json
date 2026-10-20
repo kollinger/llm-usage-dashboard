@@ -1372,6 +1372,7 @@
     "sessions": "{count} جلسات"
   },
   "widget": {
+    "localSource": "مصدر محلي",
     "open": "أداة سطح المكتب",
     "title": "حصص الحسابات",
     "filters": "تصفية الحسابات",

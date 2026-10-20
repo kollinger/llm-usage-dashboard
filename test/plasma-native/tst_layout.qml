@@ -92,4 +92,41 @@ TestCase {
         tryCompare(list(), "count", 5);
         tryCompare(findChild(accountView, "quality0_0"), "text", "Measured");
     }
+    function test_claude_local_source() {
+        accountView.snapshot = Fixtures.cases.claude;
+        tryCompare(list(), "count", 3);
+        tryCompare(findChild(accountView, "remaining0_0"), "text", "73.0% left");
+        tryCompare(findChild(accountView, "remaining1_0"), "text", "41.0% left");
+        tryCompare(findChild(accountView, "remaining2_0"), "text", "0.0% left");
+        compare(findChild(accountView, "remaining2_1").text, "—");
+        compare(findChild(accountView, "accountSource2").text, "Local source");
+        verify(findChild(accountView, "quality0_0").text.indexOf("Stale") >= 0);
+        compare(findChild(accountView, "quality2_0").text, "Measured");
+        accountView.provider = "gpt";
+        tryCompare(list(), "count", 0);
+        accountView.provider = "claude";
+        tryCompare(list(), "count", 3);
+        mouseClick(findChild(accountView, "favorite2"));
+        mouseClick(findChild(accountView, "favoritesButton"));
+        tryCompare(list(), "count", 1);
+        compare(accountView.favorites[0], Fixtures.cases.claude.accounts[2].id);
+        for (var cycle = 0; cycle < 2; cycle++) {
+            accountView.snapshot = null;
+            tryCompare(list(), "count", 0);
+            accountView.snapshot = Fixtures.cases.claude;
+            tryCompare(list(), "count", 1);
+        }
+        accountView.accountView = "all";
+        tryCompare(list(), "count", 3);
+        accountView.language = "de";
+        waitForRendering(accountView);
+        tryCompare(findChild(accountView, "accountSource0"), "text", "Lokale Quelle");
+        verify(list().contentHeight <= list().height + 1);
+        capture("claude-local-german");
+        accountView.language = "ar"; test.width = 560;
+        waitForRendering(accountView);
+        verify(accountView.rtl);
+        verify(findChild(accountView, "accountSource0").text.length > 0);
+        capture("claude-local-arabic");
+    }
 }

@@ -9,7 +9,7 @@ const http = require("node:http");
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const { createDesktopWidget } = require("../electron/desktop-widget");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture } = require("./fixtures/desktop-widget.cjs");
 const { readPlasmaSnapshot } = require("../lib/plasma-bridge");
 const { createPlasmaWidget } = require("../electron/plasma-widget");
 app.setPath("userData", process.env.WIDGET_NATIVE_PROFILE);
@@ -84,6 +84,7 @@ async function layout(window, expectAll = false) {
 }
 async function capture(window, name) {
   if (!process.env.WIDGET_SCREENSHOTS_DIR) return;
+  await evaluate(window, "new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
   await fs.mkdir(process.env.WIDGET_SCREENSHOTS_DIR, { recursive: true });
   await fs.writeFile(path.join(process.env.WIDGET_SCREENSHOTS_DIR, `${name}.png`), (await window.webContents.capturePage()).toPNG());
 }
@@ -120,6 +121,32 @@ app.on("window-all-closed", () => {});
   await layout(widget, true);
   assert.equal(await evaluate(widget, "document.querySelector('.widget-track').getAttribute('aria-valuenow')"), "0");
   assert.equal(await evaluate(widget, "document.querySelectorAll('.widget-window[data-status=unavailable] .widget-track').length"), 0);
+
+  count = 3; fixture = claudeUsageFixture();
+  await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);
+  assert.equal(await evaluate(widget, "[...document.querySelectorAll('.widget-account .widget-window:first-child .widget-window-value')].map(node => node.textContent).join('|')"), "73% left|41% left|0% left");
+  assert.equal(await evaluate(widget, "document.querySelectorAll('.widget-source')[2].textContent"), "Local source");
+  assert.equal(await evaluate(widget, "document.querySelectorAll('.widget-account')[2].querySelector('.widget-window').dataset.status"), "current");
+  const localHandle = buildDesktopWidgetSnapshot(fixture).accounts[2].id;
+  await evaluate(widget, "document.querySelectorAll('[data-favorite]')[2].click(); document.getElementById('widgetFavorites').click()");
+  await until(() => evaluate(widget, "document.querySelectorAll('.widget-account').length === 1"), "local Claude favorite");
+  assert.deepEqual(controller.state().preferences.favorites, [localHandle]);
+  for (let cycle = 0; cycle < 2; cycle++) {
+    count = 2; const quota = fixture.claudeCode; fixture.claudeCode = null;
+    await evaluate(widget, "document.getElementById('widgetRefresh').click()");
+    await until(() => evaluate(widget, "document.querySelectorAll('.widget-account').length === 0"), "temporarily missing local favorite");
+    count = 3; fixture.claudeCode = quota;
+    await evaluate(widget, "document.getElementById('widgetRefresh').click()");
+    await until(() => evaluate(widget, "document.querySelectorAll('.widget-account').length === 1"), "local favorite returns with stable handle");
+  }
+  await evaluate(widget, "document.querySelector('[data-favorite]').click(); document.getElementById('widgetAll').click()"); await ready(widget);
+  for (const code of ["de", "ar"]) {
+    language = code; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+    await until(() => evaluate(widget, `document.documentElement.lang === '${code}'`), `local Claude ${code}`);
+    await layout(widget, true); await capture(widget, `claude-local-${code}`);
+  }
+  language = "en"; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+  await until(() => evaluate(widget, "document.documentElement.lang === 'en'"), "restore language");
 
   for (const size of [0, 1, 2, 5, 10, 24]) {
     count = size; fixture = widgetUsageFixture(size);
@@ -217,10 +244,14 @@ app.on("window-all-closed", () => {});
   // dashboard window closes. Verify the real Electron fetch implementation on
   // each CI platform; no credentials are copied into the native package.
   requirePlasmaAuth = true;
+  count = 3; fixture = claudeUsageFixture();
   const desktopSession = widget.webContents.session;
   assert.equal((await readPlasmaSnapshot(desktopSession, origin)).status, "locked");
   await desktopSession.cookies.set({ url: origin, name: "plasma-fixture", value: "yes", httpOnly: true, sameSite: "lax" });
-  assert.equal((await readPlasmaSnapshot(desktopSession, origin)).snapshot.accounts.length, count);
+  const nativeClaude = (await readPlasmaSnapshot(desktopSession, origin)).snapshot.accounts;
+  assert.equal(nativeClaude.length, count);
+  assert.deepEqual(nativeClaude[2].sources, ["local"]);
+  assert.equal(nativeClaude[2].windows[0].remainingPercent, 0);
   await desktopSession.cookies.remove(origin, "plasma-fixture");
   assert.equal((await readPlasmaSnapshot(desktopSession, origin)).status, "locked", "logout clears native access on the next read");
   console.log("Plasma adapter: real Electron session cookies, HttpOnly authentication, closed main window and logout passed.");

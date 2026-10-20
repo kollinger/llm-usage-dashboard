@@ -12,7 +12,7 @@ const run = promisify(execFile);
 const { startPlasmaBridge, readPlasmaSnapshot, MAX_BYTES } = require("../lib/plasma-bridge");
 const { createPlasmaWidget, PLUGIN_ID } = require("../electron/plasma-widget");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture } = require("./fixtures/desktop-widget.cjs");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const locales = path.join(root, "public/i18n");
 const english = JSON.parse(await fs.readFile(path.join(locales, "en.json"), "utf8")).plasma;
@@ -77,11 +77,11 @@ if (process.platform === "linux") {
   };
   try {
     assert.equal((await read()).status, "unavailable");
-    let status = "ready", count = 5, calls = 0;
+    let status = "ready", count = 5, calls = 0, claudeCase = false;
     const options = { runtimeDirectory: temporary, getLanguage: () => "ar", async readSnapshot() {
       calls++; await new Promise((resolve) => setTimeout(resolve, 30));
       if (status === "throw") throw new Error("PRIVATE_FIXTURE_SENTINEL");
-      return { status, snapshot: buildDesktopWidgetSnapshot(widgetUsageFixture(count)) };
+      return { status, snapshot: buildDesktopWidgetSnapshot(claudeCase ? claudeUsageFixture() : widgetUsageFixture(count)) };
     } };
     bridge = await startPlasmaBridge(options);
     assert.equal((await fs.stat(bridge.socketPath)).mode & 0o777, 0o600);
@@ -89,6 +89,13 @@ if (process.platform === "linux") {
     const both = await Promise.all([read(), read()]);
     assert.equal(calls, 1, "multiple plasmoids share one projected endpoint request");
     assert.equal(both[0].snapshot.accounts.length, 5); assert.equal(both[1].language, "ar");
+    claudeCase = true;
+    const localClaude = (await read()).snapshot.accounts;
+    assert.equal(localClaude.length, 3);
+    assert.deepEqual(localClaude[2].sources, ["local"]);
+    assert.equal(localClaude[2].windows[0].remainingPercent, 0);
+    assert.equal(localClaude[2].windows[1].remainingPercent, null);
+    claudeCase = false;
     await assert.rejects(startPlasmaBridge(options), /busy/);
     status = "locked";
     const locked = await read(); assert.equal(locked.status, "locked"); assert.equal(locked.snapshot, undefined);

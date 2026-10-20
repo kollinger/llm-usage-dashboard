@@ -1372,6 +1372,7 @@
     "sessions": "{count} sessioner"
   },
   "widget": {
+    "localSource": "Lokal källa",
     "open": "Skrivbordswidget",
     "title": "Kvoter per konto",
     "filters": "Filtrera konton",

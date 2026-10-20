@@ -152,7 +152,8 @@ Item {
                             }
                             Controls.Label {
                                 Layout.maximumWidth: card.width * 0.3; elide: Text.ElideRight
-                                text: Model.providers[card.modelData.provider]
+                                objectName: "accountSource" + card.index
+                                text: (card.modelData.sources || []).indexOf("local") >= 0 ? view.t("widget.localSource") : Model.providers[card.modelData.provider]
                                 font.pixelSize: view.textSize
                                 color: Kirigami.Theme.textColor
                             }

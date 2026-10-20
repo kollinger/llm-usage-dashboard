@@ -1372,6 +1372,7 @@
     "sessions": "{count} sessions"
   },
   "widget": {
+    "localSource": "Source locale",
     "open": "Widget de bureau",
     "title": "Quotas par compte",
     "filters": "Filtrer les comptes",

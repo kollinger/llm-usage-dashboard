@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture } = require("./fixtures/desktop-widget.cjs");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const fixtures = {};
 for (const count of [0, 1, 5, 12, 80]) {
@@ -13,6 +13,7 @@ for (const count of [0, 1, 5, 12, 80]) {
   if (count > 1) usage.gptAccounts.accounts[1].label = "Example workspace with a very long account name for testing desktop label truncation and tooltips · Team";
   fixtures[count] = buildDesktopWidgetSnapshot(usage);
 }
+fixtures.claude = buildDesktopWidgetSnapshot(claudeUsageFixture());
 await fs.mkdir(path.join(root, "dist/plasma"), { recursive: true });
 if (process.env.PLASMA_SCREENSHOTS_DIR) await fs.mkdir(process.env.PLASMA_SCREENSHOTS_DIR, { recursive: true });
 await fs.writeFile(path.join(root, "dist/plasma/Fixtures.js"), ".pragma library\nvar cases = " + JSON.stringify(fixtures) +

@@ -1372,6 +1372,7 @@
     "sessions": "{count} sessions"
   },
   "widget": {
+    "localSource": "Local source",
     "open": "Desktop widget",
     "title": "Account quotas",
     "filters": "Filter accounts",
