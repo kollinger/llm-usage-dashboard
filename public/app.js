@@ -33,12 +33,11 @@ const state = {
   overviewChartRendered: false,
   overviewChartScrollToLatest: true,
   overviewChartRenderVersion: 0,
-  overviewChartExpectedOverflow: false,
-  overviewChartResizeObserver: null,
+  overviewChartScrollController: null,
   chartRendered: false,
   chartScrollToLatest: true,
   chartUserScrolledAwayFromLatest: false,
-  chartProgrammaticScroll: false,
+  chartScrollController: null,
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
@@ -4414,9 +4413,9 @@ function renderLocked() {
   }
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
-  clearOverviewHistoryResizeObserver();
+  clearHistoryChartScroll("overviewChartScrollController");
   state.overviewChartRendered = false;
-  state.overviewChartExpectedOverflow = false;
+  clearHistoryChartScroll("chartScrollController");
   state.chartRendered = false;
   state.layoutEditMode = true;
   state.keyboardDragSectionId = null;
@@ -5070,69 +5069,88 @@ function isOverviewHistoryScrolledToLatest(scroller = overviewHistoryScroller(),
   return overviewHistoryMaxScrollLeft(scroller) - Math.max(0, Number(currentScrollLeft) || 0) <= CHART_LATEST_SCROLL_TOLERANCE_PX;
 }
 
-function setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft) {
+function clearHistoryChartScroll(controllerKey) {
+  state[controllerKey]?.cleanup();
+  state[controllerKey] = null;
+}
+
+// Keep the existing latest-scroll intent alive through late layout changes.
+// Each render owns its observer, scroll listener and bounded frame retries.
+function settleHistoryChartScroll({ scroller, canvasSelector, previousScrollLeft, scrollToLatest, isCurrent, onUpdate }) {
+  let followingLatest = scrollToLatest;
+  let savedScrollLeft = previousScrollLeft;
+  let expectedScrollLeft = Math.max(0, Number(scroller.scrollLeft) || 0);
+  let clientWidth = scroller.clientWidth;
+  let scrollWidth = scroller.scrollWidth;
+  let stopped = false;
+  let observer = null;
+
+  function cleanup() {
+    stopped = true;
+    observer?.disconnect();
+    scroller.removeEventListener("scroll", handleScroll);
+  }
+
+  function handleScroll() {
+    if (stopped || !isCurrent() || !scroller.clientWidth) return;
+    // Browser scroll events are asynchronous, including our own assignments
+    // and clamping after resize. Neither is evidence of manual navigation.
+    if (scroller.clientWidth !== clientWidth || scroller.scrollWidth !== scrollWidth) return;
+    const currentScrollLeft = Math.max(0, Number(scroller.scrollLeft) || 0);
+    if (Math.abs(currentScrollLeft - expectedScrollLeft) <= CHART_LATEST_SCROLL_TOLERANCE_PX) return;
+    savedScrollLeft = currentScrollLeft;
+    expectedScrollLeft = currentScrollLeft;
+    const maxScrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    followingLatest = maxScrollLeft - currentScrollLeft <= CHART_LATEST_SCROLL_TOLERANCE_PX;
+    onUpdate({ pending: false, followingLatest });
+  }
+
+  function applyScroll() {
+    if (stopped) return;
+    if (!isCurrent()) {
+      cleanup();
+      return;
+    }
+    // Account for a user scroll even if its asynchronous event is still queued.
+    handleScroll();
+    const maxScrollLeft = Math.max(0, Number(scroller.scrollWidth || 0) - Number(scroller.clientWidth || 0));
+    scroller.scrollLeft = followingLatest ? maxScrollLeft : Math.min(maxScrollLeft, savedScrollLeft);
+    expectedScrollLeft = Math.max(0, Number(scroller.scrollLeft) || 0);
+    clientWidth = scroller.clientWidth;
+    scrollWidth = scroller.scrollWidth;
+    const reachedLatest = Number(clientWidth || 0) > 0 && maxScrollLeft - expectedScrollLeft <= CHART_LATEST_SCROLL_TOLERANCE_PX;
+    onUpdate({ pending: followingLatest && !reachedLatest, followingLatest });
+  }
+
+  scroller.addEventListener("scroll", handleScroll, { passive: true });
+  if (typeof ResizeObserver === "function") {
+    observer = new ResizeObserver(applyScroll);
+    observer.observe(scroller);
+    const canvas = scroller.querySelector?.(canvasSelector);
+    if (canvas) observer.observe(canvas);
+  }
+  function settleFrame(attempt = 0) {
+    window.requestAnimationFrame(() => {
+      applyScroll();
+      if (!stopped && followingLatest && attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS) settleFrame(attempt + 1);
+    });
+  }
+  settleFrame();
+  return { cleanup, handleScroll };
+}
+
+function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion) {
+  const scroller = overviewHistoryScroller();
   if (!scroller) return;
-  const maxScrollLeft = overviewHistoryMaxScrollLeft(scroller);
-  scroller.scrollLeft = scrollToLatest
-    ? maxScrollLeft
-    : Math.min(maxScrollLeft, Math.max(0, Number(previousScrollLeft) || 0));
-}
-
-function clearOverviewHistoryResizeObserver() {
-  state.overviewChartResizeObserver?.disconnect();
-  state.overviewChartResizeObserver = null;
-}
-
-function observeOverviewHistoryLayout(scroller, renderVersion) {
-  clearOverviewHistoryResizeObserver();
-  if (typeof ResizeObserver !== "function") return;
-  const observer = new ResizeObserver(() => {
-    if (
-      state.overviewChartResizeObserver !== observer ||
-      renderVersion !== state.overviewChartRenderVersion ||
-      scroller !== overviewHistoryScroller() ||
-      !state.overviewChartScrollToLatest
-    ) {
-      if (state.overviewChartResizeObserver === observer) clearOverviewHistoryResizeObserver();
-      return;
-    }
-    setOverviewHistoryScroll(scroller, true, 0);
-    const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
-    if (hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller)) {
-      state.overviewChartScrollToLatest = false;
-      clearOverviewHistoryResizeObserver();
-    }
-  });
-  state.overviewChartResizeObserver = observer;
-  observer.observe(scroller);
-  const canvas = scroller.querySelector?.(".overview-history-canvas");
-  if (canvas) observer.observe(canvas);
-}
-
-function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion, attempt = 0) {
-  window.requestAnimationFrame(() => {
-    if (renderVersion !== state.overviewChartRenderVersion) return;
-    const scroller = overviewHistoryScroller();
-    if (!scroller) return;
-    setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft);
-    state.overviewChartRendered = true;
-    if (!scrollToLatest) {
-      state.overviewChartScrollToLatest = false;
-      clearOverviewHistoryResizeObserver();
-      return;
-    }
-    const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
-    const reachedLatest = hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller);
-    const shouldRetry = !reachedLatest && attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
-    state.overviewChartScrollToLatest = !reachedLatest;
-    if (shouldRetry) {
-      finishOverviewHistoryRenderScroll(previousScrollLeft, true, renderVersion, attempt + 1);
-    } else if (!reachedLatest) {
-      observeOverviewHistoryLayout(scroller, renderVersion);
-    } else {
-      clearOverviewHistoryResizeObserver();
+  state.overviewChartScrollController = settleHistoryChartScroll({
+    scroller,
+    canvasSelector: ".overview-history-canvas",
+    previousScrollLeft,
+    scrollToLatest,
+    isCurrent: () => renderVersion === state.overviewChartRenderVersion && scroller === overviewHistoryScroller(),
+    onUpdate: ({ pending }) => {
+      state.overviewChartRendered = true;
+      state.overviewChartScrollToLatest = pending;
     }
   });
 }
@@ -5150,7 +5168,7 @@ function renderOverviewHistory(daily) {
     ? costRows.filter((row) => Number(row.totalEur || 0) > 0)
     : inputRows.filter((day) => Number(day.totalTokens || 0) > 0);
   if (!activeRows.length) {
-    clearOverviewHistoryResizeObserver();
+    clearHistoryChartScroll("overviewChartScrollController");
     els.overviewHistoryPanel.hidden = true;
     els.overviewHistoryFilterBar.innerHTML = "";
     els.overviewHistoryModeToggle.innerHTML = "";
@@ -5158,7 +5176,6 @@ function renderOverviewHistory(daily) {
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
-    state.overviewChartExpectedOverflow = false;
     return;
   }
 
@@ -5194,7 +5211,6 @@ function renderOverviewHistory(daily) {
     ? Math.max(barWidth + barGap, plotViewportWidth / Math.max(visibleDays, 1))
     : barWidth + barGap;
   const width = Math.max(plotViewportWidth, rows.length * barStep);
-  state.overviewChartExpectedOverflow = width > plotViewportWidth;
   const barX = (index) => (isSlotSeries
     ? index * barStep + Math.max(0, (barStep - barWidth) / 2)
     : index * barStep);
@@ -5205,7 +5221,7 @@ function renderOverviewHistory(daily) {
     !state.overviewChartRendered ||
     !previousScroller ||
     isOverviewHistoryScrolledToLatest(previousScroller, previousScrollLeft);
-  clearOverviewHistoryResizeObserver();
+  clearHistoryChartScroll("overviewChartScrollController");
   const timeline = isSlotSeries
     ? renderHistorySlotTimeline({
       rows,
@@ -8772,6 +8788,7 @@ function renderChart(daily, scrollState = captureChartScrollState()) {
   if (!daily.length) {
     els.chart.innerHTML = "";
     els.chartLegend.innerHTML = "";
+    clearHistoryChartScroll("chartScrollController");
     state.chartRendered = false;
     return;
   }
@@ -8803,6 +8820,7 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
   if (!rowsWithCost.length) {
     els.chart.innerHTML = `<div class="chart-empty">${escapeHtml(t("chart.costs.noData"))}</div>`;
     els.chartLegend.innerHTML = "";
+    clearHistoryChartScroll("chartScrollController");
     state.chartRendered = false;
     return;
   }
@@ -9096,30 +9114,18 @@ function captureChartScrollState() {
   };
 }
 
-function finishChartRenderScroll(previousScrollLeft, scrollToLatest, renderedScroller = chartScroller(), attempt = 0) {
-  window.requestAnimationFrame(() => {
-    if (chartScroller() !== renderedScroller) return;
-    const scroller = renderedScroller;
-    if (attempt === 0 && scroller !== els.chart) scroller.addEventListener("scroll", handleChartScroll, { passive: true });
-    const maxScrollLeft = chartMaxScrollLeft();
-    state.chartProgrammaticScroll = true;
-    try {
-      scroller.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
-    } finally {
-      state.chartProgrammaticScroll = false;
-    }
-    state.chartRendered = true;
-    updateChartManualScrollState();
-    if (!scrollToLatest) {
-      state.chartScrollToLatest = false;
-      return;
-    }
-    const shouldRetry = attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
-    const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const reachedLatest = hasLayout && isChartScrolledToLatest(scroller.scrollLeft);
-    state.chartScrollToLatest = shouldRetry || !reachedLatest;
-    if (shouldRetry) {
-      finishChartRenderScroll(previousScrollLeft, true, renderedScroller, attempt + 1);
+function finishChartRenderScroll(previousScrollLeft, scrollToLatest, renderedScroller = chartScroller()) {
+  clearHistoryChartScroll("chartScrollController");
+  state.chartScrollController = settleHistoryChartScroll({
+    scroller: renderedScroller,
+    canvasSelector: ".chart-canvas",
+    previousScrollLeft,
+    scrollToLatest,
+    isCurrent: () => chartScroller() === renderedScroller,
+    onUpdate: ({ pending, followingLatest }) => {
+      state.chartRendered = true;
+      state.chartScrollToLatest = pending;
+      state.chartUserScrolledAwayFromLatest = !followingLatest;
     }
   });
 }
@@ -9140,7 +9146,8 @@ function requestOverviewHistoryLatestForViewChange() {
 }
 
 function handleChartScroll() {
-  if (!state.chartRendered || state.chartProgrammaticScroll) return;
+  if (!state.chartRendered) return;
+  state.chartScrollController?.handleScroll();
   updateChartManualScrollState();
 }
 

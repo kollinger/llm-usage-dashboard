@@ -1,6 +1,5 @@
 import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
@@ -102,11 +101,10 @@ els.chart.scrollWidth = 1800;
 flushFrames();
 const delayedChartSettled = chartSnapshot();
 
-const overviewScroller = {
-  scrollLeft: 0,
-  scrollWidth: 0,
-  clientWidth: 0
-};
+const overviewScroller = makeElement("overview-scroller");
+overviewScroller.scrollLeft = 0;
+overviewScroller.scrollWidth = 0;
+overviewScroller.clientWidth = 0;
 els.overviewHistoryChart.clientWidth = 900;
 els.overviewHistoryChart.querySelector = (selector) => selector === ".overview-history-scroll" ? overviewScroller : null;
 state.overviewChartRendered = false;
@@ -351,6 +349,132 @@ assert.deepEqual(result.preservedPageScroll.calls, [
   { left: 12, top: 760 }
 ]);
 
+// Exercise both real scroller shapes rather than the legacy chart-root fallback.
+// Delayed layout outlives all frame retries; resize and manual navigation must
+// continue to behave correctly without another data refresh.
+for (const chart of ["overview", "history"]) {
+  for (const mode of ["tokens", "costs"]) {
+    for (const viewportWidth of [320, 900]) {
+      vm.runInNewContext(`${code}
+state.language = "en";
+state.chartMode = ${JSON.stringify(mode)};
+const chartKind = ${JSON.stringify(chart)};
+const viewportWidth = ${viewportWidth};
+const host = chartKind === "overview" ? els.overviewHistoryChart : els.chart;
+const scrollClass = chartKind === "overview" ? "overview-history-scroll" : "chart-scroll";
+const canvasClass = chartKind === "overview" ? "overview-history-canvas" : "chart-canvas";
+let scroller = null;
+let canvasWidth = 0;
+let layoutWidth = 0;
+host.clientWidth = viewportWidth;
+host.querySelector = (selector) => selector === "." + scrollClass ? scroller : null;
+Object.defineProperty(host, "innerHTML", {
+  set(html) {
+    const match = html.match(/canvas" style="width: ([\\d.]+)px/u);
+    canvasWidth = match ? Number(match[1]) : 0;
+    scroller = match ? makeElement(scrollClass) : null;
+    if (scroller) {
+      scroller.clientWidth = layoutWidth;
+      scroller.scrollWidth = layoutWidth ? canvasWidth : 0;
+      const canvas = makeElement(canvasClass);
+      scroller.querySelector = (selector) => selector === "." + canvasClass ? canvas : null;
+    }
+  }
+});
+const frames = [];
+window.requestAnimationFrame = (callback) => { frames.push(callback); return frames.length; };
+function flushFrames() {
+  let count = 0;
+  while (frames.length) {
+    frames.shift()();
+    if (++count > 50) throw new Error("unbounded scroll frame retries");
+  }
+}
+const rows = Array.from({ length: 100 }, (_, i) => ({
+  date: new Date(Date.UTC(2026, 5, 1) + i * 86400000).toISOString().slice(0, 10),
+  totalTokens: 100000 + i * 1200,
+  sources: [{
+    id: "codex", totalTokens: 100000 + i * 1200,
+    inputTokens: 50000, outputTokens: 50000 + i * 1200,
+    models: [{ model: "gpt-5.3-codex", totalTokens: 100000 + i * 1200, inputTokens: 50000, outputTokens: 50000 + i * 1200 }]
+  }]
+}));
+const renderRows = chartKind === "overview" ? renderOverviewHistory : state.chartMode === "costs" ? renderCostChart : renderChart;
+function expectLatest(label) {
+  assert.ok(scroller.scrollWidth > scroller.clientWidth, label + ": has overflow");
+  assert.equal(scroller.scrollLeft, scroller.scrollWidth - scroller.clientWidth, label);
+}
+function resize(width, contentWidth = canvasWidth) {
+  layoutWidth = width;
+  scroller.clientWidth = width;
+  scroller.scrollWidth = contentWidth;
+  flushResizeObservers();
+}
+
+// No data yet, then a hidden first render, then layout after the retry budget.
+renderRows([]);
+flushFrames();
+assert.equal(activeResizeObservers(), 0);
+renderRows(rows);
+flushFrames();
+assert.equal(scroller.scrollLeft, 0);
+assert.equal(chartKind === "overview" ? state.overviewChartScrollToLatest : state.chartScrollToLatest, true);
+resize(viewportWidth);
+expectLatest("late first layout");
+
+// Scroll width can grow after the viewport already had a valid layout.
+resize(viewportWidth, canvasWidth + 240);
+expectLatest("late content width");
+for (let cycle = 0; cycle < 2; cycle++) {
+  resize(viewportWidth - 100);
+  expectLatest("narrowed viewport");
+  resize(viewportWidth);
+  expectLatest("restored viewport");
+}
+
+// The browser can queue scroll events after the next animation frame.
+renderRows(rows);
+frames.shift()();
+scroller.scrollLeft = 100;
+flushFrames();
+assert.equal(scroller.scrollLeft, 100, "queued settling respects manual scroll before its event");
+scroller.dispatchEvent({ type: "scroll" });
+resize(viewportWidth - 100);
+assert.equal(scroller.scrollLeft, 100, "manual scroll survives layout");
+renderRows(rows);
+flushFrames();
+assert.equal(scroller.scrollLeft, 100, "manual scroll survives data refresh");
+
+// Navigation before the first settling frame also belongs to the user.
+requestChartLatestForRangeChange();
+renderRows(rows);
+scroller.scrollLeft = 120;
+scroller.dispatchEvent({ type: "scroll" });
+flushFrames();
+assert.equal(scroller.scrollLeft, 120, "manual scroll before first frame survives");
+
+// Returning to the right edge resumes following, including after a refresh.
+scroller.scrollLeft = scroller.scrollWidth - scroller.clientWidth;
+scroller.dispatchEvent({ type: "scroll" });
+renderRows([...rows, { ...rows[99], date: "2026-09-09" }]);
+flushFrames();
+expectLatest("resumed following after new data");
+
+// Cleanup invalidates old observers, scroll listeners and already queued frames.
+const staleScroller = scroller;
+renderRows(rows);
+renderRows([]);
+flushFrames();
+flushResizeObservers();
+staleScroller.scrollLeft = 0;
+staleScroller.dispatchEvent({ type: "scroll" });
+assert.equal(activeResizeObservers(), 0, "empty render disconnects observers");
+assert.equal(chartKind === "overview" ? state.overviewChartRendered : state.chartRendered, false, "stale callbacks cannot mark an empty chart rendered");
+`, { ...createAppContext(), assert }, { filename: appPath + ":" + chart + ":" + mode + ":" + viewportWidth });
+    }
+  }
+}
+
 function createAppContext() {
   const elements = new Map();
   const resizeObservers = [];
@@ -372,6 +496,7 @@ function createAppContext() {
   }
   function makeElement(id = "") {
     let html = "";
+    const listeners = new Map();
     const element = {
       id,
       hidden: false,
@@ -392,8 +517,16 @@ function createAppContext() {
           return false;
         }
       },
-      addEventListener() {},
-      removeEventListener() {},
+      addEventListener(type, callback) {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type).add(callback);
+      },
+      removeEventListener(type, callback) {
+        listeners.get(type)?.delete(callback);
+      },
+      dispatchEvent(event) {
+        for (const callback of listeners.get(event.type) || []) callback(event);
+      },
       setAttribute() {},
       removeAttribute() {},
       querySelector() {
@@ -418,6 +551,7 @@ function createAppContext() {
       close() {}
     };
     Object.defineProperty(element, "innerHTML", {
+      configurable: true,
       get() {
         return html;
       },
@@ -462,6 +596,8 @@ function createAppContext() {
     window: { lucide: null, requestAnimationFrame: (fn) => fn(), Notification: undefined, focus() {} },
     ResizeObserver,
     flushResizeObservers,
+    makeElement,
+    activeResizeObservers: () => resizeObservers.filter((observer) => observer.connected).length,
     localStorage: { getItem() { return null; }, setItem() {}, removeItem() {} },
     setTimeout,
     clearTimeout,
