@@ -163,6 +163,9 @@ if (process.platform === "linux") {
 
     // Exercise trusted IPC and exact user-local installer arguments.
     await run(process.execPath, [path.join(root, "scripts/build-plasmoid.mjs")]);
+    assert.equal(await fs.readFile(path.join(root, "dist/plasma/package/contents/code/ProviderColors.js"), "utf8"),
+      ".pragma library\n" + await fs.readFile(path.join(root, "public/provider-colors.js"), "utf8"),
+      "Plasma ships the identical shared palette and contrast logic");
     assert.deepEqual(await fs.readFile(path.join(root, "dist/plasma/llm-usage-dashboard.plasmoid")),
       await fs.readFile(path.join(root, "dist", `LLM-Usage-Dashboard-${require("../package.json").version}-plasma.zip`)),
       "existing CI ZIP asset and bundled native package are identical");

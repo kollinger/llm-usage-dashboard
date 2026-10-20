@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -6,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const appPath = path.join(rootDir, "public", "app.js");
-const source = await readFile(appPath, "utf8");
+const source = await readDashboardSource();
 const code = source.replace("\ninit();", "\n// bootstrap disabled for attribution tests");
 assert.notEqual(code, source);
 const result = JSON.parse(vm.runInNewContext(`${code}

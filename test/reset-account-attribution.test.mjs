@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -73,7 +74,7 @@ try {
   const persisted = await _test.readCodexResetHistory();
   assert.equal(persisted.accounts.length, 2);
   assert.deepEqual(persisted.accounts.map(a => a.history.windows[0].previousUsedPercent), [100, 18]);
-  const source = (await fs.readFile(new URL('../public/app.js', import.meta.url), 'utf8')).replace('\ninit();', '\n// no bootstrap');
+  const source = (await readDashboardSource()).replace('\ninit();', '\n// no bootstrap');
   const context = { document: { getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] }, window: {}, navigator: {}, localStorage: { getItem: () => null }, Intl, Date, console, URLSearchParams, setTimeout, clearTimeout };
   const html = vm.runInNewContext(source + `\nstate.translations = ${JSON.stringify(de)}; renderCodexResetHistoryContent(${JSON.stringify(withLegacy)});`, context);
   assert.match(html, /First account/); assert.match(html, /Second account/); assert.match(html, /Keinem Konto zugeordnet/);

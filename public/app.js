@@ -213,17 +213,17 @@ const els = {
 };
 
 const providerMeta = {
-  codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: "#23745c" },
-  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: "#316f8f" },
-  codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: "#5b6ee1" },
-  copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: "#6f42c1" },
-  claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: "#d55e00" },
-  anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
-  openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
-  gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: "#b94e5c" },
-  kimi: { name: "Kimi", kickerKey: "providers.kimi.kicker", accent: "#227eaa" },
-  glm: { name: "GLM/Z.AI", kickerKey: "providers.glm.kicker", accent: "#48505a" },
-  ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
+  codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: window.llmUsageProviderColors.accent("codex") },
+  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: window.llmUsageProviderColors.accent("openCode") },
+  codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: window.llmUsageProviderColors.accent("codexSpark") },
+  copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: window.llmUsageProviderColors.accent("copilot") },
+  claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: window.llmUsageProviderColors.accent("claudeCode") },
+  anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: window.llmUsageProviderColors.accent("anthropic") },
+  openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: window.llmUsageProviderColors.accent("openai") },
+  gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: window.llmUsageProviderColors.accent("gemini") },
+  kimi: { name: "Kimi", kickerKey: "providers.kimi.kicker", accent: window.llmUsageProviderColors.accent("kimi") },
+  glm: { name: "GLM/Z.AI", kickerKey: "providers.glm.kicker", accent: window.llmUsageProviderColors.accent("glm") },
+  ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: window.llmUsageProviderColors.accent("ollama") }
 };
 
 const providerBrandMeta = {
@@ -238,13 +238,13 @@ const providerBrandMeta = {
   kimi: { label: "Kimi", mark: "K", accent: providerMeta.kimi.accent },
   glm: { label: "GLM/Z.AI", mark: "Z", logo: "zai.svg", accent: providerMeta.glm.accent },
   ollama: { label: "Ollama", mark: "Ol", accent: providerMeta.ollama.accent },
-  minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: "#2459d8" },
-  deepseek: { label: "DeepSeek", mark: "DS", logo: "deepseek.svg", accent: "#4d63d8" },
-  alibaba: { label: "Alibaba / Qwen", mark: "Q", logo: "qwen.svg", accent: "#d86a1d" },
-  zai: { label: "Z.AI / GLM", mark: "Z", logo: "zai.svg", accent: "#48505a" },
-  xai: { label: "xAI", mark: "x", logo: "xai.svg", accent: "#111827" },
-  mistral: { label: "Mistral", mark: "Mi", logo: "mistral.svg", accent: "#c76619" },
-  stepfun: { label: "StepFun", mark: "St", logo: "stepfun.svg", accent: "#1e7c75" },
+  minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: window.llmUsageProviderColors.accent("minimax") },
+  deepseek: { label: "DeepSeek", mark: "DS", logo: "deepseek.svg", accent: window.llmUsageProviderColors.accent("deepseek") },
+  alibaba: { label: "Alibaba / Qwen", mark: "Q", logo: "qwen.svg", accent: window.llmUsageProviderColors.accent("alibaba") },
+  zai: { label: "Z.AI / GLM", mark: "Z", logo: "zai.svg", accent: window.llmUsageProviderColors.accent("zai") },
+  xai: { label: "xAI", mark: "x", logo: "xai.svg", accent: window.llmUsageProviderColors.accent("xai") },
+  mistral: { label: "Mistral", mark: "Mi", logo: "mistral.svg", accent: window.llmUsageProviderColors.accent("mistral") },
+  stepfun: { label: "StepFun", mark: "St", logo: "stepfun.svg", accent: window.llmUsageProviderColors.accent("stepfun") },
   local: { label: "Local", mark: "Lo", accent: providerMeta.codex.accent }
 };
 

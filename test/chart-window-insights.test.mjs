@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -6,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const appPath = path.join(rootDir, "public", "app.js");
-const appSource = await readFile(appPath, "utf8");
+const appSource = await readDashboardSource();
 const code = appSource.replace("\ninit();", "\n// init disabled for chart window insight tests");
 assert.notEqual(code, appSource, "chart window insight tests must disable app bootstrap");
 

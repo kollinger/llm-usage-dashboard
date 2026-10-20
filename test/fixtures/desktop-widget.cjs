@@ -52,4 +52,18 @@ function claudeQuotaLabelsFixture(now = Date.now()) {
   return { generatedAt: time, connectedAccounts: [{ id: "synthetic-claude-quota-labels", provider: "claude",
     label: "Claude · Synthetic quota scopes", status: "connected", updatedAt: time, limits: { rows } }] };
 }
-module.exports = { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture };
+function providerColorsUsageFixture(now = Date.now()) {
+  return { generatedAt: new Date(now).toISOString(), connectedAccounts:
+    ["gpt", "claude", "kimi", "glm", "openai", "anthropic", "moonshot", "copilot", "gemini"].map((provider, index) => ({
+      id: `synthetic-color-${provider}`, provider, label: "Claude / Codex · Same synthetic label",
+      localSource: true, status: "connected", updatedAt: new Date(now).toISOString(),
+      quotaQuality: ["measured", "calculated_from_logs", "estimated"][index % 3],
+      limits: { rows: [
+        { key: "fiveHour", windowMinutes: 300, remainingPercent: 65 },
+        { key: "weekly", windowMinutes: 10080, remainingPercent: 40, updatedAt: new Date(now - 3_600_000).toISOString() },
+        { key: "zero", windowMinutes: 60, remainingPercent: 0 },
+        { key: "missing", windowMinutes: 120, remainingPercent: null }
+      ] }
+    })) };
+}
+module.exports = { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture };

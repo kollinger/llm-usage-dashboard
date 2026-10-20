@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
@@ -111,7 +112,7 @@ for (const name of locales) {
   for (const key of Object.keys(en)) assert.deepEqual((translated[key].match(/\{\w+\}/g)||[]).sort(),(en[key].match(/\{\w+\}/g)||[]).sort(),name+':'+key);
 }
 // Render evidence labels and unavailable values without bootstrap or network calls.
-const app = (await readFile(new URL('../public/app.js',import.meta.url),'utf8')).replace('\ninit();','\n// bootstrap disabled');
+const app = (await readDashboardSource()).replace('\ninit();','\n// bootstrap disabled');
 const context = { document:{getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[]}, window:{},navigator:{},localStorage:{getItem:()=>null},Intl,Date,console,URLSearchParams,setTimeout,clearTimeout };
 const html = vm.runInNewContext(app+`\nstate.translations = ${JSON.stringify({codexResets:en})}; renderCodexResetHistoryContent(${JSON.stringify(history)});`,context);
 assert(html.includes('Credit redeemed: inferred'));
