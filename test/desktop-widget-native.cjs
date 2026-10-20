@@ -397,7 +397,11 @@ app.on("window-all-closed", () => {});
     const template = nativeImage.createFromPath(path.resolve(__dirname, "../electron/assets/menu-barTemplate.png"));
     assert(template.isTemplateImage());
     assert(template.getScaleFactors().includes(2), "Retina representation is packaged");
-    assert(tray.getBounds().width > 0, "native menu-bar item is placed");
+    console.log(`macOS initial tray bounds: ${JSON.stringify(tray.getBounds())}`);
+    // Cocoa lays out a newly added status item on the next native run-loop
+    // turn. Its width can be assigned before its height/position are ready.
+    await until(() => { const bounds = tray.getBounds(); return bounds.width > 0 && bounds.height > 0; }, "native menu-bar item is placed");
+    console.log(`macOS placed tray bounds: ${JSON.stringify(tray.getBounds())}`);
     const nativeEvents = [];
     for (const name of ["mouse-down", "mouse-up", "click"]) tray.on(name, () => { nativeEvents.push(name); });
     app.on("browser-window-created", (_event, created) => {
