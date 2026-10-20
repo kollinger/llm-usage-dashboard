@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.1-preview.5 - 2026-10-20
+
+### Fixed
+
+- Desktop update checks skip unpublished tags and incomplete platform releases, preserve the preview setting, and report network or integrity failures safely.
+
 ## 1.10.1-preview.4 - 2026-10-20
 
 ### Fixed
