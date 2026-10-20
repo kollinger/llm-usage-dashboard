@@ -194,6 +194,9 @@ app.on("window-all-closed", () => {});
   await until(() => evaluate(widget, "document.documentElement.dataset.theme === 'dark'"), "dark appearance");
   await layout(widget, true); await capture(widget, "five-accounts-dark");
 
+  // Real macOS CI exposes only 645px of content in the default outer window.
+  // Keep five full rows visible there, including wrapped translated scopes.
+  if (!wayland) { widget.setContentSize(780, 645); await pause(70); }
   const languages = (await fs.readdir(path.resolve(__dirname, "../public/i18n"))).filter((name) => name.endsWith(".json")).map((name) => name.slice(0, -5));
   for (const code of languages) {
     language = code; controller.updateTheme({ preference: theme, color: "#0f1512" });
