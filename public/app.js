@@ -2419,7 +2419,7 @@ async function init() {
 
 function renderPlasmaWidgetStatus(status, installButton, statusElement) {
   // KPlugin.Version describes files on disk, never the QML cached by Plasma.
-  // Even removing/re-adding an applet can reuse that cache until session reload.
+  // The installer independently verifies compact replacements for live panels.
   const current = status.installed && status.installedVersion && status.version &&
     status.installedVersion === status.version && status.success !== false;
   installButton.disabled = !status.supported || Boolean(current);
@@ -2427,7 +2427,7 @@ function renderPlasmaWidgetStatus(status, installButton, statusElement) {
   const key = status.success === false ? "plasma.installError" : !status.supported ?
     status.reason === "unsupported" ? "plasma.unsupported" : "plasma.requirements" : status.installed ? "plasma.installed" : null;
   const messages = key ? [t(key, { version: `\u2066${status.installedVersion || status.version}\u2069` })] : [];
-  if (status.supported && status.installed && status.success !== false) messages.push(t("plasma.reloadHelp"));
+  if (status.supported && status.installed && !status.panelsReady && status.success !== false) messages.push(t("plasma.reloadHelp"));
   if (status.supported && !status.connected) messages.push(t("plasma.offline"));
   statusElement.textContent = messages.join(" ");
 }

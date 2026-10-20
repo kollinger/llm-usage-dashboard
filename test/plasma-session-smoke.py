@@ -20,7 +20,9 @@ MODE = sys.argv[1] if len(sys.argv) > 1 else "x11"
 PANEL = "--panel" in sys.argv
 QUOTA_LABELS = "--quota-labels" in sys.argv
 UPGRADE = os.environ.get("PLASMA_UPGRADE_ARCHIVE")
+LIVE_UPGRADE = "--live-upgrade" in sys.argv
 assert not UPGRADE or PANEL, "Use --panel with PLASMA_UPGRADE_ARCHIVE"
+assert not LIVE_UPGRADE or UPGRADE, "Use PLASMA_UPGRADE_ARCHIVE with --live-upgrade"
 EVIDENCE = Path(os.environ.get("PLASMA_QA_EVIDENCE", ROOT / ".cache" / ("quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)))
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 profile = Path(tempfile.mkdtemp(prefix="llm-plasma-qa-"))
@@ -216,33 +218,95 @@ def exercise_panels(shell, fixture):
         # metadata cannot exercise Plasma's in-process QML component cache.
         desktop = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
         retained = []
+        neighbors = []
         for edge in ["bottom", "right"]:
-            retained.append(json.loads(evaluate("var p=new Panel; p.location='" + edge + "'; p.height=48; p.floating=false; p.hiding='none'; var w=p.addWidget('" + PLUGIN + "'); print(JSON.stringify({panel:p.id,widget:w.id}));")))
+            retained.append(json.loads(evaluate("var p=new Panel; p.location='" + edge + "'; p.height=48; p.floating=false; p.hiding='none';" +
+                ("p.addWidget('org.kde.plasma.analogclock');" if LIVE_UPGRADE else "") +
+                "var w=p.addWidget('" + PLUGIN + "');" +
+                ("p.addWidget('org.kde.plasma.analogclock');" if LIVE_UPGRADE else "") +
+                "print(JSON.stringify({panel:p.id,widget:w.id}));")))
+        if LIVE_UPGRADE:
+            neighbors = json.loads(evaluate("print(JSON.stringify(panels().map(p=>({panel:p.id,widgets:p.widgets().sort((a,b)=>a.geometry[p.location==='right'?'y':'x']-b.geometry[p.location==='right'?'y':'x']).map((w,index)=>({id:w.id,type:w.type,index:index}))}))));"))
         time.sleep(2)
         def panel_geometry(info):
             return json.loads(evaluate("print(JSON.stringify(panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ").geometry))"))
         before = [panel_geometry(info) for info in retained]
         assert all(max(r["width"], r["height"]) >= 300 for r in before), "Historical package must actually load its full panel view"
         snapshot = json.loads(run(["/usr/bin/python3", "-I", str(ROOT / "plasma/contents/code/read_snapshot.py")]))["snapshot"]
-        config = {"favorites": [snapshot["accounts"][0]["id"]], "view": "favorites", "provider": "all", "scale": 1.1}
+        config = {"favorites": [a["id"] for a in snapshot["accounts"][:2]], "view": "favorites", "provider": "all", "scale": 1.15}
         targets = ["desktops()[0].widgetById(" + str(desktop) + ")"] + [
             "panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ")" for info in retained]
         for target in targets:
             evaluate("var w=" + target + "; w.currentConfigGroup=['General'];" +
                      ";".join("w.writeConfig(" + json.dumps(k) + "," + json.dumps(v) + ")" for k, v in config.items()) + ";")
         capture("upgrade-old-package")
-        run(["kpackagetool6", "--type", "Plasma/Applet", "--packageroot", env["XDG_DATA_HOME"] + "/plasma/plasmoids", "--upgrade", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
+        desktop_before = geometry(desktop)
+        if LIVE_UPGRADE:
+            result = json.loads(run(["node", "test/fixtures/plasma-install.cjs", "--startup"]))
+            assert result["panelsReady"] and result.get("success") is not False, "Actual app startup must update and repair existing panels"
+            assert shell.poll() is None, "Live update must not restart Plasma"
+            assert geometry(desktop) == desktop_before, "Live repair must not replace/resize the desktop instance"
+            for i, info in enumerate(retained):
+                info["widget"] = int(evaluate("print(panelById(" + str(info["panel"]) + ").widgets().filter(w=>w.type==='" + PLUGIN + "')[0].id);"))
+                targets[i + 1] = "panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ")"
+            for original in neighbors:
+                current = json.loads(evaluate("var p=panelById(" + str(original["panel"]) + ");print(JSON.stringify(p.widgets().sort((a,b)=>a.geometry[p.location==='right'?'y':'x']-b.geometry[p.location==='right'?'y':'x']).map((w,index)=>({id:w.id,type:w.type,index:index}))));"))
+                (EVIDENCE / ("panel-order-" + str(original["panel"]) + ".json")).write_text(json.dumps({"before": original, "after": current}, indent=2))
+                assert [w["type"] for w in current] == [w["type"] for w in original["widgets"]], "Panel order must survive repair"
+                assert [w for w in current if w["type"] != PLUGIN] == [w for w in original["widgets"] if w["type"] != PLUGIN], "Unrelated widgets must retain identity and position"
+            unchanged = json.loads(evaluate("print(JSON.stringify(panels().map(p=>p.widgets().map(w=>w.id))));"))
+            run(["node", "test/fixtures/plasma-install.cjs", "--startup"])
+            assert json.loads(evaluate("print(JSON.stringify(panels().map(p=>p.widgets().map(w=>w.id))));")) == unchanged, "Repeated startup must not replace healthy instances"
+            assert (profile / "data/plasma/plasmoids" / PLUGIN).is_symlink(), "New instances must resolve the versioned canonical source"
+            # Explicit repair also has to preserve the positions of multiple
+            # healthy instances in one panel, including between other widgets.
+            horizontal = str(retained[0]["panel"])
+            extra = int(evaluate("print(panelById(" + horizontal + ").addWidget('" + PLUGIN + "').id);"))
+            time.sleep(.5)
+            order_script = "var p=panelById(" + horizontal + ");print(JSON.stringify(p.widgets().sort((a,b)=>a.geometry.x-b.geometry.x).map(w=>w.type)));"
+            multi_order = json.loads(evaluate(order_script))
+            run(["node", "test/fixtures/plasma-install.cjs"])
+            assert json.loads(evaluate(order_script)) == multi_order, "Explicit multi-instance repair must preserve native visual order"
+            for i, info in enumerate(retained):
+                ids = json.loads(evaluate("print(JSON.stringify(panelById(" + str(info["panel"]) + ").widgets().filter(w=>w.type==='" + PLUGIN + "').map(w=>w.id)));"))
+                info["widget"] = ids[0]
+                targets[i + 1] = "panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ")"
+                if i == 0:
+                    assert len(ids) == 2
+                    evaluate("panelById(" + horizontal + ").widgetById(" + str(ids[1]) + ").remove();")
+        else:
+            run(["kpackagetool6", "--type", "Plasma/Applet", "--packageroot", env["XDG_DATA_HOME"] + "/plasma/plasmoids", "--upgrade", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
         installed = profile / "data/plasma/plasmoids" / PLUGIN
         assert json.loads((installed / "metadata.json").read_text())["KPlugin"]["Version"] == json.loads((ROOT / "package.json").read_text())["version"]
         assert (installed / "contents/ui/main.qml").read_bytes() == (ROOT / "plasma/contents/ui/main.qml").read_bytes(), "Active per-user source must equal the new package"
         after = [panel_geometry(info) for info in retained]
-        assert before == after, "Existing QML is retained until the private shell reloads"
+        if LIVE_UPGRADE:
+            assert all(16 <= r["width"] <= 80 and abs(r["width"] - r["height"]) <= 1 for r in after), "Regression: full AccountView must not remain embedded in either live panel"
+            for target in targets:
+                stored = json.loads(evaluate("var w=" + target + "; w.currentConfigGroup=['General']; print(JSON.stringify({favorites:w.readConfig('favorites'),view:w.readConfig('view'),provider:w.readConfig('provider'),scale:w.readConfig('scale')}));"))
+                stored["scale"] = float(stored["scale"])
+                if isinstance(stored["favorites"], str):
+                    stored["favorites"] = stored["favorites"].split(",")
+                assert stored == config, "Live repair must preserve all desktop/panel display preferences: " + str(stored)
+            for info in retained:
+                rect, point = icon(info["panel"], info["widget"])
+                for cycle in range(2):
+                    opened(point); pointer(*point); closed()
+                    opened(point); run(["xdotool", "key", "Escape"]); closed()
+                    opened(point); pointer(800, 550); closed()
+                    assert icon(info["panel"], info["widget"])[0] == rect
+            capture("upgrade-live-repaired")
+        else:
+            assert before == after, "Existing QML is retained until the private shell reloads"
         # Also check the commonly suggested remove/re-add within the same shell.
         evaluate("panelById(" + str(retained[0]["panel"]) + ").widgetById(" + str(retained[0]["widget"]) + ").remove();")
         retained[0]["widget"] = int(evaluate("print(panelById(" + str(retained[0]["panel"]) + ").addWidget('" + PLUGIN + "').id);"))
         time.sleep(1)
         readded = panel_geometry(retained[0])
-        assert max(readded["width"], readded["height"]) >= 300, "Remove/re-add still reuses the old QML component on this Plasma version"
+        if LIVE_UPGRADE:
+            assert max(readded["width"], readded["height"]) <= 80, "Newly added instance must bypass the old component cache as well"
+        else:
+            assert max(readded["width"], readded["height"]) >= 300, "Remove/re-add still reuses the old QML component on this Plasma version"
         capture("upgrade-before-reload")
         shell.terminate()
         shell.wait(timeout=15)
@@ -271,7 +335,7 @@ def exercise_panels(shell, fixture):
             evaluate("panelById(" + str(retained[0]["panel"]) + ").location='" + edge + "';")
             time.sleep(.5)
             icon(retained[0]["panel"], retained[0]["widget"])
-        (EVIDENCE / "upgrade-results.json").write_text(json.dumps({"mode": MODE, "before": before, "afterPackageUpgrade": after, "readdedBeforeReload": readded, "restored": restored, "desktop": desktop_size, "realOldPackage": True, "activeSourceVerified": True, "preferencesPreserved": True, "formFactorChanges": True}, indent=2))
+        (EVIDENCE / "upgrade-results.json").write_text(json.dumps({"mode": MODE, "before": before, "afterPackageUpgrade": after, "readdedBeforeReload": readded, "restored": restored, "desktop": desktop_size, "realOldPackage": True, "activeSourceVerified": True, "preferencesPreserved": True, "formFactorChanges": True, "liveRepair": LIVE_UPGRADE, "neighborsAndIdempotentStartup": LIVE_UPGRADE}, indent=2))
         evaluate("panels().forEach(p=>p.remove()); desktops()[0].widgetById(" + str(desktop) + ").remove();")
 
     for edge in (["bottom"] if QUOTA_LABELS else ["bottom", "top", "left", "right"]):

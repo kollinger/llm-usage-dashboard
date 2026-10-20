@@ -44,6 +44,8 @@ for (const result of [installedState, { ...installedState, success: true }]) {
   assert(notice.textContent.includes(english.reloadHelp), "cache/reload guidance survives both install success and reopening the dialog/app");
   assert(!notice.textContent.includes(english.offline));
 }
+ui.renderPlasmaWidgetStatus({ ...installedState, panelsReady: true }, button, notice);
+assert(!notice.textContent.includes(english.reloadHelp), "a verified live panel repair does not ask for a session restart");
 ui.renderPlasmaWidgetStatus({ ...installedState, installedVersion: "1.9.0-preview.2", connected: false }, button, notice);
 assert.equal(button.disabled, false);
 assert.equal(button.textContent, english.update);
@@ -176,19 +178,30 @@ if (process.platform === "linux") {
         assert.equal(options.shell, undefined); commands.push([command, args]);
         if (args.includes("--install") || args.includes("--upgrade")) {
           assert(args.includes("--packageroot")); assert(!args.includes("--global"));
-          await fs.mkdir(path.dirname(metadataFile), { recursive: true });
-          await fs.writeFile(metadataFile, JSON.stringify({ KPlugin: { Version: app.getVersion() } }));
+          const target = path.join(args[args.indexOf("--packageroot") + 1], PLUGIN_ID, "metadata.json");
+          await fs.mkdir(path.dirname(target), { recursive: true });
+          await fs.writeFile(target, JSON.stringify({ KPlugin: { Id: PLUGIN_ID, Version: app.getVersion() } }));
         }
+        if (command === "dbus-send") return { stdout: "boolean false" }; // no running desktop in this contract
         return { stdout: command === "kpackagetool6" ? "kpackagetool6 2.0\n" : "Python 3\n" };
       }
     });
     assert.equal((await handlers.get("plasma:status")(event)).installed, false);
+    await installer.start();
+    assert(!commands.some(([, args]) => args.includes("--install")), "startup must not opt a user into a first native-widget install");
     assert.throws(() => handlers.get("plasma:status")({ ...event, senderFrame: { url: event.senderFrame.url } }), /untrusted/);
+    assert.throws(() => handlers.get("plasma:install")({ ...event, senderFrame: { url: event.senderFrame.url } }), /untrusted/);
     assert.equal((await handlers.get("plasma:install")(event)).success, true);
     assert(commands.some(([, args]) => args.includes("--install")));
     assert.equal((await handlers.get("plasma:install")(event)).success, true);
-    assert(commands.some(([, args]) => args.includes("--upgrade")));
+    assert.equal(commands.filter(([cmd, args]) => cmd === "kpackagetool6" && args.includes("--install")).length, 1, "the same immutable package is reused");
+    assert((await fs.lstat(path.dirname(metadataFile))).isSymbolicLink());
     assert.equal((await installer.status()).installedVersion, app.getVersion());
+    const callsBeforeNewerPackage = commands.length;
+    await fs.writeFile(metadataFile, JSON.stringify({ KPlugin: { Id: PLUGIN_ID, Version: "99.0.0" } }));
+    await installer.start();
+    assert.equal((await installer.status()).installedVersion, "99.0.0", "starting an older app must not downgrade an installed newer widget");
+    assert(!commands.slice(callsBeforeNewerPackage).some(([cmd]) => cmd === "dbus-send"));
     await installer.dispose(); assert.equal(handlers.size, 0);
   } finally { await bridge?.close(); await fs.rm(temporary, { recursive: true, force: true }); }
 }
