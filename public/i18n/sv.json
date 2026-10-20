@@ -1408,13 +1408,15 @@
     "compactHelp": "Ett separat appfönster för Linux, macOS och Windows.",
     "install": "Installera KDE-widget",
     "update": "Uppdatera KDE-widget",
-    "installHelp": "Installeras bara för din användare. Högerklicka på skrivbordet → Lägg till grafiska komponenter → LLM Usage Dashboard. Logga ut från Plasma och in igen efter uppdatering för att läsa in den nya versionen.",
-    "installed": "Installerad version: {version}.",
+    "installHelp": "Installeras bara för din användare. Högerklicka på panelen → Lägg till grafiska komponenter → LLM Usage Dashboard för en kompakt ikon med en utfällbar översikt. Lägg till den på skrivbordet för den stora komponenten.",
+    "installed": "Widgetpaket på disk: {version}.",
     "installing": "Installerar…",
     "requirements": "Kräver Plasma 6, kpackagetool6, Python 3 och det medföljande widgetpaketet.",
     "unsupported": "Den inbyggda widgeten kräver Linux med Plasma 6. Använd det kompakta fönstret här.",
     "installError": "Installationen misslyckades. Kontrollera kraven för Plasma 6 och försök igen.",
     "offline": "Appen är inte tillgänglig. Starta skrivbordsappen; tidigare avläsningar är inaktuella.",
-    "bounded": "Begränsat till {count}; använd favoriter eller ett leverantörsfilter."
+    "bounded": "Begränsat till {count}; använd favoriter eller ett leverantörsfilter.",
+    "current": "KDE-paketet är uppdaterat",
+    "reloadHelp": "Versionen som Plasma har läst in kan inte kontrolleras här. Om den gamla vyn finns kvar efter uppdateringen, spara ditt arbete, logga ut från Plasma och in igen. Att ta bort och lägga till komponenten kan återanvända den gamla cachade vyn."
   }
 }

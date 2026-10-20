@@ -26,6 +26,41 @@ for (const file of await fs.readdir(locales)) {
     assert.deepEqual(placeholders(translated[key]), placeholders(english[key]), `${file}:${key}`);
   }
 }
+// Exercise the actual dialog renderer. A matching disk version must never be
+// presented as proof that a running Plasma applet has loaded the new QML.
+const appSource = await fs.readFile(path.join(root, "public/app.js"), "utf8");
+const ui = vm.createContext({
+  t: (key, values = {}) => Object.entries(values).reduce((text, [name, value]) =>
+    text.replaceAll(`{${name}}`, value), english[key.replace(/^plasma\./, "")])
+});
+vm.runInContext(appSource.slice(appSource.indexOf("function renderPlasmaWidgetStatus("), appSource.indexOf("function bindEvents(")), ui);
+const button = {}, notice = {};
+const installedState = { supported: true, installed: true, installedVersion: "1.10.0-preview.1", version: "1.10.0-preview.1", connected: true };
+for (const result of [installedState, { ...installedState, success: true }]) {
+  ui.renderPlasmaWidgetStatus(result, button, notice);
+  assert.equal(button.disabled, true);
+  assert.equal(button.textContent, english.current);
+  assert(notice.textContent.includes("1.10.0-preview.1"));
+  assert(notice.textContent.includes(english.reloadHelp), "cache/reload guidance survives both install success and reopening the dialog/app");
+  assert(!notice.textContent.includes(english.offline));
+}
+ui.renderPlasmaWidgetStatus({ ...installedState, installedVersion: "1.9.0-preview.2", connected: false }, button, notice);
+assert.equal(button.disabled, false);
+assert.equal(button.textContent, english.update);
+assert(notice.textContent.includes("1.9.0-preview.2"));
+assert(notice.textContent.includes(english.offline));
+ui.renderPlasmaWidgetStatus({ ...installedState, success: false }, button, notice);
+assert.equal(button.disabled, false, "failed install allows retry even if metadata already matches");
+assert.equal(notice.textContent, english.installError);
+ui.renderPlasmaWidgetStatus({ supported: true, installed: false, version: "1.10.0-preview.1", connected: true }, button, notice);
+assert.equal(button.disabled, false);
+assert.equal(button.textContent, english.install);
+assert.equal(notice.textContent, "");
+ui.renderPlasmaWidgetStatus({ supported: false, reason: "unsupported" }, button, notice);
+assert.equal(button.disabled, true);
+assert.equal(notice.textContent, english.unsupported);
+ui.renderPlasmaWidgetStatus({ supported: false, reason: "requirements" }, button, notice);
+assert.equal(notice.textContent, english.requirements);
 const model = vm.createContext({});
 vm.runInContext((await fs.readFile(path.join(root, "plasma/contents/code/ViewModel.js"), "utf8")).replace(/^\.pragma library\s*/, ""), model);
 for (const count of [0, 1, 5, 12, 80]) {

@@ -1408,13 +1408,15 @@
     "compactHelp": "Samostatné okno aplikácie pre Linux, macOS a Windows.",
     "install": "Nainštalovať widget KDE",
     "update": "Aktualizovať widget KDE",
-    "installHelp": "Inštalácia iba pre vášho používateľa. Pravým tlačidlom na plochu → Pridať widgety → LLM Usage Dashboard. Po aktualizácii sa odhláste z Plasma a znova prihláste, aby sa načítala nová verzia.",
-    "installed": "Nainštalovaná verzia: {version}.",
+    "installHelp": "Inštalácia len pre vášho používateľa. Kliknite pravým tlačidlom na panel → Pridať widgety → LLM Usage Dashboard pre kompaktnú ikonu s rozbaľovacím prehľadom. Na ploche sa zobrazí veľký widget.",
+    "installed": "Balík widgetu na disku: {version}.",
     "installing": "Inštaluje sa…",
     "requirements": "Vyžaduje Plasma 6, kpackagetool6, Python 3 a priložený balík widgetu.",
     "unsupported": "Natívny widget vyžaduje Linux s Plasma 6. Tu použite kompaktné okno.",
     "installError": "Inštalácia zlyhala. Skontrolujte požiadavky Plasma 6 a skúste to znova.",
     "offline": "Aplikácia nie je dostupná. Spustite počítačovú aplikáciu; predchádzajúce hodnoty sú zastarané.",
-    "bounded": "Obmedzené na {count}; použite obľúbené alebo filter poskytovateľa."
+    "bounded": "Obmedzené na {count}; použite obľúbené alebo filter poskytovateľa.",
+    "current": "Balík KDE je aktuálny",
+    "reloadHelp": "Verziu načítanú v Plasma tu nemožno overiť. Ak po aktualizácii zostane staré zobrazenie, uložte prácu, odhláste sa z Plasma a znova sa prihláste. Odstránenie a opätovné pridanie widgetu môže použiť staré zobrazenie z vyrovnávacej pamäte."
   }
 }
