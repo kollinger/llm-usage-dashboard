@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.1-preview.7 - 2026-10-20
+
+### Improved
+
+- Merge pull request #53 from kollinger/kol-660-dashboard-whatsapp
+
+### Fixed
+
+- Colour widget quota bars by provider (KOL-660)
+
 ## 1.10.1-preview.6 - 2026-10-20
 
 ### Fixed
