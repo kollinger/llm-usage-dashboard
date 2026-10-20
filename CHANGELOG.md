@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.1-preview.4 - 2026-10-20
+
+### Fixed
+
+- Claude total and model-specific weekly quotas have distinct localized labels in the KDE widget, panel popup and compact window, with values and resets kept separate.
+- Five accounts remain fully visible in the compact window with long translated quota names and wider system fonts; Arabic RTL labels stay readable.
+
 ## 1.10.1-preview.3 - 2026-10-20
 
 ### Fixed
