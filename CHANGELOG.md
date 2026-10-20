@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.11.0-preview.1 - 2026-10-20
+
+### Added
+
+- macOS menu-bar quota popup with an adaptive Retina icon, account filters and favorites, provider colors, and all 27 supported languages. Click the icon to open or close it; Escape and clicking outside dismiss it while background collection continues.
+
+### Improved
+
+- The menu-bar popup and compact window share display preferences. Larger account lists scroll, and missing, stale and zero quota readings remain distinct.
+
 ## 1.10.1-preview.7 - 2026-10-20
 
 ### Improved

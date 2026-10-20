@@ -14,6 +14,12 @@ contextBridge.exposeInMainWorld("llmUsageWidget", {
   savePreferences: (preferences) => ipcRenderer.invoke("widget:preferences", preferences),
   openDashboard: (target = "dashboard") => ipcRenderer.invoke("widget:dashboard", target),
   close: () => ipcRenderer.invoke("widget:close"),
+  onState(callback) {
+    if (typeof callback !== "function") return;
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("widget:state-changed", listener);
+    return () => ipcRenderer.removeListener("widget:state-changed", listener);
+  },
   onAppearance(callback) {
     if (typeof callback !== "function") return;
     const listener = (_event, payload) => callback(payload);

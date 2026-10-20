@@ -199,7 +199,17 @@ desktop-build workflow. KPackage accepts both extensions. Manual per-user instal
 (use `--upgrade` for an existing installation). After updating, log out of
 Plasma and sign back in so its widget engine loads the new package. No root access, system-wide
 installation or additional widget store is used. The compact window remains
-available on every supported desktop platform; macOS WidgetKit is out of scope.
+available on every supported desktop platform.
+
+On macOS, the app also adds an adaptive monochrome quota icon to the menu bar.
+Click it to open the account quota popup beside the icon; click again, press
+Escape, click outside, or use its Close button to dismiss it. The popup stays
+available while the dashboard window is closed and shares the compact window's
+provider filters, favorites, text size, language and theme. Five accounts fit
+on a normal laptop display; larger lists, larger text and smaller displays
+scroll within the popup. Moving or disconnecting a display dismisses it; the
+next click positions it on the icon's current display. This uses Electron's
+native menu-bar item and panel; macOS WidgetKit is out of scope.
 
 The native widget reads the existing authenticated `/api/desktop-widget`
 projection through an owner-private Unix socket under `$XDG_RUNTIME_DIR`.
