@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Viikko",
+    "kimiMonthlyTotal": "Kuukausi yhteensä",
+    "kimiMonthlyCode": "Koodi kuukaudessa",
     "currentSession": "Nykyinen istunto",
     "allModels": "Kaikki mallit",
     "claudeDesign": "Claude Design",

@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Tjedan",
+    "kimiMonthlyTotal": "Mjesečno ukupno",
+    "kimiMonthlyCode": "Mjesečni kod",
     "currentSession": "Trenutačna sesija",
     "allModels": "Svi modeli",
     "claudeDesign": "Claude Design",

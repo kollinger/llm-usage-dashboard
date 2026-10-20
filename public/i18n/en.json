@@ -510,6 +510,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Week",
+    "kimiMonthlyTotal": "Monthly total",
+    "kimiMonthlyCode": "Monthly code",
     "glmFiveHourTokens": "5h tokens",
     "glmWeekly": "Weekly quota",
     "glmMcpMonthly": "Monthly MCP",

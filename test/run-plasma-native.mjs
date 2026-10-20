@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, kimiQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const fixtures = {};
 for (const count of [0, 1, 5, 12, 80]) {
@@ -15,6 +15,7 @@ for (const count of [0, 1, 5, 12, 80]) {
 }
 fixtures.claude = buildDesktopWidgetSnapshot(claudeUsageFixture());
 fixtures.claudeLabels = buildDesktopWidgetSnapshot(claudeQuotaLabelsFixture());
+fixtures.kimiLabels = buildDesktopWidgetSnapshot(kimiQuotaLabelsFixture());
 fixtures.providerColors = buildDesktopWidgetSnapshot(providerColorsUsageFixture());
 await fs.mkdir(path.join(root, "dist/plasma"), { recursive: true });
 if (process.env.PLASMA_SCREENSHOTS_DIR) await fs.mkdir(process.env.PLASMA_SCREENSHOTS_DIR, { recursive: true });

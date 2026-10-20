@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Εβδομάδα",
+    "kimiMonthlyTotal": "Μηνιαίο σύνολο",
+    "kimiMonthlyCode": "Μηνιαίος κώδικας",
     "currentSession": "Τρέχουσα συνεδρία",
     "allModels": "Όλα τα μοντέλα",
     "claudeDesign": "Claude Design",

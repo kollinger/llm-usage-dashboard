@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Седмица",
+    "kimiMonthlyTotal": "Общо за месеца",
+    "kimiMonthlyCode": "Код за месеца",
     "currentSession": "Текуща сесия",
     "allModels": "Всички модели",
     "claudeDesign": "Claude Design",

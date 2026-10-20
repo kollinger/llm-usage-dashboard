@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Savaitė",
+    "kimiMonthlyTotal": "Iš viso per mėnesį",
+    "kimiMonthlyCode": "Kodas per mėnesį",
     "currentSession": "Dabartinė sesija",
     "allModels": "Visi modeliai",
     "claudeDesign": "Claude Design",

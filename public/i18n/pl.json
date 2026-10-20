@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Tydzień",
+    "kimiMonthlyTotal": "Łącznie w miesiącu",
+    "kimiMonthlyCode": "Kod w miesiącu",
     "currentSession": "Bieżąca sesja",
     "allModels": "Wszystkie modele",
     "claudeDesign": "Claude Design",

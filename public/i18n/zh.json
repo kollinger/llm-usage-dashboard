@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "周",
+    "kimiMonthlyTotal": "月度总量",
+    "kimiMonthlyCode": "月度代码",
     "currentSession": "当前会话",
     "allModels": "所有模型",
     "claudeDesign": "Claude Design",

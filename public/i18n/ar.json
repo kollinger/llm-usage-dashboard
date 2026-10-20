@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "الأسبوع",
+    "kimiMonthlyTotal": "الإجمالي الشهري",
+    "kimiMonthlyCode": "البرمجة الشهرية",
     "currentSession": "الجلسة الحالية",
     "allModels": "كل النماذج",
     "claudeDesign": "Claude Design",

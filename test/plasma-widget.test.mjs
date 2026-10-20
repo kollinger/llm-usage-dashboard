@@ -163,6 +163,15 @@ if (process.platform === "linux") {
 
     // Exercise trusted IPC and exact user-local installer arguments.
     await run(process.execPath, [path.join(root, "scripts/build-plasmoid.mjs")]);
+    const translations = {};
+    vm.runInNewContext((await fs.readFile(path.join(root, "dist/plasma/package/contents/code/Translations.js"), "utf8"))
+      .replace(/^\.pragma library\s*/m, ""), translations);
+    for (const file of (await fs.readdir(path.join(root, "public/i18n"))).filter(file => file.endsWith(".json"))) {
+      const dictionary = JSON.parse(await fs.readFile(path.join(root, "public/i18n", file), "utf8"));
+      for (const key of ["kimiMonthlyTotal", "kimiMonthlyCode", "allModels", "sonnetOnly", "claudeDesign", "default"]) {
+        assert.equal(translations.catalog[file.slice(0, -5)].limits[key], dictionary.limits[key], `${file}: packaged ${key}`);
+      }
+    }
     assert.equal(await fs.readFile(path.join(root, "dist/plasma/package/contents/code/ProviderColors.js"), "utf8"),
       ".pragma library\n" + await fs.readFile(path.join(root, "public/provider-colors.js"), "utf8"),
       "Plasma ships the identical shared palette and contrast logic");

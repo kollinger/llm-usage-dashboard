@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Săptămână",
+    "kimiMonthlyTotal": "Total lunar",
+    "kimiMonthlyCode": "Cod lunar",
     "currentSession": "Sesiune curentă",
     "allModels": "Toate modelele",
     "claudeDesign": "Claude Design",
