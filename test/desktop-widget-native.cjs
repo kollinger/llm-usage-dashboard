@@ -362,8 +362,11 @@ app.on("window-all-closed", () => {});
     await until(() => evaluate(main, "document.getElementById('desktopWidgetDialog').open && document.getElementById('plasmaWidgetStatus').textContent !== t('widget.loading')"), "native installer dialog");
     if (code === "de" && (await plasmaInstaller.status()).supported) {
       await evaluate(main, "document.getElementById('plasmaWidgetInstall').click()");
-      await until(async () => (await plasmaInstaller.status()).installed, "installation from real dashboard IPC");
-      await until(() => evaluate(main, "document.getElementById('plasmaWidgetInstall').disabled && document.getElementById('plasmaWidgetStatus').textContent.includes('" + require("../package.json").version + "')"), "truthful installed package version");
+      await until(async () => (await plasmaInstaller.status()).installedVersion === require("../package.json").version,
+        "matching installed package version from real dashboard IPC");
+      // KOL-659 deliberately keeps the internal version out of this dialog.
+      await until(() => evaluate(main, "document.getElementById('plasmaWidgetInstall').disabled && document.getElementById('plasmaWidgetInstall').textContent === t('plasma.current')"),
+        "localized current installation state");
     }
     if (code === "ar" && !wayland) main.setSize(480, 800);
     const dimensions = await evaluate(main, `(() => {
