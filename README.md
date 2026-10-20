@@ -170,6 +170,14 @@ provider filtering and independent text scaling handle larger sets; the native
 list is limited to 50 matching accounts. Each provider-local ordinal remains
 visible alongside truncated names. Native colors follow the Plasma theme.
 
+The installation dialog reports the **package on disk**, not the version loaded
+by Plasma. A matching version disables further file updates and labels the button
+**KDE package up to date**. Plasma can keep the previous QML in memory, even when
+the widget is removed and added again. If the old large panel view remains after
+an update, save your work, sign out of Plasma and sign back in. Existing desktop
+and panel instances and their display preferences survive this reload; the app
+does not restart your desktop session automatically.
+
 The Linux AppImage bundles the exact-version `.plasmoid`; the same native archive
 is published as `LLM-Usage-Dashboard-<version>-plasma.zip` through the existing
 desktop-build workflow. KPackage accepts both extensions. Manual per-user installation is available with
@@ -215,6 +223,15 @@ Append `--panel` to either internal session check for real icon/popup operation
 at all four edges, repeated click/Escape/outside-click closing, remove/re-add,
 and restoration of saved filters/favorites after restarting the private shell.
 This lane also needs Python D-Bus and PyGObject for compositor observations.
+For the real upgrade-cache regression, download the published
+`v1.9.0-preview.2` Plasma ZIP and verify its GitHub asset checksum. Set
+`PLASMA_UPGRADE_ARCHIVE` to that archive's path and optionally
+`PLASMA_QA_EVIDENCE` to an ignored evidence directory, then run either session
+check with `--panel`. It loads the actual older QML with desktop and horizontal/
+vertical instances before upgrading, verifies the active per-user package,
+captures the still-cached view (including remove/re-add), then checks restored
+icons, desktop sizing, preferences and form-factor changes after a private shell
+restart. It never restarts or changes the user's real session.
 When running graphical checks concurrently, use distinct Xvfb display numbers
 or `xvfb-run -d` where available to allocate each display atomically.
 
