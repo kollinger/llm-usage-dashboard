@@ -1409,13 +1409,15 @@
     "compactHelp": "Ločeno okno aplikacije za Linux, macOS in Windows.",
     "install": "Namesti gradnik KDE",
     "update": "Posodobi gradnik KDE",
-    "installHelp": "Namestitev samo za vašega uporabnika. Desni klik na namizje → Dodaj gradnike → LLM Usage Dashboard. Po posodobitvi se odjavite iz Plasma in znova prijavite, da se naloži nova različica.",
-    "installed": "Nameščena različica: {version}.",
+    "installHelp": "Namestitev samo za vašega uporabnika. Desni klik na pult → Dodaj gradnike → LLM Usage Dashboard za majhno ikono z razširljivim pregledom. Na namizju je prikazan velik gradnik.",
+    "installed": "Paket gradnika na disku: {version}.",
     "installing": "Nameščanje…",
     "requirements": "Zahteva Plasma 6, kpackagetool6, Python 3 in priloženi paket gradnika.",
     "unsupported": "Izvorni gradnik zahteva Linux s Plasma 6. Tukaj uporabite kompaktno okno.",
     "installError": "Namestitev ni uspela. Preverite zahteve Plasma 6 in poskusite znova.",
     "offline": "Aplikacija ni dosegljiva. Zaženite namizno aplikacijo; prejšnji odčitki so zastareli.",
-    "bounded": "Omejeno na {count}; uporabite priljubljene ali filter ponudnika."
+    "bounded": "Omejeno na {count}; uporabite priljubljene ali filter ponudnika.",
+    "current": "Paket KDE je posodobljen",
+    "reloadHelp": "Različice, ki jo je naložila Plasma, tukaj ni mogoče preveriti. Če po posodobitvi ostane stari pogled, shranite delo, se odjavite iz Plasme in znova prijavite. Odstranitev in ponovno dodajanje gradnika lahko uporabi stari pogled iz predpomnilnika."
   }
 }

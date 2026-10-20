@@ -1409,13 +1409,15 @@
     "compactHelp": "Erillinen sovellusikkuna Linuxille, macOS:lle ja Windowsille.",
     "install": "Asenna KDE-sovelma",
     "update": "Päivitä KDE-sovelma",
-    "installHelp": "Asennetaan vain käyttäjällesi. Napsauta työpöytää hiiren oikealla → Lisää sovelmia → LLM Usage Dashboard. Kirjaudu päivityksen jälkeen ulos Plasmasta ja takaisin sisään ladataksesi uuden version.",
-    "installed": "Asennettu versio: {version}.",
+    "installHelp": "Asennetaan vain käyttäjällesi. Napsauta paneelia hiiren kakkospainikkeella → Lisää pienoissovelmia → LLM Usage Dashboard saadaksesi pienen kuvakkeen ja avattavan yhteenvedon. Työpöydälle lisättynä pienoissovellus on suuri.",
+    "installed": "Levylle asennettu pienoissovelluspaketti: {version}.",
     "installing": "Asennetaan…",
     "requirements": "Vaatii Plasma 6:n, kpackagetool6:n, Python 3:n ja mukana tulevan sovelmapaketin.",
     "unsupported": "Natiivi sovelma vaatii Linuxin ja Plasma 6:n. Käytä tässä kompaktia ikkunaa.",
     "installError": "Asennus epäonnistui. Tarkista Plasma 6:n vaatimukset ja yritä uudelleen.",
     "offline": "Sovellus ei ole käytettävissä. Käynnistä työpöytäsovellus; aiemmat lukemat ovat vanhentuneita.",
-    "bounded": "Rajoitettu {count} tiliin; käytä suosikkeja tai palveluntarjoajan suodatinta."
+    "bounded": "Rajoitettu {count} tiliin; käytä suosikkeja tai palveluntarjoajan suodatinta.",
+    "current": "KDE-paketti on ajan tasalla",
+    "reloadHelp": "Plasman lataamaa versiota ei voi tarkistaa tässä. Jos vanha näkymä jää päivityksen jälkeen, tallenna työsi, kirjaudu ulos Plasmasta ja takaisin sisään. Pienoissovelluksen poistaminen ja lisääminen uudelleen voi käyttää välimuistissa olevaa vanhaa näkymää."
   }
 }

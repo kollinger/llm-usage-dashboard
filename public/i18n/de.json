@@ -1409,13 +1409,15 @@
     "compactHelp": "Ein separates App-Fenster für Linux, macOS und Windows.",
     "install": "KDE-Miniprogramm installieren",
     "update": "KDE-Miniprogramm aktualisieren",
-    "installHelp": "Installation nur für deinen Benutzer. Danach Rechtsklick auf den Desktop → Miniprogramme hinzufügen → LLM Usage Dashboard. Nach einem Update von Plasma abmelden und wieder anmelden, damit die neue Version geladen wird.",
-    "installed": "Installierte Version: {version}.",
+    "installHelp": "Installation nur für deinen Benutzer. Rechtsklick auf die Kontrollleiste → Miniprogramme hinzufügen → LLM Usage Dashboard für ein kompaktes Icon mit aufklappbarer Übersicht. Auf dem Desktop erscheint das große Widget.",
+    "installed": "Widget-Paket auf dem Datenträger: {version}.",
     "installing": "Wird installiert…",
     "requirements": "Benötigt Plasma 6, kpackagetool6, Python 3 und das mitgelieferte Miniprogrammpaket.",
     "unsupported": "Das native Miniprogramm benötigt Linux mit Plasma 6. Hier kannst du das Kompaktfenster nutzen.",
     "installError": "Installation fehlgeschlagen. Prüfe die Voraussetzungen für Plasma 6 und versuche es erneut.",
     "offline": "App nicht erreichbar. Starte die Desktop-App; bisherige Werte sind veraltet.",
-    "bounded": "Auf {count} begrenzt; nutze Favoriten oder den Anbieterfilter."
+    "bounded": "Auf {count} begrenzt; nutze Favoriten oder den Anbieterfilter.",
+    "current": "KDE-Paket ist aktuell",
+    "reloadHelp": "Die von Plasma geladene Version lässt sich hier nicht prüfen. Bleibt nach dem Update die alte Ansicht, speichere deine Arbeit, melde dich von Plasma ab und wieder an. Auch Entfernen und erneutes Hinzufügen kann die alte Ansicht aus dem Zwischenspeicher laden."
   }
 }

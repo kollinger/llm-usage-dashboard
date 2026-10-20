@@ -1409,13 +1409,15 @@
     "compactHelp": "Külön alkalmazásablak Linux, macOS és Windows rendszeren.",
     "install": "KDE-elem telepítése",
     "update": "KDE-elem frissítése",
-    "installHelp": "Csak a saját felhasználóhoz települ. Jobb kattintás az asztalon → Felületi elemek hozzáadása → LLM Usage Dashboard. Frissítés után jelentkezzen ki a Plasmából, majd vissza az új verzió betöltéséhez.",
-    "installed": "Telepített verzió: {version}.",
+    "installHelp": "Telepítés csak a saját felhasználódnak. Jobb kattintás a panelen → Widgetek hozzáadása → LLM Usage Dashboard: kis ikon és felnyitható áttekintés. Az asztalhoz adva a nagy widget jelenik meg.",
+    "installed": "A lemezen lévő widgetcsomag: {version}.",
     "installing": "Telepítés…",
     "requirements": "Plasma 6, kpackagetool6, Python 3 és a mellékelt elemcsomag szükséges.",
     "unsupported": "A natív elemhez Linux és Plasma 6 szükséges. Itt a kompakt ablakot használhatja.",
     "installError": "A telepítés sikertelen. Ellenőrizze a Plasma 6 követelményeit, majd próbálja újra.",
     "offline": "Az alkalmazás nem érhető el. Indítsa el az asztali alkalmazást; a korábbi adatok elavultak.",
-    "bounded": "Legfeljebb {count}; használja a kedvenceket vagy a szolgáltatószűrőt."
+    "bounded": "Legfeljebb {count}; használja a kedvenceket vagy a szolgáltatószűrőt.",
+    "current": "A KDE-csomag naprakész",
+    "reloadHelp": "A Plasma által betöltött verzió itt nem ellenőrizhető. Ha frissítés után megmarad a régi nézet, mentsd a munkádat, jelentkezz ki a Plasmából, majd vissza. A widget eltávolítása és újbóli hozzáadása is a gyorsítótárazott régi nézetet használhatja."
   }
 }

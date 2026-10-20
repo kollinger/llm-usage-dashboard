@@ -1409,13 +1409,15 @@
     "compactHelp": "Fuinneog ar leith den aip do Linux, macOS agus Windows.",
     "install": "Suiteáil giuirléid KDE",
     "update": "Nuashonraigh giuirléid KDE",
-    "installHelp": "Suiteáil do d’úsáideoir amháin. Deaschliceáil ar an deasc → Cuir Giuirléidí Leis → LLM Usage Dashboard. Tar éis nuashonraithe, logáil amach as Plasma agus isteach arís chun an leagan nua a lódáil.",
-    "installed": "Leagan suiteáilte: {version}.",
+    "installHelp": "Suiteáil don úsáideoir seo amháin. Deaschliceáil ar an bpainéal → Cuir giuirléidí leis → LLM Usage Dashboard chun deilbhín beag agus forbhreathnú aníos a fháil. Cuir ar an deasc é don ghiuirléid mhór.",
+    "installed": "Pacáiste an ghiuirléid ar an diosca: {version}.",
     "installing": "Á suiteáil…",
     "requirements": "Teastaíonn Plasma 6, kpackagetool6, Python 3 agus an pacáiste giuirléide atá san áireamh.",
     "unsupported": "Teastaíonn Linux le Plasma 6 ón ngiuirléid dhúchasach. Úsáid an fhuinneog dhlúth anseo.",
     "installError": "Theip ar an suiteáil. Seiceáil riachtanais Plasma 6 agus bain triail eile as.",
     "offline": "Níl an aip ar fáil. Tosaigh an aip deisce; tá na léamha roimhe seo as dáta.",
-    "bounded": "Teoranta do {count}; úsáid ceanáin nó scagaire soláthraí."
+    "bounded": "Teoranta do {count}; úsáid ceanáin nó scagaire soláthraí.",
+    "current": "Tá an pacáiste KDE cothrom le dáta",
+    "reloadHelp": "Ní féidir an leagan atá luchtaithe ag Plasma a sheiceáil anseo. Má fhanann an seanamharc tar éis nuashonraithe, sábháil do chuid oibre, logáil amach as Plasma agus isteach arís. D’fhéadfadh an seanamharc taiscthe a bheith in úsáid fós má bhaineann tú an ghiuirléid agus má chuireann tú leis arís í."
   }
 }

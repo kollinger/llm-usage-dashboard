@@ -2417,6 +2417,21 @@ async function init() {
   window.addEventListener("focus", handleSubscriptionRereadReturn);
 }
 
+function renderPlasmaWidgetStatus(status, installButton, statusElement) {
+  // KPlugin.Version describes files on disk, never the QML cached by Plasma.
+  // Even removing/re-adding an applet can reuse that cache until session reload.
+  const current = status.installed && status.installedVersion && status.version &&
+    status.installedVersion === status.version && status.success !== false;
+  installButton.disabled = !status.supported || Boolean(current);
+  installButton.textContent = t(current && status.supported ? "plasma.current" : status.installed ? "plasma.update" : "plasma.install");
+  const key = status.success === false ? "plasma.installError" : !status.supported ?
+    status.reason === "unsupported" ? "plasma.unsupported" : "plasma.requirements" : status.installed ? "plasma.installed" : null;
+  const messages = key ? [t(key, { version: `\u2066${status.installedVersion || status.version}\u2069` })] : [];
+  if (status.supported && status.installed && status.success !== false) messages.push(t("plasma.reloadHelp"));
+  if (status.supported && !status.connected) messages.push(t("plasma.offline"));
+  statusElement.textContent = messages.join(" ");
+}
+
 function bindEvents() {
   els.refreshBtn.addEventListener("click", () => loadUsage({ showIndicator: true, force: true }));
   els.loginBtn.addEventListener("click", () => openModalDialog(els.loginDialog));
@@ -2536,14 +2551,7 @@ function bindEvents() {
     const installButton = document.getElementById("plasmaWidgetInstall");
     const statusElement = document.getElementById("plasmaWidgetStatus");
     const plasmaBridge = window.llmUsageDashboard.plasmaWidget;
-    const showPlasmaStatus = (status) => {
-      installButton.disabled = !status.supported || status.installedVersion === status.version;
-      installButton.textContent = t(status.installed ? "plasma.update" : "plasma.install");
-      const key = status.success === false ? "plasma.installError" : !status.supported ?
-        status.reason === "unsupported" ? "plasma.unsupported" : "plasma.requirements" : status.installed ? "plasma.installed" : null;
-      statusElement.textContent = key ? t(key, { version: `\u2066${status.installedVersion || status.version}\u2069` }) : "";
-      if (status.supported && !status.connected) statusElement.textContent += ` ${t("plasma.offline")}`;
-    };
+    const showPlasmaStatus = (status) => renderPlasmaWidgetStatus(status, installButton, statusElement);
     widgetButton.hidden = false;
     widgetButton.addEventListener("click", async () => {
       openModalDialog(dialog);

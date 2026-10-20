@@ -1409,13 +1409,15 @@
     "compactHelp": "Tieqa separata tal-app għal Linux, macOS u Windows.",
     "install": "Installa widget KDE",
     "update": "Aġġorna widget KDE",
-    "installHelp": "Jinstalla għall-utent tiegħek biss. Ikklikkja bil-lemin fuq id-desktop → Żid Widgets → LLM Usage Dashboard. Wara l-aġġornament, oħroġ minn Plasma u erġa’ idħol biex titgħabba l-verżjoni l-ġdida.",
-    "installed": "Verżjoni installata: {version}.",
+    "installHelp": "Jinstalla għall-utent tiegħek biss. Ikklikkja bil-lemin fuq il-pannell → Żid widgets → LLM Usage Dashboard għal ikona kompatta b’ħarsa ġenerali li tinfetaħ. Żidu mad-desktop għall-widget kbir.",
+    "installed": "Pakkett tal-widget fuq id-diska: {version}.",
     "installing": "Qed jinstalla…",
     "requirements": "Jeħtieġ Plasma 6, kpackagetool6, Python 3 u l-pakkett tal-widget inkluż.",
     "unsupported": "Il-widget nattiv jeħtieġ Linux bi Plasma 6. Uża t-tieqa kompatta hawn.",
     "installError": "L-installazzjoni falliet. Iċċekkja r-rekwiżiti ta’ Plasma 6 u erġa’ pprova.",
     "offline": "L-app mhix disponibbli. Ibda l-app tad-desktop; il-qari preċedenti huwa skadut.",
-    "bounded": "Limitat għal {count}; uża l-favoriti jew filtru tal-fornitur."
+    "bounded": "Limitat għal {count}; uża l-favoriti jew filtru tal-fornitur.",
+    "current": "Il-pakkett KDE huwa aġġornat",
+    "reloadHelp": "Il-verżjoni mgħobbija minn Plasma ma tistax tiġi vverifikata hawn. Jekk tibqa’ l-vista l-qadima wara l-aġġornament, issejvja xogħlok, oħroġ minn Plasma u erġa’ idħol. It-tneħħija u ż-żieda mill-ġdid tal-widget jistgħu jerġgħu jużaw il-vista l-qadima fil-cache."
   }
 }

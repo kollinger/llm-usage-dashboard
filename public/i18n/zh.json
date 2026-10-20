@@ -1409,13 +1409,15 @@
     "compactHelp": "适用于 Linux、macOS 和 Windows 的独立应用窗口。",
     "install": "安装 KDE 小部件",
     "update": "更新 KDE 小部件",
-    "installHelp": "仅为当前用户安装。然后右键单击桌面 → 添加小部件 → LLM Usage Dashboard。更新后，请退出 Plasma 会话并重新登录，以加载新版本。",
-    "installed": "已安装版本：{version}。",
+    "installHelp": "仅为当前用户安装。右键点击面板 → 添加部件 → LLM Usage Dashboard，可获得紧凑图标和弹出概览。添加到桌面则显示大型部件。",
+    "installed": "磁盘上的部件软件包：{version}。",
     "installing": "正在安装…",
     "requirements": "需要 Plasma 6、kpackagetool6、Python 3 和附带的小部件包。",
     "unsupported": "原生小部件需要运行 Plasma 6 的 Linux。此处可使用紧凑窗口。",
     "installError": "安装失败。请检查 Plasma 6 要求并重试。",
     "offline": "应用不可用。请启动桌面应用；之前的读数已过时。",
-    "bounded": "最多显示 {count} 个；请使用收藏或提供商筛选。"
+    "bounded": "最多显示 {count} 个；请使用收藏或提供商筛选。",
+    "current": "KDE 软件包已是最新",
+    "reloadHelp": "此处无法检查 Plasma 已加载的版本。如果更新后仍显示旧视图，请保存工作，注销 Plasma 后重新登录。移除并重新添加部件也可能继续使用缓存的旧视图。"
   }
 }

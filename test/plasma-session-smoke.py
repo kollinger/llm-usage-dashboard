@@ -19,7 +19,9 @@ PLUGIN = "local.llm-usage-dashboard.quotas"
 MODE = sys.argv[1] if len(sys.argv) > 1 else "x11"
 PANEL = "--panel" in sys.argv
 QUOTA_LABELS = "--quota-labels" in sys.argv
-EVIDENCE = ROOT / ".cache" / ("quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)
+UPGRADE = os.environ.get("PLASMA_UPGRADE_ARCHIVE")
+assert not UPGRADE or PANEL, "Use --panel with PLASMA_UPGRADE_ARCHIVE"
+EVIDENCE = Path(os.environ.get("PLASMA_QA_EVIDENCE", ROOT / ".cache" / ("quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)))
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 profile = Path(tempfile.mkdtemp(prefix="llm-plasma-qa-"))
 env = os.environ.copy()
@@ -186,7 +188,9 @@ def exercise_panels(shell, fixture):
     def icon(panel_id, widget_id):
         rect = json.loads(evaluate("print(JSON.stringify(panelById(" + str(panel_id) + ").widgetById(" + str(widget_id) + ").geometry))"))
         assert 16 <= rect["width"] <= 80 and abs(rect["width"] - rect["height"]) <= 1, "Panel widget must occupy one square icon: " + str(rect)
-        panel = next(w for w in windows() if w["dock"] and w["resourceClass"] in shell_classes)
+        edge = evaluate("print(panelById(" + str(panel_id) + ").location)")
+        panel = next(w for w in windows() if w["dock"] and w["resourceClass"] in shell_classes
+                     and (w["width"] < w["height"]) == (edge in ["left", "right"]))
         return rect, (panel["x"] + rect["x"] + rect["width"] / 2, panel["y"] + rect["y"] + rect["height"] / 2)
 
     def opened(point):
@@ -207,6 +211,69 @@ def exercise_panels(shell, fixture):
     # The private first-run shell may create its default panel asynchronously.
     time.sleep(3)
     evaluate("panels().forEach(p=>p.remove());")
+    if UPGRADE:
+        # Load the real historical package before upgrading: changing only its
+        # metadata cannot exercise Plasma's in-process QML component cache.
+        desktop = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
+        retained = []
+        for edge in ["bottom", "right"]:
+            retained.append(json.loads(evaluate("var p=new Panel; p.location='" + edge + "'; p.height=48; p.floating=false; p.hiding='none'; var w=p.addWidget('" + PLUGIN + "'); print(JSON.stringify({panel:p.id,widget:w.id}));")))
+        time.sleep(2)
+        def panel_geometry(info):
+            return json.loads(evaluate("print(JSON.stringify(panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ").geometry))"))
+        before = [panel_geometry(info) for info in retained]
+        assert all(max(r["width"], r["height"]) >= 300 for r in before), "Historical package must actually load its full panel view"
+        snapshot = json.loads(run(["/usr/bin/python3", "-I", str(ROOT / "plasma/contents/code/read_snapshot.py")]))["snapshot"]
+        config = {"favorites": [snapshot["accounts"][0]["id"]], "view": "favorites", "provider": "all", "scale": 1.1}
+        targets = ["desktops()[0].widgetById(" + str(desktop) + ")"] + [
+            "panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ")" for info in retained]
+        for target in targets:
+            evaluate("var w=" + target + "; w.currentConfigGroup=['General'];" +
+                     ";".join("w.writeConfig(" + json.dumps(k) + "," + json.dumps(v) + ")" for k, v in config.items()) + ";")
+        capture("upgrade-old-package")
+        run(["kpackagetool6", "--type", "Plasma/Applet", "--packageroot", env["XDG_DATA_HOME"] + "/plasma/plasmoids", "--upgrade", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
+        installed = profile / "data/plasma/plasmoids" / PLUGIN
+        assert json.loads((installed / "metadata.json").read_text())["KPlugin"]["Version"] == json.loads((ROOT / "package.json").read_text())["version"]
+        assert (installed / "contents/ui/main.qml").read_bytes() == (ROOT / "plasma/contents/ui/main.qml").read_bytes(), "Active per-user source must equal the new package"
+        after = [panel_geometry(info) for info in retained]
+        assert before == after, "Existing QML is retained until the private shell reloads"
+        # Also check the commonly suggested remove/re-add within the same shell.
+        evaluate("panelById(" + str(retained[0]["panel"]) + ").widgetById(" + str(retained[0]["widget"]) + ").remove();")
+        retained[0]["widget"] = int(evaluate("print(panelById(" + str(retained[0]["panel"]) + ").addWidget('" + PLUGIN + "').id);"))
+        time.sleep(1)
+        readded = panel_geometry(retained[0])
+        assert max(readded["width"], readded["height"]) >= 300, "Remove/re-add still reuses the old QML component on this Plasma version"
+        capture("upgrade-before-reload")
+        shell.terminate()
+        shell.wait(timeout=15)
+        shell = start(["plasmashell", "--no-respawn"], "plasmashell")
+        wait_for(lambda: evaluate("print(panels().length)") == "2", "upgrade restores existing panels")
+        time.sleep(2)
+        restored = [panel_geometry(info) for info in retained]
+        assert all(16 <= r["width"] <= 80 and abs(r["width"] - r["height"]) <= 1 for r in restored), "Restored horizontal/vertical panels must use one square icon"
+        desktop_size = geometry(desktop)
+        assert desktop_size["width"] >= 720 and desktop_size["height"] >= 780, "Existing desktop must keep its large view"
+        # The vertical panel and desktop are retained unchanged; the horizontal
+        # instance was deliberately removed/re-added and has default settings.
+        for target in [targets[0], targets[2]]:
+            stored = json.loads(evaluate("var w=" + target + "; w.currentConfigGroup=['General']; print(JSON.stringify({favorites:w.readConfig('favorites'),view:w.readConfig('view'),provider:w.readConfig('provider'),scale:w.readConfig('scale')}));"))
+            stored["scale"] = float(stored["scale"])
+            if isinstance(stored["favorites"], str):
+                stored["favorites"] = stored["favorites"].split(",")
+            assert stored == config, "Upgrade/reload must preserve existing desktop/panel preferences"
+        for info in retained:
+            rect, point = icon(info["panel"], info["widget"])
+            opened(point); pointer(*point); closed()
+        capture("upgrade-after-reload")
+        # Changing the same containment between horizontal and vertical must
+        # keep the restored applet compact without requiring another install.
+        for edge in ["top", "left", "bottom", "right"]:
+            evaluate("panelById(" + str(retained[0]["panel"]) + ").location='" + edge + "';")
+            time.sleep(.5)
+            icon(retained[0]["panel"], retained[0]["widget"])
+        (EVIDENCE / "upgrade-results.json").write_text(json.dumps({"mode": MODE, "before": before, "afterPackageUpgrade": after, "readdedBeforeReload": readded, "restored": restored, "desktop": desktop_size, "realOldPackage": True, "activeSourceVerified": True, "preferencesPreserved": True, "formFactorChanges": True}, indent=2))
+        evaluate("panels().forEach(p=>p.remove()); desktops()[0].widgetById(" + str(desktop) + ").remove();")
+
     for edge in (["bottom"] if QUOTA_LABELS else ["bottom", "top", "left", "right"]):
         if edge == "left":
             run(["plasma-apply-colorscheme", "BreezeDark"])
@@ -290,16 +357,17 @@ try:
         "[Containments][1]\nactivityId=\nformfactor=0\nimmutability=1\nlastScreen=0\nlocation=0\nplugin=org.kde.desktopcontainment\nwallpaperplugin=org.kde.color\n")
     # Update only this private D-Bus, never the user's systemd environment.
     run(["dbus-update-activation-environment", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "DISPLAY", "QSG_RHI_BACKEND", "XDG_SESSION_TYPE"])
-    run(["kpackagetool6", "--type", "Plasma/Applet", "--install", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
+    run(["kpackagetool6", "--type", "Plasma/Applet", "--install", str(Path(UPGRADE).resolve()) if UPGRADE else str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
     assert PLUGIN in run(["kpackagetool6", "--type", "Plasma/Applet", "--list"])
     # KPackage update is version-aware. Install an older synthetic version first,
     # then upgrade with the exact current archive (no privileged/system paths).
     metadata = profile / "data/plasma/plasmoids" / PLUGIN / "metadata.json"
-    installed = json.loads(metadata.read_text())
-    installed["KPlugin"]["Version"] = "0.0.0"
-    metadata.write_text(json.dumps(installed))
-    run(["kpackagetool6", "--type", "Plasma/Applet", "--upgrade", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
-    assert json.loads(metadata.read_text())["KPlugin"]["Version"] == json.loads((ROOT / "package.json").read_text())["version"]
+    if not UPGRADE:
+        installed = json.loads(metadata.read_text())
+        installed["KPlugin"]["Version"] = "0.0.0"
+        metadata.write_text(json.dumps(installed))
+        run(["kpackagetool6", "--type", "Plasma/Applet", "--upgrade", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
+        assert json.loads(metadata.read_text())["KPlugin"]["Version"] == json.loads((ROOT / "package.json").read_text())["version"]
     fixture = start(["node", "test/fixtures/plasma-bridge.cjs"], "fixture", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     # Popen pipe is bytes so only this controlled fixture stream gets text mode.
     import io

@@ -1409,13 +1409,15 @@
     "compactHelp": "Eraldi rakenduse aken Linuxi, macOS-i ja Windowsi jaoks.",
     "install": "Paigalda KDE vidin",
     "update": "Uuenda KDE vidinat",
-    "installHelp": "Paigaldatakse ainult sinu kasutajale. Paremklõps töölaual → Lisa vidinaid → LLM Usage Dashboard. Pärast uuendamist logi Plasmast välja ja uuesti sisse, et laadida uus versioon.",
-    "installed": "Paigaldatud versioon: {version}.",
+    "installHelp": "Paigaldatakse ainult sinu kasutajale. Paremklõps paneelil → Lisa vidinaid → LLM Usage Dashboard annab kompaktse ikooni ja avaneva ülevaate. Suure vidina saamiseks lisa see töölauale.",
+    "installed": "Vidina pakett kettal: {version}.",
     "installing": "Paigaldamine…",
     "requirements": "Vajab Plasma 6, kpackagetool6, Python 3 ja kaasasolevat vidinapaketti.",
     "unsupported": "Oma vidin vajab Linuxit ja Plasma 6. Siin kasuta kompaktset akent.",
     "installError": "Paigaldamine nurjus. Kontrolli Plasma 6 nõudeid ja proovi uuesti.",
     "offline": "Rakendus pole saadaval. Käivita töölauarakendus; varasemad näidud on aegunud.",
-    "bounded": "Piiratud {count} kontoga; kasuta lemmikuid või teenusepakkuja filtrit."
+    "bounded": "Piiratud {count} kontoga; kasuta lemmikuid või teenusepakkuja filtrit.",
+    "current": "KDE pakett on ajakohane",
+    "reloadHelp": "Plasma laaditud versiooni ei saa siin kontrollida. Kui pärast uuendamist jääb vana vaade, salvesta töö, logi Plasmast välja ja uuesti sisse. Vidina eemaldamine ja uuesti lisamine võib kasutada vana vahemällu salvestatud vaadet."
   }
 }

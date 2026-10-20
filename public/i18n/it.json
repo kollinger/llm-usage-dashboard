@@ -1409,13 +1409,15 @@
     "compactHelp": "Una finestra separata dell’app per Linux, macOS e Windows.",
     "install": "Installa widget KDE",
     "update": "Aggiorna widget KDE",
-    "installHelp": "Installazione solo per il tuo utente. Clic destro sul desktop → Aggiungi oggetti → LLM Usage Dashboard. Dopo l’aggiornamento, esci dalla sessione Plasma e accedi nuovamente per caricare la nuova versione.",
-    "installed": "Versione installata: {version}.",
+    "installHelp": "Si installa solo per il tuo utente. Clic destro sul pannello → Aggiungi oggetti → LLM Usage Dashboard per un’icona compatta con una panoramica a comparsa. Aggiungilo al desktop per il widget grande.",
+    "installed": "Pacchetto del widget su disco: {version}.",
     "installing": "Installazione…",
     "requirements": "Richiede Plasma 6, kpackagetool6, Python 3 e il pacchetto widget incluso.",
     "unsupported": "Il widget nativo richiede Linux con Plasma 6. Qui puoi usare la finestra compatta.",
     "installError": "Installazione non riuscita. Controlla i requisiti di Plasma 6 e riprova.",
     "offline": "App non disponibile. Avvia l’app desktop; le letture precedenti sono obsolete.",
-    "bounded": "Limite di {count}; usa i preferiti o un filtro per fornitore."
+    "bounded": "Limite di {count}; usa i preferiti o un filtro per fornitore.",
+    "current": "Pacchetto KDE aggiornato",
+    "reloadHelp": "Qui non è possibile verificare la versione caricata da Plasma. Se dopo l’aggiornamento resta la vista precedente, salva il lavoro, esci dalla sessione Plasma e accedi di nuovo. Rimuovere e aggiungere nuovamente il widget può riutilizzare la vecchia vista nella cache."
   }
 }
