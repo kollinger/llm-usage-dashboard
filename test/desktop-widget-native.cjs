@@ -9,7 +9,9 @@ const http = require("node:http");
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const { createDesktopWidget } = require("../electron/desktop-widget");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const providerColors = require("../public/provider-colors");
+const { contrastRatio } = require("./fixtures/color-contrast.cjs");
 const { readPlasmaSnapshot } = require("../lib/plasma-bridge");
 const { createPlasmaWidget } = require("../electron/plasma-widget");
 app.setPath("userData", process.env.WIDGET_NATIVE_PROFILE);
@@ -91,6 +93,37 @@ async function capture(window, name) {
   await fs.mkdir(process.env.WIDGET_SCREENSHOTS_DIR, { recursive: true });
   await fs.writeFile(path.join(process.env.WIDGET_SCREENSHOTS_DIR, `${name}.png`), (await window.webContents.capturePage()).toPNG());
 }
+async function checkProviderColors(window) {
+  const accounts = buildDesktopWidgetSnapshot(fixture).accounts;
+  const rendered = await evaluate(window, `([...document.querySelectorAll('.widget-account')].map(account => ({
+    id: account.dataset.account,
+    windows: [...account.querySelectorAll('.widget-window')].map(node => ({
+      status: node.dataset.status, quality: node.querySelector('.widget-quality').textContent,
+      value: node.querySelector('.widget-track')?.getAttribute('aria-valuenow') ?? null,
+      color: node.querySelector('.widget-track span') ? getComputedStyle(node.querySelector('.widget-track span')).backgroundColor : null,
+      track: node.querySelector('.widget-track') ? getComputedStyle(node.querySelector('.widget-track')).backgroundColor : null,
+      ink: getComputedStyle(node.querySelector('.widget-window-value')).color,
+      panel: getComputedStyle(account).backgroundColor
+    }))
+  })))`);
+  assert.equal(rendered.length, accounts.length);
+  for (const item of rendered) {
+    const account = accounts.find((candidate) => candidate.id === item.id);
+    assert.deepEqual(item.windows.map((row) => row.status), ["current", "stale", "current", "unavailable"]);
+    assert.deepEqual(item.windows.map((row) => row.value), ["65", "40", "0", null]);
+    assert(item.windows[1].quality && item.windows[3].quality, "stale and unavailable have explicit translated text");
+    for (const row of item.windows.filter((row) => row.color)) {
+      const background = "#" + row.track.match(/\d+/g).slice(0, 3).map((channel) => Number(channel).toString(16).padStart(2, "0")).join("");
+      const expected = providerColors.quotaAccent(account.provider, background);
+      const channels = expected.slice(1).match(/../g).map((channel) => parseInt(channel, 16));
+      assert.equal(row.color, `rgb(${channels.join(", ")})`, `${account.provider}: actual CSS colour`);
+      assert(contrastRatio(row.color, row.track) >= 3, `${account.provider}: actual bar contrast`);
+      assert(contrastRatio(row.ink, row.panel) >= 4.5, `${account.provider}: value and stale-warning readability`);
+    }
+    assert.equal(item.windows[0].color, item.windows[1].color, "stale status preserves provider identity");
+    assert.equal(item.windows[0].color, item.windows[2].color, "real zero keeps its provider identity");
+  }
+}
 let controller, main, plasmaInstaller;
 app.on("window-all-closed", () => {});
 (async () => {
@@ -124,6 +157,24 @@ app.on("window-all-closed", () => {});
   await layout(widget, true);
   assert.equal(await evaluate(widget, "document.querySelector('.widget-track').getAttribute('aria-valuenow')"), "0");
   assert.equal(await evaluate(widget, "document.querySelectorAll('.widget-window[data-status=unavailable] .widget-track').length"), 0);
+
+  count = 9; fixture = providerColorsUsageFixture();
+  await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);
+  for (let cycle = 0; cycle < 2; cycle++) {
+    for (const appearance of ["dark", "light"]) {
+      theme = appearance; controller.updateTheme({ preference: theme, color: theme === "dark" ? "#0f1512" : "#f6f7f4" });
+      await until(() => evaluate(widget, `document.documentElement.dataset.theme === '${theme}'`), "provider theme change");
+      await evaluate(widget, "new Promise(resolve => requestAnimationFrame(resolve))");
+      await checkProviderColors(widget); await layout(widget);
+      if (cycle === 0) await capture(widget, `provider-colors-${theme}`);
+    }
+  }
+  language = "ar"; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+  await until(() => evaluate(widget, "document.documentElement.lang === 'ar'"), "provider colours Arabic RTL");
+  await checkProviderColors(widget); await layout(widget); await capture(widget, "provider-colors-arabic");
+  language = "en"; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+  await until(() => evaluate(widget, "document.documentElement.lang === 'en'"), "restore provider language");
+  console.log("Provider colours native: all nine providers, identical labels/local sources, two light/dark cycles, Arabic RTL, current/stale/zero/missing, actual fill and text contrast passed.");
 
   count = 1; fixture = claudeQuotaLabelsFixture();
   await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);

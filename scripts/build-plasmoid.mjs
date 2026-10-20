@@ -16,6 +16,8 @@ for (const file of files) {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(path.join(root, "plasma", file), destination);
 }
+await fs.writeFile(path.join(directory, "contents", "code", "ProviderColors.js"),
+  ".pragma library\n" + await fs.readFile(path.join(root, "public", "provider-colors.js"), "utf8"));
 const catalog = {};
 const metadata = JSON.parse(await fs.readFile(path.join(directory, "metadata.json"), "utf8"));
 metadata.KPlugin.Version = pkg.version;

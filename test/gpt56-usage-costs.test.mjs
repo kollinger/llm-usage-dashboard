@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -8,7 +9,7 @@ import usageEventsModule from "../lib/usage-events.js";
 const { aggregateUsageEvents } = usageEventsModule;
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const appPath = path.join(rootDir, "public", "app.js");
-const appSource = await readFile(appPath, "utf8");
+const appSource = await readDashboardSource();
 const code = appSource.replace("\ninit();", "\n// init disabled for GPT-5.6 usage tests");
 assert.notEqual(code, appSource, "GPT-5.6 tests must disable app bootstrap");
 const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));

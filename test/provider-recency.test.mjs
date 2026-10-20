@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile, readFile, readdir } from "node:fs/promises";
@@ -109,7 +110,7 @@ async function assertSubscriptionPlanDetection() {
 
 async function assertProviderVisibility() {
   const appPath = path.join(rootDir, "public", "app.js");
-  const appSource = await readFile(appPath, "utf8");
+  const appSource = await readDashboardSource();
   const code = appSource.replace("\ninit();", "\n// init disabled for provider visibility test");
   assert.notEqual(code, appSource, "provider visibility test must disable app bootstrap");
 
@@ -557,7 +558,7 @@ async function assertSubscriptionConnectionLocalization() {
 
 async function assertFrontendUsageIntelligence() {
   const appPath = path.join(rootDir, "public", "app.js");
-  const appSource = await readFile(appPath, "utf8");
+  const appSource = await readDashboardSource();
   const code = appSource.replace("\ninit();", "\n// init disabled for usage intelligence test");
   assert.notEqual(code, appSource, "usage intelligence test must disable app bootstrap");
   assert.equal(appSource.includes("function renderRings"), false, "legacy quota ring renderer must stay removed");

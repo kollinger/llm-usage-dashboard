@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import "../code/Translations.js" as Translations
 import "../code/ViewModel.js" as Model
+import "../code/ProviderColors.js" as ProviderColors
 
 Item {
     id: view
@@ -218,10 +219,11 @@ Item {
                                         background: Rectangle { color: Kirigami.Theme.backgroundColor; border.color: Kirigami.Theme.disabledTextColor; radius: 3 }
                                         contentItem: Item {
                                             Rectangle {
+                                                objectName: "quotaFill" + card.index + "_" + quota.index
                                                 width: parent.width * meter.position; height: parent.height; radius: 3
                                                 anchors.left: view.rtl ? undefined : parent.left
                                                 anchors.right: view.rtl ? parent.right : undefined
-                                                color: Kirigami.Theme.highlightColor
+                                                color: ProviderColors.quotaAccent(card.modelData.provider, Kirigami.Theme.backgroundColor.toString())
                                             }
                                         }
                                         visible: quota.remaining !== null

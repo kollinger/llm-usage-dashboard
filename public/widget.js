@@ -69,11 +69,13 @@
     </div>`;
   }
   function renderAccount(account) {
+    const accent = window.llmUsageProviderColors.quotaAccent(account.provider,
+      getComputedStyle(document.documentElement).getPropertyValue("--track").trim());
     const favorite = preferences.favorites.includes(account.id);
     const label = account.labelIndex ? `${account.label} · ${number(account.labelIndex)}` : account.label;
     const action = t(favorite ? "widget.removeFavorite" : "widget.addFavorite", { name: label });
     const sources = (account.sources || []).map((source) => ({ codex: "Codex", openCode: "OpenCode", local: t("widget.localSource") }[source])).filter(Boolean).join(" · ");
-    return `<article class="widget-account" role="listitem" data-account="${escape(account.id)}">
+    return `<article class="widget-account" role="listitem" data-account="${escape(account.id)}" style="--provider-accent:${accent}">
       <button class="widget-star" data-favorite="${escape(account.id)}" type="button" aria-pressed="${favorite}" aria-label="${escape(action)}" title="${escape(action)}">${favorite ? "★" : "☆"}</button>
       <div class="widget-identity"><div class="widget-name-line" title="${escape(label)}"><bdi class="widget-name">${escape(account.label)}</bdi>${account.labelIndex ? `<span class="widget-number">${escape(number(account.labelIndex))}</span>` : ""}</div><span class="widget-source" title="${escape(providerNames[account.provider])}">${escape(sources || providerNames[account.provider])}</span></div>
       ${account.windows?.length ? `<div class="widget-windows">${account.windows.map((window) => renderWindow(window, account.provider)).join("")}</div>` : `<p class="widget-missing">${escape(t("widget.noQuota"))}</p>`}
@@ -169,7 +171,9 @@
   window.addEventListener("storage", (event) => {
     if (event.key === "llmUsage.language" && event.newValue) loadLanguage(event.newValue).catch(() => {});
   });
-  window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); request?.abort(); removeAppearance?.(); }, { once: true });
+  const themeObserver = new MutationObserver(render);
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); request?.abort(); removeAppearance?.(); themeObserver.disconnect(); }, { once: true });
   (async () => {
     nativeState = await bridge?.getState().catch(() => ({})) || {};
     if (nativeState.preferences) preferences = nativeState.preferences;

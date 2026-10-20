@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
 import os from "node:os";
@@ -281,7 +282,7 @@ async function assertGenericOpenCodeConfigDoesNotActivateGlmCard() {
 async function assertFrontendRendersGlmQuotaRows() {
   const appPath = path.join(rootDir, "public", "app.js");
   const i18nPath = path.join(rootDir, "public", "i18n", "en.json");
-  const appSource = await readFile(appPath, "utf8");
+  const appSource = await readDashboardSource();
   const translations = JSON.parse(await readFile(i18nPath, "utf8"));
   const code = appSource.replace("\ninit();", "\n// init disabled for GLM quota render test");
   assert.notEqual(code, appSource, "GLM quota render test must disable app bootstrap");

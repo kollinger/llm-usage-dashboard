@@ -1,7 +1,9 @@
 import QtQuick
 import QtTest
+import org.kde.kirigami as Kirigami
 import "../../dist/plasma/package/contents/ui" as Native
 import "../../dist/plasma/Fixtures.js" as Fixtures
+import "../../dist/plasma/package/contents/code/ProviderColors.js" as ProviderColors
 
 TestCase {
     id: test
@@ -60,6 +62,39 @@ TestCase {
         tryCompare(list(), "count", 2);
         accountView.provider = "all";
         tryCompare(list(), "count", 5);
+    }
+    function test_provider_colors() {
+        accountView.snapshot = Fixtures.cases.providerColors;
+        tryCompare(list(), "count", 9);
+        // Synthetic backgrounds exercise the actual theme binding without
+        // changing the user's desktop colour scheme or app preferences.
+        var original = accountView.Kirigami.Theme.backgroundColor;
+        try {
+            for (var cycle = 0; cycle < 2; cycle++) {
+                ["#eff0f1", "#232629"].forEach(function(background) {
+                    accountView.Kirigami.Theme.backgroundColor = background;
+                    ["en", "ar"].forEach(function(language) {
+                        accountView.language = language;
+                        for (var index = 0; index < 9; index++) {
+                            list().positionViewAtIndex(index, ListView.Center);
+                            wait(30); // Let recycled delegates settle; an unchanged scroll need not produce a new frame.
+                            var account = accountView.shown[index];
+                            var expected = ProviderColors.quotaAccent(account.provider, background);
+                            [0, 1, 2].forEach(function(windowIndex) {
+                                var fill = findChild(accountView, "quotaFill" + index + "_" + windowIndex);
+                                verify(fill !== null, "Loaded native meter for " + account.provider);
+                                compare(fill.color.toString(), expected, account.provider + "/" + background);
+                            });
+                            verify(findChild(accountView, "quality" + index + "_1").text.length > 0);
+                            compare(findChild(accountView, "remaining" + index + "_3").text, "—");
+                            verify(!findChild(accountView, "quotaMeter" + index + "_3").visible);
+                            compare(findChild(accountView, "quotaMeter" + index + "_2").value, 0);
+                        }
+                        list().positionViewAtBeginning();
+                    });
+                });
+            }
+        } finally { accountView.Kirigami.Theme.backgroundColor = original; }
     }
     function test_resize_scale_rtl() {
         accountView.language = "de";
