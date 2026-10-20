@@ -67,7 +67,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} detected of {count} known accounts · scanned {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -92,7 +92,12 @@
       "failed": "Sign-in unavailable. Install Codex CLI or try again."
     },
     "connectionHelp": "Existing Codex and OpenCode logins are detected automatically. Add another GPT account here without replacing them.",
-    "loginPrivacy": "Sign-in communicates with OpenAI. Credentials stay in a separate local profile and are never sent to the developer or to paired devices."
+    "loginPrivacy": "Sign-in communicates with OpenAI. Credentials stay in a separate local profile and are never sent to the developer or to paired devices.",
+    "profileNote": "OpenCode profile detected; current use is not confirmed.",
+    "quotaUnavailable": "Limits could not be read. Re-scan or sign in again in the source app.",
+    "savedLimits": "Saved limits · stale",
+    "identityUnverified": "Identity unverified. Saved history is not assigned to a workspace.",
+    "openCodeUsage": "OpenCode usage; account attribution unavailable. Account limits are shown in Accounts."
   },
   "chart": {
     "eyebrow": "Local capture",

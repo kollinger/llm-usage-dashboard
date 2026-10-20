@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Atrasti {active} no {count} zināmiem kontiem · pārbaude {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Pierakstīšanās nav pieejama. Instalējiet Codex CLI vai mēģiniet vēlreiz."
     },
     "connectionHelp": "Esošās Codex un OpenCode pierakstīšanās tiek atrastas automātiski. Pievienojiet GPT kontus, tās neaizstājot.",
-    "loginPrivacy": "Pierakstīšanās sazinās ar OpenAI. Akreditācijas dati paliek atsevišķā lokālā profilā un netiek sūtīti izstrādātājam vai savienotām ierīcēm."
+    "loginPrivacy": "Pierakstīšanās sazinās ar OpenAI. Akreditācijas dati paliek atsevišķā lokālā profilā un netiek sūtīti izstrādātājam vai savienotām ierīcēm.",
+    "profileNote": "Atrasts OpenCode profils; pašreizējā lietošana nav apstiprināta.",
+    "quotaUnavailable": "Limitus nevarēja nolasīt. Pārbaudiet vai piesakieties avota lietotnē vēlreiz.",
+    "savedLimits": "Saglabāti limiti · novecojuši",
+    "identityUnverified": "Identitāte nav pārbaudīta. Saglabātā vēsture nav piesaistīta darbvietai.",
+    "openCodeUsage": "OpenCode lietojums; konts nav zināms. Limiti redzami sadaļā Konti."
   },
   "codexResets": {
     "title": "Codex · Atiestatīšanas vēsture",

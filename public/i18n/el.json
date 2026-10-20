@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Εντοπίστηκαν {active} από {count} γνωστούς λογαριασμούς · έλεγχος {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Η σύνδεση δεν είναι διαθέσιμη. Εγκαταστήστε το Codex CLI ή δοκιμάστε ξανά."
     },
     "connectionHelp": "Οι υπάρχουσες συνδέσεις Codex και OpenCode εντοπίζονται αυτόματα. Προσθέστε λογαριασμούς GPT χωρίς να τις αντικαταστήσετε.",
-    "loginPrivacy": "Η σύνδεση επικοινωνεί με το OpenAI. Τα διαπιστευτήρια παραμένουν σε ξεχωριστό τοπικό προφίλ και δεν αποστέλλονται στον προγραμματιστή ή στις συζευγμένες συσκευές."
+    "loginPrivacy": "Η σύνδεση επικοινωνεί με το OpenAI. Τα διαπιστευτήρια παραμένουν σε ξεχωριστό τοπικό προφίλ και δεν αποστέλλονται στον προγραμματιστή ή στις συζευγμένες συσκευές.",
+    "profileNote": "Εντοπίστηκε προφίλ OpenCode· η τρέχουσα χρήση δεν έχει επιβεβαιωθεί.",
+    "quotaUnavailable": "Δεν διαβάστηκαν όρια. Επαναλάβετε τον έλεγχο ή τη σύνδεση στην εφαρμογή προέλευσης.",
+    "savedLimits": "Αποθηκευμένα όρια · παλιά",
+    "identityUnverified": "Μη επαληθευμένη ταυτότητα. Το ιστορικό δεν αντιστοιχίζεται σε χώρο εργασίας.",
+    "openCodeUsage": "Χρήση OpenCode· άγνωστος λογαριασμός. Τα όρια εμφανίζονται στους Λογαριασμούς."
   },
   "codexResets": {
     "title": "Codex · Ιστορικό επαναφορών",

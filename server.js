@@ -44,6 +44,7 @@ const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHisto
 const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
+  chatGptOauthAccountId,
   codexAccountObservationsFromAuth,
   createGptAccountObservation,
   mergeGptAccountRegistry,
@@ -655,9 +656,15 @@ async function readBrowserConnections({ force = false, usage = usageCache.value 
   ]);
   const accounts = (registry.accounts || []).map((account) => {
     const profile = profiles.find((item) => item.accountId === account.id);
-    const source = account.sources?.filter((item) => item.limits?.rows?.length).sort((a, b) => Date.parse(b.limitsUpdatedAt || 0) - Date.parse(a.limitsUpdatedAt || 0))[0];
+    const current = (item) => item?.active && item.quotaStatus === "ready" && Date.now() - Date.parse(item.limitsUpdatedAt) >= -60_000 &&
+      Date.now() - Date.parse(item.limitsUpdatedAt) <= 15 * 60_000 && item.limits?.rows?.some((row) => !row.resetsAt || Date.parse(row.resetsAt) > Date.now());
+    const source = account.sources?.filter((item) => item.limits?.rows?.length).sort((a, b) =>
+      Number(Boolean(current(b))) - Number(Boolean(current(a))) || (Date.parse(b.limitsUpdatedAt) || 0) - (Date.parse(a.limitsUpdatedAt) || 0))[0];
+    const authRequired = !current(source) && account.sources?.some((item) => item.active && ["auth_required", "credentials_missing"].includes(item.quotaReason));
     return { id: profile ? `gpt:${profile.id}` : `detected:${account.id}`, accountId: account.id, provider: "gpt", label: profile?.label || account.label,
-      kind: "subscription", managed: Boolean(profile), status: account.active ? "connected" : "saved", updatedAt: source?.limitsUpdatedAt || account.lastSeenAt,
+      kind: "subscription", managed: Boolean(profile), status: !account.active ? "saved" : authRequired ? "auth_required" : profile && current(source) ? "connected" : "detected",
+      quotaStatus: current(source) ? "current" : source ? "stale" : "unavailable", identityQuality: account.identityQuality,
+      applications: (account.sources || []).filter((item) => item.active && ["codex", "openCode"].includes(item.id)).map((item) => item.id),
       ...safeMeasurement({ limits: source?.limits, updatedAt: source?.limitsUpdatedAt || account.lastSeenAt, planType: account.planType }) };
   });
   for (const profile of profiles) {
@@ -1390,7 +1397,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
   const [claudeProbe, claudeStatusline] = usage.cache?.restored && !usage.claudeCode?.limits
     ? await Promise.all([claudeApiUsageCache.value || readClaudeUsageSnapshot(), readClaudeStatusline().catch(() => null)])
     : [null, null];
-  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+  // Consumption restored from disk intentionally contains no account quotas.
+  // A completed account re-scan must still reach dashboard/widget consumers
+  // immediately while the heavier consumption refresh is in progress.
+  const withAccounts = gptAccountsCache.value ? { ...usage, gptAccounts: gptAccountsCache.value } : usage;
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(withAccounts, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
 async function currentCodexCreditScope() {
@@ -9147,6 +9158,7 @@ async function readCodexGptAccountObservation(options = {}) {
 
   for (const codexHome of codexHomes) {
     const authFile = path.join(codexHome, "auth.json");
+    const authSignature = await gptAccountAuthFileSignature([authFile]);
     let authObservations = [];
     try {
       const stat = await fsp.stat(authFile);
@@ -9170,7 +9182,9 @@ async function readCodexGptAccountObservation(options = {}) {
     try {
       const liveObservation = await readCodexProfileGptAccountObservation(codexHome, {
         refreshToken,
-        clientFactory: options.clientFactory
+        clientFactory: options.clientFactory,
+        profileIdentity: authObservations[0],
+        authSignature
       });
       if (!liveObservation) {
         if (authObservations.length) {
@@ -9202,7 +9216,14 @@ async function readCodexGptAccountObservation(options = {}) {
 }
 
 async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
-  const lease = await acquireCodexAccountClient(codexHome, options.clientFactory);
+  const authFile = path.join(codexHome, "auth.json");
+  const authSignature = options.authSignature || await gptAccountAuthFileSignature([authFile]);
+  let profileIdentity = options.profileIdentity;
+  if (!profileIdentity) {
+    try { profileIdentity = codexAccountObservationsFromAuth(JSON.parse(await fsp.readFile(authFile, "utf8")))[0]; }
+    catch { /* A live account ID can still establish identity without a local auth file. */ }
+  }
+  const lease = await acquireCodexAccountClient(codexHome, options.clientFactory, Boolean(profileIdentity));
   try {
     const response = await lease.client.request("account/read", {
       refreshToken: Boolean(options.refreshToken)
@@ -9222,7 +9243,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
       sourceId: "codex",
       sourceRef: codexHome,
       email: account.email,
-      accountId: rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null,
+      accountId: response?.accountId || account.accountId || (rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null),
       planType: liveLimits?.codex?.planType || account.planType,
       seenAt: new Date().toISOString(),
       usage: usageResult.status === "fulfilled" ? usageResult.value : null,
@@ -9237,7 +9258,24 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
           ? "identity_and_limits"
           : "identity_only"
     });
-    if (observation && (liveLimits?.historySnapshot || liveLimits?.notificationSnapshot)) {
+    if (profileIdentity?.identityQuality === "account_id") {
+      // The lease belongs to this exact profile. Bind an email-only CLI
+      // response only while that profile's auth file is unchanged and its
+      // returned identity/plan agree. Never match other profiles by email.
+      const unchanged = authSignature === await gptAccountAuthFileSignature([authFile]);
+      const identityMatches = observation && (observation.identityQuality === "account_id"
+        ? observation.id === profileIdentity.id
+        : observation.label === profileIdentity.label && (!observation.planType || !profileIdentity.planType || observation.planType === profileIdentity.planType));
+      if (!unchanged || !identityMatches) return null;
+      observation.id = profileIdentity.id;
+      observation.identityQuality = "account_id";
+    } else if (observation?.identityQuality === "email") {
+      observation.limits = null;
+      observation.usage = null;
+      observation.quotaStatus = "unavailable";
+      observation.quotaReason = "identity_unverified";
+    }
+    if (observation?.identityQuality === "account_id" && observation.quotaStatus === "ready" && (liveLimits?.historySnapshot || liveLimits?.notificationSnapshot)) {
       if (liveLimits.historySnapshot) {
         codexResetProfileAccounts.set(codexHome, liveLimits.historySnapshot.accountKey);
         liveLimits.historySnapshot.accountRef = observation.id;
@@ -9252,13 +9290,13 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
   }
 }
 
-async function acquireCodexAccountClient(codexHome, clientFactory) {
+async function acquireCodexAccountClient(codexHome, clientFactory, dedicated = false) {
   if (typeof clientFactory === "function") {
     const lease = await clientFactory(codexHome);
     if (lease?.client) return { client: lease.client, closeWhenDone: Boolean(lease.closeWhenDone) };
     return { client: lease, closeWhenDone: false };
   }
-  if (sameResolvedPath(codexHome, CODEX_HOME)) {
+  if (!dedicated && sameResolvedPath(codexHome, CODEX_HOME)) {
     return { client: await getCodexAppServer(), closeWhenDone: false };
   }
   return {
@@ -9361,7 +9399,8 @@ async function openCodeAccountObservationsWithQuota(auth, options = {}) {
   };
 }
 
-function openCodeGptAccountAuthFiles(sources, extraFiles = []) {
+function openCodeGptAccountAuthFiles(sources, extraFiles) {
+  if (Array.isArray(extraFiles)) return uniquePaths(extraFiles);
   const files = [...defaultOpenCodeMultiAuthFiles(), ...OPENCODE_MULTI_AUTH_FILES, ...(extraFiles || [])];
   const profileDirs = new Set();
   for (const entry of sourcePathEntries(sources || defaultOpenCodeSources(), OPENCODE_DB_ROLES)) {
@@ -9402,16 +9441,13 @@ async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
   const accessToken = String(entry?.access || "").trim();
   const claims = parseJwtClaims(accessToken) || {};
   const nestedAuth = claims["https://api.openai.com/auth"] || {};
-  const accountId = String(
-    claims.chatgpt_account_id ||
-      nestedAuth.chatgpt_account_id ||
-      entry?.chatgptAccountId ||
-      entry?.accountId ||
-      claims.organizations?.[0]?.id ||
-      ""
-  ).trim();
-  if (!accessToken || !accountId || /[\r\n]/u.test(accessToken) || /[\r\n]/u.test(accountId)) {
+  const accountId = chatGptOauthAccountId(entry);
+  if (!accessToken || !accountId || accountId.length > 320 || /[\x00-\x1f\x7f]/u.test(accessToken + accountId)) {
     return { status: "unavailable", reason: "credentials_missing", limits: null };
+  }
+  const expiresAt = Number(entry?.expires) || Number(claims.exp) * 1000;
+  if (expiresAt > 0 && (expiresAt < 1e12 ? expiresAt * 1000 : expiresAt) <= Date.now()) {
+    return { status: "unavailable", reason: "auth_required", limits: null };
   }
 
   const controller = new AbortController();
@@ -9435,6 +9471,10 @@ async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
       };
     }
     const payload = await response.json();
+    const returnedAccountId = payload?.account_id || payload?.accountId || payload?.chatgpt_account_id;
+    if (returnedAccountId && returnedAccountId !== accountId) {
+      return { status: "unavailable", reason: "identity_unverified", limits: null };
+    }
     const limits = codexRateLimitsFromUsagePayload(payload, "Codex");
     if (!limits?.rows?.length) return { status: "unavailable", reason: "limits_missing", limits: null };
     const root = codexUsagePayloadRoot(payload);

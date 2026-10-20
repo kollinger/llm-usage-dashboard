@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Aptikta {active} iš {count} žinomų paskyrų · patikra {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Prisijungimas nepasiekiamas. Įdiekite Codex CLI arba bandykite dar kartą."
     },
     "connectionHelp": "Esami Codex ir OpenCode prisijungimai aptinkami automatiškai. Pridėkite GPT paskyras jų nekeisdami.",
-    "loginPrivacy": "Prisijungimas palaiko ryšį su OpenAI. Prisijungimo duomenys lieka atskirame vietiniame profilyje ir nesiunčiami kūrėjui ar susietiems įrenginiams."
+    "loginPrivacy": "Prisijungimas palaiko ryšį su OpenAI. Prisijungimo duomenys lieka atskirame vietiniame profilyje ir nesiunčiami kūrėjui ar susietiems įrenginiams.",
+    "profileNote": "Aptiktas OpenCode profilis; dabartinis naudojimas nepatvirtintas.",
+    "quotaUnavailable": "Limitų nepavyko perskaityti. Tikrinkite arba prisijunkite šaltinio programoje iš naujo.",
+    "savedLimits": "Išsaugoti limitai · pasenę",
+    "identityUnverified": "Tapatybė nepatvirtinta. Išsaugota istorija nepriskirta darbo sričiai.",
+    "openCodeUsage": "OpenCode naudojimas; paskyra nežinoma. Limitai rodomi skiltyje Paskyros."
   },
   "codexResets": {
     "title": "Codex · Atstatymų istorija",

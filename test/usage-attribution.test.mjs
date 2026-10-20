@@ -18,6 +18,8 @@ const b = { id: "b".repeat(32), label: "Computer B" };
 const accountA = recordedAccountAttribution("codex", { account_id: "fixture-account-a" });
 const accountB = recordedAccountAttribution("codex", { account: { id: "fixture-account-b" } });
 assert.equal(accountA.accountId, createGptAccountObservation({ sourceId: "codex", accountId: "fixture-account-a" }).id);
+assert.equal(recordedAccountAttribution("codex", { account: { id: "fixture-account-a", email: "same@example.test" } }).accountId, accountA.accountId);
+assert.equal(recordedAccountAttribution("codex", { account: { id: "fixture-account-b", email: "same@example.test" } }).accountId, accountB.accountId);
 assert.equal(recordedAccountAttribution("codex", { email: "current@login.invalid" }), null);
 assert.equal(recordedAccountAttribution("codex", { account_id: "\ninvalid" }).accountId, null);
 assert.equal(recordedAccountAttribution("gemini", { account_id: "unsupported schema" }), null);

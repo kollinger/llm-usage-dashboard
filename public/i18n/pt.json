@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} detetadas de {count} contas conhecidas · análise {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Início de sessão indisponível. Instale Codex CLI ou tente novamente."
     },
     "connectionHelp": "As sessões existentes de Codex e OpenCode são detetadas automaticamente. Adicione mais contas GPT aqui sem as substituir.",
-    "loginPrivacy": "O início de sessão comunica com a OpenAI. As credenciais ficam num perfil local separado e não são enviadas ao programador nem aos dispositivos emparelhados."
+    "loginPrivacy": "O início de sessão comunica com a OpenAI. As credenciais ficam num perfil local separado e não são enviadas ao programador nem aos dispositivos emparelhados.",
+    "profileNote": "Perfil OpenCode detetado; utilização atual não confirmada.",
+    "quotaUnavailable": "Não foi possível ler os limites. Volte a pesquisar ou inicie sessão na aplicação de origem.",
+    "savedLimits": "Limites guardados · desatualizados",
+    "identityUnverified": "Identidade não verificada. O histórico guardado não está associado a um espaço de trabalho.",
+    "openCodeUsage": "Utilização OpenCode; conta desconhecida. Os limites estão em Contas."
   },
   "codexResets": {
     "title": "Codex · Histórico de reposições",

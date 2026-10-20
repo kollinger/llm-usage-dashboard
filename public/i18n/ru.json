@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Обнаружено {active} из {count} известных аккаунтов · проверка {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Вход недоступен. Установите Codex CLI или попробуйте снова."
     },
     "connectionHelp": "Существующие входы Codex и OpenCode определяются автоматически. Добавляйте аккаунты GPT, не заменяя их.",
-    "loginPrivacy": "Вход связывается с OpenAI. Учётные данные остаются в отдельном локальном профиле и не отправляются разработчику или сопряжённым устройствам."
+    "loginPrivacy": "Вход связывается с OpenAI. Учётные данные остаются в отдельном локальном профиле и не отправляются разработчику или сопряжённым устройствам.",
+    "profileNote": "Найден профиль OpenCode; текущее использование не подтверждено.",
+    "quotaUnavailable": "Не удалось прочитать лимиты. Повторите проверку или вход в исходном приложении.",
+    "savedLimits": "Сохранённые лимиты · устарели",
+    "identityUnverified": "Личность не подтверждена. Сохранённая история не привязана к рабочему пространству.",
+    "openCodeUsage": "Использование OpenCode; аккаунт неизвестен. Лимиты показаны в разделе Аккаунты."
   },
   "codexResets": {
     "title": "Codex · История сбросов",
