@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -17,6 +18,7 @@ const weeklyResetSeconds = Math.floor(Date.parse("2026-07-24T18:00:00.000Z") / 1
 assertLegacyCodexWindows();
 assertCodexBinaryCandidates();
 assertWeeklyPrimaryCodexWindow();
+assertNewestCodexSampleWinsWithinResetJitter();
 assertWeeklyPrimarySparkWindow();
 assertUnknownCodexWindow();
 await assertCodexCardDomRendering();
@@ -27,6 +29,8 @@ function assertCodexBinaryCandidates() {
     homeDir: "/Users/example",
     env: {}
   });
+  assert.equal(macCandidates.includes("/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"), true);
+  assert.equal(macCandidates.includes("/Users/example/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"), true);
   assert.equal(macCandidates.includes("/Applications/ChatGPT.app/Contents/Resources/codex"), true);
   assert.equal(macCandidates.includes("/Applications/Codex.app/Contents/Resources/codex"), true);
   assert.equal(macCandidates.includes("/Users/example/Applications/ChatGPT.app/Contents/Resources/codex"), true);
@@ -107,6 +111,39 @@ function assertWeeklyPrimaryCodexWindow() {
   assert.equal(alerts[0]?.windowMinutes, 10080);
 }
 
+function assertNewestCodexSampleWinsWithinResetJitter() {
+  const resetSeconds = Math.floor((Date.now() + 6 * 24 * 60 * 60 * 1000) / 1000);
+  const limits = _test.codexRateLimitsFromEvents(
+    [
+      {
+        timestamp: "2026-08-20T04:50:07.000Z",
+        rateLimits: {
+          primary: {
+            used_percent: 98,
+            window_minutes: 10080,
+            resets_at: resetSeconds
+          }
+        }
+      },
+      {
+        timestamp: "2026-08-15T06:01:56.075Z",
+        rateLimits: {
+          primary: {
+            used_percent: 38,
+            window_minutes: 10080,
+            resets_at: resetSeconds + 2
+          }
+        }
+      }
+    ],
+    null
+  );
+
+  assert.equal(limits.weekly.usedPercent, 98);
+  assert.equal(limits.weekly.resetsAt, new Date(resetSeconds * 1000).toISOString());
+  assert.equal(limits.weekly.observedAt, "2026-08-20T04:50:07.000Z");
+}
+
 function assertWeeklyPrimarySparkWindow() {
   const limits = _test.codexSparkRateLimitsFromEvents(
     [],
@@ -157,7 +194,7 @@ function assertUnknownCodexWindow() {
 
 async function assertCodexCardDomRendering() {
   const appPath = path.join(rootDir, "public", "app.js");
-  const appSource = await readFile(appPath, "utf8");
+  const appSource = await readDashboardSource();
   const code = appSource.replace("\ninit();", "\n// init disabled for Codex quota DOM test");
   assert.notEqual(code, appSource, "Codex quota DOM test must disable app bootstrap");
   const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
@@ -208,9 +245,12 @@ const legacy = normalizeCodexProvider({
     ]
   }
 });
+const expiryHtml = renderCreditRow(normalizeCreditRow({ key: "codexCredits", balance: 63000, valueLabel: "63,000 credits", expiresOn: "2026-12-31", expirySource: "manual" }), "#009900");
+const unknownExpiryHtml = renderCreditRow(normalizeCreditRow({ key: "codexCredits", balance: 63000, valueLabel: "63,000 credits" }), "#009900");
 const weeklyOnlyHtml = renderProvider(weeklyOnly);
 const legacyHtml = renderProvider(legacy);
 JSON.stringify({
+  expiryHtml, unknownExpiryHtml,
   weeklyOnlyHasWeek: weeklyOnlyHtml.includes(">Week<") || weeklyOnlyHtml.includes("Week left"),
   weeklyOnlyHasFiveHourLimit: weeklyOnlyHtml.includes("5h Codex limit") || weeklyOnlyHtml.includes("5h left") || weeklyOnlyHtml.includes(">5h<"),
   legacyHasFiveHour: legacyHtml.includes("5h Codex limit") || legacyHtml.includes("5h left") || legacyHtml.includes(">5h<"),
@@ -219,6 +259,9 @@ JSON.stringify({
     createAppContext()
   ));
 
+  assert.match(result.expiryHtml, /Expires on .*2026.*entered by you/);
+  assert.match(result.expiryHtml, /data-credit-expiry/);
+  assert.match(result.unknownExpiryHtml, /Expiry date not provided by Codex/);
   assert.equal(result.weeklyOnlyHasWeek, true);
   assert.equal(result.weeklyOnlyHasFiveHourLimit, false);
   assert.equal(result.legacyHasFiveHour, true);
@@ -322,3 +365,12 @@ function createAppContext() {
     Error
   };
 }
+
+const savedUsage = { codex: { status: "live", updatedAt: "2026-01-01T00:00:00Z", totals: { allTime: { totalTokens: 42 } }, limits: null } };
+const liveQuota = { codex: { primary: { usedPercent: 49, windowDurationMins: 300, resetsAt: fiveHourResetSeconds } },
+  source: { status: "live", updatedAt: new Date().toISOString() } };
+const overlaid = _test.overlayCurrentCodexQuota(savedUsage, liveQuota, 1000, 2000);
+assert.deepEqual(overlaid.codex.limits, _test.codexRateLimitsFromLive(liveQuota.codex, "Codex"));
+assert.equal(overlaid.codex.updatedAt, savedUsage.codex.updatedAt, "fresh quotas must not rewrite the history timestamp");
+assert.equal(overlaid.codex.totals.allTime.totalTokens, 42);
+assert.equal(_test.overlayCurrentCodexQuota(savedUsage, liveQuota, 1000, 92_000), savedUsage, "stale quota probes cannot appear current");

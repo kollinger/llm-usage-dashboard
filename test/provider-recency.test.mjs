@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile, readFile, readdir } from "node:fs/promises";
@@ -109,7 +110,7 @@ async function assertSubscriptionPlanDetection() {
 
 async function assertProviderVisibility() {
   const appPath = path.join(rootDir, "public", "app.js");
-  const appSource = await readFile(appPath, "utf8");
+  const appSource = await readDashboardSource();
   const code = appSource.replace("\ninit();", "\n// init disabled for provider visibility test");
   assert.notEqual(code, appSource, "provider visibility test must disable app bootstrap");
 
@@ -268,6 +269,16 @@ JSON.stringify({
     limitRows: [],
     creditRows: []
   }),
+  weeklyUsageWithoutCurrentActivity: providerHasUsage({
+    id: "claudeCode",
+    status: "empty",
+    todayTokens: 0,
+    weekTokens: 12345,
+    apiTokens: 0,
+    cost: 0,
+    limitRows: [],
+    creditRows: []
+  }),
   configuredGlmZero: providerHasUsage({
     id: "glm",
     status: "empty",
@@ -295,6 +306,7 @@ JSON.stringify({
   assert.equal(result.recentFullCopilot, true);
   assert.equal(result.neutralSpark, false);
   assert.equal(result.activeCodexLimit, true);
+  assert.equal(result.weeklyUsageWithoutCurrentActivity, true);
   assert.equal(result.configuredGlmZero, false);
   assert(result.activeIds.includes("codex"));
   assert(!result.activeIds.includes("copilot"));
@@ -546,7 +558,7 @@ async function assertSubscriptionConnectionLocalization() {
 
 async function assertFrontendUsageIntelligence() {
   const appPath = path.join(rootDir, "public", "app.js");
-  const appSource = await readFile(appPath, "utf8");
+  const appSource = await readDashboardSource();
   const code = appSource.replace("\ninit();", "\n// init disabled for usage intelligence test");
   assert.notEqual(code, appSource, "usage intelligence test must disable app bootstrap");
   assert.equal(appSource.includes("function renderRings"), false, "legacy quota ring renderer must stay removed");
@@ -659,7 +671,14 @@ for (const filter of ["today", "h24", "week", "month", "all"]) {
 }
 const todaySummaryTotal = usageTotalsForToday({ daily }, []).totalTokens;
 const recordDay = findRecordDay(daily);
+const fiveHourTile = document.getElementById("fiveHourTile");
+summaryMetricTileById = () => fiveHourTile;
 renderSummary([], local, filterDailyByRange(daily, "today"));
+const fiveHourTileHiddenWithoutLimit = fiveHourTile.hidden;
+renderSummary([{ id: "codex", todayTokens: 1, limitRows: [
+  { key: "fiveHour", windowMinutes: 300, usedPercent: 20, remainingPercent: 80 }
+] }], local, filterDailyByRange(daily, "today"));
+const fiveHourTileVisibleWithLimit = !fiveHourTile.hidden;
 const renderedTokensToday = document.getElementById("tokensToday").textContent;
 const renderedTokensTotal = document.getElementById("tokensTotal").textContent;
 const renderedTokensTodayNote = document.getElementById("tokensRangeNote").textContent;
@@ -920,6 +939,18 @@ const normalizedCodexConnectionCardHtml = renderProvider(normalizeCodexProvider(
     statusKey: "subscriptions.connectionStatus.chatgptLoginRequired"
   }
 }));
+const codexFallbackLimitTime = "${today}T09:00:00Z";
+const codexFallbackProvider = normalizeCodexProvider({
+  status: "live",
+  latest: { timestamp: "${today}T10:15:00Z" },
+  liveRateLimits: { status: "error", updatedAt: "${today}T10:14:00Z" },
+  limits: {
+    weekly: {
+      key: "weekly", label: "Week", windowMinutes: 10080,
+      usedPercent: 47, observedAt: codexFallbackLimitTime, resetsAt: earlyWeekReset
+    }
+  }
+});
 const normalizedCodexRefreshCardHtml = renderProvider({
   id: "codex",
   name: "Codex",
@@ -987,13 +1018,13 @@ const claudeWithFableHtml = renderProvider(normalizeLocalProvider("claudeCode", 
   },
   totals: { last24h: { totalTokens: 100 }, allTime: { totalTokens: 500 } }
 }));
-const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent);
+const riskLimitTachometerHtml = renderLimitBar({ label: "Week", usedPercent: 50, remainingPercent: 50, windowMinutes: 10080, resetsAt: earlyWeekReset }, providerMeta.codex.accent, "tachometer");
 let storedProjectionMode = "";
 localStorage.setItem = (key, value) => {
-  if (key === USAGE_PROJECTION_MODE_STORAGE_KEY) storedProjectionMode = value;
+  if (key === LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY) storedProjectionMode = value;
 };
-setUsageProjectionMode("bar");
-const projectionModeAfterToggle = state.usageProjectionMode;
+setUsageProjectionMode("tachometer", "claudeCode");
+const projectionModeAfterToggle = state.usageProjectionModes.claudeCode;
 const codexLimitBarsHtml = renderLimitBars({
   id: "codex",
   accent: providerMeta.codex.accent,
@@ -1238,6 +1269,8 @@ JSON.stringify({
   recordDayLabel: t("summary.recordDayLabel"),
   recordDayFormattedDate: formatFullDate(recordDay?.date),
   renderedTokensToday,
+  fiveHourTileHiddenWithoutLimit,
+  fiveHourTileVisibleWithLimit,
   renderedTokensTotal,
   renderedTokensTodayNote,
   renderedTokensTotalNote,
@@ -1350,6 +1383,7 @@ JSON.stringify({
     /12 minutes ago/.test(relativeFreshnessText) &&
     /2 hours ago/.test(relativeFreshnessText) &&
     /3 days ago/.test(relativeFreshnessText),
+  codexFallbackUsesReadingTime: codexFallbackProvider.limitsUpdatedAt === codexFallbackLimitTime,
   normalizedProviderConnectionActions:
     normalizedCodexConnectionCardHtml.includes("Log in to ChatGPT and read plan") &&
     normalizedCodexConnectionCardHtml.includes("https://chatgpt.com/#settings/Billing") &&
@@ -1378,14 +1412,14 @@ JSON.stringify({
   providerCardNoFableQuotaAudit:
     !providerCardHtml.includes("Fable quota source") &&
     !providerCardHtml.includes("no synthetic quota is shown") &&
-    providerCardHtml.includes("limit-tachometer-gauge") &&
+    providerCardHtml.includes("limit-projection-bar") &&
     !providerCardHtml.includes("ring-row"),
   claudeCodeUsesCurrentUsageComponent:
     providerCardHtml.includes("limit-bars") &&
     providerCardHtml.includes("usage-projection-toggle") &&
     providerCardHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
     providerCardHtml.includes("data-usage-projection-mode=\\"bar\\"") &&
-    providerCardHtml.includes("limit-tachometer-gauge") &&
+    providerCardHtml.includes("limit-projection-bar") &&
     !providerCardHtml.includes("ring-row") &&
     !providerCardHtml.includes("ring-box") &&
     !providerCardHtml.includes("ring-sub"),
@@ -1423,14 +1457,15 @@ JSON.stringify({
   limitBarsHasProjectionToggle:
     limitBarsHtml.includes("usage-projection-toggle") &&
     limitBarsHtml.includes("data-usage-projection-mode=\\"tachometer\\"") &&
-    limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\""),
-  providerProjectionModeGlobal:
+    limitBarsHtml.includes("data-usage-projection-mode=\\"bar\\"") &&
+    limitBarsHtml.includes("data-usage-projection-provider=\\"codex\\""),
+  providerProjectionModeIndependent:
     codexLimitBarsHtml.includes("limit-bars-mode-bar") &&
     codexLimitBarsHtml.includes("limit-projection-bar") &&
     !codexLimitBarsHtml.includes("limit-tachometer-gauge") &&
-    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-bar") &&
-    claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
-    !claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
+    claudeTachometerLimitBarsHtml.includes("limit-bars-mode-tachometer") &&
+    !claudeTachometerLimitBarsHtml.includes("limit-projection-bar") &&
+    claudeTachometerLimitBarsHtml.includes("limit-tachometer-gauge"),
 	    claudeLoginAction:
 		    claudeLoginCardHtml.includes("Read Claude plan again") &&
 		    !claudeLoginCardHtml.includes("Log in to Claude and read plan") &&
@@ -1466,6 +1501,7 @@ JSON.stringify({
   riskLimitBarHasProjectionBarMode:
     riskLimitBarHtml.includes("limit-projection-bar") &&
     !riskLimitBarHtml.includes("limit-tachometer-gauge") &&
+    riskLimitBarHtml.includes("limit-gauge-projection-callout") &&
     riskLimitBarHtml.includes("100%") &&
     riskLimitBarHtml.includes("projected"),
   zeroUsageProjectionValid:
@@ -1570,6 +1606,8 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.recordDayTokens, 500);
   assert.equal(result.recordDayLabel, "Record day");
   assert.equal(result.renderedTokensToday, "222");
+  assert.equal(result.fiveHourTileHiddenWithoutLimit, true);
+  assert.equal(result.fiveHourTileVisibleWithLimit, true);
   assert.equal(result.renderedTokensTotal, "722");
   assert.equal(result.renderedTokensTodayNote.includes("not provider quota limits"), true);
   assert.equal(result.renderedTokensTodayNote.includes("Codex: 222"), true);
@@ -1635,6 +1673,7 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.providerCardHasLogo, true);
   assert.equal(result.providerCardFreshness, true);
   assert.equal(result.relativeFreshness, true);
+  assert.equal(result.codexFallbackUsesReadingTime, true);
   assert.equal(result.normalizedProviderConnectionActions, true);
   assert.equal(result.normalizedClaudeConnectionAction, true);
   assert.equal(result.normalizedCodexRefreshAction, true);
@@ -1642,12 +1681,12 @@ JSON.stringify({ claudeMax20Label, codexPro20Label });`,
   assert.equal(result.claudeCodeUsesCurrentUsageComponent, true);
   assert.equal(result.logoSamplesCoverCatalogProviders, true);
   assert.equal(result.riskLimitBarUsesProviderAccent, true);
-  assert.equal(result.defaultUsageProjectionMode, "tachometer");
-  assert.equal(result.projectionModeAfterToggle, "bar");
-  assert.equal(result.storedProjectionMode, "bar");
-  assert.equal(result.invalidProjectionModeFallsBack, "tachometer");
+  assert.equal(result.defaultUsageProjectionMode, "bar");
+  assert.equal(result.projectionModeAfterToggle, "tachometer");
+  assert.deepEqual(JSON.parse(result.storedProjectionMode), { claudeCode: "tachometer" });
+  assert.equal(result.invalidProjectionModeFallsBack, "bar");
   assert.equal(result.limitBarsHasProjectionToggle, true);
-  assert.equal(result.providerProjectionModeGlobal, true);
+  assert.equal(result.providerProjectionModeIndependent, true);
   assert.equal(result.claudeLoginAction, true);
   assert.equal(result.connectionRereadFlow, true);
   assert.equal(result.claudeConflictAction, true);

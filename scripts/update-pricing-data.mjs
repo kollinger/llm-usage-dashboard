@@ -5,10 +5,10 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 const APP_JS = new URL("../public/app.js", import.meta.url);
 const I18N_DIR = new URL("../public/i18n/", import.meta.url);
 const ECB_DAILY_XML_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-const PRICING_CATALOG_VERSION = "2026.08.15";
-const PRICING_REVIEW_DATE = "2026-08-15";
-const BASELINE_SOURCE_REVIEW_DATE = "2026-07-09";
-const SCORE_REVIEW_DATE = "2026-07-09";
+const PRICING_CATALOG_VERSION = "2026.10.01.2";
+const PRICING_REVIEW_DATE = "2026-10-01";
+const BASELINE_SOURCE_REVIEW_DATE = "2026-09-25";
+const BENCHMARK_REVIEW_DATE = "2026-09-13";
 const PRICING_MAX_AGE_DAYS = 45;
 
 const REQUIRED_PROVIDER_COVERAGE = [
@@ -31,6 +31,10 @@ const REQUIRED_MODEL_COVERAGE = [
   "Claude Opus 4.8",
   "Claude Sonnet 5",
   "Claude Sonnet 4.6",
+  "GPT-6 Astra",
+  "GPT-6 Sol",
+  "GPT-6.1 Sol",
+  "GPT-6 Luna",
   "GPT-5.6 Sol",
   "GPT-5.6 Terra",
   "GPT-5.6 Luna",
@@ -40,11 +44,16 @@ const REQUIRED_MODEL_COVERAGE = [
   "GLM-5.2",
   "GLM-4.7-FlashX",
   "Gemini 3.1 Pro Preview",
+  "Gemini 3.8 Flash",
+  "Grok 4.6",
   "Grok 4.3",
   "Grok Build 0.1",
   "MiniMax M3",
   "Mistral Large 2",
+  "Mistral Large 3",
+  "Mistral Medium 3.5",
   "Qwen3.7-Max",
+  "Qwen3.8-Max",
   "Qwen3-Max",
   "step-3.7-flash"
 ];
@@ -54,18 +63,82 @@ const REQUIRED_MODEL_COVERAGE = [
 const rawPricingModels = [
   {
     provider: "OpenAI",
+    model: "GPT-6 Astra",
+    aliases: ["gpt-6-astra"],
+    region: "API/Codex",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE,
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request."
+  },
+  {
+    provider: "OpenAI",
     model: "GPT-5.6 Sol",
     aliases: ["gpt-5.6-sol", "gpt-5-6-sol", "gpt-5.6", "gpt-5-6"],
     region: "API/Codex",
-    inputUsd: 5,
-    cacheWriteUsd: 6.25,
-    cachedInputUsd: 0.5,
-    outputUsd: 30,
+    inputUsd: 4,
+    cacheWriteUsd: 5,
+    cachedInputUsd: 0.4,
+    outputUsd: 20,
     contextTokens: 1_050_000,
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: PRICING_REVIEW_DATE
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Sol",
+    aliases: ["gpt-6-sol", "gpt-6.0-sol", "gpt-6-0-sol"],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 10,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-sol",
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE,
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6.1 Sol",
+    aliases: ["gpt-6.1-sol", "gpt-6-1-sol"],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.1,
+    outputUsd: 10,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Fast is 2x Standard; Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Luna",
+    aliases: ["gpt-6-luna", "gpt-6.0-luna", "gpt-6-0-luna"],
+    region: "API/Codex",
+    inputUsd: 0.1,
+    cacheWriteUsd: 0.125,
+    cachedInputUsd: 0.01,
+    outputUsd: 0.5,
+    contextTokens: 1_050_000,
+    maxOutputTokens: 128_000,
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE,
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
   },
   {
     provider: "OpenAI",
@@ -80,7 +153,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: PRICING_REVIEW_DATE
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE
   },
   {
     provider: "OpenAI",
@@ -95,7 +168,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: PRICING_REVIEW_DATE
+    sourceReviewDate: BASELINE_SOURCE_REVIEW_DATE
   },
   {
     provider: "OpenAI",
@@ -116,12 +189,14 @@ const rawPricingModels = [
     aliases: ["gpt-5.5-pro", "gpt-5-5-pro"],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     contextTokens: 1_000_000,
     maxOutputTokens: 128_000,
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -142,12 +217,14 @@ const rawPricingModels = [
     aliases: ["gpt-5.4-pro", "gpt-5-4-pro"],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     contextTokens: 1_000_000,
     maxOutputTokens: 128_000,
     source: "OpenAI",
-    sourceUrl: "https://developers.openai.com/api/docs/pricing"
+    sourceUrl: "https://developers.openai.com/api/docs/pricing",
+    sourceReviewDate: PRICING_REVIEW_DATE,
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -272,7 +349,7 @@ const rawPricingModels = [
       "anthropic.claude-sonnet-5",
       "claude-sonnet-5-0"
     ],
-    region: "Intro pricing through 2026-08-31",
+    region: "Global",
     inputUsd: 2,
     cacheWriteUsd: 2.5,
     cachedInputUsd: 0.2,
@@ -281,7 +358,7 @@ const rawPricingModels = [
     maxOutputTokens: 128_000,
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing",
-    sourceNotes: "Introductory pricing applies through August 31, 2026; standard pricing starts September 1, 2026."
+    sourceNotes: "Current first-party global API rates. US-only inference carries a 1.1x multiplier."
   },
   {
     provider: "Anthropic",
@@ -325,7 +402,7 @@ const rawPricingModels = [
     provider: "MiniMax",
     model: "MiniMax M3",
     aliases: ["minimax-m3"],
-    region: "<=512k 7d promo",
+    region: "<=512k permanent 50% off",
     inputUsd: 0.3,
     cachedInputUsd: 0.06,
     outputUsd: 1.2,
@@ -335,6 +412,34 @@ const rawPricingModels = [
     source: "MiniMax",
     sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
     china: true
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.8 Flash",
+    aliases: ["gemini-3.8-flash", "models/gemini-3.8-flash"],
+    region: "Standard through 2026-12-31",
+    inputUsd: 0.75,
+    cachedInputUsd: 0.075,
+    outputUsd: 3.75,
+    contextTokens: null,
+    maxOutputTokens: null,
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.7 Flash",
+    aliases: ["gemini-3.7-flash", "models/gemini-3.7-flash"],
+    region: "Standard through 2026-12-31",
+    inputUsd: 0.75,
+    cachedInputUsd: 0.075,
+    outputUsd: 3.75,
+    contextTokens: null,
+    maxOutputTokens: null,
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
   },
   {
     provider: "Google",
@@ -381,36 +486,55 @@ const rawPricingModels = [
     model: "DeepSeek V4 Pro",
     aliases: ["deepseek-v4-pro"],
     region: "API",
-    inputUsd: 0.435,
-    cachedInputUsd: 0.003625,
-    outputUsd: 0.87,
-    contextTokens: 128_000,
-    maxOutputTokens: 8_000,
+    inputUsd: 1.32,
+    cachedInputUsd: 0.044,
+    outputUsd: 3.96,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 384_000,
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
+    sourceNotes: "Peak rates. DeepSeek documents half-price off-peak billing outside weekday 01:00–04:00 and 06:00–10:00 UTC.",
     china: true
   },
   {
     provider: "DeepSeek",
-    model: "DeepSeek V4 Flash",
-    aliases: ["deepseek-v4-flash"],
+    model: "DeepSeek V4.1 Flash",
+    aliases: ["deepseek-flash", "deepseek-v4.1-flash", "deepseek-v4-1-flash", "deepseek-v4-flash", "deepseek-v4-flash-vision-exp"],
     region: "API",
-    inputUsd: 0.14,
-    cachedInputUsd: 0.0028,
-    outputUsd: 0.28,
-    contextTokens: 128_000,
-    maxOutputTokens: 8_000,
+    inputUsd: 0.3,
+    cachedInputUsd: 0.006,
+    outputUsd: 1.2,
+    contextTokens: 1_000_000,
+    maxOutputTokens: 384_000,
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
+    sourceNotes: "Peak rates. Legacy DeepSeek V4 Flash requests are served and billed as V4.1 Flash; off-peak rates are 50% lower.",
+    china: true
+  },
+  {
+    provider: "Alibaba",
+    model: "Qwen3.8-Max",
+    aliases: ["qwen3.8-max", "qwen3-8-max", "qwen3.8-max-0902"],
+    region: "Global <=1M",
+    inputUsd: 1.65,
+    cacheWriteUsd: 2.063,
+    cachedInputUsd: 0.165,
+    outputUsd: 4.951,
+    contextTokens: 1_000_000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Alibaba",
+    sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
     china: true
   },
   {
     provider: "Alibaba",
     model: "Qwen3.7-Max",
-    aliases: ["qwen3.7-max", "qwen3-7-max", "qwen3.7-max-2026-06-08"],
+    aliases: ["qwen3.7-max", "qwen3-7-max", "qwen3.7-max-2026-06-08", "qwen3.7-max-2026-05-20"],
     region: "Global <=1M",
     inputUsd: 1.65,
-    cachedInputUsd: null,
+    cacheWriteUsd: 2.063,
+    cachedInputUsd: 0.165,
     outputUsd: 4.951,
     contextTokens: 1_000_000,
     maxOutputTokens: null,
@@ -677,6 +801,21 @@ const rawPricingModels = [
   },
   {
     provider: "xAI",
+    model: "Grok 4.6",
+    aliases: ["grok-4.6", "grok-4-6"],
+    region: "Text API, <200k prompt",
+    inputUsd: 2,
+    cachedInputUsd: 0.5,
+    outputUsd: 6,
+    contextTokens: 500_000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "xAI",
+    sourceUrl: "https://docs.x.ai/developers/pricing",
+    sourceNotes: "For prompts of 200k tokens or more, xAI bills the full request at $4 input, $1 cached input, and $12 output per 1M tokens."
+  },
+  {
+    provider: "xAI",
     model: "Grok 4.3",
     aliases: ["grok-4.3", "grok-4-3"],
     region: "Chat API",
@@ -707,13 +846,53 @@ const rawPricingModels = [
   },
   {
     provider: "Mistral",
+    model: "Mistral Large 3",
+    aliases: ["mistral-large-3", "mistral-large-latest"],
+    region: "API",
+    inputUsd: 0.5,
+    cachedInputUsd: 0.05,
+    outputUsd: 1.5,
+    contextTokens: null,
+    maxOutputTokens: null,
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Medium 3.5",
+    aliases: ["mistral-medium-3.5", "mistral-medium-latest"],
+    region: "API",
+    inputUsd: 1.5,
+    cachedInputUsd: 0.15,
+    outputUsd: 7.5,
+    contextTokens: null,
+    maxOutputTokens: null,
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Small 4",
+    aliases: ["mistral-small-4", "mistral-small-latest"],
+    region: "API",
+    inputUsd: 0.15,
+    cachedInputUsd: 0.015,
+    outputUsd: 0.6,
+    contextTokens: null,
+    maxOutputTokens: null,
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing"
+  },
+  {
+    provider: "Mistral",
     model: "Mistral Large 2",
-    aliases: ["mistral-large-2", "mistral-large-latest"],
+    aliases: ["mistral-large-2"],
     region: "API",
     inputUsd: null,
     cachedInputUsd: null,
     outputUsd: null,
     priceStatus: "unknown",
+    availability: "deprecated",
     contextTokens: 128_000,
     maxOutputTokens: null,
     limitStatus: "official",
@@ -723,12 +902,13 @@ const rawPricingModels = [
   {
     provider: "Mistral",
     model: "Mistral Small 3.2",
-    aliases: ["mistral-small-3.2", "mistral-small-latest"],
+    aliases: ["mistral-small-3.2"],
     region: "API",
     inputUsd: null,
     cachedInputUsd: null,
     outputUsd: null,
     priceStatus: "unknown",
+    availability: "deprecated",
     contextTokens: 128_000,
     maxOutputTokens: null,
     limitStatus: "official",
@@ -737,55 +917,64 @@ const rawPricingModels = [
   }
 ];
 
-const modelQualityScores = {
-  "GPT-5.6 Sol": null,
-  "GPT-5.6 Terra": null,
-  "GPT-5.6 Luna": null,
-  "Claude Fable 5": 100,
-  "Claude Mythos 5": 99,
-  "GPT-5.5 Pro": 99,
-  "Claude Opus 4.8": 98,
-  "GPT-5.5": 97,
-  "Claude Sonnet 5": 96,
-  "GLM-5.2": 95,
-  "Gemini 3.1 Pro Preview": 94,
-  "GLM-5.1": 93,
-  "DeepSeek V4 Pro": 92,
-  "Qwen3.7-Max": 90,
-  "GPT-5.4 Pro": 89,
-  "MiniMax M3": 88,
-  "GPT-5.4": 87,
-  "GPT-5.3-Codex": 86,
-  "GPT-5.3-Codex-Spark": 85,
-  "Claude Sonnet 4.6": 84,
-  "Gemini 3.5 Flash": 83,
-  "GLM-5-Turbo": 82,
-  "GLM-5": 81,
-  "Grok 4.3": 81,
-  "GPT-5.2": 80,
-  "Qwen3-Max": 79,
-  "GPT-5.4 Mini": 77,
-  "Grok Build 0.1": 76,
-  "Mistral Large 2": 75,
-  "GLM-4.6": 74,
-  "GLM-4.7": 73,
-  "GLM-4.5-X": 72,
-  "GLM-4.5-AirX": 71,
-  "Qwen3.5-Plus": 70,
-  "GLM-4.5": 69,
-  "step-3.7-flash": 68,
-  "DeepSeek V4 Flash": 67,
-  "GLM-4.5-Air": 66,
-  "Mistral Small 3.2": 65,
-  "Claude Haiku 4.5": 64,
-  "GPT-5.4 Nano": 63,
-  "Gemini 3.1 Flash-Lite": 62,
-  "GLM-4.7-FlashX": 61,
-  "step-3.5-flash": 58,
-  "GLM-4-32B-0414-128K": 56,
-  "GLM-4.7-Flash": 55,
-  "GLM-4.5-Flash": 55
+// Arena Text is an independent, human-preference benchmark. Keep the exact
+// tested deployment instead of projecting a nearby model's result onto a
+// catalog row. Scores from other benchmarks are intentionally not mixed into
+// this Elo scale.
+const ARENA_TEXT_SOURCE = "Arena Text";
+const ARENA_TEXT_SOURCE_URL = "https://arena.ai/leaderboard/";
+const arenaTextSnapshot = {
+  "GPT-6 Astra": { score: 1480, rank: 24, votes: 2693, testedModel: "gpt-6-astra-max" },
+  "GPT-5.6 Sol": { score: 1483, rank: 18, votes: 27069, testedModel: "gpt-5.6-sol-xhigh" },
+  "GPT-5.6 Terra": { score: 1466, rank: 45, votes: 28119, testedModel: "gpt-5.6-terra-xhigh" },
+  "GPT-5.6 Luna": { score: 1452, rank: 67, votes: 28547, testedModel: "gpt-5.6-luna-xhigh" },
+  "GPT-5.5": { score: 1476, rank: 28, votes: 66317, testedModel: "gpt-5.5" },
+  "GPT-5.4": { score: 1466, rank: 46, votes: 63526, testedModel: "gpt-5.4" },
+  "GPT-5.4 Mini": { score: 1448, rank: 74, votes: 59387, testedModel: "gpt-5.4-mini-high" },
+  "GPT-5.4 Nano": { score: 1402, rank: 146, votes: 58424, testedModel: "gpt-5.4-nano-high" },
+  "GPT-5.2": { score: 1436, rank: 91, votes: 78967, testedModel: "gpt-5.2" },
+  "Claude Fable 5": { score: 1506, rank: 1, votes: 30057, testedModel: "claude-fable-5-high" },
+  "Claude Opus 4.8": { score: 1473, rank: 35, votes: 53446, testedModel: "claude-opus-4-8" },
+  "Claude Sonnet 5": { score: 1461, rank: 51, votes: 35301, testedModel: "claude-sonnet-5-high" },
+  "Claude Sonnet 4.6": { score: 1473, rank: 37, votes: 66208, testedModel: "claude-sonnet-4-6" },
+  "Claude Haiku 4.5": { score: 1415, rank: 129, votes: 129278, testedModel: "claude-haiku-4-5-20251001" },
+  "MiniMax M3": { score: 1441, rank: 84, votes: 48540, testedModel: "minimax-m3" },
+  "Gemini 3.8 Flash": { score: 1493, rank: 9, votes: 5076, testedModel: "gemini-3.8-flash-high" },
+  "Gemini 3.7 Flash": { score: 1490, rank: 12, votes: 5640, testedModel: "gemini-3.7-flash-high" },
+  "Gemini 3.5 Flash": { score: 1478, rank: 25, votes: 38257, testedModel: "gemini-3.5-flash-high" },
+  "Gemini 3.1 Pro Preview": { score: 1487, rank: 15, votes: 106951, testedModel: "gemini-3.1-pro-preview" },
+  "Gemini 3.1 Flash-Lite": { score: 1432, rank: 98, votes: 60405, testedModel: "gemini-3.1-flash-lite-preview" },
+  "DeepSeek V4 Pro": { score: 1457, rank: 57, votes: 54130, testedModel: "deepseek-v4-pro" },
+  "DeepSeek V4.1 Flash": { score: 1436, rank: 92, votes: 48887, testedModel: "deepseek-v4-flash" },
+  "Qwen3.8-Max": { score: 1481, rank: 22, votes: 16670, testedModel: "qwen3.8-max" },
+  "Qwen3.7-Max": { score: 1473, rank: 34, votes: 3705, testedModel: "qwen3.7-max-preview" },
+  "Qwen3-Max": { score: 1435, rank: 94, votes: 27194, testedModel: "qwen3-max-preview" },
+  "GLM-5.2": { score: 1472, rank: 38, votes: 36798, testedModel: "glm-5.2-max" },
+  "GLM-5.1": { score: 1466, rank: 47, votes: 48901, testedModel: "glm-5.1" },
+  "GLM-5": { score: 1458, rank: 56, votes: 27605, testedModel: "glm-5" },
+  "GLM-4.7": { score: 1442, rank: 83, votes: 11893, testedModel: "glm-4.7" },
+  "GLM-4.7-Flash": { score: 1366, rank: 186, votes: 11491, testedModel: "glm-4.7-flash" },
+  "GLM-4.6": { score: 1425, rank: 112, votes: 35061, testedModel: "glm-4.6" },
+  "GLM-4.5": { score: 1411, rank: 136, votes: 23712, testedModel: "glm-4.5" },
+  "GLM-4.5-Air": { score: 1373, rank: 182, votes: 30367, testedModel: "glm-4.5-air" },
+  "step-3.5-flash": { score: 1394, rank: 158, votes: 57137, testedModel: "step-3.5-flash" },
+  "Grok 4.6": { score: 1456, rank: 63, votes: 15521, testedModel: "grok-4.6-high" },
+  "Grok 4.3": { score: 1443, rank: 81, votes: 66801, testedModel: "grok-4.3" },
+  "Mistral Large 3": { score: 1413, rank: 133, votes: 69028, testedModel: "mistral-large-3" },
+  "Mistral Medium 3.5": { score: 1426, rank: 106, votes: 10996, testedModel: "mistral-medium-3.5" }
 };
+
+const modelBenchmarkScores = Object.fromEntries(
+  rawPricingModels.map(({ model }) => {
+    const score = arenaTextSnapshot[model];
+    return [
+      model,
+      score
+        ? { source: ARENA_TEXT_SOURCE, sourceUrl: ARENA_TEXT_SOURCE_URL, measuredOn: BENCHMARK_REVIEW_DATE, ...score }
+        : null
+    ];
+  })
+);
 
 const args = new Set(process.argv.slice(2));
 const pricingModels = enrichPricingModels(rawPricingModels);
@@ -794,7 +983,7 @@ await validatePricingData();
 
 if (args.has("--validate")) {
   console.log(
-    `Pricing catalog ${PRICING_CATALOG_VERSION} is valid: ${pricingModels.length} models, ${REQUIRED_PROVIDER_COVERAGE.length} required providers.`
+    `Pricing catalog ${PRICING_CATALOG_VERSION} is valid: ${pricingModels.length} models, ${benchmarkCoverageCount()} independently benchmarked, ${REQUIRED_PROVIDER_COVERAGE.length} required providers.`
   );
   process.exit(0);
 }
@@ -865,19 +1054,19 @@ async function fetchUsdPerEur() {
 
 function updateAppJs(source, { rate, date }) {
   const metaPattern =
-    /const USD_PER_EUR = [\d.]+;\nconst FX_DATE = "[^"]+";\nconst PRICING_DATE = "[^"]+";\nconst SCORE_DATE = "[^"]+";(?:\nconst PRICING_CATALOG_VERSION = "[^"]+";\nconst PRICING_MAX_AGE_DAYS = \d+;)?/;
+    /const USD_PER_EUR = [\d.]+;\nconst FX_DATE = "[^"]+";\nconst PRICING_DATE = "[^"]+";\nconst (?:SCORE_DATE|BENCHMARK_DATE) = "[^"]+";(?:\nconst PRICING_CATALOG_VERSION = "[^"]+";\nconst PRICING_MAX_AGE_DAYS = \d+;)?/;
   const pricingPattern = /const pricingModels = \[[\s\S]*?\];/;
-  const scoresPattern = /const modelQualityScores = \{[\s\S]*?\};/;
+  const benchmarkPattern = /const model(?:Quality|Benchmark)Scores = \{[\s\S]*?\};/;
 
   const metaReplacement =
     `const USD_PER_EUR = ${rate};\n` +
     `const FX_DATE = "${date}";\n` +
     `const PRICING_DATE = "${PRICING_REVIEW_DATE}";\n` +
-    `const SCORE_DATE = "${SCORE_REVIEW_DATE}";\n` +
+    `const BENCHMARK_DATE = "${BENCHMARK_REVIEW_DATE}";\n` +
     `const PRICING_CATALOG_VERSION = "${PRICING_CATALOG_VERSION}";\n` +
     `const PRICING_MAX_AGE_DAYS = ${PRICING_MAX_AGE_DAYS};`;
   const pricingReplacement = `const pricingModels = ${formatValue(pricingModels, 0)};`;
-  const scoresReplacement = `const modelQualityScores = ${formatValue(modelQualityScores, 0)};`;
+  const benchmarkReplacement = `const modelBenchmarkScores = ${formatValue(modelBenchmarkScores, 0)};`;
 
   if (!metaPattern.test(source)) {
     throw new Error("Could not find pricing metadata in public/app.js.");
@@ -889,10 +1078,10 @@ function updateAppJs(source, { rate, date }) {
   }
   const withPricing = withMeta.replace(pricingPattern, pricingReplacement);
 
-  if (!scoresPattern.test(withPricing)) {
-    throw new Error("Could not find model quality scores in public/app.js.");
+  if (!benchmarkPattern.test(withPricing)) {
+    throw new Error("Could not find model benchmark scores in public/app.js.");
   }
-  return withPricing.replace(scoresPattern, scoresReplacement);
+  return withPricing.replace(benchmarkPattern, benchmarkReplacement);
 }
 
 async function validatePricingData() {
@@ -917,21 +1106,41 @@ function validateFreshReviewDate() {
 function validateCatalogRows() {
   const models = new Set(pricingModels.map((row) => row.model));
   const providers = new Set(pricingModels.map((row) => row.provider));
-  const missingScores = pricingModels.filter((row) => !Object.hasOwn(modelQualityScores, row.model)).map((row) => row.model);
-  const staleScores = Object.keys(modelQualityScores).filter((model) => !models.has(model));
+  const missingScores = pricingModels.filter((row) => !Object.hasOwn(modelBenchmarkScores, row.model)).map((row) => row.model);
+  const staleScores = Object.keys(modelBenchmarkScores).filter((model) => !models.has(model));
   const missingProviders = REQUIRED_PROVIDER_COVERAGE.filter((provider) => !providers.has(provider));
   const missingRequiredModels = REQUIRED_MODEL_COVERAGE.filter((model) => !models.has(model));
 
-  if (missingScores.length) throw new Error(`Missing quality scores: ${missingScores.join(", ")}`);
-  if (staleScores.length) throw new Error(`Scores without pricing rows: ${staleScores.join(", ")}`);
+  if (missingScores.length) throw new Error(`Missing benchmark coverage entries: ${missingScores.join(", ")}`);
+  if (staleScores.length) throw new Error(`Benchmark entries without pricing rows: ${staleScores.join(", ")}`);
   if (missingProviders.length) throw new Error(`Missing required providers: ${missingProviders.join(", ")}`);
   if (missingRequiredModels.length) throw new Error(`Missing required models: ${missingRequiredModels.join(", ")}`);
 
   const canonicalNames = new Map();
   for (const row of pricingModels) {
     validateCatalogRow(row);
+    validateBenchmarkScore(row.model, modelBenchmarkScores[row.model]);
     addCanonicalName(canonicalNames, row.model, row.model);
     for (const alias of row.aliases) addCanonicalName(canonicalNames, alias, row.model);
+  }
+}
+
+function benchmarkCoverageCount() {
+  return Object.values(modelBenchmarkScores).filter(Boolean).length;
+}
+
+function validateBenchmarkScore(model, benchmark) {
+  if (benchmark == null) return;
+  for (const key of ["source", "sourceUrl", "measuredOn", "testedModel"]) {
+    if (!benchmark[key]) throw new Error(`Benchmark entry for ${model} misses ${key}.`);
+  }
+  for (const key of ["score", "rank", "votes"]) {
+    if (!Number.isFinite(benchmark[key]) || benchmark[key] < 0) {
+      throw new Error(`Benchmark entry for ${model} has invalid ${key}.`);
+    }
+  }
+  if (!Number.isInteger(benchmark.rank) || !Number.isInteger(benchmark.votes)) {
+    throw new Error(`Benchmark entry for ${model} has a non-integer rank or vote count.`);
   }
 }
 

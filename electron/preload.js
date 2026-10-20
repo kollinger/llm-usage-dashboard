@@ -1,13 +1,42 @@
 "use strict";
 
 const { contextBridge, ipcRenderer } = require("electron");
+let widgetDashboardCallback = null, widgetDashboardPending = false;
+ipcRenderer.on("widget:open-accounts", () => {
+  if (widgetDashboardCallback) widgetDashboardCallback();
+  else widgetDashboardPending = true;
+});
 
 const initialThemePreference = process.argv
   .find((argument) => argument.startsWith("--llm-usage-theme="))
   ?.slice("--llm-usage-theme=".length) || "system";
+const initialLanguagePreference = process.argv
+  .find((argument) => argument.startsWith("--llm-usage-language="))
+  ?.slice("--llm-usage-language=".length) || null;
 
 contextBridge.exposeInMainWorld("llmUsageDashboard", {
   initialThemePreference,
+  initialLanguagePreference,
+  desktopWidget: { open: () => ipcRenderer.invoke("widget:open") },
+  plasmaWidget: {
+    status: () => ipcRenderer.invoke("plasma:status"),
+    install: () => ipcRenderer.invoke("plasma:install")
+  },
+  onWidgetDashboard(callback) {
+    if (typeof callback !== "function") return;
+    widgetDashboardCallback = callback;
+    if (widgetDashboardPending) { widgetDashboardPending = false; callback(); }
+  },
+  mobileAccess: {
+    status: () => ipcRenderer.invoke("mobile:status"),
+    setEnabled: (enabled) => ipcRenderer.invoke("mobile:enabled", enabled),
+    openPairing: (https = false) => ipcRenderer.invoke("mobile:open", https),
+    setHttpsOrigin: (origin) => ipcRenderer.invoke("mobile:https", origin),
+    setVpnNetworks: (networks) => ipcRenderer.invoke("mobile:vpn", networks)
+  },
+  setLanguagePreference(language) {
+    return ipcRenderer.invoke("language:set-preference", String(language || ""));
+  },
   setThemePreference(preference) {
     return ipcRenderer.invoke("theme:set-preference", String(preference || "system"));
   },

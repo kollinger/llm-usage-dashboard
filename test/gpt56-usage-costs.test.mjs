@@ -1,3 +1,4 @@
+import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -8,7 +9,7 @@ import usageEventsModule from "../lib/usage-events.js";
 const { aggregateUsageEvents } = usageEventsModule;
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const appPath = path.join(rootDir, "public", "app.js");
-const appSource = await readFile(appPath, "utf8");
+const appSource = await readDashboardSource();
 const code = appSource.replace("\ninit();", "\n// init disabled for GPT-5.6 usage tests");
 assert.notEqual(code, appSource, "GPT-5.6 tests must disable app bootstrap");
 const translations = JSON.parse(await readFile(path.join(rootDir, "public", "i18n", "en.json"), "utf8"));
@@ -21,6 +22,8 @@ state.fallbackTranslations = {};
 const sol = pricingModelForUsageModel("gpt-5.6-sol");
 const terra = pricingModelForUsageModel("gpt-5.6-terra");
 const luna = pricingModelForUsageModel("gpt-5.6-luna");
+const gpt6Sol = pricingModelForUsageModel("gpt-6-sol");
+const gpt6Luna = pricingModelForUsageModel("gpt-6-luna");
 const solAlias = pricingModelForUsageModel("gpt-5.6");
 const solBucketCost = estimateCost({
   inputTokens: 1_000_000,
@@ -91,6 +94,9 @@ JSON.stringify({
   sol: { model: sol?.model, input: sol?.inputUsd, cacheWrite: sol?.cacheWriteUsd, cached: sol?.cachedInputUsd, output: sol?.outputUsd },
   terra: { model: terra?.model, input: terra?.inputUsd, cacheWrite: terra?.cacheWriteUsd, cached: terra?.cachedInputUsd, output: terra?.outputUsd },
   luna: { model: luna?.model, input: luna?.inputUsd, cacheWrite: luna?.cacheWriteUsd, cached: luna?.cachedInputUsd, output: luna?.outputUsd },
+  gpt6Sol: { model: gpt6Sol?.model, input: gpt6Sol?.inputUsd, cacheWrite: gpt6Sol?.cacheWriteUsd, cached: gpt6Sol?.cachedInputUsd, output: gpt6Sol?.outputUsd },
+  gpt6Luna: { model: gpt6Luna?.model, input: gpt6Luna?.inputUsd, cacheWrite: gpt6Luna?.cacheWriteUsd, cached: gpt6Luna?.cachedInputUsd, output: gpt6Luna?.outputUsd },
+  gpt6Scores: { sol: modelBenchmarkScores["GPT-6 Sol"], luna: modelBenchmarkScores["GPT-6 Luna"] },
   solAlias: solAlias?.model,
   solBucketUsd: solBucketCost.usd,
   usedModelCostStatus: usedModelCost.status,
@@ -106,11 +112,14 @@ JSON.stringify({
   { filename: appPath }
 ));
 
-assert.deepEqual(uiResult.sol, { model: "GPT-5.6 Sol", input: 5, cacheWrite: 6.25, cached: 0.5, output: 30 });
+assert.deepEqual(uiResult.sol, { model: "GPT-5.6 Sol", input: 4, cacheWrite: 5, cached: 0.4, output: 20 });
 assert.deepEqual(uiResult.terra, { model: "GPT-5.6 Terra", input: 2, cacheWrite: 2.5, cached: 0.2, output: 12 });
 assert.deepEqual(uiResult.luna, { model: "GPT-5.6 Luna", input: 0.2, cacheWrite: 0.25, cached: 0.02, output: 1.2 });
+assert.deepEqual(uiResult.gpt6Sol, { model: "GPT-6 Sol", input: 2, cacheWrite: 2.5, cached: 0.2, output: 10 });
+assert.deepEqual(uiResult.gpt6Luna, { model: "GPT-6 Luna", input: 0.1, cacheWrite: 0.125, cached: 0.01, output: 0.5 });
+assert.deepEqual(uiResult.gpt6Scores, { sol: null, luna: null });
 assert.equal(uiResult.solAlias, "GPT-5.6 Sol");
-assert.equal(uiResult.solBucketUsd, 41.75);
+assert.equal(uiResult.solBucketUsd, 29.4);
 assert.equal(uiResult.usedModelCostStatus, "complete");
 assert.deepEqual(uiResult.modelEfforts, [
   { model: "gpt-5.6-sol", efforts: ["xhigh", "max"] },
@@ -131,6 +140,58 @@ assert.deepEqual(uiResult.todayBilling, {
 });
 assert.equal(uiResult.allTimeTotal, 1_098);
 assert.equal(uiResult.allTimeModel, "gpt-5.6-sol");
+
+const cachePricing = JSON.parse(vm.runInNewContext(
+  `${code}
+state.translations = ${JSON.stringify(translations)};
+state.fallbackTranslations = {};
+const cacheOnlyUsage = { cachedInputTokens: 1_000_000 };
+const proModels = ["gpt-5.4-pro", "gpt-5.5-pro"].map(pricingModelForUsageModel);
+const unknown = pricingModelForUsageModel("mistral-large-2");
+const rows = [...proModels, unknown, pricingModelForUsageModel("gpt-5.4"),
+  pricingModelForUsageModel("glm-4.7-flash")].map((price) => ({
+    price, today: estimateCost(cacheOnlyUsage, price), total: estimateCost(cacheOnlyUsage, price)
+  }));
+state.pricingSort = { key: "cache", direction: "asc" };
+const ascending = sortPricingRows(rows).map((row) => row.price.model);
+state.pricingSort.direction = "desc";
+const descending = sortPricingRows(rows).map((row) => row.price.model);
+JSON.stringify({
+  proModels: proModels.map((price) => ({
+    model: price.model,
+    cacheRate: price.cachedInputUsd,
+    displayedRate: formatCacheRate(price),
+    cost: estimateCost(cacheOnlyUsage, price)
+  })),
+  unknownCost: estimateCost(cacheOnlyUsage, unknown),
+  unknownRate: formatCacheRate(unknown),
+  missingBuckets: [null, undefined, NaN].map((rate) => estimateTokenBucket(1_000_000, rate)),
+  zeroBucket: estimateTokenBucket(1_000_000, 0),
+  emptyUnknownBucket: estimateTokenBucket(0, null),
+  ascending,
+  descending
+});`,
+  createAppContext(),
+  { filename: appPath }
+));
+for (const model of cachePricing.proModels) {
+  assert.equal(model.cacheRate, 30, `${model.model} cache inputs have no discount`);
+  assert.equal(model.displayedRate, "$30/M");
+  assert.equal(model.cost.usd, 30);
+  assert.equal(model.cost.costed, true);
+}
+assert.equal(cachePricing.unknownCost.costed, false);
+assert.equal(cachePricing.unknownCost.eur, null);
+assert.equal(cachePricing.unknownRate, "Unknown");
+assert.deepEqual(cachePricing.missingBuckets, Array(3).fill({ usd: 0, costed: false }));
+assert.deepEqual(cachePricing.zeroBucket, { usd: 0, costed: true });
+assert.deepEqual(cachePricing.emptyUnknownBucket, { usd: 0, costed: true });
+assert.deepEqual(cachePricing.ascending, [
+  "GLM-4.7-Flash", "GPT-5.4", "GPT-5.4 Pro", "GPT-5.5 Pro", "Mistral Large 2"
+]);
+assert.deepEqual(cachePricing.descending, [
+  "GPT-5.4 Pro", "GPT-5.5 Pro", "GPT-5.4", "GLM-4.7-Flash", "Mistral Large 2"
+]);
 
 const now = Date.parse("2026-08-15T12:00:00Z");
 const aggregate = aggregateUsageEvents([

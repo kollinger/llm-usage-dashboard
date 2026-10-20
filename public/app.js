@@ -2,7 +2,14 @@ const state = {
   auth: null,
   usage: null,
   subscriptionHistory: null,
+  codexResetHistory: null,
+  codexResetLimit: 10,
+  loadingCodexResetHistory: false,
+  codexResetError: false,
   loadingUsage: false,
+  loadingUsageDevice: null,
+  usageRequestAbort: null,
+  queuedUsageScope: false,
   queuedUsageForce: false,
   queuedUsageIndicator: false,
   refreshIndicator: false,
@@ -35,8 +42,11 @@ const state = {
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
-  usageProjectionMode: "tachometer",
+  usageProjectionMode: "bar",
+  usageProjectionModes: {},
+  quotaPaceWindowMinutesByCard: {},
   pricingView: "api",
+  pricingModelFilter: "",
   pricingSort: { key: "total", direction: "desc" },
   themePreference: "system",
   language: "en",
@@ -78,6 +88,8 @@ const els = {
   dashboardLayout: document.getElementById("dashboardLayout"),
   summaryStrip: document.getElementById("summaryStrip"),
   providerGrid: document.getElementById("providerGrid"),
+  codexResetHistory: document.getElementById("codexResetHistory"),
+  codexResetPeriod: document.getElementById("codexResetPeriod"),
   providerViewNotice: document.getElementById("providerViewNotice"),
   sourceDiagnosticsSection: document.getElementById("sourceDiagnosticsSection"),
   sourceDiagnosticsMeta: document.getElementById("sourceDiagnosticsMeta"),
@@ -123,6 +135,17 @@ const els = {
   oidcLink: document.getElementById("oidcLink"),
   settingsDialog: document.getElementById("settingsDialog"),
   settingsCloseBtn: document.getElementById("settingsCloseBtn"),
+  mobileAccessOpen: document.getElementById("mobileAccessOpen"),
+  mobileAccessDisable: document.getElementById("mobileAccessDisable"),
+  mobileAccessStatus: document.getElementById("mobileAccessStatus"),
+  mobileAccessAddress: document.getElementById("mobileAccessAddress"),
+  mobileAccessAddressField: document.getElementById("mobileAccessAddressField"),
+  mobileHttpsOrigin: document.getElementById("mobileHttpsOrigin"),
+  mobileHttpsSave: document.getElementById("mobileHttpsSave"),
+  mobileHttpsOpen: document.getElementById("mobileHttpsOpen"),
+  mobileVpnNetworks: document.getElementById("mobileVpnNetworks"),
+  mobileVpnSave: document.getElementById("mobileVpnSave"),
+  mobileVpnStatus: document.getElementById("mobileVpnStatus"),
   settingsSourcesRecheckBtn: document.getElementById("settingsSourcesRecheckBtn"),
   settingsSourcesStatus: document.getElementById("settingsSourcesStatus"),
   settingsSourceSummary: document.getElementById("settingsSourceSummary"),
@@ -147,6 +170,7 @@ const els = {
   updateNotice: document.getElementById("updateNotice"),
   updateNoticeBody: document.getElementById("updateNoticeBody"),
   notificationsEnabled: document.getElementById("notificationsEnabled"),
+  notificationResetsEnabled: document.getElementById("notificationResetsEnabled"),
   notificationThresholds: document.getElementById("notificationThresholds"),
   notificationPacingPercent: document.getElementById("notificationPacingPercent"),
   notificationHardLimitPercent: document.getElementById("notificationHardLimitPercent"),
@@ -187,6 +211,7 @@ const els = {
   overviewHistoryPanel: document.getElementById("overviewHistoryPanel"),
   overviewHistoryFilterBar: document.getElementById("overviewHistoryFilterBar"),
   overviewHistoryModeToggle: document.getElementById("overviewHistoryModeToggle"),
+  overviewHistoryBreakdownToggle: document.getElementById("overviewHistoryBreakdownToggle"),
   overviewHistoryChart: document.getElementById("overviewHistoryChart"),
   overviewHistoryLegend: document.getElementById("overviewHistoryLegend"),
   chartTitle: document.getElementById("chartTitle"),
@@ -210,21 +235,23 @@ const els = {
   pricingUsedModels: document.getElementById("pricingUsedModels"),
   pricingSubscriptionCosts: document.getElementById("pricingSubscriptionCosts"),
   priceRows: document.getElementById("priceRows"),
+  pricingModelFilter: document.getElementById("pricingModelFilter"),
   pricingMeta: document.getElementById("pricingMeta"),
   priceSortButtons: Array.from(document.querySelectorAll("[data-price-sort]"))
 };
 
 const providerMeta = {
-  codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: "#23745c" },
-  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: "#316f8f" },
-  codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: "#5b6ee1" },
-  copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: "#6f42c1" },
-  claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: "#d55e00" },
-  anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: "#8d5d3b" },
-  openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: "#2e6ea6" },
-  gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: "#b94e5c" },
-  glm: { name: "GLM/Z.AI", kickerKey: "providers.glm.kicker", accent: "#48505a" },
-  ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: "#4f6d2f" }
+  codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: window.llmUsageProviderColors.accent("codex") },
+  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: window.llmUsageProviderColors.accent("openCode") },
+  codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: window.llmUsageProviderColors.accent("codexSpark") },
+  copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: window.llmUsageProviderColors.accent("copilot") },
+  claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: window.llmUsageProviderColors.accent("claudeCode") },
+  anthropic: { name: "Anthropic API", kickerKey: "providers.anthropic.kicker", accent: window.llmUsageProviderColors.accent("anthropic") },
+  openai: { name: "OpenAI API", kickerKey: "providers.openai.kicker", accent: window.llmUsageProviderColors.accent("openai") },
+  gemini: { name: "Gemini", kickerKey: "providers.gemini.kicker", accent: window.llmUsageProviderColors.accent("gemini") },
+  kimi: { name: "Kimi", kickerKey: "providers.kimi.kicker", accent: window.llmUsageProviderColors.accent("kimi") },
+  glm: { name: "GLM/Z.AI", kickerKey: "providers.glm.kicker", accent: window.llmUsageProviderColors.accent("glm") },
+  ollama: { name: "Ollama", kickerKey: "providers.ollama.kicker", accent: window.llmUsageProviderColors.accent("ollama") }
 };
 
 const providerBrandMeta = {
@@ -236,15 +263,16 @@ const providerBrandMeta = {
   anthropic: { label: "Anthropic", mark: "An", logo: "anthropic.svg", accent: providerMeta.anthropic.accent },
   openai: { label: "OpenAI", mark: "AI", logo: "openai.svg", accent: providerMeta.openai.accent },
   gemini: { label: "Google Gemini", mark: "G", logo: "gemini.svg", accent: providerMeta.gemini.accent },
+  kimi: { label: "Kimi", mark: "K", accent: providerMeta.kimi.accent },
   glm: { label: "GLM/Z.AI", mark: "Z", logo: "zai.svg", accent: providerMeta.glm.accent },
   ollama: { label: "Ollama", mark: "Ol", accent: providerMeta.ollama.accent },
-  minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: "#2459d8" },
-  deepseek: { label: "DeepSeek", mark: "DS", logo: "deepseek.svg", accent: "#4d63d8" },
-  alibaba: { label: "Alibaba / Qwen", mark: "Q", logo: "qwen.svg", accent: "#d86a1d" },
-  zai: { label: "Z.AI / GLM", mark: "Z", logo: "zai.svg", accent: "#48505a" },
-  xai: { label: "xAI", mark: "x", logo: "xai.svg", accent: "#111827" },
-  mistral: { label: "Mistral", mark: "Mi", logo: "mistral.svg", accent: "#c76619" },
-  stepfun: { label: "StepFun", mark: "St", logo: "stepfun.svg", accent: "#1e7c75" },
+  minimax: { label: "MiniMax", mark: "MM", logo: "minimax.svg", accent: window.llmUsageProviderColors.accent("minimax") },
+  deepseek: { label: "DeepSeek", mark: "DS", logo: "deepseek.svg", accent: window.llmUsageProviderColors.accent("deepseek") },
+  alibaba: { label: "Alibaba / Qwen", mark: "Q", logo: "qwen.svg", accent: window.llmUsageProviderColors.accent("alibaba") },
+  zai: { label: "Z.AI / GLM", mark: "Z", logo: "zai.svg", accent: window.llmUsageProviderColors.accent("zai") },
+  xai: { label: "xAI", mark: "x", logo: "xai.svg", accent: window.llmUsageProviderColors.accent("xai") },
+  mistral: { label: "Mistral", mark: "Mi", logo: "mistral.svg", accent: window.llmUsageProviderColors.accent("mistral") },
+  stepfun: { label: "StepFun", mark: "St", logo: "stepfun.svg", accent: window.llmUsageProviderColors.accent("stepfun") },
   local: { label: "Local", mark: "Lo", accent: providerMeta.codex.accent }
 };
 
@@ -266,6 +294,9 @@ const providerBrandAliases = new Map([
   ["google", "gemini"],
   ["googlegemini", "gemini"],
   ["gemini", "gemini"],
+  ["kimi", "kimi"],
+  ["moonshot", "kimi"],
+  ["moonshotai", "kimi"],
   ["glm", "glm"],
   ["glmzai", "glm"],
   ["ollama", "ollama"],
@@ -283,11 +314,11 @@ const providerBrandAliases = new Map([
   ["local", "local"]
 ]);
 
-const USD_PER_EUR = 1.1567;
-const FX_DATE = "2026-08-14";
-const PRICING_DATE = "2026-08-15";
-const SCORE_DATE = "2026-07-09";
-const PRICING_CATALOG_VERSION = "2026.08.15";
+const USD_PER_EUR = 1.1298;
+const FX_DATE = "2026-10-01";
+const PRICING_DATE = "2026-10-01";
+const BENCHMARK_DATE = "2026-09-13";
+const PRICING_CATALOG_VERSION = "2026.10.01.2";
 const PRICING_MAX_AGE_DAYS = 45;
 const MILLION = 1_000_000;
 const CHART_TICK_BASES = [1, 2.5, 5, 10];
@@ -304,8 +335,10 @@ const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "overview-history",
   "overview",
   "providers",
+  "codex-resets",
   "live",
   "token-history",
+  "chat-usage",
   "token-mix",
   "pricing",
   "diagnostics"
@@ -351,7 +384,8 @@ const SYNC_DEVICE_FILTER_STORAGE_KEY = "llmUsage.syncDeviceFilter";
 const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
 const LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
-const CHART_BREAKDOWN_MODES = ["total", "provider", "model"];
+const CHART_BREAKDOWN_MODES = ["total", "provider", "model", "device", "account"];
+const CHART_ATTRIBUTION_PALETTE = ["#0072b2", "#008765", "#d14900", "#803e9c", "#c3365f", "#526127", "#006b73", "#77502d"];
 const LIMIT_GAUGE_MAX_PERCENT = 160;
 const LIMIT_GAUGE_TARGET_PERCENT = 100;
 const LIVE_TOKEN_DISPLAY_TICK_MS = 1000;
@@ -373,7 +407,7 @@ const MODAL_BACKDROP_GRACE_MS = 450;
 const translationCache = new Map();
 const dialogOpenedAt = new WeakMap();
 const dialogPointerStartedInside = new WeakMap();
-const chartSourceOrder = ["codex", "codexSpark", "openCode", "copilot", "claudeCode", "ollama", "gemini", "glm", "openai", "anthropic", "local"];
+const chartSourceOrder = ["codex", "codexSpark", "openCode", "copilot", "claudeCode", "ollama", "gemini", "glm", "kimi", "openai", "anthropic", "local"];
 const chartSourceColors = {
   codex: providerMeta.codex.accent,
   codexSpark: providerMeta.codexSpark.accent,
@@ -383,6 +417,7 @@ const chartSourceColors = {
   ollama: providerMeta.ollama.accent,
   gemini: providerMeta.gemini.accent,
   glm: providerMeta.glm.accent,
+  kimi: providerMeta.kimi.accent,
   openai: providerMeta.openai.accent,
   anthropic: providerMeta.anthropic.accent,
   local: "#23745c"
@@ -652,6 +687,29 @@ const DIAGNOSTIC_ISSUE_STATUSES = new Set([
 const pricingModels = [
   {
     provider: "OpenAI",
+    model: "GPT-6 Astra",
+    aliases: [
+      "gpt-6-astra"
+    ],
+    region: "API/Codex",
+    inputUsd: 10,
+    cacheWriteUsd: 12.5,
+    cachedInputUsd: 1,
+    outputUsd: 50,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-astra",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request."
+  },
+  {
+    provider: "OpenAI",
     model: "GPT-5.6 Sol",
     aliases: [
       "gpt-5.6-sol",
@@ -660,10 +718,10 @@ const pricingModels = [
       "gpt-5-6"
     ],
     region: "API/Codex",
-    inputUsd: 5,
-    cacheWriteUsd: 6.25,
-    cachedInputUsd: 0.5,
-    outputUsd: 30,
+    inputUsd: 4,
+    cacheWriteUsd: 5,
+    cachedInputUsd: 0.4,
+    outputUsd: 20,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
@@ -673,7 +731,81 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-08-15"
+    sourceReviewDate: "2026-09-25"
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Sol",
+    aliases: [
+      "gpt-6-sol",
+      "gpt-6.0-sol",
+      "gpt-6-0-sol"
+    ],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.2,
+    outputUsd: 10,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-sol",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6.1 Sol",
+    aliases: [
+      "gpt-6.1-sol",
+      "gpt-6-1-sol"
+    ],
+    region: "API/Codex",
+    inputUsd: 2,
+    cacheWriteUsd: 2.5,
+    cachedInputUsd: 0.1,
+    outputUsd: 10,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+    sourceReviewDate: "2026-10-01",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Fast is 2x Standard; Batch and Flex are 50% of Standard rates."
+  },
+  {
+    provider: "OpenAI",
+    model: "GPT-6 Luna",
+    aliases: [
+      "gpt-6-luna",
+      "gpt-6.0-luna",
+      "gpt-6-0-luna"
+    ],
+    region: "API/Codex",
+    inputUsd: 0.1,
+    cacheWriteUsd: 0.125,
+    cachedInputUsd: 0.01,
+    outputUsd: 0.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1050000,
+    maxOutputTokens: 128000,
+    limitStatus: "official",
+    source: "OpenAI",
+    sourceUrl: "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Over 272K input tokens: 2x input/cache rates and 1.5x output for the full request. Batch and Flex are 50% of Standard rates."
   },
   {
     provider: "OpenAI",
@@ -696,7 +828,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-08-15"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -719,7 +851,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/models/compare",
-    sourceReviewDate: "2026-08-15"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -741,7 +873,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -752,7 +884,7 @@ const pricingModels = [
     ],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     currency: "USD",
     unit: "1M tokens",
@@ -763,7 +895,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-10-01",
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -785,7 +918,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -796,7 +929,7 @@ const pricingModels = [
     ],
     region: "API/Codex",
     inputUsd: 30,
-    cachedInputUsd: null,
+    cachedInputUsd: 30,
     outputUsd: 180,
     currency: "USD",
     unit: "1M tokens",
@@ -807,7 +940,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-10-01",
+    sourceNotes: "Cached inputs receive no discount and use the normal input rate."
   },
   {
     provider: "OpenAI",
@@ -829,7 +963,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -851,7 +985,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -874,7 +1008,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -897,7 +1031,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI Codex",
     sourceUrl: "https://openai.com/blog/introducing-gpt-5-3-codex-spark/",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "OpenAI",
@@ -919,7 +1053,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "OpenAI",
     sourceUrl: "https://developers.openai.com/api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -942,7 +1076,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -965,7 +1099,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Invitation-only Project Glasswing model with Fable 5 specs and pricing."
   },
   {
@@ -992,7 +1126,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -1002,7 +1136,7 @@ const pricingModels = [
       "anthropic.claude-sonnet-5",
       "claude-sonnet-5-0"
     ],
-    region: "Intro pricing through 2026-08-31",
+    region: "Global",
     inputUsd: 2,
     cacheWriteUsd: 2.5,
     cachedInputUsd: 0.2,
@@ -1016,8 +1150,8 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/pricing",
-    sourceReviewDate: "2026-07-09",
-    sourceNotes: "Introductory pricing applies through August 31, 2026; standard pricing starts September 1, 2026."
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Current first-party global API rates. US-only inference carries a 1.1x multiplier."
   },
   {
     provider: "Anthropic",
@@ -1043,7 +1177,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Anthropic",
@@ -1067,7 +1201,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Anthropic",
     sourceUrl: "https://platform.claude.com/docs/en/about-claude/models/overview",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "MiniMax",
@@ -1075,7 +1209,7 @@ const pricingModels = [
     aliases: [
       "minimax-m3"
     ],
-    region: "<=512k 7d promo",
+    region: "<=512k permanent 50% off",
     inputUsd: 0.3,
     cachedInputUsd: 0.06,
     outputUsd: 1.2,
@@ -1088,8 +1222,54 @@ const pricingModels = [
     limitStatus: "official",
     source: "MiniMax",
     sourceUrl: "https://platform.minimax.io/docs/guides/pricing-paygo",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.8 Flash",
+    aliases: [
+      "gemini-3.8-flash",
+      "models/gemini-3.8-flash"
+    ],
+    region: "Standard through 2026-12-31",
+    inputUsd: 0.75,
+    cachedInputUsd: 0.075,
+    outputUsd: 3.75,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
+  },
+  {
+    provider: "Google",
+    model: "Gemini 3.7 Flash",
+    aliases: [
+      "gemini-3.7-flash",
+      "models/gemini-3.7-flash"
+    ],
+    region: "Standard through 2026-12-31",
+    inputUsd: 0.75,
+    cachedInputUsd: 0.075,
+    outputUsd: 3.75,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Google",
+    sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Standard paid-tier pricing through December 31, 2026; Google lists higher rates from January 1, 2027."
   },
   {
     provider: "Google",
@@ -1111,7 +1291,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Google",
@@ -1134,7 +1314,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Google",
@@ -1156,7 +1336,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Google",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "DeepSeek",
@@ -1165,54 +1345,61 @@ const pricingModels = [
       "deepseek-v4-pro"
     ],
     region: "API",
-    inputUsd: 0.435,
-    cachedInputUsd: 0.003625,
-    outputUsd: 0.87,
+    inputUsd: 1.32,
+    cachedInputUsd: 0.044,
+    outputUsd: 3.96,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 8000,
+    contextTokens: 1000000,
+    maxOutputTokens: 384000,
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Peak rates. DeepSeek documents half-price off-peak billing outside weekday 01:00–04:00 and 06:00–10:00 UTC.",
     china: true
   },
   {
     provider: "DeepSeek",
-    model: "DeepSeek V4 Flash",
+    model: "DeepSeek V4.1 Flash",
     aliases: [
-      "deepseek-v4-flash"
+      "deepseek-flash",
+      "deepseek-v4.1-flash",
+      "deepseek-v4-1-flash",
+      "deepseek-v4-flash",
+      "deepseek-v4-flash-vision-exp"
     ],
     region: "API",
-    inputUsd: 0.14,
-    cachedInputUsd: 0.0028,
-    outputUsd: 0.28,
+    inputUsd: 0.3,
+    cachedInputUsd: 0.006,
+    outputUsd: 1.2,
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "official",
     availability: "ga",
-    contextTokens: 128000,
-    maxOutputTokens: 8000,
+    contextTokens: 1000000,
+    maxOutputTokens: 384000,
     limitStatus: "official",
     source: "DeepSeek",
     sourceUrl: "https://api-docs.deepseek.com/quick_start/pricing/",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "Peak rates. Legacy DeepSeek V4 Flash requests are served and billed as V4.1 Flash; off-peak rates are 50% lower.",
     china: true
   },
   {
     provider: "Alibaba",
-    model: "Qwen3.7-Max",
+    model: "Qwen3.8-Max",
     aliases: [
-      "qwen3.7-max",
-      "qwen3-7-max",
-      "qwen3.7-max-2026-06-08"
+      "qwen3.8-max",
+      "qwen3-8-max",
+      "qwen3.8-max-0902"
     ],
     region: "Global <=1M",
     inputUsd: 1.65,
-    cachedInputUsd: null,
+    cacheWriteUsd: 2.063,
+    cachedInputUsd: 0.165,
     outputUsd: 4.951,
     currency: "USD",
     unit: "1M tokens",
@@ -1223,7 +1410,33 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
+    china: true
+  },
+  {
+    provider: "Alibaba",
+    model: "Qwen3.7-Max",
+    aliases: [
+      "qwen3.7-max",
+      "qwen3-7-max",
+      "qwen3.7-max-2026-06-08",
+      "qwen3.7-max-2026-05-20"
+    ],
+    region: "Global <=1M",
+    inputUsd: 1.65,
+    cacheWriteUsd: 2.063,
+    cachedInputUsd: 0.165,
+    outputUsd: 4.951,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 1000000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "Alibaba",
+    sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1246,7 +1459,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1270,7 +1483,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Alibaba",
     sourceUrl: "https://www.alibabacloud.com/help/en/model-studio/model-pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1293,7 +1506,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1316,7 +1529,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1338,7 +1551,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1360,7 +1573,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1383,7 +1596,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1406,7 +1619,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1429,7 +1642,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1452,7 +1665,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1475,7 +1688,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1498,7 +1711,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1521,7 +1734,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1544,7 +1757,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1567,7 +1780,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1589,7 +1802,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "Z.AI",
     sourceUrl: "https://docs.z.ai/guides/overview/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1612,7 +1825,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
   },
   {
@@ -1635,8 +1848,31 @@ const pricingModels = [
     limitStatus: "official",
     source: "StepFun",
     sourceUrl: "https://platform.stepfun.ai/docs/en/pricing/details",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     china: true
+  },
+  {
+    provider: "xAI",
+    model: "Grok 4.6",
+    aliases: [
+      "grok-4.6",
+      "grok-4-6"
+    ],
+    region: "Text API, <200k prompt",
+    inputUsd: 2,
+    cachedInputUsd: 0.5,
+    outputUsd: 6,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: 500000,
+    maxOutputTokens: null,
+    limitStatus: "official",
+    source: "xAI",
+    sourceUrl: "https://docs.x.ai/developers/pricing",
+    sourceReviewDate: "2026-09-25",
+    sourceNotes: "For prompts of 200k tokens or more, xAI bills the full request at $4 input, $1 cached input, and $12 output per 1M tokens."
   },
   {
     provider: "xAI",
@@ -1658,7 +1894,7 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Chat API table lists Cached input at $0.20 per 1M tokens."
   },
   {
@@ -1681,15 +1917,80 @@ const pricingModels = [
     limitStatus: "official",
     source: "xAI",
     sourceUrl: "https://docs.x.ai/developers/pricing",
-    sourceReviewDate: "2026-07-09",
+    sourceReviewDate: "2026-09-25",
     sourceNotes: "Code API table lists Cached input at $0.20 per 1M tokens."
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Large 3",
+    aliases: [
+      "mistral-large-3",
+      "mistral-large-latest"
+    ],
+    region: "API",
+    inputUsd: 0.5,
+    cachedInputUsd: 0.05,
+    outputUsd: 1.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing",
+    sourceReviewDate: "2026-09-25"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Medium 3.5",
+    aliases: [
+      "mistral-medium-3.5",
+      "mistral-medium-latest"
+    ],
+    region: "API",
+    inputUsd: 1.5,
+    cachedInputUsd: 0.15,
+    outputUsd: 7.5,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing",
+    sourceReviewDate: "2026-09-25"
+  },
+  {
+    provider: "Mistral",
+    model: "Mistral Small 4",
+    aliases: [
+      "mistral-small-4",
+      "mistral-small-latest"
+    ],
+    region: "API",
+    inputUsd: 0.15,
+    cachedInputUsd: 0.015,
+    outputUsd: 0.6,
+    currency: "USD",
+    unit: "1M tokens",
+    priceStatus: "official",
+    availability: "ga",
+    contextTokens: null,
+    maxOutputTokens: null,
+    limitStatus: "unknown",
+    source: "Mistral",
+    sourceUrl: "https://docs.mistral.ai/inference/pricing",
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Mistral",
     model: "Mistral Large 2",
     aliases: [
-      "mistral-large-2",
-      "mistral-large-latest"
+      "mistral-large-2"
     ],
     region: "API",
     inputUsd: null,
@@ -1698,20 +1999,19 @@ const pricingModels = [
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "unknown",
-    availability: "ga",
+    availability: "deprecated",
     contextTokens: 128000,
     maxOutputTokens: null,
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   },
   {
     provider: "Mistral",
     model: "Mistral Small 3.2",
     aliases: [
-      "mistral-small-3.2",
-      "mistral-small-latest"
+      "mistral-small-3.2"
     ],
     region: "API",
     inputUsd: null,
@@ -1720,13 +2020,13 @@ const pricingModels = [
     currency: "USD",
     unit: "1M tokens",
     priceStatus: "unknown",
-    availability: "ga",
+    availability: "deprecated",
     contextTokens: 128000,
     maxOutputTokens: null,
     limitStatus: "official",
     source: "Mistral",
     sourceUrl: "https://docs.mistral.ai/getting-started/models/",
-    sourceReviewDate: "2026-07-09"
+    sourceReviewDate: "2026-09-25"
   }
 ];
 
@@ -1751,54 +2051,369 @@ const pricingModelAliasByCanonicalName = new Map(
   )
 );
 
-const modelQualityScores = {
-  "GPT-5.6 Sol": null,
-  "GPT-5.6 Terra": null,
-  "GPT-5.6 Luna": null,
-  "Claude Fable 5": 100,
-  "Claude Mythos 5": 99,
-  "GPT-5.5 Pro": 99,
-  "Claude Opus 4.8": 98,
-  "GPT-5.5": 97,
-  "Claude Sonnet 5": 96,
-  "GLM-5.2": 95,
-  "Gemini 3.1 Pro Preview": 94,
-  "GLM-5.1": 93,
-  "DeepSeek V4 Pro": 92,
-  "Qwen3.7-Max": 90,
-  "GPT-5.4 Pro": 89,
-  "MiniMax M3": 88,
-  "GPT-5.4": 87,
-  "GPT-5.3-Codex": 86,
-  "GPT-5.3-Codex-Spark": 85,
-  "Claude Sonnet 4.6": 84,
-  "Gemini 3.5 Flash": 83,
-  "GLM-5-Turbo": 82,
-  "GLM-5": 81,
-  "Grok 4.3": 81,
-  "GPT-5.2": 80,
-  "Qwen3-Max": 79,
-  "GPT-5.4 Mini": 77,
-  "Grok Build 0.1": 76,
-  "Mistral Large 2": 75,
-  "GLM-4.6": 74,
-  "GLM-4.7": 73,
-  "GLM-4.5-X": 72,
-  "GLM-4.5-AirX": 71,
-  "Qwen3.5-Plus": 70,
-  "GLM-4.5": 69,
-  "step-3.7-flash": 68,
-  "DeepSeek V4 Flash": 67,
-  "GLM-4.5-Air": 66,
-  "Mistral Small 3.2": 65,
-  "Claude Haiku 4.5": 64,
-  "GPT-5.4 Nano": 63,
-  "Gemini 3.1 Flash-Lite": 62,
-  "GLM-4.7-FlashX": 61,
-  "step-3.5-flash": 58,
-  "GLM-4-32B-0414-128K": 56,
-  "GLM-4.7-Flash": 55,
-  "GLM-4.5-Flash": 55
+const modelBenchmarkScores = {
+  "GPT-6 Astra": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1480,
+    rank: 24,
+    votes: 2693,
+    testedModel: "gpt-6-astra-max"
+  },
+  "GPT-5.6 Sol": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1483,
+    rank: 18,
+    votes: 27069,
+    testedModel: "gpt-5.6-sol-xhigh"
+  },
+  "GPT-6 Sol": null,
+  "GPT-6.1 Sol": null,
+  "GPT-6 Luna": null,
+  "GPT-5.6 Terra": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1466,
+    rank: 45,
+    votes: 28119,
+    testedModel: "gpt-5.6-terra-xhigh"
+  },
+  "GPT-5.6 Luna": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1452,
+    rank: 67,
+    votes: 28547,
+    testedModel: "gpt-5.6-luna-xhigh"
+  },
+  "GPT-5.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1476,
+    rank: 28,
+    votes: 66317,
+    testedModel: "gpt-5.5"
+  },
+  "GPT-5.5 Pro": null,
+  "GPT-5.4": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1466,
+    rank: 46,
+    votes: 63526,
+    testedModel: "gpt-5.4"
+  },
+  "GPT-5.4 Pro": null,
+  "GPT-5.4 Mini": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1448,
+    rank: 74,
+    votes: 59387,
+    testedModel: "gpt-5.4-mini-high"
+  },
+  "GPT-5.4 Nano": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1402,
+    rank: 146,
+    votes: 58424,
+    testedModel: "gpt-5.4-nano-high"
+  },
+  "GPT-5.3-Codex": null,
+  "GPT-5.3-Codex-Spark": null,
+  "GPT-5.2": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1436,
+    rank: 91,
+    votes: 78967,
+    testedModel: "gpt-5.2"
+  },
+  "Claude Fable 5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1506,
+    rank: 1,
+    votes: 30057,
+    testedModel: "claude-fable-5-high"
+  },
+  "Claude Mythos 5": null,
+  "Claude Opus 4.8": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1473,
+    rank: 35,
+    votes: 53446,
+    testedModel: "claude-opus-4-8"
+  },
+  "Claude Sonnet 5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1461,
+    rank: 51,
+    votes: 35301,
+    testedModel: "claude-sonnet-5-high"
+  },
+  "Claude Sonnet 4.6": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1473,
+    rank: 37,
+    votes: 66208,
+    testedModel: "claude-sonnet-4-6"
+  },
+  "Claude Haiku 4.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1415,
+    rank: 129,
+    votes: 129278,
+    testedModel: "claude-haiku-4-5-20251001"
+  },
+  "MiniMax M3": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1441,
+    rank: 84,
+    votes: 48540,
+    testedModel: "minimax-m3"
+  },
+  "Gemini 3.8 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1493,
+    rank: 9,
+    votes: 5076,
+    testedModel: "gemini-3.8-flash-high"
+  },
+  "Gemini 3.7 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1490,
+    rank: 12,
+    votes: 5640,
+    testedModel: "gemini-3.7-flash-high"
+  },
+  "Gemini 3.1 Pro Preview": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1487,
+    rank: 15,
+    votes: 106951,
+    testedModel: "gemini-3.1-pro-preview"
+  },
+  "Gemini 3.5 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1478,
+    rank: 25,
+    votes: 38257,
+    testedModel: "gemini-3.5-flash-high"
+  },
+  "Gemini 3.1 Flash-Lite": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1432,
+    rank: 98,
+    votes: 60405,
+    testedModel: "gemini-3.1-flash-lite-preview"
+  },
+  "DeepSeek V4 Pro": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1457,
+    rank: 57,
+    votes: 54130,
+    testedModel: "deepseek-v4-pro"
+  },
+  "DeepSeek V4.1 Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1436,
+    rank: 92,
+    votes: 48887,
+    testedModel: "deepseek-v4-flash"
+  },
+  "Qwen3.8-Max": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1481,
+    rank: 22,
+    votes: 16670,
+    testedModel: "qwen3.8-max"
+  },
+  "Qwen3.7-Max": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1473,
+    rank: 34,
+    votes: 3705,
+    testedModel: "qwen3.7-max-preview"
+  },
+  "Qwen3-Max": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1435,
+    rank: 94,
+    votes: 27194,
+    testedModel: "qwen3-max-preview"
+  },
+  "Qwen3.5-Plus": null,
+  "GLM-5.2": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1472,
+    rank: 38,
+    votes: 36798,
+    testedModel: "glm-5.2-max"
+  },
+  "GLM-5.1": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1466,
+    rank: 47,
+    votes: 48901,
+    testedModel: "glm-5.1"
+  },
+  "GLM-5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1458,
+    rank: 56,
+    votes: 27605,
+    testedModel: "glm-5"
+  },
+  "GLM-5-Turbo": null,
+  "GLM-4.7": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1442,
+    rank: 83,
+    votes: 11893,
+    testedModel: "glm-4.7"
+  },
+  "GLM-4.7-FlashX": null,
+  "GLM-4.7-Flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1366,
+    rank: 186,
+    votes: 11491,
+    testedModel: "glm-4.7-flash"
+  },
+  "GLM-4.6": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1425,
+    rank: 112,
+    votes: 35061,
+    testedModel: "glm-4.6"
+  },
+  "GLM-4.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1411,
+    rank: 136,
+    votes: 23712,
+    testedModel: "glm-4.5"
+  },
+  "GLM-4.5-X": null,
+  "GLM-4.5-Air": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1373,
+    rank: 182,
+    votes: 30367,
+    testedModel: "glm-4.5-air"
+  },
+  "GLM-4.5-AirX": null,
+  "GLM-4.5-Flash": null,
+  "GLM-4-32B-0414-128K": null,
+  "step-3.7-flash": null,
+  "step-3.5-flash": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1394,
+    rank: 158,
+    votes: 57137,
+    testedModel: "step-3.5-flash"
+  },
+  "Grok 4.6": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1456,
+    rank: 63,
+    votes: 15521,
+    testedModel: "grok-4.6-high"
+  },
+  "Grok 4.3": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1443,
+    rank: 81,
+    votes: 66801,
+    testedModel: "grok-4.3"
+  },
+  "Grok Build 0.1": null,
+  "Mistral Large 3": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1413,
+    rank: 133,
+    votes: 69028,
+    testedModel: "mistral-large-3"
+  },
+  "Mistral Medium 3.5": {
+    source: "Arena Text",
+    sourceUrl: "https://arena.ai/leaderboard/",
+    measuredOn: "2026-09-13",
+    score: 1426,
+    rank: 106,
+    votes: 10996,
+    testedModel: "mistral-medium-3.5"
+  },
+  "Mistral Small 4": null,
+  "Mistral Large 2": null,
+  "Mistral Small 3.2": null
 };
 
 init();
@@ -1817,6 +2432,7 @@ async function init() {
   bindEvents();
   refreshIcons();
   await loadAuth();
+  setInterval(loadCodexResetHistory, 60000);
   await Promise.all([loadUsage({ showIndicator: true }), loadSourceDiagnostics(), loadSystemMetrics()]);
   setInterval(pollUsage, USAGE_POLL_INTERVAL_MS);
   scheduleSystemMetricsPolling();
@@ -1831,6 +2447,21 @@ async function init() {
   window.addEventListener("focus", handleSubscriptionRereadReturn);
 }
 
+function renderPlasmaWidgetStatus(status, installButton, statusElement) {
+  // KPlugin.Version describes files on disk, never the QML cached by Plasma.
+  // The installer independently verifies compact replacements for live panels.
+  const current = status.installed && status.installedVersion && status.version &&
+    status.installedVersion === status.version && status.success !== false;
+  installButton.disabled = !status.supported || Boolean(current);
+  installButton.textContent = t(current && status.supported ? "plasma.current" : status.installed ? "plasma.update" : "plasma.install");
+  const key = status.success === false ? "plasma.installError" : !status.supported ?
+    status.reason === "unsupported" ? "plasma.unsupported" : "plasma.requirements" : status.installed ? "plasma.installed" : null;
+  const messages = key ? [t(key, { version: `\u2066${status.installedVersion || status.version}\u2069` })] : [];
+  if (status.supported && status.installed && !status.panelsReady && status.success !== false) messages.push(t("plasma.reloadHelp"));
+  if (status.supported && !status.connected) messages.push(t("plasma.offline"));
+  statusElement.textContent = messages.join(" ");
+}
+
 function bindEvents() {
   els.refreshBtn.addEventListener("click", () => loadUsage({ showIndicator: true, force: true }));
   els.loginBtn.addEventListener("click", () => openModalDialog(els.loginDialog));
@@ -1840,6 +2471,34 @@ function bindEvents() {
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
   els.syncDeviceFilter?.addEventListener("change", () => setSyncDeviceFilter(els.syncDeviceFilter.value));
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
+  els.mobileAccessOpen.addEventListener("click", () => changeMobileAccess(true));
+  els.mobileAccessDisable.addEventListener("click", () => changeMobileAccess(false));
+  els.mobileHttpsSave.addEventListener("click", async () => {
+    if (!els.mobileHttpsOrigin.reportValidity()) return;
+    const value = els.mobileHttpsOrigin.value.trim();
+    renderMobileAccess(state.mobileAccess, true);
+    try { renderMobileAccess(await window.llmUsageDashboard.mobileAccess.setHttpsOrigin(value)); }
+    catch { renderMobileAccess({ ...state.mobileAccess, reason: "failed" }); }
+  });
+  els.mobileHttpsOpen.addEventListener("click", async () => {
+    try { renderMobileAccess(await window.llmUsageDashboard.mobileAccess.openPairing(true)); }
+    catch { renderMobileAccess({ ...state.mobileAccess, reason: "failed" }); }
+  });
+  els.mobileVpnSave.addEventListener("click", async () => {
+    const networks = els.mobileVpnNetworks.value;
+    els.mobileVpnStatus.textContent = "";
+    renderMobileAccess(state.mobileAccess, true);
+    try {
+      const value = await window.llmUsageDashboard.mobileAccess.setVpnNetworks(networks);
+      renderMobileAccess(value);
+      els.mobileVpnNetworks.value = (value.vpnNetworks || []).join("\n");
+      els.mobileVpnStatus.textContent = t("settings.mobile.vpnSaved");
+    } catch {
+      renderMobileAccess(state.mobileAccess);
+      els.mobileVpnNetworks.value = networks;
+      els.mobileVpnStatus.textContent = t("settings.mobile.vpnInvalid");
+    }
+  });
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
@@ -1849,6 +2508,7 @@ function bindEvents() {
   els.syncNewPairingCodeBtn?.addEventListener("click", createSyncPairingCode);
   els.syncNowBtn?.addEventListener("click", runSyncNow);
   els.syncDisconnectBtn?.addEventListener("click", disconnectSync);
+  setupConnections();
   els.supportReportDownloadBtn?.addEventListener("click", downloadSupportReport);
   els.supportReportCopyBtn?.addEventListener("click", copySupportReportSummary);
   els.loginDialog.addEventListener("pointerdown", recordDialogPointerOrigin);
@@ -1884,8 +2544,18 @@ function bindEvents() {
   els.providerGrid?.addEventListener("pointerup", handleProviderPointerUp);
   els.providerGrid?.addEventListener("pointercancel", cancelProviderPointerDrag);
   els.providerGrid?.addEventListener("click", handleSubscriptionConnectionClick);
+  els.providerGrid?.addEventListener("click", openCreditExpiry);
+  document.getElementById("creditExpiryClose")?.addEventListener("click", () => document.getElementById("creditExpiryDialog").close());
+  document.getElementById("creditExpiryForm")?.addEventListener("submit", saveCreditExpiry);
   els.providerGrid?.addEventListener("keydown", handleProviderKeyboardReorder);
   els.chart?.addEventListener("scroll", handleChartScroll, { passive: true });
+  [els.chart, els.overviewHistoryChart].forEach((chart) => {
+    chart?.addEventListener("pointermove", showHistoryBarTooltip);
+    chart?.addEventListener("pointerleave", hideHistoryBarTooltip);
+    chart?.addEventListener("focusin", showHistoryBarTooltip);
+    chart?.addEventListener("focusout", hideHistoryBarTooltip);
+    chart?.addEventListener("scroll", hideHistoryBarTooltip, true);
+  });
   els.liveHistoryLegend?.addEventListener("click", handleLiveHistoryLegendToggle);
   els.liveHistoryLegend?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -1905,19 +2575,57 @@ function bindEvents() {
     onNotificationEnabledChange();
     scheduleSettingsAutosave("notifications");
   });
+  els.notificationResetsEnabled?.addEventListener("change", () => scheduleSettingsAutosave("notifications"));
   [els.notificationPacingPercent, els.notificationHardLimitPercent].forEach((field) => {
     field?.addEventListener("input", () => scheduleSettingsAutosave("notifications"));
   });
   els.notificationSettingsBtn?.addEventListener("click", openNotificationSettings);
   els.notificationTestBtn?.addEventListener("click", sendTestNotification);
   els.themeSelect?.addEventListener("change", () => setThemePreference(els.themeSelect.value));
+  const widgetButton = document.getElementById("desktopWidgetBtn");
+  if (widgetButton && window.llmUsageDashboard?.desktopWidget) {
+    const dialog = document.getElementById("desktopWidgetDialog");
+    const installButton = document.getElementById("plasmaWidgetInstall");
+    const statusElement = document.getElementById("plasmaWidgetStatus");
+    const plasmaBridge = window.llmUsageDashboard.plasmaWidget;
+    const showPlasmaStatus = (status) => renderPlasmaWidgetStatus(status, installButton, statusElement);
+    widgetButton.hidden = false;
+    widgetButton.addEventListener("click", async () => {
+      openModalDialog(dialog);
+      installButton.disabled = true;
+      statusElement.textContent = t("widget.loading");
+      try { showPlasmaStatus(await plasmaBridge?.status() || { supported: false }); }
+      catch { statusElement.textContent = t("plasma.installError"); }
+    });
+    document.getElementById("compactWidgetBtn").addEventListener("click", async () => {
+      try { await window.llmUsageDashboard.desktopWidget.open(); dialog.close(); }
+      catch { statusElement.textContent = t("widget.error"); }
+    });
+    installButton.addEventListener("click", async () => {
+      installButton.disabled = true; statusElement.textContent = t("plasma.installing");
+      try { showPlasmaStatus(await plasmaBridge.install()); }
+      catch { statusElement.textContent = t("plasma.installError"); installButton.disabled = false; }
+    });
+  }
+  window.llmUsageDashboard?.onWidgetDashboard?.(() => openSettings("accounts"));
   els.languageSelect?.addEventListener("change", () => setLanguage(els.languageSelect.value));
+  els.codexResetPeriod?.addEventListener("change", () => {
+    state.codexResetLimit = Number(els.codexResetPeriod.value);
+    void loadCodexResetHistory();
+  });
   window.addEventListener("llm-usage-theme-change", (event) => {
     state.themePreference = normalizeThemePreference(event.detail?.preference);
     syncThemeSelect();
   });
   els.priceSortButtons.forEach((button) => {
     button.addEventListener("click", () => sortPricing(button.dataset.priceSort));
+  });
+  els.pricingModelFilter?.addEventListener("input", () => {
+    state.pricingModelFilter = els.pricingModelFilter.value;
+    if (state.usage) {
+      const local = activeDashboardUsage();
+      renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
+    }
   });
   els.pricingViewToggle?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-pricing-view]");
@@ -1931,10 +2639,28 @@ function bindEvents() {
     }
   });
   els.loginForm.addEventListener("submit", login);
+  els.appShell.addEventListener("change", (event) => {
+    const select = event.target.closest("[data-chart-group]");
+    if (!select) return;
+    state.chartBreakdownMode = CHART_BREAKDOWN_MODES.includes(select.value) ? select.value : "total";
+    requestChartLatestForViewChange();
+    requestOverviewHistoryLatestForViewChange();
+    if (state.usage) preservePageScrollDuring(render);
+  });
   els.appShell.addEventListener("click", (e) => {
+    const quotaPaceBtn = e.target.closest("[data-quota-pace-window]");
+    if (quotaPaceBtn) {
+      const minutes = Number(quotaPaceBtn.dataset.quotaPaceWindow);
+      const card = quotaPaceBtn.dataset.quotaPaceCard;
+      if (card && [30, 60, 120, 300].includes(minutes) && minutes !== (state.quotaPaceWindowMinutesByCard[card] || 120)) {
+        state.quotaPaceWindowMinutesByCard[card] = minutes;
+        if (state.usage) preservePageScrollDuring(render);
+      }
+      return;
+    }
     const projectionModeBtn = e.target.closest("[data-usage-projection-mode]");
     if (projectionModeBtn) {
-      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode);
+      setUsageProjectionMode(projectionModeBtn.dataset.usageProjectionMode, projectionModeBtn.dataset.usageProjectionProvider);
       return;
     }
     const modeBtn = e.target.closest("[data-chart-mode]");
@@ -1942,15 +2668,6 @@ function bindEvents() {
       state.chartMode = modeBtn.dataset.chartMode === "costs" ? "costs" : "tokens";
       requestChartLatestForViewChange();
       requestOverviewHistoryLatestForViewChange();
-      if (state.usage) preservePageScrollDuring(render);
-      return;
-    }
-    const breakdownBtn = e.target.closest("[data-chart-breakdown]");
-    if (breakdownBtn) {
-      state.chartBreakdownMode = CHART_BREAKDOWN_MODES.includes(breakdownBtn.dataset.chartBreakdown)
-        ? breakdownBtn.dataset.chartBreakdown
-        : "total";
-      requestChartLatestForViewChange();
       if (state.usage) preservePageScrollDuring(render);
       return;
     }
@@ -2008,6 +2725,8 @@ async function loadLanguage(language, { persist = true, rerender = true } = {}) 
     } catch {
       // Keep the selected language for this session if storage is unavailable.
     }
+    const nativeSave = window.llmUsageDashboard?.setLanguagePreference?.(nextLanguage);
+    await nativeSave?.catch(() => {});
   }
 
   applyStaticTranslations();
@@ -2024,6 +2743,8 @@ async function fetchTranslations(language) {
 }
 
 function detectInitialLanguage() {
+  const nativePreference = normalizeLanguage(window.llmUsageDashboard?.initialLanguagePreference);
+  if (nativePreference) return nativePreference;
   try {
     const stored = normalizeLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY));
     if (stored) return stored;
@@ -2072,7 +2793,9 @@ function renderLanguageOptions() {
 }
 
 function rerenderLanguageSensitiveViews() {
+  renderMobileAccess(state.mobileAccess);
   renderAuth();
+  renderConnectionAccounts();
   if (state.usage) {
     render();
   } else if (state.auth && !state.auth.authenticated) {
@@ -2151,23 +2874,27 @@ async function setSyncDeviceFilter(value) {
 }
 
 function activeDashboardUsage() {
-  if (state.syncStatus?.enabled && state.syncStatus?.connected && state.syncUsage) return state.syncUsage;
+  if (connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected && state.syncUsage) return state.syncUsage;
   return state.usage?.local || null;
 }
 
 async function loadSyncUsageView({ renderAfter = false } = {}) {
-  const connected = Boolean(state.syncStatus?.enabled && state.syncStatus?.connected);
+  const requestId = state.syncViewRequestId = (state.syncViewRequestId || 0) + 1;
+  const isCurrent = () => requestId === state.syncViewRequestId && connectionState.selectedDevice === "collector";
+  const connected = Boolean(connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected);
   if (!connected) {
     state.syncDevices = [];
     state.syncUsage = null;
     state.syncUsagePayload = null;
     state.syncViewError = "";
+    state.syncViewLoading = false;
     if (renderAfter && state.usage) renderUsageIfChanged({ force: true });
     return;
   }
   state.syncViewLoading = true;
   try {
     const deviceResult = await fetchJson(`/api/sync/local/devices?ts=${Date.now()}`);
+    if (!isCurrent()) return;
     state.syncDevices = Array.isArray(deviceResult.devices) ? deviceResult.devices : [];
     if (
       state.syncDeviceFilter.startsWith("device_") &&
@@ -2185,22 +2912,26 @@ async function loadSyncUsageView({ renderAfter = false } = {}) {
       ts: String(Date.now())
     });
     const payload = await fetchJson(`/api/sync/local/usage?${params.toString()}`);
+    if (!isCurrent()) return;
     state.syncUsagePayload = payload;
     state.syncUsage = payload.usage || null;
     state.syncViewError = "";
   } catch (error) {
+    if (!isCurrent()) return;
     state.syncUsage = null;
     state.syncUsagePayload = null;
     state.syncViewError = error.message || t("sync.actionFailed");
   } finally {
-    state.syncViewLoading = false;
-    if (renderAfter && state.usage) renderUsageIfChanged({ force: true });
+    if (requestId === state.syncViewRequestId) {
+      state.syncViewLoading = false;
+      if (renderAfter && state.usage && isCurrent()) renderUsageIfChanged({ force: true });
+    }
   }
 }
 
 function renderSyncDeviceFilter() {
   if (!els.syncDeviceFilterWrap || !els.syncDeviceFilter) return;
-  const connected = Boolean(state.syncStatus?.enabled && state.syncStatus?.connected);
+  const connected = Boolean(connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected);
   els.syncDeviceFilterWrap.hidden = !connected;
   if (!connected) {
     els.syncDeviceFilter.innerHTML = "";
@@ -2263,33 +2994,29 @@ function loadProviderOrderPreference() {
 }
 
 function normalizeUsageProjectionMode(mode) {
-  return USAGE_PROJECTION_MODES.includes(mode) ? mode : "tachometer";
+  return USAGE_PROJECTION_MODES.includes(mode) ? mode : "bar";
 }
 
 function loadUsageProjectionModePreference() {
   try {
-    const saved = localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY);
-    if (saved) {
-      state.usageProjectionMode = normalizeUsageProjectionMode(saved);
-      return;
-    }
     const legacyMap = JSON.parse(localStorage.getItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY) || "{}");
-    const legacyMode = legacyMap && typeof legacyMap === "object" && !Array.isArray(legacyMap)
-      ? Object.values(legacyMap).find((mode) => USAGE_PROJECTION_MODES.includes(mode))
-      : null;
-    state.usageProjectionMode = normalizeUsageProjectionMode(legacyMode);
+    state.usageProjectionModes = legacyMap && typeof legacyMap === "object" && !Array.isArray(legacyMap)
+      ? Object.fromEntries(Object.entries(legacyMap).filter(([id, mode]) => id && USAGE_PROJECTION_MODES.includes(mode)))
+      : {};
+    state.usageProjectionMode = normalizeUsageProjectionMode(localStorage.getItem(USAGE_PROJECTION_MODE_STORAGE_KEY));
   } catch {
-    state.usageProjectionMode = "tachometer";
+    state.usageProjectionMode = "bar";
+    state.usageProjectionModes = {};
   }
 }
 
-function setUsageProjectionMode(mode) {
+function setUsageProjectionMode(mode, providerId) {
+  if (!providerId) return;
   const nextMode = normalizeUsageProjectionMode(mode);
-  if (state.usageProjectionMode === nextMode) return;
-  state.usageProjectionMode = nextMode;
+  if ((state.usageProjectionModes[providerId] || state.usageProjectionMode) === nextMode) return;
+  state.usageProjectionModes[providerId] = nextMode;
   try {
-    localStorage.setItem(USAGE_PROJECTION_MODE_STORAGE_KEY, nextMode);
-    localStorage.removeItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY);
+    localStorage.setItem(LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY, JSON.stringify(state.usageProjectionModes));
   } catch {
     // Ignore storage failures; the selected view still changes for this session.
   }
@@ -3645,7 +4372,12 @@ function systemMetricsPollDelayMs() {
 }
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: connectionState.selectedDevice !== "collector" && (!state.auth || state.auth.authenticated), force });
   if (state.loadingUsage) {
+    if (connectionState.selectedDevice !== state.loadingUsageDevice) {
+      state.queuedUsageScope = true;
+      state.usageRequestAbort?.abort();
+    }
     if (force) {
       state.queuedUsageForce = true;
       state.queuedUsageIndicator ||= showIndicator;
@@ -3660,11 +4392,17 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     renderLocked();
     return;
   }
+  if (force || Date.now() - (state.codexResetFetchedAt || 0) >= 60000) void loadCodexResetHistory();
   if (force) state.gptAccountScanMessage = "";
+  const requestedDevice = connectionState.selectedDevice;
+  state.loadingUsageDevice = requestedDevice;
+  const requestAbort = new AbortController();
+  state.usageRequestAbort = requestAbort;
   setUsageLoading(true, showIndicator);
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
     params.set("lang", state.language || DEFAULT_LANGUAGE);
+    params.set("device", requestedDevice === "collector" ? "local" : requestedDevice);
     if (force) params.set("force", "1");
     // Subscription history changes rarely; refresh it on force and on a slow
     // cadence instead of alongside every usage poll.
@@ -3673,22 +4411,36 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
       !state.subscriptionHistory ||
       Date.now() - (state.subscriptionHistoryFetchedAt || 0) >= SUBSCRIPTION_HISTORY_REFRESH_MS;
     const [usage, subscriptionHistory] = await Promise.all([
-      fetchJson(`/api/usage?${params.toString()}`),
+      fetchJson(`/api/usage?${params.toString()}`, { signal: requestAbort.signal }),
       refreshSubscriptionHistory
-        ? fetchJson("/api/subscription-history").catch((error) => {
+        ? fetchJson("/api/subscription-history", { signal: requestAbort.signal }).catch((error) => {
             if (error.status === 401) throw error;
             // Keep the previous data on transient failures and retry next poll.
             return null;
           })
         : Promise.resolve(state.subscriptionHistory)
     ]);
+    if (connectionState.selectedDevice !== requestedDevice) {
+      state.queuedUsageScope = true;
+      return;
+    }
     if (refreshSubscriptionHistory && subscriptionHistory) state.subscriptionHistoryFetchedAt = Date.now();
     state.usage = usage;
     state.syncStatus = usage.sync || null;
+    if (!connectionState.collectorScopeInitialized && state.syncStatus) {
+      connectionState.collectorScopeInitialized = true;
+      if (!usage.deviceSync?.enabled && state.syncStatus.enabled && state.syncStatus.connected) connectionState.selectedDevice = "collector";
+    }
+    const loadedSource = connectionState.selectedDevice;
     await loadSyncUsageView({ renderAfter: false });
+    if (connectionState.selectedDevice !== loadedSource) {
+      state.queuedUsageScope = true;
+      return;
+    }
     state.subscriptionHistory = subscriptionHistory || state.subscriptionHistory || { version: 1, entries: [] };
     renderUsageIfChanged({ force });
   } catch (error) {
+    if (requestAbort.signal.aborted) return;
     if (error.status === 401) {
       await loadAuth();
       renderLocked();
@@ -3699,14 +4451,17 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     // render even when its payload matches the last rendered signature.
     state.lastUsageRenderSignature = null;
   } finally {
+    if (state.usageRequestAbort === requestAbort) state.usageRequestAbort = null;
     setUsageLoading(false);
-    if (state.queuedUsageForce) {
+    if (state.queuedUsageForce || state.queuedUsageScope) {
       const shouldRunQueuedUsage = !state.auth || state.auth.authenticated;
       const queuedShowIndicator = state.queuedUsageIndicator;
+      const queuedForce = state.queuedUsageForce;
       state.queuedUsageForce = false;
+      state.queuedUsageScope = false;
       state.queuedUsageIndicator = false;
       if (shouldRunQueuedUsage) {
-        await loadUsage({ showIndicator: queuedShowIndicator, force: true });
+        await loadUsage({ showIndicator: queuedShowIndicator, force: queuedForce });
       }
     }
   }
@@ -3765,6 +4520,7 @@ function renderSkeletonProviderGrid() {
 }
 
 function renderLocked() {
+  globalThis.ChatUsagePanel?.lock();
   state.sourceDiagnostics = null;
   state.sourceDiagnosticsError = "";
   // The locked view replaces dashboard markup, so the next usage load must
@@ -3772,6 +4528,8 @@ function renderLocked() {
   state.lastUsageRenderSignature = null;
   els.providerGrid.innerHTML = "";
   els.fiveHourOpen.textContent = "--";
+  const fiveHourTile = summaryMetricTileById("five-hour");
+  if (fiveHourTile) fiveHourTile.hidden = true;
   els.weeklyOpen.textContent = "--";
   if (els.tokensRangeLabel) els.tokensRangeLabel.textContent = t("summary.tokensToday");
   els.tokensToday.textContent = "--";
@@ -3859,8 +4617,14 @@ function renderUsageIfChanged({ force = false } = {}) {
 }
 
 function render() {
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: connectionState.selectedDevice !== "collector" && (!state.auth || state.auth.authenticated) });
   const usage = state.usage;
   const local = activeDashboardUsage();
+  const historyNotice = document.getElementById("usageRefreshNotice");
+  if (historyNotice) {
+    historyNotice.hidden = !usage.cache?.refreshing;
+    historyNotice.textContent = historyNotice.hidden ? "" : t("history.refreshing", { time: formatUpdatedAt(usage.local?.updatedAt) });
+  }
   const providers = orderProviders(buildProviders(usage));
   const visibleProviders = state.showAllProviders ? providers : providers.filter(providerHasUsage);
   const chartScrollState = captureChartScrollState();
@@ -3882,6 +4646,8 @@ function render() {
   const selectedRangeRows = usageRowsForSelectedRange(local, chartRows);
   renderSummary(visibleProviders, local, filteredDaily);
   renderGptAccounts(usage.gptAccounts);
+  renderConnections(usage);
+  renderCodexResetHistory();
   updateSummaryMetricLayout();
   renderOverviewHistory(chartRows);
   updateDashboardLayoutMode();
@@ -3917,9 +4683,86 @@ function render() {
   refreshIcons();
 }
 
+async function loadCodexResetHistory() {
+  if (state.loadingCodexResetHistory || state.auth?.authenticated === false) return;
+  state.loadingCodexResetHistory = true;
+  const limit = state.codexResetLimit;
+  try {
+    const history = await fetchJson(`/api/codex-reset-history?limit=${limit}`);
+    if (limit === state.codexResetLimit) state.codexResetHistory = history;
+    state.codexResetFetchedAt = Date.now();
+    state.codexResetError = false;
+  } catch {
+    state.codexResetError = true;
+  } finally {
+    state.loadingCodexResetHistory = false;
+    renderCodexResetHistory();
+    if (limit !== state.codexResetLimit) void loadCodexResetHistory();
+  }
+}
+
+function renderCodexResetHistory() {
+  if (els.codexResetHistory) els.codexResetHistory.innerHTML = renderCodexResetHistoryContent(state.codexResetHistory);
+}
+
+function renderCodexResetHistoryContent(history) {
+  const text = (key, params = {}) => escapeHtml(t(`codexResets.${key}`, params));
+  if (!history) return `<p class="empty-message">${text(state.codexResetError ? "unavailable" : "loading")}</p>`;
+  if (history.accounts) {
+    const sections = history.accounts.map((account) => `<section class="reset-account"><h3>${escapeHtml(account.label)}</h3>${renderCodexResetHistoryContent(account.history)}</section>`);
+    if (history.unassigned) sections.push(`<section class="reset-account"><h3>${text("unassigned")}</h3>${renderCodexResetHistoryContent(history.unassigned)}</section>`);
+    return sections.length ? sections.join("") : `<p class="empty-message">${text("empty")}</p>`;
+  }
+  const summary = history.summary;
+  const number = (value) => value === null || value === undefined ? "—" : new Intl.NumberFormat(currentLocale(), { maximumFractionDigits: 1 }).format(value);
+  const days = (value) => value === null || value === undefined ? "—" : text("days", { value: number(value) });
+  const metric = (label, value, note) => `<div class="reset-metric"><span>${text(label)}</span><strong>${value}</strong><small>${note}</small></div>`;
+  const credits = history.credits?.availableCount;
+  const status = state.codexResetError ? "unavailable" : history.liveStatus;
+  const rows = history.windows.map((w) => {
+    const uncertain = w.confidence === "uncertain";
+    const kind = uncertain ? "uncertain" : w.resetType;
+    const detail = w.creditRedemption ? text(w.creditRedemption === "confirmed" ? "confirmed" : "inferred") : text("estimated");
+    const cause = w.resetCause || { type: "unknown", confidence: "unknown" };
+    const causeKey = cause.type === "manual" ? "causeManual" : cause.type === "provider_inferred" ? "causeProvider" : cause.type === "scheduled" ? "causeScheduled" : "causeUnknown";
+    const causeDetail = cause.type === "unknown" ? text("causeMissing") : cause.type === "provider_inferred" ? text("causeNoCredit") : text(cause.confidence === "confirmed" ? "causeConfirmed" : "causeInferred");
+    const interval = w.resetObservedBetween ? `${formatDateTime(w.resetObservedBetween.from)} – ${formatDateTime(w.resetObservedBetween.to)}` : "";
+    return `<tr><td>${escapeHtml(formatDateTime(w.startsAt))}</td><td>${escapeHtml(formatDateTime(w.scheduledResetAt))}</td>
+      <td title="${escapeHtml(interval)}">${escapeHtml(formatDateTime(w.closedAt))}</td><td>${days(w.durationDays)}</td>
+      <td><span class="reset-usage">${number(w.maxUsedPercent)} %</span><div class="reset-usage-track"><i style="width:${Math.max(0, Math.min(100, Number(w.maxUsedPercent)))}%"></i></div></td>
+      <td>${w.previousUsedPercent == null ? "—" : `${number(w.previousUsedPercent)} %`}${w.resetObservedBetween?.from ? `<small>${escapeHtml(formatDateTime(w.resetObservedBetween.from))}</small>` : ""}</td>
+      <td><span class="reset-tag ${uncertain ? "reset-uncertain" : w.resetType === "early" ? "reset-early" : ""}">${text(kind)}</span><small>${detail}</small></td>
+      <td><strong>${text(causeKey)}</strong><small>${causeDetail}</small></td></tr>`;
+  }).join("");
+  const events = (history.creditEvents || []).map((e) => {
+    const key = e.type === "redeemed" ? (e.confidence === "confirmed" ? "confirmed" : "inferred")
+      : e.type === "granted" ? "granted" : e.type === "expired" ? "expired" : "creditUnknown";
+    return `<li><span>${text(key)}</span><small>${escapeHtml(formatDateTime(e.from))} – ${escapeHtml(formatDateTime(e.to))}</small></li>`;
+  }).join("");
+  const expiries = (history.credits?.items || []).filter((c) => c.status === "available" && c.expiresAt)
+    .map((c) => `<span class="reset-expiry">${text("expires", { time: formatDateTime(c.expiresAt) })}</span>`).join("");
+  return `<div class="reset-summary">
+    ${metric("credits", number(credits), text(status))}
+    ${metric("earlyCount", number(summary.earlyResets), text("windows", { count: summary.selectedWindows }))}
+    ${metric("averageDuration", days(summary.averageDurationDays), text("durationBasis", { count: summary.durationSampleCount }))}
+    ${metric("averageUsage", summary.averageMaxUsedPercent === null ? "—" : `${number(summary.averageMaxUsedPercent)} %`, text("maximum"))}
+  </div>
+  <p class="reset-note">${text("note")}</p>
+  <p class="reset-note"><strong>${text("causeSummary", { manual: summary.manualResets ?? 0, provider: summary.providerResetsInferred ?? 0, scheduled: summary.scheduledResets ?? 0, unknown: summary.unknownResetCauses ?? summary.selectedWindows })}</strong></p>
+  <p class="reset-note">${text("causeNote")}</p>
+  ${history.recordingStartedAt ? `<p class="reset-note">${text("recordingSince", { time: formatDateTime(history.recordingStartedAt) })} · ${text("redemptions", { confirmed: summary.confirmedRedemptions, inferred: summary.inferredRedemptions })}</p>` : ""}
+  ${expiries ? `<div class="reset-expiries">${expiries}</div>` : ""}
+  ${summary.uncertainWindows || summary.recordingGaps ? `<p class="reset-note reset-warning">${text("coverage", { uncertain: summary.uncertainWindows, gaps: summary.recordingGaps })}</p>` : ""}
+  ${history.current ? `<p class="reset-note">${text("current", { time: formatDateTime(history.current.scheduledResetAt), percent: number(history.current.maxUsedPercent) })} · ${text("latest", { percent: number(history.current.lastUsedPercent), time: formatDateTime(history.current.lastObservedAt) })}</p>` : ""}
+  ${events ? `<details class="reset-events"><summary>${text("events")}</summary><ul>${events}</ul></details>` : ""}
+  ${rows ? `<div class="reset-table-wrap"><table class="reset-table"><thead><tr>${["start", "plannedReset", "end", "duration", "usage", "beforeReset", "result", "cause"].map((key) => `<th scope="col">${text(key)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty-message">${text("empty")}</p>`}`;
+}
+
 function renderGptAccounts(registry) {
   if (!els.gptAccountsSection || !els.gptAccountsMeta || !els.gptAccountList) return;
   const accounts = Array.isArray(registry?.accounts) ? registry.accounts : [];
+  document.getElementById("accountOverviewPanel").hidden = accounts.length < 2 && !state.usage?.deviceSync?.enabled;
+  document.getElementById("accountOverviewList").innerHTML = accounts.map(renderGptAccount).join("");
   const activeCount = accounts.filter((account) => account.active).length;
   const scanStatus = registry?.scan?.status || registry?.status || "empty";
   els.gptAccountsRecheckBtn.disabled = state.gptAccountScanPending;
@@ -3973,7 +4816,7 @@ function renderGptAccount(account) {
     </span>
   `).join("");
   const metrics = [];
-  if (Number.isFinite(Number(lifetimeTokens))) {
+  if (typeof lifetimeTokens === "number" && Number.isFinite(lifetimeTokens)) {
     metrics.push(`<span><strong>${escapeHtml(formatTokens(lifetimeTokens))}</strong>${escapeHtml(t("gptAccounts.lifetimeTokens"))}</span>`);
   }
   for (const limit of limits) {
@@ -4096,6 +4939,7 @@ function buildProviders(usage) {
     normalizeLocalProvider("copilot", usage.copilot),
     normalizeLocalProvider("ollama", usage.ollama),
     normalizeLocalProvider("glm", usage.glm),
+    normalizeLocalProvider("kimi", usage.kimi),
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
   ];
@@ -4115,19 +4959,14 @@ function renderChartModeToggle() {
 }
 
 function renderChartBreakdownToggle() {
-  return CHART_BREAKDOWN_MODES
-    .map((mode) => {
-      const active = state.chartBreakdownMode === mode;
-      return `
-        <button type="button" class="chart-mode-btn${active ? " active" : ""}" data-chart-breakdown="${mode}" aria-pressed="${active}">
-          ${escapeHtml(t(`chart.breakdown.${mode}`))}
-        </button>
-      `;
-    })
-    .join("");
+  return `<label class="chart-group-field"><span>${escapeHtml(t("chart.attribution.groupBy"))}</span>
+    <select data-chart-group aria-label="${escapeHtml(t("chart.attribution.groupBy"))}">${CHART_BREAKDOWN_MODES.map((mode) =>
+      `<option value="${mode}"${state.chartBreakdownMode === mode ? " selected" : ""}>${escapeHtml(t(`chart.breakdown.${mode}`))}</option>`
+    ).join("")}</select></label>`;
 }
 
 function renderTokenBreakdownSummary(daily, breakdownMode) {
+  if (["device", "account"].includes(breakdownMode)) return renderAttributionTotalBars(daily, breakdownMode);
   if (breakdownMode === "model") return renderModelTotalBars(daily);
   if (breakdownMode === "provider") return renderProviderTotalBars(daily);
   return renderTotalBreakdownSummary(daily);
@@ -4466,6 +5305,7 @@ function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, r
 }
 
 function renderOverviewHistory(daily) {
+  hideHistoryBarTooltip();
   if (!els.overviewHistoryPanel || !els.overviewHistoryFilterBar || !els.overviewHistoryModeToggle || !els.overviewHistoryChart || !els.overviewHistoryLegend) return;
   const renderVersion = state.overviewChartRenderVersion + 1;
   state.overviewChartRenderVersion = renderVersion;
@@ -4481,6 +5321,7 @@ function renderOverviewHistory(daily) {
     els.overviewHistoryPanel.hidden = true;
     els.overviewHistoryFilterBar.innerHTML = "";
     els.overviewHistoryModeToggle.innerHTML = "";
+    if (els.overviewHistoryBreakdownToggle) els.overviewHistoryBreakdownToggle.innerHTML = "";
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
@@ -4501,11 +5342,15 @@ function renderOverviewHistory(daily) {
     : activeRows;
   const segmentEntries = mode === "costs"
     ? costSourcesInUse(activeRows)
-    : chartProviderSegmentsInUse(activeRows);
+    : chartTokenSegmentEntries(activeRows, state.chartBreakdownMode);
   const rawMax = Math.max(...rows.map((row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0)), mode === "costs" ? 0.01 : 1);
   const scale = mode === "costs" ? chartCostScale(rawMax) : chartTokenScale(rawMax);
-  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(state.usage?.local?.daily || []);
+  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(activeDashboardUsage()?.daily || []);
   els.overviewHistoryModeToggle.innerHTML = renderChartModeToggle();
+  if (els.overviewHistoryBreakdownToggle) {
+    els.overviewHistoryBreakdownToggle.hidden = mode === "costs";
+    els.overviewHistoryBreakdownToggle.innerHTML = mode === "costs" ? "" : renderChartBreakdownToggle();
+  }
   const visibleDays = Math.min(rows.length, isSlotSeries ? 96 : viewportWidth >= 1000 ? 72 : 48);
   const barGap = isSlotSeries ? 2 : 3;
   const rawBarWidth = (plotViewportWidth - barGap * Math.max(0, visibleDays - 1)) / Math.max(visibleDays, 1);
@@ -4536,9 +5381,10 @@ function renderOverviewHistory(daily) {
       chartHeight,
       xForRow: (index) => barX(index) + barWidth / 2,
       valueForRow: (row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0),
-      valueFormatter: (value) => mode === "costs" ? formatEuro(value) : formatTokens(value),
+      valueFormatter: (value) => historyBarValue(mode, value),
       lineColor: typeof segmentEntries[0] === "string" ? chartSourceColor(segmentEntries[0]) : chartSegmentColor(segmentEntries[0]),
-      pointRadius: 2.3
+      pointRadius: 2.3,
+      mode
     })
     : "";
 
@@ -4547,6 +5393,8 @@ function renderOverviewHistory(daily) {
       if (isSlotSeries) return "";
       const x = barX(index);
       const fullLabel = formatHistoryRowFullLabel(row);
+      const total = historyBarValue(mode, mode === "costs" ? row.totalEur : row.totalTokens);
+      const detail = chartHistoryDetail(row, mode);
       const rawSegments = mode === "costs"
         ? segmentEntries
           .map((id) => ({
@@ -4562,7 +5410,7 @@ function renderOverviewHistory(daily) {
       }));
       const visibleSegments = chartVisibleSegments(normalizedSegments, scale.max, chartHeight);
       let yCursor = axisY;
-      return visibleSegments
+      const segmentRects = visibleSegments
         .map((segment, segmentIndex) => {
           const h = segment.height;
           if (h <= 0) return "";
@@ -4572,6 +5420,7 @@ function renderOverviewHistory(daily) {
           const isOnlySegment = visibleSegments.length === 1;
           const isTopSegment = segmentIndex === visibleSegments.length - 1;
           const isBottomSegment = segmentIndex === 0;
+          const segmentDetail = state.chartBreakdownMode === "device" ? chartHistoryDetail(row, mode, segment.id) : "";
           const clipPath = isOnlySegment
             ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
             : isTopSegment
@@ -4583,12 +5432,11 @@ function renderOverviewHistory(daily) {
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}">
-              <title>${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatTokens(segment.totalTokens)}`)}</title>
-            </rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${mode === "costs" ? chartSourceColor(segment.id) : chartSegmentColor(segment)}" data-history-segment-label="${escapeHtml(segment.label)}" data-history-segment-value="${escapeHtml(historyBarValue(mode, mode === "costs" ? segment.totalEur : segment.totalTokens))}" data-history-detail="${escapeHtml(segmentDetail)}" aria-label="${escapeHtml(`${fullLabel} · ${segment.label} · ${mode === "costs" ? formatEuro(segment.totalEur) : formatNumber(segment.totalTokens)}`)}"></rect>
           `;
         })
         .join("");
+      return `<g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" data-history-detail="${escapeHtml(detail)}" aria-label="${escapeHtml(`${fullLabel} · ${total}${detail ? ` · ${detail}` : ""}`)}">${segmentRects}</g>`;
     })
     .join("");
   const tickFormatter = mode === "costs" ? formatChartEuro : formatTokens;
@@ -4612,7 +5460,7 @@ function renderOverviewHistory(daily) {
       </svg>
       <div class="overview-history-scroll">
         <div class="overview-history-canvas" style="width: ${width}px">
-          <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.overviewAria"))}" style="width: ${width}px">
+          <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(t("chart.svgAria"))}" style="width: ${width}px">
             ${gridLines}
             <line x1="0" y1="${axisY}" x2="${width}" y2="${axisY}" stroke="var(--line)"></line>
             ${timeline}
@@ -4631,7 +5479,10 @@ function normalizeCodexProvider(codex) {
   const last24hTokens = subtractTokenTotals(codex?.totals?.last24h, codex?.spark?.totals?.last24h);
   const allTimeTokens = subtractTokenTotals(codex?.totals?.allTime, codex?.spark?.totals?.allTime);
   const limitRows = normalizeLimitRows(codex?.limits);
-  const limitUpdatedAt = codex?.liveRateLimits?.updatedAt || codex?.latest?.timestamp;
+  const observedLimitTimes = limitRows.map((row) => row.observedAt).filter((value) => Number.isFinite(Date.parse(value)));
+  const limitUpdatedAt = observedLimitTimes.length
+    ? observedLimitTimes.reduce((latest, value) => Date.parse(value) > Date.parse(latest) ? value : latest)
+    : codex?.liveRateLimits?.status === "live" ? codex.liveRateLimits.updatedAt : null;
   const creditRows = normalizeCreditRows(codex?.creditRows, codex?.credits);
   const rawPlanType = codex?.planType || codex?.latest?.planType || null;
   const subscription = normalizeSubscription(codex?.subscription, {
@@ -4956,7 +5807,7 @@ function normalizeLocalProvider(id, provider) {
   const limitsUpdatedAt =
     id === "claudeCode"
       ? provider?.limitsUpdatedAt
-      : (id === "copilot" || id === "glm") && hasLimitData
+      : ["copilot", "glm", "kimi"].includes(id) && hasLimitData
         ? provider?.limitsUpdatedAt || provider?.quotaStatus?.updatedAt
         : null;
   const updatedAt = limitsUpdatedAt || provider?.latest?.timestamp;
@@ -5007,6 +5858,7 @@ function normalizeLocalProvider(id, provider) {
     primaryLabel: t("limits.fiveHour"),
     secondaryLabel: t("limits.weekly"),
     todayTokens: provider?.totals?.last24h?.totalTokens,
+    weekTokens: provider?.totals?.last7d?.totalTokens,
     allTimeTokens: provider?.totals?.allTime?.totalTokens,
     apiTokens: provider?.totals?.last24h?.totalTokens,
     configuredSource,
@@ -5132,7 +5984,10 @@ function normalizeCreditRow(row) {
     percent: Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : null,
     valueLabel: creditValueLabel(row),
     resetsAt: row.resetsAt || null,
-    resetLabel: row.resetLabel || null
+    resetLabel: row.resetLabel || null,
+    balance: row.balance ?? null,
+    expiresOn: row.expiresOn || null,
+    expirySource: row.expirySource || null
   };
 }
 
@@ -5180,6 +6035,7 @@ function normalizeLimitRow(row) {
           : Math.max(0, 100 - usedPercent),
     valueLabel: valueIsDetail ? statusValueLabel : rawValueLabel || statusValueLabel,
     windowMinutes,
+    observedAt: row.observedAt || null,
     resetsAt,
     resetLabel
   };
@@ -5388,6 +6244,7 @@ function normalizeApiProvider(id, provider) {
 function providerHasUsage(provider) {
   const hasActiveUsage = [
     provider.todayTokens,
+    provider.weekTokens,
     provider.apiTokens,
     provider.cost
   ].some((value) => Number(value || 0) > 0);
@@ -5554,6 +6411,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
+      ${provider.id === "claudeCode" ? `<p class="provider-note">${escapeHtml(t("providers.messages.claudeLogTokensHelp"))}</p>` : ""}
       ${footRows.length ? `
         <div class="provider-foot">
           ${footRows.map(renderProviderFootRow).join("")}
@@ -5862,7 +6720,8 @@ function renderProviderFootRow(row) {
 function renderClaudeCreditHint(provider) {
   if (provider.id !== "claudeCode" || provider.creditRows?.length) return "";
   if (provider.subscription?.planType || provider.subscriptionConnectionAction?.rereadOnly) return "";
-  const status = provider.claudeBrowserCredits?.status || "missing";
+  if (!provider.claudeBrowserCredits) return "";
+  const status = provider.claudeBrowserCredits.status;
   if (status === "available") return "";
   const hint = t("providers.messages.claudeBrowserLoginHint");
   return `
@@ -5883,7 +6742,11 @@ function renderCreditRow(row, accent) {
   const value =
     row.valueLabel ||
     (row.amount === null || row.amount === undefined ? "--" : formatMoney(row.amount, row.currency || "EUR"));
-  const detail = row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
+  const codexBalance = row.key === "codexCredits" && Number.isFinite(row.balance);
+  const detail = codexBalance ? row.expiresOn
+    ? t("credits.expiryManual", { date: new Date(`${row.expiresOn}T12:00:00`).toLocaleDateString(state.language) })
+    : t("credits.expiryUnknown")
+    : row.resetLabel || (row.resetsAt ? t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }) : "");
   const bar =
     row.percent === null || row.percent === undefined
       ? ""
@@ -5898,8 +6761,37 @@ function renderCreditRow(row, accent) {
       </div>
       ${bar}
       ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
+      ${codexBalance ? `<button type="button" class="credit-expiry-edit text-button ghost" data-credit-expiry>${escapeHtml(t("credits.expiryEdit"))}</button>` : ""}
     </div>
   `;
+}
+
+async function openCreditExpiry(event) {
+  if (!event.target.closest("[data-credit-expiry]")) return;
+  const dialog = document.getElementById("creditExpiryDialog");
+  const status = document.getElementById("creditExpiryStatus");
+  const save = document.getElementById("creditExpirySave");
+  save.disabled = true; status.textContent = ""; dialog.showModal();
+  try {
+    const value = await fetchJson("/api/credits/codex-expiry");
+    dialog.dataset.context = value.context || "";
+    document.getElementById("creditExpiryDate").value = value.expiresOn || "";
+    save.disabled = !value.context;
+    if (!value.context) status.textContent = t("credits.expiryError");
+  } catch { status.textContent = t("credits.expiryError"); }
+}
+
+async function saveCreditExpiry(event) {
+  event.preventDefault();
+  const dialog = document.getElementById("creditExpiryDialog");
+  const save = document.getElementById("creditExpirySave");
+  save.disabled = true;
+  try {
+    await fetchJson("/api/credits/codex-expiry", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ context: dialog.dataset.context, expiresOn: document.getElementById("creditExpiryDate").value || null }) });
+    dialog.close(); await loadUsage();
+  } catch { document.getElementById("creditExpiryStatus").textContent = t("credits.expiryError"); }
+  finally { save.disabled = false; }
 }
 
 function renderLimitBars(provider) {
@@ -5907,16 +6799,74 @@ function renderLimitBars(provider) {
     ? provider.limitRows
     : normalizeLimitRows({ fiveHour: provider.fiveHour, weekly: provider.weekly });
   if (!rows.length) return "";
-  const mode = normalizeUsageProjectionMode(state.usageProjectionMode);
+  const mode = normalizeUsageProjectionMode(state.usageProjectionModes[provider.id] || state.usageProjectionMode);
   return `
     <div class="limit-bars limit-bars-mode-${escapeHtml(mode)}${rows.length > 1 ? " limit-bars-grid" : ""}">
-      ${renderUsageProjectionModeToggle(mode)}
-      ${rows.map((row) => renderLimitBar(row, provider.accent, mode)).join("")}
+      ${renderUsageProjectionModeToggle(mode, provider.id)}
+      ${rows.map((row) => `${renderLimitBar(row, provider.accent, mode)}${renderQuotaPaceCard(provider, row)}`).join("")}
     </div>
   `;
 }
 
-function renderUsageProjectionModeToggle(activeMode) {
+function renderQuotaPaceCard(provider, row) {
+  if (!isWeeklyLimit(row) || !["codex", "claudeCode"].includes(provider.id)) return "";
+  const rawKey = String(row.key || "").replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase();
+  const key = rawKey.startsWith("fable") ? rawKey : "weekly";
+  const card = `${provider.id}:${key}`;
+  const minutes = state.quotaPaceWindowMinutesByCard[card] || 120;
+  const windows = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]];
+  const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
+  const label = row.label;
+  let result = t("limits.recentPace.collecting");
+  let timeToLimit = "";
+  if (pace?.status === "flat") result = t("limits.recentPace.flat");
+  if (pace?.status === "stale") result = t("limits.recentPace.stale");
+  if (pace?.status === "changed") result = t("limits.recentPace.changed");
+  if (["risk", "safe", "possible"].includes(pace?.status) && pace.hitAt) {
+    timeToLimit = t("limits.recentPace.timeToLimit", {
+      duration: formatDurationCompact(Date.parse(pace.hitAt) - Date.now())
+    });
+  }
+  if (pace?.status === "risk" && pace.hitAt && pace.resetsAt) {
+    result = t("limits.pace.hitBeforeReset", {
+      time: formatDateTime(pace.hitAt),
+      duration: formatDurationCompact(Date.parse(pace.resetsAt) - Date.parse(pace.hitAt))
+    });
+  }
+  if (pace?.status === "safe" && pace.resetsAt && pace.observedMinutes) {
+    const remaining = Math.max(0, 100 - row.usedPercent - pace.deltaPercent *
+      ((Date.parse(pace.resetsAt) - Date.now()) / 60_000 / pace.observedMinutes));
+    result = t("limits.pace.remaining", { percent: formatPacePercent(remaining) });
+  }
+  if (pace?.status === "possible") result = t("limits.recentPace.possible");
+  const measured = pace?.deltaPercent !== undefined && pace?.observedMinutes
+    ? t("limits.recentPace.measured", {
+        percent: new Intl.NumberFormat(state.language || "en", { maximumFractionDigits: 1 }).format(pace.deltaPercent),
+        duration: formatDurationCompact(pace.observedMinutes * 60_000)
+      })
+    : "";
+  return `
+    <div class="quota-pace-card quota-pace-${escapeHtml(pace?.status || "collecting")}">
+      <div class="quota-pace-head">
+        <strong>${escapeHtml(t("limits.recentPace.title"))} · ${escapeHtml(label)}</strong>
+        <div class="quota-pace-windows" role="group" aria-label="${escapeHtml(t("limits.recentPace.title"))}">
+          ${windows.map(([value, text]) => `
+            <button type="button" class="chart-mode-btn${minutes === value ? " active" : ""}"
+              data-quota-pace-window="${value}" data-quota-pace-card="${escapeHtml(card)}" aria-pressed="${minutes === value}">${text}</button>
+          `).join("")}
+        </div>
+      </div>
+      ${measured ? `<p class="quota-pace-measured">${escapeHtml(measured)}</p>` : ""}
+      ${timeToLimit ? `<p class="quota-pace-result">${escapeHtml(timeToLimit)}</p>` : ""}
+      <p class="${timeToLimit ? "quota-pace-note" : "quota-pace-result"}">${escapeHtml(result)}</p>
+      ${["risk", "safe", "possible"].includes(pace?.status)
+        ? `<p class="quota-pace-note">${escapeHtml(t("limits.recentPace.note"))}</p>`
+        : ""}
+    </div>
+  `;
+}
+
+function renderUsageProjectionModeToggle(activeMode, providerId) {
   return `
     <div class="limit-bars-head">
       <span>${escapeHtml(t("limits.gauge.title"))}</span>
@@ -5928,6 +6878,7 @@ function renderUsageProjectionModeToggle(activeMode) {
               type="button"
               class="chart-mode-btn usage-projection-mode-btn${active ? " active" : ""}"
               data-usage-projection-mode="${mode}"
+              data-usage-projection-provider="${escapeHtml(providerId)}"
               aria-pressed="${active}"
             >
               ${escapeHtml(t(`limits.view.${mode}`))}
@@ -5939,7 +6890,7 @@ function renderUsageProjectionModeToggle(activeMode) {
   `;
 }
 
-function renderLimitBar(row, accent, mode = "tachometer") {
+function renderLimitBar(row, accent, mode = "bar") {
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
   const remaining = Math.round(row.remainingPercent ?? Math.max(0, 100 - used));
@@ -5997,7 +6948,7 @@ function appendResetTime(label, resetsAt, limit = null) {
   return `${text} (${time})`;
 }
 
-function renderLimitProjectionVisualization(row, accent, mode = "tachometer") {
+function renderLimitProjectionVisualization(row, accent, mode = "bar") {
   return normalizeUsageProjectionMode(mode) === "bar"
     ? renderLimitProjectionBar(row, accent)
     : renderLimitProjectionGauge(row, accent);
@@ -6065,6 +7016,7 @@ function renderLimitProjectionBar(row, accent) {
   const clamped = hasProjection ? Math.max(0, Math.min(LIMIT_GAUGE_MAX_PERCENT, projected)) : 0;
   const gaugeLeft = (clamped / LIMIT_GAUGE_MAX_PERCENT) * 100;
   const status = hasProjection ? limitProjectionStatus(projected) : "unknown";
+  const calloutAlignment = clamped <= 12 ? "start" : clamped >= LIMIT_GAUGE_MAX_PERCENT - 12 ? "end" : "center";
   const value = inactive
     ? t("limits.leftValue", { percent: 100 })
     : hasProjection
@@ -6086,11 +7038,18 @@ function renderLimitProjectionBar(row, accent) {
     >
       <div class="limit-gauge-head">
         <span>${escapeHtml(row.label)}</span>
-        <strong>${escapeHtml(value)}</strong>
+        ${hasProjection ? "" : `<strong>${escapeHtml(value)}</strong>`}
       </div>
-      <div class="limit-gauge-track" aria-hidden="true">
-        <span class="limit-gauge-target"></span>
-        <span class="limit-gauge-needle"></span>
+      <div class="limit-gauge-track-wrap">
+        ${
+          hasProjection
+            ? `<strong class="limit-gauge-projection-callout limit-gauge-projection-callout-${calloutAlignment}">${escapeHtml(value)}</strong>`
+            : ""
+        }
+        <div class="limit-gauge-track" aria-hidden="true">
+          <span class="limit-gauge-target"></span>
+          <span class="limit-gauge-needle"></span>
+        </div>
       </div>
       <div class="limit-gauge-scale" aria-hidden="true">
         <span>0%</span>
@@ -6283,6 +7242,7 @@ function formatDurationCompact(ms) {
   const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
   const minutes = totalMinutes % 60;
   if (days > 0) return t("limits.duration.daysHours", { days, hours });
+  if (hours > 0 && minutes === 0) return t("settings.notifications.nativeDurationHours", { hours });
   if (hours > 0) return t("limits.duration.hoursMinutes", { hours, minutes });
   return t("limits.duration.minutes", { minutes });
 }
@@ -6297,9 +7257,13 @@ function limitStatusAccent(status, fallback) {
 }
 
 function renderSummary(providers, local, filteredDaily = []) {
-  const withFiveHour = providers.filter((p) => p.fiveHour);
+  const withFiveHour = providers.filter(providerHasUsage)
+    .map((provider) => provider.limitRows?.find(isFiveHourLimit) || provider.fiveHour)
+    .filter((limit) => limit && limit.status !== "unavailable");
   const withWeekly = providers.filter((p) => p.weekly);
-  els.fiveHourOpen.textContent = percentAverage(withFiveHour.map((p) => p.fiveHour.remainingPercent));
+  const fiveHourTile = summaryMetricTileById("five-hour");
+  if (fiveHourTile) fiveHourTile.hidden = withFiveHour.length === 0;
+  els.fiveHourOpen.textContent = percentAverage(withFiveHour.map((limit) => limit.remainingPercent));
   els.weeklyOpen.textContent = percentAverage(withWeekly.map((p) => p.weekly.remainingPercent));
   if (els.tokensRangeLabel) {
     els.tokensRangeLabel.textContent = t("summary.tokensToday");
@@ -6977,7 +7941,10 @@ function renderPricing(local, rangeRows = [], providers = []) {
 
   const todayUsage = billingTotalsForDaily(dailyRowsForToday(local));
   const totalUsage = billingTotalsForWindow(local, "allTime");
-  const rows = pricingModels.map((price) => ({
+  const query = state.pricingModelFilter.trim().toLowerCase();
+  const rows = pricingModels.filter((price) =>
+    [price.model, ...(price.aliases || [])].some((name) => name.toLowerCase().includes(query))
+  ).map((price) => ({
     price,
     today: estimateCost(todayUsage, price),
     total: estimateCost(totalUsage, price)
@@ -6998,7 +7965,7 @@ function renderPricing(local, rangeRows = [], providers = []) {
               </div>
             </div>
           </td>
-          <td class="score-cell">${renderQualityScore(price)}</td>
+          <td class="score-cell">${renderBenchmarkScore(price)}</td>
           <td>${renderLimitCell(price)}</td>
           <td class="numeric">${formatUsdPerM(price.inputUsd)}</td>
           <td class="numeric">${formatCacheRate(price)}</td>
@@ -7010,14 +7977,14 @@ function renderPricing(local, rangeRows = [], providers = []) {
         </tr>
       `;
     })
-    .join("");
+    .join("") || `<tr><td colspan="10" class="pricing-empty" role="status">${escapeHtml(t("pricing.modelFilter.empty"))}</td></tr>`;
 
   els.pricingMeta.textContent = t("pricing.meta", {
     catalogVersion: PRICING_CATALOG_VERSION,
     modelCount: formatNumber(pricingModels.length),
     fxDate: FX_DATE,
     pricingDate: PRICING_DATE,
-    scoreDate: SCORE_DATE
+    scoreDate: BENCHMARK_DATE
   });
 }
 
@@ -7309,7 +8276,7 @@ function pricingSortValue(row, key) {
   return (
     {
       model: `${price.provider} ${price.model}`,
-      score: sortNumber(modelQualityScores[price.model]),
+      score: sortNumber(modelBenchmarkScores[price.model]?.score),
       region: priceRegion(price),
       limits: sortNumber(price.contextTokens ?? price.maxOutputTokens),
       input: sortNumber(price.inputUsd),
@@ -7328,6 +8295,7 @@ function priceRegion(price) {
 }
 
 function sortNumber(value) {
+  if (value == null) return sortMissing();
   const number = Number(value);
   return Number.isFinite(number) ? { value: number, missing: false } : sortMissing();
 }
@@ -7400,14 +8368,15 @@ function updatePricingSortButtons() {
   }
 }
 
-function renderQualityScore(price) {
-  const score = modelQualityScores[price.model];
-  if (!score) return "--";
+function renderBenchmarkScore(price) {
+  const benchmark = modelBenchmarkScores[price.model];
+  if (!benchmark) return "--";
   return `
-    <div class="score-meter" title="${escapeHtml(t("pricing.qualityScoreTitle", { scoreDate: SCORE_DATE, score }))}">
-      <span class="score-track"><span class="score-fill" style="width: ${score}%"></span></span>
-      <strong>${score}</strong>
-    </div>
+    <a class="score-meter" href="${benchmark.sourceUrl}" target="_blank" rel="noreferrer"
+      title="${escapeHtml(t("pricing.qualityScoreTitle", { scoreDate: benchmark.measuredOn, score: benchmark.score }))} · ${escapeHtml(benchmark.testedModel)} · #${formatNumber(benchmark.rank)}">
+      <strong>${formatNumber(benchmark.score)} <small>Elo</small></strong>
+      <span>#${formatNumber(benchmark.rank)}</span>
+    </a>
   `;
 }
 
@@ -7490,6 +8459,7 @@ function estimateCost(usage, price) {
 function estimateTokenBucket(tokens, rateUsdPerMillion) {
   const count = Number(tokens || 0);
   if (!count) return { usd: 0, costed: true };
+  if (rateUsdPerMillion == null) return { usd: 0, costed: false };
   const rate = Number(rateUsdPerMillion);
   if (!Number.isFinite(rate)) return { usd: 0, costed: false };
   return { usd: (count * rate) / MILLION, costed: true };
@@ -7596,6 +8566,7 @@ function selectedRangeInsightDetail() {
 }
 
 function renderBreakdownWindowSummary(daily, breakdownMode) {
+  if (["device", "account"].includes(breakdownMode)) return renderAttributionWindowSummary(daily, breakdownMode);
   if (breakdownMode === "model") return renderModelWindowSummary(daily);
   return renderProviderWindowSummary(daily, breakdownMode);
 }
@@ -7964,6 +8935,7 @@ function formatInsightValue(value, mode) {
 }
 
 function renderChart(daily, scrollState = captureChartScrollState()) {
+  hideHistoryBarTooltip();
   if (!daily.length) {
     els.chart.innerHTML = "";
     els.chartLegend.innerHTML = "";
@@ -7981,16 +8953,18 @@ function renderChart(daily, scrollState = captureChartScrollState()) {
     clipPrefix: "barClip",
     scrollState,
     tickFormatter: formatTokens,
+    mode: "tokens",
     segmentsForRow: (row) => chartSegmentsForDay(row, segmentEntries),
     segmentValue: (segment) => segment.totalTokens,
     segmentLabel: (segment) => segment.label,
-    segmentTitleValue: (segment) => formatTokens(segment.totalTokens),
+    segmentTitleValue: (segment) => formatNumber(segment.totalTokens),
     segmentColor: chartSegmentColor
   });
   els.chartLegend.innerHTML = renderChartLegend(segmentEntries);
 }
 
 function renderCostChart(daily, scrollState = captureChartScrollState()) {
+  hideHistoryBarTooltip();
   const costDaily = buildCostDaily(daily);
   const rowsWithCost = costDaily.filter((row) => row.totalEur > 0);
   if (!rowsWithCost.length) {
@@ -8011,6 +8985,7 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
     clipPrefix: "costBarClip",
     scrollState,
     tickFormatter: formatChartEuro,
+    mode: "costs",
     segmentsForRow: (day) =>
       sourceIds
         .map((id) => ({
@@ -8029,6 +9004,50 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
 
 function normalizedHistoryRowValue(row, segmentValue, segmentsForRow) {
   return (segmentsForRow(row) || []).reduce((sum, segment) => sum + Number(segmentValue(segment) || 0), 0);
+}
+
+function historyBarValue(mode, value) {
+  return `${t(`chart.mode.${mode}`)}: ${mode === "costs" ? formatEuro(value) : formatNumber(value)}`;
+}
+
+let historyBarTooltip;
+
+function showHistoryBarTooltip(event) {
+  const bar = event.target.closest?.("[data-history-label]");
+  if (!bar) {
+    hideHistoryBarTooltip();
+    return;
+  }
+  if (!historyBarTooltip) {
+    historyBarTooltip = document.createElement("div");
+    historyBarTooltip.className = "history-bar-tooltip";
+    historyBarTooltip.setAttribute("aria-hidden", "true");
+    historyBarTooltip.innerHTML = '<strong class="history-bar-tooltip-date"></strong><span class="history-bar-tooltip-value"></span><span class="history-bar-tooltip-segment" hidden><span class="history-bar-tooltip-swatch"></span><span class="history-bar-tooltip-segment-value"></span></span><span class="history-bar-tooltip-detail" hidden></span>';
+    document.body.appendChild(historyBarTooltip);
+  }
+  historyBarTooltip.querySelector(".history-bar-tooltip-date").textContent = bar.dataset.historyLabel;
+  historyBarTooltip.querySelector(".history-bar-tooltip-value").textContent = `${t("chart.breakdown.total")} · ${bar.dataset.historyValue}`;
+  const segment = event.target.closest?.("[data-history-segment-label]");
+  const segmentLine = historyBarTooltip.querySelector(".history-bar-tooltip-segment");
+  segmentLine.hidden = !segment;
+  if (segment) {
+    historyBarTooltip.querySelector(".history-bar-tooltip-swatch").style.backgroundColor = segment.getAttribute("fill");
+    historyBarTooltip.querySelector(".history-bar-tooltip-segment-value").textContent = `${segment.dataset.historySegmentLabel} · ${segment.dataset.historySegmentValue}`;
+  }
+  const detailLine = historyBarTooltip.querySelector(".history-bar-tooltip-detail");
+  detailLine.textContent = segment?.dataset.historyDetail || bar.dataset.historyDetail || "";
+  detailLine.hidden = !detailLine.textContent;
+  historyBarTooltip.hidden = false;
+  const bounds = bar.getBoundingClientRect();
+  const x = event.type === "focusin" ? bounds.left + bounds.width / 2 : event.clientX;
+  const y = event.type === "focusin" ? bounds.top : event.clientY;
+  const tooltipBounds = historyBarTooltip.getBoundingClientRect();
+  historyBarTooltip.style.left = `${Math.max(8, Math.min(x + 12, window.innerWidth - tooltipBounds.width - 8))}px`;
+  historyBarTooltip.style.top = `${y >= tooltipBounds.height + 18 ? y - tooltipBounds.height - 12 : y + 16}px`;
+}
+
+function hideHistoryBarTooltip() {
+  if (historyBarTooltip) historyBarTooltip.hidden = true;
 }
 
 function svgNumber(value) {
@@ -8064,16 +9083,18 @@ function historyTimelineAreaPath(points, axisY) {
   ].join(" ");
 }
 
-function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, valueForRow, valueFormatter, lineColor, pointRadius = 2.5 }) {
+function renderHistorySlotTimeline({ rows, max, axisY, chartHeight, xForRow, valueForRow, valueFormatter, lineColor, pointRadius = 2.5, mode = "tokens" }) {
   const points = historyTimelinePoints(rows, max, axisY, chartHeight, xForRow, valueForRow);
   const linePath = historyTimelineLinePath(points);
   const areaPath = historyTimelineAreaPath(points, axisY);
   const safeLineColor = escapeHtml(lineColor || chartSourceColor("local"));
   const dots = points
     .map((point) => {
-      const title = `${formatHistoryRowFullLabel(point.row)} · ${valueFormatter(point.value)}`;
+      const label = formatHistoryRowFullLabel(point.row);
+      const value = valueFormatter(point.value);
+      const detail = chartHistoryDetail(point.row, mode);
       const radius = point.value > 0 ? pointRadius : Math.max(1.4, pointRadius * 0.58);
-      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}"><title>${escapeHtml(title)}</title></circle>`;
+      return `<circle class="history-slot-dot${point.value > 0 ? "" : " is-empty"}" cx="${point.x}" cy="${point.y}" r="${svgNumber(radius)}" fill="${safeLineColor}" tabindex="0" data-history-label="${escapeHtml(label)}" data-history-value="${escapeHtml(value)}" data-history-detail="${escapeHtml(detail)}" aria-label="${escapeHtml(`${label} · ${value}${detail ? ` · ${detail}` : ""}`)}"></circle>`;
     })
     .join("");
   return `
@@ -8090,6 +9111,7 @@ function renderStackedHistoryChart({
   clipPrefix,
   scrollState,
   tickFormatter,
+  mode,
   segmentsForRow,
   segmentValue,
   segmentLabel,
@@ -8131,9 +9153,10 @@ function renderStackedHistoryChart({
       chartHeight,
       xForRow: rowCenterX,
       valueForRow: (row) => normalizedHistoryRowValue(row, segmentValue, segmentsForRow),
-      valueFormatter: (value) => segmentTitleValue({ totalTokens: value, totalEur: value }),
+      valueFormatter: (value) => historyBarValue(mode, value),
       lineColor: timelineSegment ? segmentColor(timelineSegment) : chartSourceColor("local"),
-      pointRadius: 3
+      pointRadius: 3,
+      mode
     })
     : "";
   const timelineLabelStep = isSlotSeries ? Math.max(1, Math.ceil(rows.length / 8)) : 1;
@@ -8152,6 +9175,8 @@ function renderStackedHistoryChart({
       const x = barX(index);
       const label = formatHistoryRowTick(row);
       const fullLabel = formatHistoryRowFullLabel(row);
+      const total = historyBarValue(mode, mode === "costs" ? row.totalEur : row.totalTokens);
+      const detail = chartHistoryDetail(row, mode);
       const rawSegments = segmentsForRow(row);
       const normalizedSegments = rawSegments.map((segment) => ({
         ...segment,
@@ -8169,6 +9194,7 @@ function renderStackedHistoryChart({
           const isOnlySegment = visibleSegments.length === 1;
           const isTopSegment = segmentIndex === visibleSegments.length - 1;
           const isBottomSegment = segmentIndex === 0;
+          const segmentDetail = state.chartBreakdownMode === "device" ? chartHistoryDetail(row, mode, segment.id) : "";
           const clipPath = isOnlySegment
             ? roundedRectPath(x, yCursor, barWidth, h, radius, radius, radius, radius)
             : isTopSegment
@@ -8180,14 +9206,12 @@ function renderStackedHistoryChart({
             <clipPath id="${clipId}">
               <path d="${clipPath}"></path>
             </clipPath>
-            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}">
-              <title>${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}</title>
-            </rect>
+            <rect x="${x}" y="${yCursor}" width="${barWidth}" height="${h}" clip-path="url(#${clipId})" fill="${segmentColor(segment)}" data-history-segment-label="${escapeHtml(segmentLabel(segment))}" data-history-segment-value="${escapeHtml(historyBarValue(mode, segmentValue(segment)))}" data-history-detail="${escapeHtml(segmentDetail)}" aria-label="${escapeHtml(`${fullLabel} · ${segmentLabel(segment)} · ${segmentTitleValue(segment)}`)}"></rect>
           `;
         })
         .join("");
       return `
-        ${segmentRects}
+        <g class="history-day-bar" tabindex="0" data-history-label="${escapeHtml(fullLabel)}" data-history-value="${escapeHtml(total)}" data-history-detail="${escapeHtml(detail)}" aria-label="${escapeHtml(`${fullLabel} · ${total}${detail ? ` · ${detail}` : ""}`)}">${segmentRects}</g>
         <text x="${x + barWidth / 2}" y="${dateLabelY}" text-anchor="middle" class="axis-label">${label}</text>
       `;
     })
@@ -8689,6 +9713,7 @@ function chartSourcesInUse(daily) {
 }
 
 function chartTokenSegmentEntries(daily, mode) {
+  if (["device", "account"].includes(mode)) return chartAttributionEntries(daily, mode);
   if (mode === "model") return chartModelSegmentsInUse(daily);
   if (mode === "provider") return chartProviderSegmentsInUse(daily);
   if (chartHasProviderBreakdown(daily)) return chartProviderSegmentsInUse(daily);
@@ -8704,6 +9729,143 @@ function chartTokenSegmentEntries(daily, mode) {
   ];
 }
 
+function chartAttributionLabel(row, dimension) {
+  if (dimension === "account" && (row.id === "unknown" || ["unknown", "conflict"].includes(row.quality))) return t("chart.attribution.unknownAccount");
+  if (dimension === "device" && (row.id === "shared" || row.quality === "ambiguous")) return t("chart.attribution.sharedDevice");
+  if (row.id === "unknown" || row.quality === "unknown") return t("chart.attribution.unknownDevice");
+  return row.label || t(dimension === "account" ? "chart.attribution.unknownAccount" : "chart.attribution.unknownDevice");
+}
+
+function chartAttributionRows(row, dimension) {
+  const total = Math.max(0, Number(row?.totalTokens) || 0);
+  if (!total) return [];
+  const raw = row?.attribution?.[dimension === "account" ? "accounts" : "devices"];
+  const values = (Array.isArray(raw) ? raw : []).filter((entry) => entry && typeof entry.id === "string" && Number.isFinite(entry.totalTokens) && entry.totalTokens > 0);
+  const sum = values.reduce((value, entry) => value + entry.totalTokens, 0);
+  // An absent/inconsistent breakdown must not assign measured tokens to a
+  // guessed installation or account. Preserve the bar total in an unknown row.
+  if (sum > total + 0.01) return [{ id: "unknown", quality: "unknown", label: null, totalTokens: total }];
+  const result = values.map((entry) => ({ ...entry }));
+  if (sum < total) {
+    const unknown = result.find((entry) => entry.id === "unknown");
+    if (unknown) unknown.totalTokens += total - sum;
+    else result.push({ id: "unknown", quality: "unknown", label: null, totalTokens: total - sum });
+  }
+  return result;
+}
+
+function chartAttributionDetail(row, dimension) {
+  if (dimension === "account") {
+    const devices = chartAttributionRows({ totalTokens: row.totalTokens, attribution: { devices: row.devices } }, "device");
+    return devices.map((device) => `${chartAttributionLabel(device, "device")}: ${formatTokens(device.totalTokens)}`).join(" · ");
+  }
+  if (row.quality === "ambiguous" || row.id === "shared") {
+    const observed = (Array.isArray(row.observedOn) ? row.observedOn : []).map((device) => device.label).filter(Boolean);
+    return observed.length ? observed.join(" · ") : t("chart.attribution.sharedDeviceHelp");
+  }
+  return t(row.quality === "observed" ? "chart.attribution.observed" : "chart.attribution.unknownDevice");
+}
+
+function chartAttributionEntries(daily, dimension) {
+  const groups = new Map();
+  for (const day of Array.isArray(daily) ? daily : []) {
+    for (const row of chartAttributionRows(day, dimension)) {
+      let group = groups.get(row.id);
+      if (!group) {
+        group = { ...row, totalTokens: 0, devices: new Map(), observedOn: new Map(), models: new Map() };
+        groups.set(row.id, group);
+      }
+      group.totalTokens += row.totalTokens;
+      if (dimension === "device") {
+        for (const model of chartAttributionModelRows(row)) {
+          const key = JSON.stringify([model.sourceId, model.model]);
+          const existing = group.models.get(key);
+          group.models.set(key, { ...model, totalTokens: (existing?.totalTokens || 0) + model.totalTokens });
+        }
+      }
+      if (row.quality === "conflict") group.quality = "conflict";
+      for (const device of Array.isArray(row.devices) ? row.devices : []) {
+        if (!device?.id || !Number.isFinite(device.totalTokens)) continue;
+        const existing = group.devices.get(device.id);
+        group.devices.set(device.id, { ...device, totalTokens: (existing?.totalTokens || 0) + device.totalTokens });
+      }
+      for (const device of Array.isArray(row.observedOn) ? row.observedOn : []) {
+        if (device?.id) group.observedOn.set(device.id, device);
+      }
+    }
+  }
+  const colorIds = chartAttributionKnownIds(dimension, [...groups.keys()]);
+  return [...groups.values()].map((group) => {
+    const row = { ...group, devices: [...group.devices.values()], observedOn: [...group.observedOn.values()],
+      models: [...group.models.values()].sort((a, b) => b.totalTokens - a.totalTokens || String(a.model || "").localeCompare(String(b.model || ""))) };
+    return { ...row, id: `${dimension}:${row.id}`, attributionId: row.id, dimension, type: "attribution", markId: null,
+      label: chartAttributionLabel(row, dimension), detail: chartAttributionDetail(row, dimension), color: chartAttributionColor(row, dimension, colorIds) };
+  }).sort((left, right) => right.totalTokens - left.totalTokens || left.id.localeCompare(right.id));
+}
+
+function chartAttributionKnownIds(dimension, extraIds = []) {
+  const usage = state.usage || {};
+  const key = dimension === "account" ? "accounts" : "devices";
+  const allTime = usage.local?.attribution?.[key];
+  const rows = Array.isArray(allTime) ? allTime
+    : (usage.local?.daily || []).flatMap((day) => day.attribution?.[key] || []);
+  const ids = new Set([...extraIds, ...rows.map((row) => row.id)]);
+  if (dimension === "device") {
+    const sync = usage.deviceSync || {};
+    ids.add(sync.deviceId);
+    for (const device of [...(sync.devices || []), ...(sync.peers || []), ...rows.flatMap((row) => row.observedOn || [])]) ids.add(device.id);
+  }
+  return [...ids].filter((id) => typeof id === "string" && id && !["unknown", "shared"].includes(id)).sort();
+}
+
+function chartAttributionColor(row, dimension, knownIds = chartAttributionKnownIds(dimension, [row.id])) {
+  if (row.id === "unknown" || ["unknown", "conflict"].includes(row.quality)) return "#89918c";
+  if (row.id === "shared" || row.quality === "ambiguous") return "#b07a34";
+  // Use the complete installation/all-time account catalog, never the current
+  // date-filter subset or token ranking, so refreshes preserve category colors.
+  const index = Math.max(0, knownIds.indexOf(row.id));
+  return CHART_ATTRIBUTION_PALETTE[index % CHART_ATTRIBUTION_PALETTE.length];
+}
+
+function renderAttributionTotalBars(daily, dimension) {
+  const entries = chartAttributionEntries(daily, dimension);
+  if (!entries.length) return "--";
+  const total = entries.reduce((sum, entry) => sum + entry.totalTokens, 0);
+  const max = Math.max(...entries.map((entry) => entry.totalTokens), 1);
+  return `<div class="source-bars-title"><span>${escapeHtml(t(`chart.breakdown.${dimension}`))}</span><strong>${formatTokens(total)}</strong></div>` + entries.slice(0, 5).map((entry) =>
+    `<div class="source-bar-row" title="${escapeHtml(`${entry.label} · ${entry.detail}`)}"><span class="source-bar-name">${escapeHtml(entry.label)}</span><span class="source-bar-track" aria-hidden="true"><span class="source-bar-fill" style="--bar-width: ${Math.max(.8, entry.totalTokens / max * 100)}; --accent: ${entry.color}"></span></span><span class="source-bar-value">${formatTokens(entry.totalTokens)}</span></div>`
+  ).join("");
+}
+
+function renderAttributionWindowSummary(daily, dimension) {
+  const entries = chartAttributionEntries(daily, dimension);
+  if (!entries.length) return "";
+  const total = entries.reduce((sum, entry) => sum + entry.totalTokens, 0);
+  return `<div class="model-window-summary attribution-window-summary"><div class="model-window-head"><strong>${escapeHtml(t(`chart.breakdown.${dimension}`))}</strong><span>${escapeHtml(chartRangeLabel(state.chartTimeFilter))}</span></div>
+    <p class="attribution-note">${escapeHtml(t("chart.attribution.observedHelp"))}${dimension === "account" ? ` ${escapeHtml(t("chart.attribution.accountHelp"))}` : ""}</p>
+    <div class="model-window-table-wrap"><table class="model-window-table attribution-table"><thead><tr><th scope="col">${escapeHtml(t(`chart.breakdown.${dimension}`))}</th><th scope="col">${escapeHtml(t("chart.providers.columns.tokens"))}</th><th scope="col">${escapeHtml(t("chart.providers.columns.share"))}</th><th scope="col">${escapeHtml(t(dimension === "account" ? "chart.attribution.observedOn" : "chart.attribution.evidence"))}</th></tr></thead><tbody>${entries.map((entry) =>
+      `<tr><td><span class="chart-legend-swatch" style="background: ${entry.color}"></span>${escapeHtml(entry.label)}</td><td>${formatTokens(entry.totalTokens)}</td><td>${formatSharePercent(total ? entry.totalTokens / total * 100 : 0)}</td><td>${escapeHtml(entry.detail)}</td></tr>`
+    ).join("")}</tbody></table></div></div>`;
+}
+
+function chartHistoryDetail(row, mode = "tokens", selectedId = null) {
+  if (mode !== "tokens" || !["device", "account"].includes(state.chartBreakdownMode)) return "";
+  return chartAttributionEntries([row], state.chartBreakdownMode).filter((entry) => !selectedId || entry.id === selectedId).map((entry) => {
+    const heading = `${entry.label}: ${formatTokens(entry.totalTokens)}${entry.detail ? ` (${entry.detail})` : ""}`;
+    const models = entry.models.map((model) => `  ${model.model || t("chart.models.unknown")}: ${formatTokens(model.totalTokens)}`);
+    return [heading, ...models].join("\n");
+  }).join("\n");
+}
+
+function chartAttributionModelRows(row) {
+  const total = Math.max(0, Number(row.totalTokens) || 0);
+  const values = (Array.isArray(row.models) ? row.models : []).filter((model) => model && Number.isFinite(model.totalTokens) && model.totalTokens > 0)
+    .map((model) => ({ sourceId: model.sourceId || null, model: model.model || null, totalTokens: model.totalTokens }));
+  const sum = values.reduce((value, model) => value + model.totalTokens, 0);
+  if (sum > total + 0.01) return [{ sourceId: null, model: null, totalTokens: total }];
+  if (sum < total) values.push({ sourceId: null, model: null, totalTokens: total - sum });
+  return values;
+}
 function chartHasProviderBreakdown(daily) {
   return (Array.isArray(daily) ? daily : []).some((day) =>
     (Array.isArray(day.sources) ? day.sources : []).some((source) => Number(source.totalTokens || 0) > 0)
@@ -8821,6 +9983,15 @@ function modelRowTotalTokens(model) {
 }
 
 function chartSegmentsForDay(day, entries) {
+  if (entries.some((entry) => entry.type === "attribution")) {
+    const mode = entries[0].dimension;
+    const byId = new Map(chartAttributionRows(day, mode).map((row) => [row.id, row]));
+    return entries.flatMap((entry) => {
+      const row = byId.get(entry.attributionId);
+      return row?.totalTokens > 0 ? [{ ...entry, totalTokens: row.totalTokens, detail: chartAttributionDetail(row, mode),
+        models: mode === "device" ? chartAttributionModelRows(row) : [] }] : [];
+    });
+  }
   if (entries.length === 1 && entries[0]?.type === "total") {
     const totalTokens = Number(day.totalTokens || 0);
     return totalTokens > 0
@@ -9009,9 +10180,10 @@ function parseDateOnly(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-async function openSettings() {
+async function openSettings(tab = "accounts") {
   if (!state.auth?.authenticated) return openModalDialog(els.loginDialog);
   openModalDialog(els.settingsDialog);
+  selectSettingsTab(typeof tab === "string" ? tab : "general");
   renderSourceSettings();
   renderSupportReport();
   await Promise.all([
@@ -9020,7 +10192,9 @@ async function openSettings() {
     loadUpdateSettingsAndStatus(),
     loadNotificationSettings(),
     loadNotificationStatus(),
-    loadSourceDiagnostics()
+    loadSourceDiagnostics(),
+    loadConnectionSettings(),
+    loadMobileAccess()
   ]);
 }
 
@@ -9097,6 +10271,7 @@ async function saveSyncSettings() {
       })
     });
     state.syncStatus = { ...status, collectorEnabled: state.syncStatus?.collectorEnabled };
+    if (status.enabled && status.connected) connectionState.selectedDevice = "collector";
     await loadSyncUsageView({ renderAfter: true });
     showSettingsToast(t("sync.saved"), "ready");
   });
@@ -9114,6 +10289,7 @@ async function createSyncSpace() {
       })
     });
     await loadSyncSettings();
+    connectionState.selectedDevice = "collector";
     await loadUsage({ force: true });
     showSettingsToast(t("sync.saved"), "ready");
   });
@@ -9132,6 +10308,7 @@ async function joinSyncSpace() {
     });
     if (els.syncPairingCode) els.syncPairingCode.value = "";
     await loadSyncSettings();
+    connectionState.selectedDevice = "collector";
     await loadUsage({ force: true });
     showSettingsToast(t("sync.saved"), "ready");
   });
@@ -9189,6 +10366,38 @@ async function runSyncAction(action) {
     renderSyncSettings();
     renderSyncDeviceFilter();
   }
+}
+
+function renderMobileAccess(value = {}, busy = false) {
+  if (!busy) state.mobileAccess = value;
+  const available = !!window.llmUsageDashboard?.mobileAccess;
+  els.mobileAccessStatus.textContent = t(`settings.mobile.${!available ? "desktopOnly" : value.reason || (value.running ? "on" : "off")}`);
+  els.mobileAccessOpen.disabled = busy || !available;
+  els.mobileAccessDisable.disabled = busy;
+  els.mobileAccessDisable.hidden = !value.enabled;
+  els.mobileAccessAddressField.hidden = !value.running;
+  els.mobileAccessAddress.value = value.url || "";
+  els.mobileHttpsSave.disabled = busy || !available;
+  els.mobileHttpsOrigin.disabled = busy || !available;
+  if (!busy && document.activeElement !== els.mobileHttpsOrigin) els.mobileHttpsOrigin.value = value.httpsOrigin || "";
+  els.mobileHttpsOpen.hidden = !value.httpsOrigin;
+  els.mobileHttpsOpen.disabled = busy || !available;
+  els.mobileVpnSave.disabled = busy || !available;
+  els.mobileVpnNetworks.disabled = busy || !available;
+  if (!busy && document.activeElement !== els.mobileVpnNetworks) els.mobileVpnNetworks.value = (value.vpnNetworks || []).join("\n");
+}
+
+async function loadMobileAccess() {
+  try { renderMobileAccess(await window.llmUsageDashboard?.mobileAccess?.status()); }
+  catch { renderMobileAccess({ reason: "failed" }); }
+}
+
+async function changeMobileAccess(enable) {
+  renderMobileAccess({}, true);
+  try {
+    const api = window.llmUsageDashboard.mobileAccess;
+    renderMobileAccess(await (enable ? api.openPairing() : api.setEnabled(false)));
+  } catch { renderMobileAccess({ reason: "failed" }); }
 }
 
 async function loadSupportReport() {
@@ -9477,6 +10686,7 @@ async function loadNotificationSettings() {
   try {
     const settings = await fetchJson("/api/notifications/settings");
     els.notificationsEnabled.checked = Boolean(settings.enabled);
+    if (els.notificationResetsEnabled) els.notificationResetsEnabled.checked = settings.resetsEnabled !== false;
     if (els.notificationPacingPercent) els.notificationPacingPercent.value = settings.pacingPercent ?? 100;
     if (els.notificationHardLimitPercent) els.notificationHardLimitPercent.value = settings.hardLimitPercent ?? 95;
     if (els.notificationThresholds) els.notificationThresholds.hidden = !settings.enabled;
@@ -9494,6 +10704,7 @@ async function saveNotificationSettings() {
   showSettingsToast(t("settings.saving"), "loading", { persistMs: 0 });
   const payload = {
     enabled: els.notificationsEnabled.checked,
+    resetsEnabled: els.notificationResetsEnabled?.checked !== false,
     pacingPercent: Number(els.notificationPacingPercent?.value ?? 100),
     hardLimitPercent: Number(els.notificationHardLimitPercent?.value ?? 95)
   };

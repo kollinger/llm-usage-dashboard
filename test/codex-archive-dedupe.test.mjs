@@ -10,6 +10,9 @@ process.env.GLM_CODING_PLAN_QUOTA_ENABLED = "false";
 
 const require = createRequire(import.meta.url);
 const { readCodexUsage } = require("../server.js");
+const { exportUsageEvents, attributeLocalUsageEvents } = require("../lib/device-sync-data.js");
+const { createChatUsageIndex } = require("../lib/chat-usage.js");
+const { buildSyncUploadEvent } = require("../lib/sync-client.js");
 const root = await mkdtemp(path.join(os.tmpdir(), "codex-archive-dedupe-"));
 const sessions = path.join(root, "sessions");
 const archived = path.join(root, "archived_sessions");
@@ -36,7 +39,7 @@ try {
   const contents = `${JSON.stringify({
     timestamp: "2026-08-20T06:59:59.000Z",
     type: "session_meta",
-    payload: { model: "gpt-5.6" }
+    payload: { id: "archive-fixture-session", model: "gpt-5.6", cwd: root, originator: "multica" }
   })}\n${tokenLine}\n`;
   const liveFile = path.join(sessions, "rollout-live-copy.jsonl");
   const archiveFile = path.join(archived, "rollout-archive-copy.jsonl");
@@ -56,6 +59,15 @@ try {
   assert.equal(withBothPaths.source.eventCount, 1);
   assert.equal(withBothPaths.totals.allTime.totalTokens, 130);
   assert.equal(withBothPaths._usageEvents.length, 1);
+  const raw = withBothPaths._usageEvents[0];
+  assert(raw.conversation, "archive dedupe must retain conversation evidence for chat rankings and direct sync");
+  assert.equal(raw.chatContext.cwd, root, "local chat metadata lookup must retain its existing context");
+  assert.equal(exportUsageEvents([withBothPaths]).events[0].conversation.sessionId, raw.conversation.sessionId);
+  const attributedEvents = attributeLocalUsageEvents(withBothPaths._usageEvents, { device: { id: "local", label: "Fixture" } });
+  assert.equal(createChatUsageIndex(attributedEvents).events[0].conversation.sessionId, raw.conversation.sessionId);
+  const upload = JSON.stringify(buildSyncUploadEvent(raw));
+  assert(!upload.includes(root), "private collector upload must exclude local chat context");
+  assert(!upload.includes("conversation"), "local conversation metadata is outside the collector allowlist");
 
   await unlink(liveFile);
   const archiveOnly = await readCodexUsage({ sources: [source] });

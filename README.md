@@ -20,11 +20,54 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 - Ollama local token capture through the optional built-in proxy logger.
 - Optional OpenAI and Anthropic admin API usage/cost aggregation when admin keys are provided.
 - Token history chart with per-provider color stacking, source totals, and API price comparison estimates for local/non-API usage.
+- Chat and ticket rankings: top 10 or a searchable paginated list, token/API-equivalent sorting, provider/model filters, and expandable usage and run details.
 - Multilingual UI with system-language detection and a settings language selector.
 - Optional password login and OIDC/SSO.
 - Optional private cloud sync with deliberate pairing, restart-safe uploads,
   global event deduplication, and per-device dashboard filters.
 - Electron builds for macOS, Linux AppImage, and Windows.
+
+## Chat and ticket usage
+
+The **Chats & Tickets** panel groups recorded usage by native session identity.
+Codex titles come from the local session index; Claude Code titles come from
+explicit session-title metadata. Copilot, OpenCode and Gemini sessions are
+included when their logs identify a session. Message bodies are never used as
+fallback titles. Missing titles, missing session identities, and incomplete
+Multica associations are reported separately from zero usage.
+
+The panel defaults to the top ten by tokens. Its full list uses 50-row pages,
+with search, source/provider/model filters and optional API-equivalent sorting.
+Time filters cover all records, the last 30 or seven days, local today, and the
+last 24 hours. Today uses the browser's timezone, including daylight-saving
+changes. Expanded rows show the same filtered period, model token categories
+and associated provider runs. Reasoning and cached input retain each provider's
+existing billing semantics.
+
+Euro amounts are estimates using the dashboard's explicitly dated price/FX
+catalog, not subscription charges, provider invoices, or historical billed
+costs. Unknown models and mutable aliases remain unpriced; partial amounts show
+their missing token coverage. Only locally available or paired-device usage
+records are covered, so deleted logs and absent web-chat exports cannot be
+reconstructed. Existing provider/quota totals remain independent of this view.
+
+Optional Multica metadata uses the existing local CLI configuration read-only:
+`~/.multica/config.json`, or a selected profile via
+`LLM_USAGE_MULTICA_PROFILE` / `MULTICA_PROFILE`. Configuration can instead be
+selected with `LLM_USAGE_MULTICA_CONFIG_FILE`; explicit overrides are
+`LLM_USAGE_MULTICA_SERVER_URL`, `LLM_USAGE_MULTICA_WORKSPACE_ID`, and
+`LLM_USAGE_MULTICA_TOKEN`. Keep any token only in the existing private config or
+process environment. Set `LLM_USAGE_MULTICA_ENABLED=0` to disable these reads.
+Exact task metadata or matching run/session IDs determine ticket membership;
+directory names only select lookup candidates. Metadata enrichment is cached
+and proceeds in bounded batches; the panel reports incomplete coverage while
+lookups remain. Multica runtime totals are never added again to session usage.
+
+Paired installations exchange only sanitized chat metadata and usage under
+their existing encryption/signature protection. Raw prompts, responses, local
+paths, credentials and native session IDs are excluded from report/sync output.
+Older peers continue exchanging consumption data; their records can show
+missing chat metadata until the producing installation is updated.
 
 ## Quick Start
 
@@ -57,7 +100,7 @@ LLM_USAGE_SYNC_COLLECTOR_ENABLED=true
 LLM_USAGE_SYNC_COLLECTOR_ADMIN_TOKEN=<long-random-secret>
 ```
 
-Then open **Settings → Private cloud sync**, enable sync, enter the server URL
+Then open **Settings → Advanced → Private device sync**, enable sync, enter the server URL
 and a safe device label, and create the first private space. Generate a
 short-lived one-time pairing code on that device to join another. The main
 dashboard can show all devices, this device, a named device, or records with
@@ -72,7 +115,7 @@ and verification commands.
 
 ## Desktop App
 
-Prebuilt desktop downloads are published on the [GitHub Releases page](https://github.com/kollinger/llm-usage-dashboard/releases/latest).
+Prebuilt desktop downloads are published on the [GitHub Releases page](https://github.com/kollinger/llm-usage-dashboard/releases).
 Current desktop release assets are marked as unsigned prereleases until macOS notarization and Windows code signing are configured.
 
 The installed desktop app starts at login in the background on supported platforms and keeps the local backend running even when the dashboard window is closed. This lets live quota snapshots continue to sync while the machine is awake and online; development runs with `npm run electron` do not install a login item. macOS and Windows use native login-item APIs; Linux packaged builds write an XDG autostart `.desktop` file.
@@ -117,6 +160,164 @@ Version numbers follow Semantic Versioning:
 - Preview builds should use SemVer prerelease tags such as `v1.1.0-preview.1` or `v1.1.0-rc.1`
 
 The workflow builds macOS, Linux, and Windows packages on native GitHub-hosted runners, uploads them as workflow artifacts, and attaches them to a GitHub Release. Release artifacts are currently unsigned prereleases; macOS Gatekeeper and Windows SmartScreen may warn until code signing/notarization certificates are configured as repository secrets.
+
+Desktop update checks use the public GitHub releases API and select the highest
+newer SemVer allowed by the preview setting. Unpublished tags, missing platform
+metadata and missing installers are skipped. Metadata version, installer name,
+size and SHA512 must agree; the existing updater verifies the downloaded bytes.
+Checks never offer a downgrade. Authentication, rate-limit, network and integrity
+failures remain errors, recorded as fixed diagnostic codes without response
+bodies, credentials or local paths. No GitHub token is required. Existing macOS
+signing requirements still apply.
+
+`npm run test:updates` covers synthetic release selection and error boundaries.
+`npm run test:updates:native` exercises the actual Electron updater against an
+isolated local fixture, including Linux download checksum rejection/recovery.
+The existing desktop-build CI runs this native check on each platform.
+
+### Desktop quota widget
+
+In the desktop app, choose **Desktop widget → Compact window** in the dashboard toolbar. The
+separate floating window stays available when the main dashboard is closed;
+closing the widget does not stop the app's existing background collection.
+Open it again from the dashboard. It shares the existing account and quota
+snapshots and does not start another collector or ask for another login.
+
+The default 780 × 700 window shows five accounts together. Accounts are grouped
+by provider; a visible number distinguishes accounts of the same provider even
+when a long name is truncated. Hover the name for its full label. Star accounts
+to use the explicit Favorites view, filter by provider, or scroll the bounded
+list for larger sets. Text size can be increased independently. Each quota
+window keeps its own remaining percentage, reset time and measurement quality.
+Missing values stay unavailable; saved readings older than 15 minutes, failed
+reads and elapsed reset times are marked stale. No combined account quota is
+calculated. **Manage accounts** opens the full dashboard's account settings.
+
+Size, position, pin preference and display preferences are saved privately in
+the app's user-data directory. On macOS and X11, saved bounds are kept inside
+the current monitor work areas and recovered after a monitor is removed. The
+pin button keeps the window above ordinary windows where Electron supports it.
+On native Wayland, KDE controls placement and stacking: use the KDE window
+menu's **Keep Above Others** option. The widget explains this and does not claim
+that Electron can pin or restore global coordinates on Wayland. Window resizing
+remains subject to the compositor ([Electron window API](https://www.electronjs.org/docs/latest/api/browser-window#winsetalwaysontopflag-level-relativelevel)). This is a floating app window, not a Plasma
+plasmoid or an Apple WidgetKit extension.
+
+For a **native KDE Plasma 6 desktop widget**, choose **Desktop widget → Install
+KDE widget** in the Linux app. Installation and updates use `kpackagetool6` for
+your user only; Python 3 and Plasma's `plasma5support` executable data engine
+must be installed. Then right-click the desktop, choose **Add Widgets** (German:
+**Miniprogramme hinzufügen**) and find **LLM Usage Dashboard**. Add it like any
+other Plasma widget, resize it using Plasma's handles, or remove and add it
+again. The default size shows five accounts. Provider groups, favorites,
+provider filtering and independent text scaling handle larger sets; the native
+list is limited to 50 matching accounts. Each provider-local ordinal remains
+visible alongside truncated names. Native colors follow the Plasma theme.
+
+The installation dialog reports the **package on disk**, not the version loaded
+by Plasma. A matching version disables further file updates and labels the button
+**KDE package up to date**. Plasma can keep the previous QML in memory, even when
+the widget is removed and added again. If the old large panel view remains after
+an update, save your work, sign out of Plasma and sign back in. Existing desktop
+and panel instances and their display preferences survive this reload; the app
+does not restart your desktop session automatically.
+
+The Linux AppImage bundles the exact-version `.plasmoid`; the same native archive
+is published as `LLM-Usage-Dashboard-<version>-plasma.zip` through the existing
+desktop-build workflow. KPackage accepts both extensions. Manual per-user installation is available with
+`kpackagetool6 --type Plasma/Applet --install LLM-Usage-Dashboard-<version>-plasma.zip`
+(use `--upgrade` for an existing installation). After updating, log out of
+Plasma and sign back in so its widget engine loads the new package. No root access, system-wide
+installation or additional widget store is used. The compact window remains
+available on every supported desktop platform.
+
+On macOS, the app also adds an adaptive monochrome quota icon to the menu bar.
+Click it to open the account quota popup beside the icon; click again, press
+Escape, click outside, or use its Close button to dismiss it. The popup stays
+available while the dashboard window is closed and shares the compact window's
+provider filters, favorites, text size, language and theme. Five accounts fit
+on a normal laptop display; larger lists, larger text and smaller displays
+scroll within the popup. Moving or disconnecting a display dismisses it; the
+next click positions it on the icon's current display. This uses Electron's
+native menu-bar item and panel; macOS WidgetKit is out of scope.
+
+The native widget reads the existing authenticated `/api/desktop-widget`
+projection through an owner-private Unix socket under `$XDG_RUNTIME_DIR`.
+The socket directory is mode `0700`, the socket `0600`; unsafe runtime paths
+are rejected. The app's own Electron session authorizes each read. No session
+cookie, provider credential, port-discovery token or raw account identity is
+included in the widget. The transport opens no TCP port and does not change
+dashboard authentication, host/origin checks or networking. Dynamic dashboard
+ports and closing the main window require no widget reconfiguration. The app
+must keep running; unavailable apps and stale readings are labeled, and signing
+out clears the widget on its next read. Only display preferences and opaque
+favorite handles persist in Plasma configuration; quota snapshots stay in memory.
+
+The same widget can be added to a Plasma panel through its **Add Widgets**
+menu. Horizontal and vertical panels show a single native icon; click it to
+open the account overview, then click again, press Escape, or click outside to
+close it. The popup keeps the same provider filter, favorites and text size
+settings for that widget and scrolls when there are more accounts than fit.
+The desktop widget and the app's separate compact window remain available.
+
+Once installed, the native widget is synchronized when the dashboard starts
+after an update. Existing panel instances are refreshed with their display
+preferences, shortcuts and panel positions preserved. Desktop instances keep
+their size and settings. The installer retains previous package sources while
+running applets may still refer to them.
+
+Run `npm run plasma:build` to build the native archive under `dist/plasma/`.
+`npm run test:plasma` verifies locale, data, bridge, security and installer
+contracts. `npm run test:plasma:native` runs the synthetic Qt rendering suite
+after building the package (a Qt 6 graphical session or `QT_QPA_PLATFORM=offscreen`
+is required). Internal full-desktop checks use
+`xvfb-run -d -s '-screen 0 1600x1100x24' dbus-run-session -- python3 test/plasma-session-smoke.py x11`
+and the same command with `wayland`. They install/update in a temporary user
+profile and exercise actual native add/resize/remove/re-add cycles; Wayland uses
+a nested KWin compositor with host input. These optional tools are development
+dependencies only, not bundled services. Verified session versions and evidence
+are recorded with each release candidate; Plasma 5 and non-KDE sessions do not
+support the native package.
+
+Append `--panel` to either internal session check for real icon/popup operation
+at all four edges, repeated click/Escape/outside-click closing, remove/re-add,
+and restoration of saved filters/favorites after restarting the private shell.
+This lane also needs Python D-Bus and PyGObject for compositor observations.
+For the real upgrade-cache regression, download the published
+`v1.9.0-preview.2` Plasma ZIP and verify its GitHub asset checksum. Set
+`PLASMA_UPGRADE_ARCHIVE` to that archive's path and optionally
+`PLASMA_QA_EVIDENCE` to an ignored evidence directory, then run either session
+check with `--panel`. It loads the actual older QML with desktop and horizontal/
+vertical instances before upgrading, verifies the active per-user package,
+captures the still-cached view (including remove/re-add), then checks restored
+icons, desktop sizing, preferences and form-factor changes after a private shell
+restart. It never restarts or changes the user's real session.
+Add `--live-upgrade` to that historical-package lane to exercise the actual app
+startup and installer: both old full panel views must become compact icons
+before a shell restart, including saved preferences, neighboring widgets,
+multiple instances, repeated startup and newly added instances using the same
+plugin ID. The lane then checks private-shell restoration and popup lifecycles.
+When running graphical checks concurrently, use distinct Xvfb display numbers
+or `xvfb-run -d` where available to allocate each display atomically.
+
+The widget uses the dashboard's theme and all 27 supported languages, including
+Arabic RTL. It retains Electron's isolated, sandboxed renderer and a separate
+preload exposing only widget controls. Its authenticated loopback-only endpoint
+returns an explicit allowlist of display data, without account identifiers,
+credentials, source paths or raw provider responses. Codex/OpenCode identity and
+quota attribution remain owned by the shared account registry.
+
+Run `npm run test:desktop-widget` for synthetic projection, freshness, API,
+geometry, lifecycle and IPC checks. Run `npm run test:desktop-widget:native` in a
+graphical session for the native window and layout checks (on headless Linux:
+`xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:desktop-widget:native`).
+The existing desktop-build workflow runs the native checks as part of
+`npm run check` on GitHub Actions, including the macOS CI runner, before
+producing its packages. `npm run test:desktop-widget:ci` selects that CI-only
+lane; local native checks use the explicit command above.
+GitHub's Linux UI/IPC lane uses a test-only `--no-sandbox` flag because its
+runner does not provide a usable Electron sandbox helper; normal app launches
+and the internal KDE X11/Wayland tests use the standard sandbox configuration.
 
 ## Docker
 
@@ -263,6 +464,15 @@ By default, Codex rate-limit rings also try to read a live snapshot from the loc
 
 ### GPT accounts and OpenCode
 
+Use **Accounts → Add account** to choose ChatGPT, Claude Code, Kimi Code,
+GLM or an API connection. Browser logins use isolated local profiles; API keys
+stay in an encrypted local vault. Repeat for multiple accounts. Optional direct
+device sync shares sanitized consumption and saved account quotas only between
+your paired devices, without developer infrastructure or relay services.
+Use **Installations → Connect installation** to pair your own devices.
+See [accounts and direct sync](docs/accounts-and-direct-sync.md) for setup,
+privacy, supported network paths, and preview limitations.
+
 The GPT accounts section in Settings combines the ChatGPT accounts found in every configured Codex home with every OpenCode OpenAI OAuth identity found in the built-in OpenCode auth store and supported OpenCode multi-account stores. **Re-scan accounts** reads the current 5-hour and weekly Codex quota separately for every reachable account. The section shows quota coverage as a fraction and marks an account's limit as unavailable instead of treating identity-only detection as complete. Previously observed identities and their last measured quota remain visible as history. Additional profiles or auth stores can be supplied with `LLM_USAGE_CODEX_HOMES`, `LLM_USAGE_OPENCODE_DATA_DIRS`, `LLM_USAGE_OPENCODE_DB_FILES`, and `LLM_USAGE_OPENCODE_AUTH_FILES` using the OS path delimiter.
 
 Codex has one active cached login per `CODEX_HOME`; the dashboard starts an isolated read-only Codex app-server for each configured home so those profiles can be refreshed without replacing one another. OpenCode multi-account plugins can keep several ChatGPT OAuth accounts in one local account store. The dashboard discovers the common `oc-codex-multi-auth` and `opencode-multi-auth-codex` stores, including their per-project stores, and probes every distinct account separately. While the desktop backend is running, it watches the configured Codex, OpenCode, and multi-account auth files and captures fresh sanitized account/limit snapshots shortly after a login changes, even when the dashboard window is closed. OpenCode quota is read with each existing OAuth access token; the dashboard never sends the refresh token, never writes credentials, and stores only normalized quota snapshots. If an OpenCode access token is no longer accepted, use that account in OpenCode once and re-scan.
@@ -404,7 +614,7 @@ Consumer subscription usage, such as ChatGPT or Claude plan UI data, is not gene
 
 The pricing section is mainly a comparison view for local or consumer-style usage: it applies public API price tables to locally observed token counts so non-API users can estimate what similar API usage might cost. Those estimates are not provider invoices and do not imply that consumer subscription usage is available through the admin APIs. Provider subscription counters, such as Copilot premium requests or AI credits, are kept out of the API-cost estimate. When local usage includes model names, known API model IDs such as `claude-fable-5` are matched to the curated price table; unknown model IDs stay unpriced instead of being silently folded into a different model's price.
 
-Model quality scores in the pricing table are an internal heuristic for quick sorting and visual comparison. They are not an official benchmark, not a provider claim, and should be recalibrated or removed when a better documented scoring method is adopted.
+Model quality results in the pricing table use a dated snapshot of the independent human-preference [Arena Text leaderboard](https://arena.ai/leaderboard/). Each displayed Elo value links to the source and retains its tested deployment and rank in the tooltip. Models without an exact match in that snapshot stay unscored; the dashboard never projects a nearby model's result onto them or mixes incompatible benchmark scales.
 
 Refresh the curated API price table and latest ECB USD/EUR reference rate with:
 
@@ -424,7 +634,7 @@ npm run pricing:validate
 npm run pricing:check
 ```
 
-The script rewrites the pricing metadata, model rows, and internal heuristic scores in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing, model limits, availability, aliases, and model-quality signals before changing the review dates in that script. The catalog records a version, review date, source URL, source review date, price quality, availability, context/output limits, and explicit unknown values where an official source does not publish a price. The 2026-07-06 catalog includes Claude Fable 5 limits from Anthropic's official model overview, xAI cached-input pricing from the official xAI pricing page, and Z.AI GLM rows from the official Z.AI pricing page. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
+The script rewrites the pricing metadata, model rows, and Arena Text benchmark snapshot in `public/app.js` from `scripts/update-pricing-data.mjs`. Review current provider pricing, model limits, availability, aliases, and benchmark coverage before changing the review dates in that script. The catalog records a version, review date, source URL, source review date, price quality, availability, context/output limits, benchmark source data, and explicit unknown values where an official source does not publish a price or an exact benchmark match is unavailable. The 2026-09-12 catalog corrects the current GPT-5.6 Sol and Claude Sonnet 5 rates, adds GPT-6 Astra plus current Google, xAI, Alibaba, and Mistral models, and retains retired Mistral rows as explicitly unpriced historical mappings. Z.AI's cached-input storage column was listed as limited-time free at review time; the dashboard table records input, cached input/read, and output token rates only.
 
 ## Implementation Status
 
@@ -436,7 +646,7 @@ The script rewrites the pricing metadata, model rows, and internal heuristic sco
 - Gemini local usage: known telemetry and chat metadata paths are scanned when present.
 - Ollama local usage: the optional proxy logger can capture Ollama-compatible usage into `data/ollama-usage.jsonl`.
 - OpenAI and Anthropic API reporting: minimal admin-key aggregation is available for usage, cost, and configured Anthropic organization/workspace rate limits.
-- Pricing comparison and model scores: public API price rows can be compared against local usage, and model quality scores are displayed as an internal heuristic.
+- Pricing comparison and model benchmarks: public API price rows can be compared against local usage, and exact-match Arena Text Elo results are displayed where independently measured.
 
 ### Known Limits
 
@@ -448,7 +658,7 @@ The script rewrites the pricing metadata, model rows, and internal heuristic sco
 ### Open To-Dos
 
 - Copilot quota windows: map returned Copilot SDK quota snapshot keys or response headers to exact session/5-hour, 7-day/weekly, premium-request, chat, and completion semantics before labeling them as those windows in the UI.
-- Model quality scores: review every model score against current model capabilities, public benchmark signals, real-world usefulness, context/window limits, multimodal/tool strengths, and price/performance tradeoffs; update or remove scores that do not make sense.
+- Model benchmark coverage: refresh the dated Arena Text snapshot and add clearly labelled, separate benchmark dimensions only where they are independently sourced and comparable.
 - Desktop signing: enroll in Apple Developer Program, add Developer ID signing and notarization for macOS, add Windows code signing, store the required certificates/credentials in GitHub Secrets, then remove the prerelease marker from signed release builds.
 - API customer reporting: expand OpenAI and Anthropic admin reporting with longer history, pagination, per-project/API-key/workspace grouping, and broader endpoint categories while keeping the default local-first mode useful without provider API keys.
 - Provider data gaps: keep new provider-specific local sources documented as they become stable enough to trust.
@@ -529,3 +739,33 @@ npm run dist:win
 ```
 
 The GitHub Actions workflow `Desktop builds` can build macOS, Linux, and Windows artifacts from tags or manual workflow dispatch.
+
+### Codex reset history
+
+The Codex reset-history panel shows the last 10, 30, or all observed weekly
+windows: announced reset, estimated end/duration, and highest observed usage.
+Overlapping old sources and long observation gaps remain visible and are
+excluded from duration averages. Historical logs have no reliable account
+attribution; live histories are separated by an opaque account key.
+
+While the app runs, a read-only Codex app-server request checks quota and reset
+credits every minute. Changes and minute heartbeats are saved locally under the
+configured data directory in `codex-reset-snapshots.jsonl`; compressed historical
+quota metadata is in `codex-reset-history-import.json`. Records omit raw account
+and credit IDs, credentials, source paths, and chat content. The app never redeems
+a reset credit. A redeemed provider status confirms a credit redemption; an
+unexpired disappearing credit plus a nearby quota reset is only inferred.
+An expired credit, incomplete inventory, missing sample, person, or device is
+not silently attributed to a user action. Recording pauses when the app quits.
+
+Reset timing and cause are separate columns. A credit redemption across a
+closely observed quota reset is classified as manual (confirmed or inferred).
+An early reset with unchanged complete credit inventories is classified as
+OpenAI (inferred); this is evidence of no observed credit use, not a provider
+statement of cause. Scheduled transitions use the same coverage checks. Each
+transition requires live observations of the same account and plan no more
+than five minutes apart, a usage drop, and no conflicting window or recording
+gap. Historical causes stay unknown because the old logs lack credit evidence.
+Cause counts apply to the selected 10, 30, or all windows, independently of
+credit-event totals since live recording began. No reset is attributed to a
+particular person or device.

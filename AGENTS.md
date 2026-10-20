@@ -50,12 +50,13 @@ Instructions for agents working on this repository.
 - Treat local integration into the current review/integration branch as normal
   delivery work, not as a separate Gerhard gate, as long as it does not cross a
   release, production, account, permission, data-loss, or product-decision gate.
-- Use Gerhard's M1 for Mac-specific desktop builds, installation, launch,
-  notification, and UI-state checks. Do heavier implementation, Docker, and
-  broad QA on the Manjaro runner when available.
-- Batch macOS app builds for meaningful review points instead of rebuilding for
-  every tiny change. When installing a fresh Mac build, state the commit,
-  included tickets, and the exact things Gerhard should look at.
+- Do implementation, Docker, and broad QA on the Manjaro runner. Build release
+  artifacts with the existing GitHub Actions desktop-build workflow on its
+  platform runners, including macOS builds and required native macOS checks.
+- Gerhard's M1 is an update recipient, not a build or release-verification
+  runner. It receives the completed release through the normal app updater.
+  Its availability, SSH access, local DMG creation, installation, or manual
+  review must not block ordinary ticket completion, release, or announcement.
 - Restore review-facing UI state after QA. If a check turns on persisted
   controls such as `Show all` providers, layout edit mode, alternate filters,
   or diagnostic-only views, switch back to the normal review state before
@@ -102,16 +103,17 @@ docker build -t llm-usage-dashboard:local .
 
 Desktop artifacts are written to `dist/` and should normally be published as release artifacts, not committed.
 
-For final macOS desktop verification on Gerhard's machine, build a fresh DMG
-with `npm run dist:mac`, install the app from that DMG into `/Applications`, and
-launch the installed `/Applications/LLM Usage Dashboard.app` directly. Do not
-treat a desktop build as final based only on `npm run electron`, `dist:dir`, or
-an older `dist/` artifact.
+For macOS release verification, use the fresh artifact from the existing macOS
+CI job for the exact release commit/tag. Verify required checks, expected assets,
+checksums, and updater metadata; an older local artifact or `npm run electron`
+does not establish release delivery. Required native/IPC or packaging checks
+belong on an appropriate macOS CI runner, not on Gerhard's M1 by default.
 
-For every review handoff that includes app-visible behavior, create this fresh
-M1 macOS review build even when implementation, Docker, broad builds, or browser
-QA ran on Manjaro. Record the source branch/commit and included tickets with the
-handoff so review never comes from an older local Git state or stale artifact.
+Do not add a fresh M1 DMG build/install/launch gate to app-visible handoffs.
+An optional check of the installed M1 app happens after release and is recorded
+separately from CI/release verification. Do not claim that the M1 installed an
+update unless its actual installed version was observed. Restore review-facing
+UI state after any optional local check.
 
 ## Versioning
 
@@ -143,10 +145,11 @@ handoff so review never comes from an older local Git state or stale artifact.
 
 - The intended WhatsApp review group name is `LLM Usage Dashboard Review`
   unless Gerhard explicitly chooses another name.
-- The review bot runs as GPT-5.6 Sol with maximum reasoning and is addressed
-  with `@Sol`. During the migration, `@Opus` remains a trigger alias so older
-  group habits do not break. Every WhatsApp reply from that bot must start with
-  the truthful visible identity prefix `🤖 [Sol 5.6]`.
+- The review bot runs as GPT-6.1 Sol with maximum reasoning. It accepts ordinary
+  messages from the two allowed group members without a mention by default;
+  `@Sol` and the compatibility alias `@Opus` remain usable. The existing Support
+  Console trigger can switch between all messages and mentions. Every WhatsApp
+  reply uses the truthful identity prefix `🤖 [Sol 6.1]`.
 - The review route must use the shared project-bound Sol admin runner, start in
   `/srv/multica/projects/llm-usage-dashboard`, and have shell/file access to
   that repository. Its live model, workdir, display name, mention, and response
@@ -169,14 +172,15 @@ handoff so review never comes from an older local Git state or stale artifact.
   not grant unrelated machine administration, unrelated project access,
   destructive system changes, secret disclosure, or external sends beyond the
   reviewed route contract.
-- Reinhard may discuss changes with `@Sol` (or the temporary `@Opus` alias),
-  but a Multica issue for this product may be created only after Gerhard
-  explicitly approves the concrete
-  ticket draft in the same WhatsApp group. After approval, implementation
-  should run through Multica on Manjaro with the usual GPT+Opus owner/reviewer
-  pattern and a durable heartbeat/lifecycle watch until the ticket is truthfully
-  done, blocked, cancelled, pushed, released, and announced back to the
-  WhatsApp group.
+- Gerhard and Reinhard may both directly request ordinary product changes.
+  A clear request authorizes ticket creation and delivery without an additional
+  Gerhard approval. Clarify ambiguous product requirements with the requester.
+  Implementation runs through Multica on Manjaro with the configured owner and
+  independent reviewer and a durable lifecycle watch through integration,
+  preview release and group announcement. Do not assign routine product work
+  to Gerhard just to obtain a release or implementation approval. Destructive,
+  account, payment, secret and unrelated-project boundaries remain in force;
+  changing bot permissions retains its separate self-change contract.
 - For approved WhatsApp Review Gateway tickets, release is fully delegated:
   after the ticket reaches truthful `done`, the gateway/heartbeat should
   automatically bump the preview version, update the changelog, commit, tag,
@@ -207,9 +211,9 @@ handoff so review never comes from an older local Git state or stale artifact.
 - Do not wait for Gerhard before routine ticket commits or ticket-branch pushes
   when the work is reversible in Git and does not cross a release, production,
   account, permission, secret, data-loss, or product-decision gate.
-- Integration on Gerhard's Mac and local Mac-app test builds are allowed without
-  a separate gate when they are useful review builds. Batch them for meaningful
-  updates so the M1 is not kept busy for every tiny change.
+- Routine integration and release preparation stay on the responsible runner;
+  the existing CI builds the desktop artifacts. Do not start local test builds
+  on Gerhard's M1 or wait for its availability as part of ordinary delivery.
 - Still stop for Gerhard before destructive actions, account/signing/permission
   changes, public tunnels, live database writes, or unresolved product
   decisions. For approved WhatsApp Review Gateway tickets in this product,

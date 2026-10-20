@@ -154,6 +154,35 @@ directory, and treat public DNS/deployment as a separate operational review.
 
 ## Verification
 
+### Compatibility with direct installation sync
+
+The collector is separate from the newer peer-to-peer installation sync. Its
+opt-in settings are under **Settings → Advanced → Private device sync**. Both
+protocols remain off until explicitly enabled; pairing with one does not pair
+with or enable the other. Their private state directories and credentials are
+separate, and direct-sync snapshots are never imported into the collector.
+
+The dashboard's device/source selector offers **Private device sync** when a
+collector is connected. That choice exposes the collector's all/current/specific/
+unknown device filter. Selecting a direct installation or **This device** uses
+the existing direct/local aggregate without adding collector totals. When direct
+sync is disabled, an existing collector connection initially opens its collector
+view; an existing direct-sync view retains its selected source. Collector errors
+fall back to this device's local usage and show the existing fallback message.
+
+Provider quotas and account information keep their existing source semantics.
+The collector does not exchange chat titles or account identities, so the chat
+ranking panel is unavailable in the collector view instead of displaying local
+or direct-peer chats under a collector filter. Local and direct-sync views keep
+their existing chat, account attribution, phone and widget behavior.
+
+Collector browser controls enforce the same loopback Host, local connection and
+same-origin checks as account and direct-pairing controls. Private devices use
+the collector's bearer-authenticated API; browser-facing proxy responses never
+include device credentials.
+
+### Automated checks
+
 Focused automated coverage is available through:
 
 ```sh

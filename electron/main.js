@@ -10,11 +10,19 @@ const { execFile, spawn } = require("node:child_process");
 const { promisify } = require("node:util");
 const { app, BrowserWindow, shell, Notification, dialog, session: electronSession, ipcMain, powerMonitor, nativeTheme } = require("electron");
 const { detectOpenAiPlanType, detectClaudePlanType, hasPlanProbeSignal } = require("../lib/subscription-plan-detection");
+const { notificationMessage } = require("../lib/mobile-notifications");
+const { EVENT_TYPES } = require("../lib/quota-notifications");
+const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
+const { createDesktopWidget } = require("./desktop-widget");
+const { createMacMenuBar } = require("./mac-menu-bar");
+const { createPlasmaWidget } = require("./plasma-widget");
+const { configurePublishedUpdates, safeUpdateError } = require("./published-update-provider");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
 let mainWindow = null;
 let dashboardPort = null;
+let mobileAccess = null, mobileWindow = null, mobileRefreshTimer = null, mobileShutdown = false;
 let openWindowWhenReady = false;
 let claudeBrowserSyncPending = null;
 let accountBillingSyncPending = null;
@@ -30,6 +38,10 @@ let lastBadgeCount = null;
 let lastNotificationStatusWriteAt = 0;
 let lastNotificationStatusSignature = null;
 let themePreference = "system";
+let languagePreference = null;
+let desktopWidget = null;
+let macMenuBar = null;
+let plasmaWidget = null;
 // Plan-probe backoff state per domain: { until, failures, planType, successAt }
 const planProbeBackoff = new Map();
 // Chrome cookie rows cached per domain, keyed by the cookie DB size+mtime.
@@ -116,10 +128,68 @@ ipcMain.handle("subscription:refresh", async (_event, payload = {}) => {
   return refreshSubscriptionSources(payload?.provider);
 });
 
+function trustedMobileRequest(event) {
+  const url = new URL(event.senderFrame.url);
+  if (!mainWindow || event.sender !== mainWindow.webContents ||
+      url.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(url.hostname) ||
+      url.port !== String(dashboardPort)) throw new Error("untrusted_mobile_request");
+}
+
+ipcMain.handle("mobile:status", async (event) => {
+  trustedMobileRequest(event); return mobileAccess.status();
+});
+ipcMain.handle("mobile:enabled", async (event, enabled) => {
+  trustedMobileRequest(event);
+  const status = await mobileAccess.setEnabled(enabled);
+  if (!enabled && mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  return status;
+});
+ipcMain.handle("mobile:https", async (event, origin) => {
+  trustedMobileRequest(event);
+  if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  return mobileAccess.setHttpsOrigin(origin);
+});
+ipcMain.handle("mobile:vpn", async (event, networks) => {
+  trustedMobileRequest(event);
+  const status = await mobileAccess.setVpnNetworks(networks);
+  if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  return status;
+});
+ipcMain.handle("mobile:open", async (event, https = false) => {
+  trustedMobileRequest(event);
+  const status = await mobileAccess.setEnabled(true);
+  if (!status.running) return status;
+  if (https && !status.httpsOrigin) return status;
+  if (mobileWindow && !mobileWindow.isDestroyed()) mobileWindow.close();
+  const target = new URL(status.controlUrl);
+  if (languagePreference) target.searchParams.set("lang", languagePreference);
+  target.searchParams.set("desktop", "1");
+  if (https) target.searchParams.set("https", "1");
+  mobileWindow = new BrowserWindow({ width: 680, height: 850, parent: mainWindow,
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true } });
+  mobileWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  mobileWindow.webContents.on("will-navigate", (navigation, url) => {
+    if (new URL(url).origin !== target.origin) navigation.preventDefault();
+  });
+  mobileWindow.on("closed", () => { mobileWindow = null; });
+  await mobileWindow.loadURL(target.href);
+  return status;
+});
+
 ipcMain.handle("theme:set-preference", async (_event, preference) => {
   const normalized = applyNativeThemePreference(preference);
   await writeThemePreference(normalized.preference);
   return normalized;
+});
+
+ipcMain.handle("language:set-preference", async (_event, language) => {
+  const normalized = normalizeNotificationLanguage(language);
+  if (normalized) {
+    languagePreference = normalized;
+    await writeLanguagePreference(normalized);
+    desktopWidget?.updateTheme({ preference: themePreference, color: THEME_BACKGROUND_COLORS[resolvedNativeTheme()] });
+  }
+  return languagePreference;
 });
 
 function setDefaultEnv(name, value) {
@@ -140,6 +210,29 @@ function normalizeThemePreference(preference) {
 
 function getThemeSettingsFile() {
   return path.join(app.getPath("userData"), "theme-settings.json");
+}
+
+function getLanguageSettingsFile() {
+  return path.join(app.getPath("userData"), "language-settings.json");
+}
+
+async function readLanguagePreference() {
+  try {
+    const settings = JSON.parse(await fs.readFile(getLanguageSettingsFile(), "utf8"));
+    return normalizeNotificationLanguage(settings?.language);
+  } catch {
+    return null;
+  }
+}
+
+async function writeLanguagePreference(language) {
+  const filePath = getLanguageSettingsFile();
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, `${JSON.stringify({ language }, null, 2)}\n`, { mode: 0o600 });
+  } catch {
+    // The renderer keeps its local preference if native persistence fails.
+  }
 }
 
 async function readThemePreference() {
@@ -171,6 +264,7 @@ function updateNativeWindowTheme() {
     mainWindow.setBackgroundColor(THEME_BACKGROUND_COLORS[resolvedTheme]);
     mainWindow.webContents.send("theme:system-changed", { resolvedTheme });
   }
+  desktopWidget?.updateTheme({ preference: themePreference, color: THEME_BACKGROUND_COLORS[resolvedTheme] });
   return resolvedTheme;
 }
 
@@ -186,7 +280,7 @@ function applyNativeThemePreference(preference) {
 async function startBackend() {
   configureDashboardEnv();
   const { startDashboard } = require("../server");
-  const servers = startDashboard({ port: Number(process.env.PORT || 0) });
+  const servers = startDashboard({ port: Number(process.env.PORT || 0), host: "127.0.0.1" });
   dashboardServer = servers.dashboardServer;
   ollamaProxyServer = servers.ollamaProxyServer;
   await new Promise((resolve) => dashboardServer.once("listening", resolve));
@@ -248,7 +342,7 @@ function createWindow(port) {
     backgroundColor: THEME_BACKGROUND_COLORS[resolvedTheme],
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      additionalArguments: [`--llm-usage-theme=${themePreference}`],
+      additionalArguments: [`--llm-usage-theme=${themePreference}`, `--llm-usage-language=${languagePreference || ""}`],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -344,7 +438,8 @@ function closeServer(server) {
 }
 
 function alertKey(alert) {
-  return `${alert.windowLabel}:${alert.type}`;
+  if (alert.id) return alert.id;
+  return `${alert.provider || ""}:${alert.windowKey || alert.windowLabel}:${alert.type}`;
 }
 
 function normalizeNotificationLanguage(language) {
@@ -406,7 +501,7 @@ async function getNotificationLanguage() {
       // The window may still be loading; fall through to app/system locale.
     }
   }
-  candidates.push(app.getLocale?.(), process.env.LANG, NOTIFICATION_FALLBACK_LANGUAGE);
+  candidates.push(languagePreference, app.getLocale?.(), process.env.LANG, NOTIFICATION_FALLBACK_LANGUAGE);
   for (const candidate of candidates) {
     const normalized = normalizeNotificationLanguage(candidate);
     if (normalized) return normalized;
@@ -466,12 +561,19 @@ function formatNotificationDuration(minutes, language) {
 }
 
 function buildNotificationTitle(alert, language) {
+  if (EVENT_TYPES.includes(alert.type)) return notificationT(language, "mobilePrototype.notificationsTitle");
+  if (alert.type === "credit_expiry") return notificationT(language, "credits.expiryAlertTitle");
   return notificationT(language, "settings.notifications.nativeAlertTitle", {
     window: localizedNotificationWindowLabel(alert, language)
   });
 }
 
 function buildNotificationBody(alert, language) {
+  if (EVENT_TYPES.includes(alert.type)) return notificationMessage(alert, readNotificationTranslations(language).mobilePrototype, language).body;
+  if (alert.type === "credit_expiry") return notificationT(language, "credits.expiryAlertBody", {
+    balance: new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(alert.balance),
+    date: new Date(`${alert.expiresOn}T12:00:00`).toLocaleDateString(language)
+  });
   const usedPercent = Math.round(Number(alert.usedPercent) || 0);
   if (alert.type === "hard_limit") {
     return [
@@ -779,7 +881,7 @@ function registerAutoUpdaterEvents(autoUpdater) {
   autoUpdater.on("error", (error) => {
     writeUpdateStatus({
       state: "error",
-      lastError: error?.message || String(error || "update_error")
+      lastError: safeUpdateError(error).code
     }).catch(() => {});
   });
 }
@@ -806,12 +908,13 @@ async function ensureAutoUpdater() {
     try {
       ({ autoUpdater } = require("electron-updater"));
     } catch (error) {
-      await writeUpdateStatus({ state: "error", lastError: error?.message || "electron_updater_missing" });
+      await writeUpdateStatus({ state: "error", lastError: "electron_updater_missing" });
       return { ok: false, reason: "electron_updater_missing" };
     }
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.logger = null;
+    configurePublishedUpdates(autoUpdater);
     registerAutoUpdaterEvents(autoUpdater);
     autoUpdaterRef = autoUpdater;
   }
@@ -835,11 +938,12 @@ async function checkForUpdates(reason = "scheduled") {
       downloadPercent: null,
       lastError: null
     });
-    await ready.autoUpdater.checkForUpdates();
+    const result = await ready.autoUpdater.checkForUpdates();
+    if (result?.downloadPromise) await result.downloadPromise;
   })().catch((error) => {
     return writeUpdateStatus({
       state: "error",
-      lastError: error?.message || String(error || "update_check_failed")
+      lastError: safeUpdateError(error).code
     });
   }).finally(() => {
     updateCheckPending = null;
@@ -936,16 +1040,19 @@ async function checkNotifications(port) {
     }
     lastAlertCount = data.alerts.length;
     lastAlerts = data.alerts;
+    let deliveredEventIds = [];
+    try { deliveredEventIds = JSON.parse(await fs.readFile(getNotificationStatusFile(), "utf8")).deliveredEventIds || []; } catch { /* First notification check. */ }
     const now = Date.now();
     const notificationLanguage = await getNotificationLanguage();
     for (const alert of data.alerts) {
       const key = alertKey(alert);
+      if (EVENT_TYPES.includes(alert.type) && deliveredEventIds.includes(key)) continue;
       const lastShown = notificationCooldowns.get(key) || 0;
-      if (now - lastShown < NOTIFICATION_COOLDOWN_MS) {
+      if (alert.type === "credit_expiry" ? lastShown > 0 : now - lastShown < NOTIFICATION_COOLDOWN_MS) {
         lastSkippedReason = `cooldown:${key}`;
         continue;
       }
-      notificationCooldowns.set(key, now);
+      if (!EVENT_TYPES.includes(alert.type)) notificationCooldowns.set(key, now);
       if (notificationSupported) {
         const title = buildNotificationTitle(alert, notificationLanguage);
         const body = buildNotificationBody(alert, notificationLanguage);
@@ -955,6 +1062,10 @@ async function checkNotifications(port) {
         if (delivery.result === "error") {
           lastSkippedReason = `notification_failed:${delivery.error}`;
         } else {
+          if (EVENT_TYPES.includes(alert.type)) {
+            deliveredEventIds = [...deliveredEventIds, key].slice(-200);
+            notificationCooldowns.set(key, now);
+          }
           requestNotificationAttention();
           lastShownAt = new Date().toISOString();
           lastShownAlert = alert;
@@ -973,7 +1084,8 @@ async function checkNotifications(port) {
       lastShownAlert,
       lastSkippedReason,
       lastError: null,
-      notificationSupported
+      notificationSupported,
+      deliveredEventIds
     });
   } catch (err) {
     lastError = err.message || String(err);
@@ -2442,9 +2554,39 @@ async function fileExists(filePath) {
 app.whenReady().then(async () => {
   if (!hasSingleInstanceLock) return;
   applyNativeThemePreference(await readThemePreference());
+  languagePreference = await readLanguagePreference();
   nativeTheme.on("updated", updateNativeWindowTheme);
   const port = await startBackend();
   dashboardPort = port;
+  plasmaWidget = createPlasmaWidget({ app, ipcMain, session: electronSession.defaultSession,
+    origin: `http://localhost:${port}`, getMainWindow: () => mainWindow, getLanguage: () => languagePreference });
+  await plasmaWidget.start();
+  desktopWidget = createDesktopWidget({ BrowserWindow, ipcMain, screen: require("electron").screen,
+    origin: `http://localhost:${port}`, stateFile: path.join(app.getPath("userData"), "desktop-widget.json"),
+    getMainWindow: () => mainWindow, getLanguage: () => languagePreference,
+    getTheme: () => ({ preference: themePreference, color: THEME_BACKGROUND_COLORS[resolvedNativeTheme()] }),
+    isWayland: process.platform === "linux" &&
+      (app.commandLine.getSwitchValue("ozone-platform") === "wayland" ||
+       (!app.commandLine.getSwitchValue("ozone-platform") && Boolean(process.env.WAYLAND_DISPLAY))),
+    showDashboard(target) {
+      showDashboardWindow(port);
+      if (target === "accounts") {
+        const targetWindow = mainWindow;
+        const send = () => {
+          if (mainWindow === targetWindow && !targetWindow.isDestroyed()) targetWindow.webContents.send("widget:open-accounts");
+        };
+        if (targetWindow.webContents.isLoadingMainFrame()) targetWindow.webContents.once("did-finish-load", send);
+        else send();
+      }
+    }
+  });
+  macMenuBar = createMacMenuBar({ Tray: require("electron").Tray, nativeImage: require("electron").nativeImage,
+    screen: require("electron").screen, widget: desktopWidget });
+  mobileAccess = createDesktopMobileAccess({ dataDir: process.env.LLM_USAGE_DATA_DIR,
+    upstream: `http://127.0.0.1:${port}`, label: os.hostname(),
+    legacyDirectory: path.join(app.getPath("appData"), "LLM Usage Dashboard LAN Prototype", "mobile-prototype") });
+  await mobileAccess.init();
+  mobileRefreshTimer = setInterval(() => { if (!systemSuspended) mobileAccess.refresh().catch(() => {}); }, 20000);
   await writeInstanceMarker(port).catch(() => {});
   await configureBackgroundLoginItem();
   if (shouldOpenInitialWindow() || openWindowWhenReady) showDashboardWindow(port);
@@ -2457,6 +2599,7 @@ app.whenReady().then(async () => {
   });
   powerMonitor.on("resume", () => {
     systemSuspended = false;
+    mobileAccess.refresh().catch(() => {});
     pollNotifications(port).catch(() => {});
   });
 
@@ -2477,7 +2620,13 @@ app.on("window-all-closed", () => {
   // Keep the backend alive for background quota sync; a later app launch reopens the window.
 });
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
+  if ((mobileAccess || plasmaWidget) && !mobileShutdown) {
+    event.preventDefault(); mobileShutdown = true; clearInterval(mobileRefreshTimer);
+    Promise.allSettled([mobileAccess?.stop(), plasmaWidget?.dispose()]).finally(() => app.quit()); return;
+  }
+  macMenuBar?.dispose(); macMenuBar = null;
+  desktopWidget?.dispose(); desktopWidget = null;
   removeInstanceMarker().catch(() => {});
   closeServer(dashboardServer);
   closeServer(ollamaProxyServer);

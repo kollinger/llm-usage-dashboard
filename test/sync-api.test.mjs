@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import crypto from "node:crypto";
+import { request } from "node:http";
 
 const dataDir = await mkdtemp(path.join(os.tmpdir(), "llm-sync-api-test-"));
 process.env.LLM_USAGE_DATA_DIR = dataDir;
@@ -21,6 +22,21 @@ const address = dashboardServer.address();
 const baseUrl = `http://127.0.0.1:${address.port}`;
 
 try {
+  for (const headers of [
+    { origin: "https://untrusted.invalid" },
+    { host: "untrusted.invalid" },
+    { "sec-fetch-site": "cross-site" }
+  ]) {
+    for (const [method, endpoint, body] of [
+      ["GET", "/api/sync/local/status"],
+      ["POST", "/api/sync/local/settings", { enabled: false }],
+      ["POST", "/api/sync/local/create-space", { deviceName: "Untrusted browser" }]
+    ]) {
+      const response = await api(method, endpoint, { headers, body });
+      assert.equal(response.status, 403, `${method} ${endpoint} must reject ${JSON.stringify(headers)}`);
+      assert.equal(response.body.error, "local_control_only");
+    }
+  }
   const forbiddenAdmin = await api("POST", "/api/sync/spaces", {
     body: { displayName: "Private test", deviceName: "Device A" }
   });
@@ -161,16 +177,28 @@ try {
 console.log("two-device sync API smoke passed");
 
 async function api(method, endpoint, options = {}) {
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    method,
-    headers: {
-      accept: "application/json",
-      ...(options.body ? { "content-type": "application/json" } : {}),
-      ...(options.token ? { authorization: `Bearer ${options.token}` } : {})
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined
+  return new Promise((resolve, reject) => {
+    const req = request(`${baseUrl}${endpoint}`, {
+      method,
+      headers: {
+        accept: "application/json",
+        ...(options.body ? { "content-type": "application/json" } : {}),
+        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
+        ...options.headers
+      }
+    }, (res) => {
+      let text = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => { text += chunk; });
+      res.on("end", () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(text) }); }
+        catch (error) { reject(error); }
+      });
+    });
+    req.on("error", reject);
+    req.setTimeout(10_000, () => req.destroy(new Error("sync API request timeout")));
+    req.end(options.body ? JSON.stringify(options.body) : undefined);
   });
-  return { status: response.status, body: await response.json() };
 }
 
 function event(seed, totalTokens, timestamp = "2026-08-20T07:00:00.000Z") {

@@ -138,12 +138,13 @@ assert.match(trigger.dedupeKey, /^codex\|readCodexUsage\|missing\|/u);
           }
         }
       }),
-      env: { ...process.env, CLAUDE_HOME: claudeHome }
+      env: { ...process.env, CLAUDE_HOME: path.join(tmpHome, "default"), CLAUDE_CONFIG_DIR: claudeHome }
     });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /Fable 79% frei/u);
     const captured = JSON.parse(fs.readFileSync(path.join(claudeHome, "usage-dashboard-statusline.json"), "utf8"));
     assert.equal(captured.rate_limits.fable.used_percentage, 21);
+    assert.equal(fs.existsSync(path.join(tmpHome, "default", "usage-dashboard-statusline.json")), false, "an isolated profile must not write into the default account");
   } finally {
     fs.rmSync(tmpHome, { recursive: true, force: true });
   }

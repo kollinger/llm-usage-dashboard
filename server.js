@@ -14,6 +14,23 @@ const execFileAsync = promisify(execFile);
 const express = require("express");
 const session = require("express-session");
 const packageInfo = require("./package.json");
+const { createGptAccountLogin } = require("./lib/gpt-account-login");
+const { createCreditExpiryStore, creditExpiryAlert, validDate: validCreditExpiryDate } = require("./lib/credit-expiry");
+const { createClaudeAccountLogin } = require("./lib/claude-account-login");
+const { createKimiAccountLogin, readKimiKeyUsage, readMoonshotBalance } = require("./lib/kimi-accounts");
+const { createProviderAccountStore, safeMeasurement, providerAccountIdentity } = require("./lib/provider-account-store");
+const { readAdminAccountUsage } = require("./lib/admin-account-usage");
+const { createKimiRuntime } = require("./lib/kimi-runtime");
+const { installConnectionsApi } = require("./lib/connections-api");
+const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
+const { claudeAccountIdentity, quotaAccountId, mergeClaudeLocalAccounts } = require("./lib/claude-accounts");
+const { DeviceSync } = require("./lib/device-sync");
+const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
+const { createUsageAggregation } = require("./lib/usage-aggregation");
+const { readUsageFileEvents } = require("./lib/usage-file-cache");
+const { conversationDescriptor, periodStart } = require("./lib/chat-usage");
+const { createChatMetadataReader } = require("./lib/chat-metadata");
+const { createUsageViewCache } = require("./lib/usage-view-cache");
 const { discoverSources, sourceId } = require("./lib/source-discovery");
 const {
   connectSource,
@@ -21,7 +38,10 @@ const {
   normalizeConnectedSource,
   readSourceSettings
 } = require("./lib/source-settings");
-const { aggregateUsageEvents, hashEvidencePath, normalizeUsageEvent } = require("./lib/usage-events");
+const { aggregateUsageEvents, hashEvidencePath, normalizeUsageEvent, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
+const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
+const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildAccountHistories } = require("./lib/codex-reset-history");
+const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
 const { SyncLedger } = require("./lib/sync-ledger");
 const { LocalSyncClient, safeDelayUntil } = require("./lib/sync-client");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
@@ -45,14 +65,21 @@ const SYNC_COLLECTOR_ENABLED = parseBoolean(process.env.LLM_USAGE_SYNC_COLLECTOR
 const SYNC_COLLECTOR_ADMIN_TOKEN = String(process.env.LLM_USAGE_SYNC_COLLECTOR_ADMIN_TOKEN || "").trim();
 const SYNC_SERVER_URL = String(process.env.LLM_USAGE_SYNC_SERVER_URL || "").trim();
 const SYNC_BACKGROUND_INTERVAL_MS = Math.max(5_000, envMs("LLM_USAGE_SYNC_INTERVAL_SECONDS", 60));
+const chatMetadataReader = createChatMetadataReader();
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
 const NOTIFICATION_STATUS_FILE = path.join(DATA_DIR, "notification-status.json");
+const quotaNotifications = createQuotaNotifications(path.join(DATA_DIR, "quota-notifications.json"));
 const UPDATE_SETTINGS_FILE = path.join(DATA_DIR, "update-settings.json");
 const UPDATE_STATUS_FILE = path.join(DATA_DIR, "update-status.json");
 const CLAUDE_BROWSER_CREDITS_FILE = path.join(DATA_DIR, "claude-browser-credits.json");
+const CLAUDE_USAGE_SNAPSHOT_FILE = path.join(DATA_DIR, "claude-usage-snapshot.json");
 const QUOTA_EVENTS_FILE = path.join(DATA_DIR, "quota-events.jsonl");
+const CODEX_RESET_SNAPSHOTS_FILE = path.join(DATA_DIR, "codex-reset-snapshots.jsonl");
+const CODEX_RESET_IMPORT_FILE = path.join(DATA_DIR, "codex-reset-history-import.json");
+const QUOTA_PACE_SAMPLES_FILE = path.join(DATA_DIR, "quota-pace-samples.json");
 const SUBSCRIPTION_SETTINGS_FILE = path.join(DATA_DIR, "subscription-settings.json");
+const creditExpiryStore = createCreditExpiryStore(path.join(DATA_DIR, "credit-expiry.json"));
 const SUBSCRIPTION_HISTORY_FILE = path.join(DATA_DIR, "subscription-history.json");
 const OFFICIAL_SUBSCRIPTION_PRICING_FILE = path.join(DATA_DIR, "official-subscription-pricing.json");
 const ACCOUNT_BILLING_SNAPSHOTS_FILE = path.join(DATA_DIR, "account-billing-snapshots.json");
@@ -81,6 +108,7 @@ const CODEX_HOMES = uniquePaths([
   DEFAULT_CODEX_HOME,
   CODEX_HOME,
   ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR),
+  ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles")),
   ...parsePathList(process.env.LLM_USAGE_CODEX_HOMES)
 ]);
 const COPILOT_HOME = expandHome(process.env.COPILOT_HOME || path.join(os.homedir(), ".copilot"));
@@ -159,6 +187,7 @@ const COPILOT_QUOTA_PROBE_SCRIPT = resolvePackagedResourcePath(path.join("script
 const CLAUDE_AUTH_STATUS_TIMEOUT_MS = envMs("CLAUDE_AUTH_STATUS_TIMEOUT_SECONDS", 5);
 const CLAUDE_AUTH_STATUS_CACHE_MS = envMs("CLAUDE_AUTH_STATUS_CACHE_SECONDS", 15 * 60);
 const CLAUDE_API_USAGE_CACHE_MS = envMs("CLAUDE_API_USAGE_CACHE_SECONDS", 60);
+const CLAUDE_API_USAGE_FALLBACK_MAX_AGE_MS = 8 * 24 * 60 * 60 * 1000;
 const ANTHROPIC_WORKSPACE_ID = String(process.env.ANTHROPIC_WORKSPACE_ID || "").trim();
 const ELECTRON_SYNC_TOKEN = String(process.env.LLM_USAGE_ELECTRON_SYNC_TOKEN || "").trim();
 const SUBSCRIPTION_PROVIDER_IDS = ["codex", "claudeCode", "openai", "anthropic", "copilot", "gemini"];
@@ -497,6 +526,10 @@ const usageFileScanCaches = {
   claudeCode: new Map(),
   gemini: new Map()
 };
+const usageFileCacheDirectories = new Map(Object.entries(usageFileScanCaches).map(([provider, cache]) =>
+  [cache, path.join(DATA_DIR, "usage-file-cache", provider)]));
+const usageFileCacheVersion = crypto.createHash("sha256").update(fs.readFileSync(__filename))
+  .update(fs.readFileSync(path.join(__dirname, "lib", "usage-events.js"))).digest("hex");
 let quotaEventsLatestByKeyPromise = null;
 let gptAccountAuthWatchTimer = null;
 let gptAccountAuthWatchInitialTimer = null;
@@ -556,6 +589,244 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(ROOT, "public")));
+app.use("/vendor/lucide", express.static(path.join(path.dirname(require.resolve("lucide/package.json")), "dist", "umd")));
+
+const deviceSync = new DeviceSync({ dataDir: DATA_DIR });
+const usageViewCache = createUsageViewCache({ directory: path.join(DATA_DIR, "usage-view-cache"), context: async () => {
+  try {
+    const read = async (file) => JSON.parse(await fsp.readFile(file, "utf8").catch((error) => {
+      if (error.code === "ENOENT") return "null";
+      throw error;
+    }));
+    const [settings, identity, sources] = await Promise.all([
+      read(path.join(DATA_DIR, "device-sync", "settings.json")), read(path.join(DATA_DIR, "device-sync", "identity.json")),
+      read(path.join(DATA_DIR, "connected-sources.json"))
+    ]);
+    return crypto.createHash("sha256").update(JSON.stringify([identity?.id || null, settings?.enabled || false, settings?.name || null,
+      (settings?.peers || []).map(({ id, signingKey, exchangeKey }) => [id, signingKey, exchangeKey]).sort(),
+      (settings?.revoked || []).slice().sort(), sources])).digest("hex");
+  } catch { return null; }
+} });
+const usageAggregation = createUsageAggregation({ viewCache: usageViewCache });
+const gptLogin = createGptAccountLogin({
+  profilesDir: path.join(DATA_DIR, "codex-profiles"),
+  clientFactory: createCodexAppServer,
+  onComplete: async () => {
+    prepareForcedGptAccountRefresh();
+    await readGptAccounts({ force: true });
+  }
+});
+
+const refreshConnectedAccounts = () => { invalidateTimedCache(usageCache); invalidateTimedCache(claudeAuthStatusCache); };
+const claudeLogin = createClaudeAccountLogin({ profilesDir: path.join(DATA_DIR, "claude-profiles"), resolveCli: resolveClaudeBinary, onComplete: async (profile) => {
+  await installManagedClaudeStatusline(profile.id);
+  refreshConnectedAccounts();
+} });
+const kimiRuntime = createKimiRuntime({ toolsDir: path.join(DATA_DIR, "tools", "kimi") });
+const kimiLogin = createKimiAccountLogin({ profilesDir: path.join(DATA_DIR, "kimi-profiles"), resolveCli: () => kimiRuntime.ensure(), onComplete: refreshConnectedAccounts });
+const connectedAccountStore = createProviderAccountStore({ dataDir: DATA_DIR, readers: {
+  openai: ({ key }) => readAdminAccountUsage("openai", key),
+  anthropic: ({ key }) => readAdminAccountUsage("anthropic", key),
+  kimi: async ({ key }) => {
+    const result = await readKimiKeyUsage(key);
+    return { ...result, authenticated: result.authenticated ?? ["available", "connected", "live"].includes(result.status) };
+  },
+  moonshot: async ({ key }) => {
+    const result = await readMoonshotBalance(key);
+    return { ...result, balance: result.balance?.available, currency: result.balance?.currency,
+      authenticated: result.authenticated ?? ["available", "connected", "live"].includes(result.status) };
+  },
+  glm: async ({ key, region }) => {
+    const base = resolveGlmCodingPlanBase(region === "china" ? "https://open.bigmodel.cn" : "https://api.z.ai");
+    const result = await fetchGlmCodingPlanQuota({ auth: { ...base, status: "available", accessToken: key, source: "dashboard_account" } });
+    return { authenticated: result.status === "available", limits: result.limits, updatedAt: result.updatedAt || new Date().toISOString(),
+      error: result.status === "expired" ? "invalid_key" : "connection_unavailable" };
+  }
+} });
+
+async function readManagedGptProfiles() {
+  const profiles = [];
+  for (const home of defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))) {
+    const id = path.basename(home);
+    if (!/^[a-f0-9-]{36}$/.test(id)) continue;
+    try {
+      const auth = JSON.parse(await fsp.readFile(path.join(home, "auth.json"), "utf8"));
+      const account = codexAccountObservationsFromAuth(auth)[0];
+      if (account) {
+        let label = account.label;
+        try {
+          const metadata = JSON.parse(await fsp.readFile(path.join(home, "dashboard-account.json"), "utf8"));
+          if (typeof metadata.label === "string" && metadata.label.trim()) label = metadata.label.replace(/[\x00-\x1f\x7f]/g, "").trim().slice(0, 80);
+        } catch { /* Profiles created before account labels keep their masked label. */ }
+        profiles.push({ id, label, accountId: account.id });
+      }
+    } catch { /* An unfinished or expired login is not a connected account. */ }
+  }
+  return profiles;
+}
+
+async function readBrowserConnections({ force = false, usage = usageCache.value } = {}) {
+  const isolated = (reader, fallback) => Promise.resolve().then(reader).catch(() => fallback);
+  const [profiles, registry, claudeProfiles, kimiProfiles, localClaude] = await Promise.all([
+    isolated(() => readManagedGptProfiles(), []),
+    isolated(() => force ? readGptAccounts({ force: true }) : Promise.resolve(gptAccountsCache.value || null).then((value) => value || readGptAccountRegistry(DATA_DIR).then(publicGptAccountRegistry)), { accounts: [] }),
+    isolated(() => claudeLogin.profiles({ refresh: force }), []),
+    isolated(() => force ? kimiLogin.refresh().then(() => kimiLogin.profiles()) : kimiLogin.profiles(), []),
+    isolated(() => readClaudeAuthStatus(), {})
+  ]);
+  const accounts = (registry.accounts || []).map((account) => {
+    const profile = profiles.find((item) => item.accountId === account.id);
+    const source = account.sources?.filter((item) => item.limits?.rows?.length).sort((a, b) => Date.parse(b.limitsUpdatedAt || 0) - Date.parse(a.limitsUpdatedAt || 0))[0];
+    return { id: profile ? `gpt:${profile.id}` : `detected:${account.id}`, accountId: account.id, provider: "gpt", label: profile?.label || account.label,
+      kind: "subscription", managed: Boolean(profile), status: account.active ? "connected" : "saved", updatedAt: source?.limitsUpdatedAt || account.lastSeenAt,
+      ...safeMeasurement({ limits: source?.limits, updatedAt: source?.limitsUpdatedAt || account.lastSeenAt, planType: account.planType }) };
+  });
+  for (const profile of profiles) {
+    if (!accounts.some((account) => account.id === `gpt:${profile.id}`)) accounts.push({ id: `gpt:${profile.id}`, accountId: profile.accountId, provider: "gpt", label: profile.label, kind: "subscription", managed: true, status: "connected", updatedAt: null });
+  }
+  for (const profile of claudeProfiles) {
+    const configDir = path.join(DATA_DIR, "claude-profiles", profile.id);
+    const measurement = await readClaudeProfileMeasurement(configDir).catch(() => ({}));
+    accounts.push({ id: `claude:${profile.id}`, accountId: profile.accountId || null, provider: "claude", label: profile.label || "Claude Code",
+      kind: "subscription", managed: true, status: profile.authenticated ? "connected" : "unavailable", ...safeMeasurement({ ...measurement, planType: profile.planType }), detailCode: measurement?.limits ? null : "limits_unavailable" });
+  }
+  for (const profile of kimiProfiles) accounts.push({ id: `kimi:${profile.id}`, accountId: profile.accountId || null, provider: "kimi", label: profile.label || "Kimi Code", kind: "subscription", managed: true,
+    status: profile.measurement?.error === "auth_failed" ? "auth_required" : ["connected", "available", "live"].includes(profile.status) ? "connected" : profile.status || "unavailable",
+    detailCode: profile.measurement?.error === "auth_failed" ? "invalid_key" : profile.measurement?.status === "unavailable" ? "limits_unavailable" : null,
+    ...safeMeasurement(profile.measurement) });
+  const glm = usage?.glm;
+  if (!glm?.connectedAccountCount && glm?.limits?.rows?.length) {
+    const auth = await readGlmCodingPlanAuth().catch(() => null);
+    const accountId = auth?.status === "available" && auth.accessToken
+      ? providerAccountIdentity("glm", auth.provider === "bigmodel" ? "china" : "global", auth.accessToken) : null;
+    accounts.push({ id: "detected:glm", accountId, provider: "glm", label: "GLM / Z.AI", kind: "subscription", managed: false, status: "connected",
+      ...safeMeasurement({ limits: glm.limits, updatedAt: glm.limitsUpdatedAt || glm.updatedAt }) });
+  }
+  return mergeClaudeLocalAccounts(accounts, usage?.claudeCode, localClaude).map((account) =>
+    account.provider === "claude" ? { ...account, ...safeMeasurement(account) } : account);
+}
+
+async function readClaudeProfileMeasurement(configDir) {
+  try {
+    const raw = JSON.parse(await fsp.readFile(path.join(configDir, "usage-dashboard-statusline.json"), "utf8"));
+    const statusline = extractClaudeStatusline(raw);
+    return { limits: statusline?.limits, updatedAt: raw.captured_at };
+  } catch { return {}; }
+}
+
+async function installManagedClaudeStatusline(id) {
+  if (!/^[a-f0-9-]{36}$/.test(id)) return;
+  const profileDir = path.join(DATA_DIR, "claude-profiles", id);
+  const settingsFile = path.join(profileDir, "settings.json");
+  let settings = {};
+  try { settings = JSON.parse(await fsp.readFile(settingsFile, "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  // Only our newly created profile is configured. Never replace a user's hook.
+  if (settings.statusLine) return;
+  const capture = path.join(profileDir, "llm-usage-statusline-capture.js");
+  await fsp.copyFile(path.join(ROOT, "scripts", "claude-statusline-capture.js"), capture);
+  await fsp.chmod(capture, 0o700);
+  const runner = process.versions?.electron ? `ELECTRON_RUN_AS_NODE=1 ${shellQuote(process.execPath)}` : shellQuote(process.execPath);
+  let command = `${runner} ${shellQuote(capture)}`;
+  if (process.platform === "win32") {
+    const quote = (value) => `'${value.replace(/'/g, "''")}'`;
+    const script = `${process.versions?.electron ? "$env:ELECTRON_RUN_AS_NODE='1'; " : ""}$input | & ${quote(process.execPath)} ${quote(capture)}`;
+    command = `powershell.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand ${Buffer.from(script, "utf16le").toString("base64")}`;
+  }
+  settings.statusLine = { type: "command", command };
+  await fsp.writeFile(settingsFile, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+  await fsp.chmod(settingsFile, 0o600);
+}
+
+function localControlMiddleware(req, res, next) {
+  const remote = req.socket.remoteAddress?.replace(/^::ffff:/, "");
+  const local = remote === "::1" || remote === "127.0.0.1";
+  const host = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(req.hostname);
+  let originAllowed = true;
+  if (req.get("origin")) {
+    try { originAllowed = new URL(req.get("origin")).origin === `${req.protocol}://${req.get("host")}`; }
+    catch { originAllowed = false; }
+  }
+  if (!local || !host || !originAllowed || req.get("sec-fetch-site") === "cross-site") return res.status(403).json({ error: "local_control_only" });
+  next();
+}
+
+installConnectionsApi(app, {
+  middleware: [authMiddleware, localControlMiddleware], keyStore: connectedAccountStore,
+  logins: { gpt: gptLogin, claude: claudeLogin, kimi: { ...kimiLogin, cancel: async () => { await kimiRuntime.cancel(); return kimiLogin.cancel(); } } },
+  available: (provider) => provider === "kimi" ? kimiRuntime.availability() : ({ gpt: resolveCodexBinary, claude: resolveClaudeBinary }[provider]?.()),
+  listBrowserAccounts: readBrowserConnections,
+  async removeBrowserAccount(id) {
+    const match = /^(gpt|claude|kimi):([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/.exec(id);
+    if (!match) throw new Error("invalid_account");
+    const [, provider, profileId] = match;
+    if (provider === "gpt") {
+      if (!(await readManagedGptProfiles()).some((profile) => profile.id === profileId)) throw new Error("invalid_account");
+      await fsp.rm(path.join(DATA_DIR, "codex-profiles", profileId), { recursive: true });
+      prepareForcedGptAccountRefresh();
+    } else {
+      try { await (provider === "claude" ? claudeLogin : kimiLogin).remove(profileId); }
+      catch { throw new Error("profile_remove_failed"); }
+    }
+  },
+  invalidate: refreshConnectedAccounts
+});
+
+app.get("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, (_req, res) => res.json(gptLogin.status()));
+app.post("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, async (_req, res) => {
+  try { res.json(await gptLogin.start()); }
+  catch { res.status(400).json({ error: "codex_login_unavailable" }); }
+});
+app.delete("/api/gpt-accounts/login", authMiddleware, localControlMiddleware, async (_req, res) => {
+  try { res.json(await gptLogin.cancel()); }
+  catch { res.status(400).json({ error: "login_cancel_failed" }); }
+});
+app.get("/api/gpt-accounts/profiles", authMiddleware, localControlMiddleware, async (_req, res) => {
+  const root = path.join(DATA_DIR, "codex-profiles");
+  const profiles = [];
+  for (const home of defaultCodexAccountHomes(root)) {
+    const id = path.basename(home);
+    if (!/^[a-f0-9-]{36}$/.test(id)) continue;
+    try {
+      const auth = JSON.parse(await fsp.readFile(path.join(home, "auth.json"), "utf8"));
+      const account = codexAccountObservationsFromAuth(auth)[0];
+      if (account) profiles.push({ id, label: account.label, accountId: account.id });
+    } catch { /* Pending and expired logins do not appear as connected accounts. */ }
+  }
+  res.json({ profiles });
+});
+app.delete("/api/gpt-accounts/profiles/:id", authMiddleware, localControlMiddleware, async (req, res) => {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(req.params.id)) return res.status(400).json({ error: "invalid_profile" });
+  try {
+    await fsp.rm(path.join(DATA_DIR, "codex-profiles", req.params.id), { recursive: true, force: true });
+    prepareForcedGptAccountRefresh();
+    res.json({ ok: true });
+  } catch { res.status(400).json({ error: "profile_remove_failed" }); }
+});
+async function readDeviceSyncStatus() {
+  const status = deviceSync.status();
+  if (!status.restoring || !status.enabled) return status;
+  const cached = await usageViewCache.read("all", await usageViewCache.context());
+  return cached?.devices ? { ...status, devices: cached.devices } : status;
+}
+
+app.get("/api/device-sync", authMiddleware, localControlMiddleware, async (_req, res) => res.json(await readDeviceSyncStatus()));
+app.post("/api/device-sync/:action", authMiddleware, localControlMiddleware, async (req, res) => {
+  try {
+    let result;
+    if (req.params.action === "settings") result = await deviceSync.configure(req.body);
+    else if (req.params.action === "invite") result = deviceSync.createInvite();
+    else if (req.params.action === "join") result = await deviceSync.join(req.body.code);
+    else if (req.params.action === "forget") result = await deviceSync.forget(req.body.id);
+    else if (req.params.action === "refresh") result = await deviceSync.sync();
+    else return res.status(404).json({ error: "unknown_action" });
+    invalidateTimedCache(usageCache);
+    res.json(result);
+  } catch (error) {
+    const allowed = new Set(["sync_disabled", "invalid_pairing_code", "peer_unreachable", "network_unavailable", "invalid_device", "invalid_settings", "device_limit"]);
+    res.status(400).json({ error: allowed.has(error.message) ? error.message : "sync_failed" });
+  }
+});
 
 function expandHome(value) {
   if (!value) return value;
@@ -834,20 +1105,94 @@ app.get("/auth/oidc/callback", async (req, res) => {
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
     markInteractiveUsageRequest();
-    const [usage, sync] = await Promise.all([
-      readUsageDashboard({ force: parseBoolean(req.query.force) }),
-      localSyncClient.readPublicStatus()
-    ]);
-    res.json({
-      ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)),
-      sync: {
-        ...sync,
-        collectorEnabled: SYNC_COLLECTOR_ENABLED
+    const collectorSync = {
+      ...(await localSyncClient.readPublicStatus()),
+      collectorEnabled: SYNC_COLLECTOR_ENABLED
+    };
+    const sendUsage = (value) => res.json({ ...value, sync: collectorSync });
+    const force = parseBoolean(req.query.force);
+    const usage = await readUsageDashboard({ force, staleWhileRefresh: !force });
+    const selected = typeof req.query.device === "string" ? req.query.device : "local";
+    let sync = await readDeviceSyncStatus();
+    if (sync.enabled && selected !== "local" && sync.restoring && !force) {
+      const cached = await usageViewCache.read(selected, await usageViewCache.context());
+      if (cached && deviceSync.config.enabled && deviceSync.restoringSnapshots &&
+          !cached.devices?.some((device) => deviceSync.config.revoked.includes(device.id)) &&
+          (selected === "all" || cached.devices?.some((device) => device.id === selected))) {
+        const combined = refreshCombinedUsageMetadata(usage, cached.value, [], selected);
+        return sendUsage({ ...combined, cache: cached.value.cache, deviceSync: sync });
       }
-    });
+    }
+    if (sync.enabled && selected !== "local") {
+      if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+      if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
+        return sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
+      }
+      const snapshots = [...deviceSync.snapshots.values()];
+      const combined = await usageAggregation.get(usage, snapshots, selected, { force });
+      const currentSync = deviceSync.status();
+      if (!currentSync.enabled) return sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: currentSync });
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+      if (snapshots.length !== deviceSync.snapshots.size || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id))) {
+        return res.status(409).json({ error: "device_scope_changed" });
+      }
+      return sendUsage({ ...combined, deviceSync: currentSync });
+    }
+    sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
   }
+});
+
+app.get("/api/desktop-widget", authMiddleware, localControlMiddleware, async (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    markInteractiveUsageRequest();
+    res.json(buildDesktopWidgetSnapshot(await readUsageDashboard({ staleWhileRefresh: true })));
+  } catch {
+    res.status(503).json({ error: "widget_unavailable" });
+  }
+});
+
+app.get("/api/chat-usage", authMiddleware, async (req, res) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    let selected = typeof req.query.device === "string" ? req.query.device : "local";
+    const period = typeof req.query.period === "string" ? req.query.period : "all";
+    const timeZone = typeof req.query.timeZone === "string" ? req.query.timeZone : "UTC";
+    const id = typeof req.query.id === "string" ? req.query.id : null;
+    try { periodStart(period, timeZone); }
+    catch { return res.status(400).json({ error: "invalid_chat_period" }); }
+    if (id && !/^[a-f0-9]{64}$/.test(id)) return res.status(400).json({ error: "invalid_chat_id" });
+    let sync = await readDeviceSyncStatus();
+    // The shared desktop/phone frontend defaults to All even without paired
+    // computers. Match /api/usage: All then means this installation's usage.
+    if (selected === "all" && !sync.enabled) selected = "local";
+    if (selected !== "local") {
+      if (!sync.enabled) return res.status(400).json({ error: "device_sync_disabled" });
+      if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+    }
+    // Reuse the existing scan and worker; this route never starts a provider
+    // request per chat or sends transcript contents to the browser.
+    await readUsageDashboard({ staleWhileRefresh: false });
+    const snapshots = sync.enabled ? [...deviceSync.snapshots.values()] : [];
+    let report = await usageAggregation.chats(snapshots, selected, { period, timeZone, id });
+    if (!report && selected === "local") {
+      // A worker can restart while the consumption view is still fresh. Rebuild
+      // its private index once, without forcing an account/auth refresh.
+      invalidateTimedCache(usageCache);
+      await readUsageDashboard({ staleWhileRefresh: false });
+      report = await usageAggregation.chats(snapshots, selected, { period, timeZone, id });
+    }
+    if (selected !== "local" && (!deviceSync.status().enabled || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id)))) {
+      return res.status(409).json({ error: "device_scope_changed" });
+    }
+    if (!report) return res.status(503).json({ error: "chat_usage_initializing" });
+    if (id && !report.row) return res.status(404).json({ error: "chat_not_found" });
+    return res.json(report);
+  } catch (error) { sendApiError(res, error, "chat_usage_read_failed"); }
 });
 
 app.get("/api/system/live", authMiddleware, async (_req, res) => {
@@ -955,6 +1300,8 @@ app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
     sendApiError(res, error, "source_disable_failed");
   }
 });
+
+app.use("/api/sync/local", authMiddleware, localControlMiddleware);
 
 app.post("/api/sync/spaces", syncCollectorAdminMiddleware, async (req, res) => {
   try {
@@ -1149,11 +1496,24 @@ app.delete("/api/sync/local/connection", authMiddleware, async (req, res) => {
   }
 });
 
-async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
+async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   if (force) prepareForcedGptAccountRefresh();
-  return readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
+  if (!force && !usageCache.value) {
+    const restored = await usageViewCache.read("local", await usageViewCache.context());
+    if (restored && !usageCache.value) {
+      usageCache.value = restored.value;
+      usageCache.updatedAtMs = Date.parse(restored.value.generatedAt);
+    }
+  }
+  const usage = await readThroughCache(usageCache, USAGE_CACHE_MS, async () => {
+    const viewFingerprint = await usageViewCache.context();
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
+    for (const profile of await claudeLogin.profileSources().catch(() => [])) {
+      localSources.claudeCode.push(defaultHomeSource("claudeCode", "Claude Code", profile.configDir, [
+        { role: "projects", path: path.join(profile.configDir, "projects"), kind: "directory" }
+      ]));
+    }
     // Resolve the account registry before the parallel provider readers so the
     // Codex account and rate-limit probes reuse one initialized app-server.
     const gptAccounts = await readGptAccounts({
@@ -1202,6 +1562,10 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       readAnthropicUsage().catch((error) => providerError("anthropic", error))
     ]);
 
+    // Connections consume this scan's measurements, including on a cold start.
+    // Reading the previous usageCache here loses Claude's first quota sample.
+    const connectedAccounts = await readConnectedAccountSnapshots({ claudeCode: claudeCodeRaw, glm: glmRaw }).catch(() => []);
+
     const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex", officialPricing, accountBilling);
     const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot", officialPricing, accountBilling);
     const claudeCode = mergeProviderSubscription(
@@ -1212,7 +1576,10 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       accountBilling
     );
     const gemini = mergeProviderSubscription(geminiRaw, subscriptions.gemini, "gemini", officialPricing, accountBilling);
-    const glm = glmRaw;
+    const glm = applyConnectedAccountQuota(glmRaw, connectedAccounts.filter((account) => account.provider === "glm"));
+    const kimi = applyConnectedAccountQuota({ id: "kimi", status: "not_configured", updatedAt: new Date().toISOString(),
+      totals: null, daily: [], byModel: [], limits: null, usageQuality: "unavailable", _usageEvents: [],
+      source: { hasConfiguredSource: false, eventCount: 0, protocol: "kimi_code_quota" } }, connectedAccounts.filter((account) => account.provider === "kimi"));
     const openCode = openCodeRaw;
     const ollama = ollamaRaw;
     const openai = mergeProviderSubscription(openaiRaw, subscriptions.openai, "openai", officialPricing, accountBilling);
@@ -1223,30 +1590,134 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0 } = {}) {
       officialPricing,
       accountBilling
     );
-    await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, openai, anthropic]).catch(() => {});
-    const local = buildLocalAggregate([codex, openCode, copilot, claudeCode, gemini, glm, ollama]);
-    const syncUsageEvents = [codex, openCode, copilot, claudeCode, gemini, glm, ollama]
+    const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
+    const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
+    const providers = [codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama];
+    const chatCatalog = await chatMetadataReader.read({ codexHomes: uniquePaths([
+      ...CODEX_HOMES, ...sourcePathEntries(localSources.codex, ["sessions", "archived_sessions"])
+        .map((entry) => path.dirname(entry.path))
+    ]), sessions: [...new Map(providers.flatMap((provider) => (provider?._usageEvents || []).flatMap((event) =>
+      event.evidence?.sessionId ? [[`${event.providerId}:${event.evidence.sessionId}`, {
+        providerId: event.providerId, sessionId: event.evidence.sessionId, file: event.evidence.realpath,
+        cwd: event.chatContext?.cwd, originator: event.chatContext?.originator
+      }]] : []))).values()] }).catch(() => ({ sessions: {}, multicaStatus: "unavailable" }));
+    for (const provider of providers) {
+      for (const event of provider?._usageEvents || []) {
+        const sessionId = event.evidence?.sessionId;
+        if (!sessionId) continue;
+        const metadata = chatCatalog.sessions?.[`${event.providerId}:${sessionId}`] || chatCatalog.files?.[event.evidence?.realpath];
+        if (metadata) {
+          const runs = (metadata.runs || []).filter((run) => Number.isFinite(Date.parse(run.startedAt)) &&
+            event.timestampMs >= Date.parse(run.startedAt) && (!run.completedAt || event.timestampMs <= Date.parse(run.completedAt)));
+          const run = runs.length === 1 ? runs[0] : null;
+          event.conversation = conversationDescriptor(event.providerId, sessionId, {
+            kind: event.conversation?.kind, title: event.conversation?.title, ...metadata,
+            ...(metadata.runs?.length ? { runId: run?.id, runTitle: run?.kind } : {})
+          });
+        }
+      }
+    }
+    const aggregateOptions = {
+      device: { id: deviceSync.identity?.id || "local", label: deviceSync.config.name },
+      snapshots: [...deviceSync.snapshots.values()],
+      accounts: [...(gptAccounts.accounts || []), ...connectedAccounts],
+      dailyHistoryDays: DAILY_HISTORY_DAYS,
+      exportEvents: deviceSync.config.enabled,
+      multicaStatus: chatCatalog.multicaStatus
+    };
+    const aggregation = await usageAggregation.aggregateLocal(providers, aggregateOptions);
+    if (!providers.some((provider) => provider?._usageEvents?.length)) aggregation.local = buildLocalAggregate(providers, aggregateOptions);
+    const local = aggregation.local;
+    if (deviceSync.config.enabled && aggregation.exported) {
+      try {
+        await deviceSync.capture({ ...aggregation.exported, accounts: gptAccounts.accounts, connections: connectedAccounts });
+        if (deviceSync.error === "capture_failed") deviceSync.error = null;
+      } catch { deviceSync.error = "capture_failed"; }
+    }
+    const syncUsageEvents = providers
       .flatMap((provider) => provider?._usageEvents || []);
     await localSyncClient.captureUsageEvents(syncUsageEvents).catch(async (error) => {
       await localSyncClient.recordError(error).catch(() => {});
     });
 
     const now = new Date().toISOString();
-    return {
+    const value = {
       generatedAt: now,
+      quotaPace,
       codex: stripProviderUsageEvents(codex),
       openCode: stripProviderUsageEvents(openCode),
       copilot: stripProviderUsageEvents(copilot),
       claudeCode: stripProviderUsageEvents(claudeCode),
       gemini: stripProviderUsageEvents(gemini),
       glm: stripProviderUsageEvents(glm),
+      kimi: stripProviderUsageEvents(kimi),
       ollama: stripProviderUsageEvents(ollama),
       local,
       gptAccounts,
+      connectedAccounts,
       openai,
       anthropic
     };
-  }, { force, maxAgeMs });
+    await usageViewCache.write("local", viewFingerprint, value);
+    return value;
+  }, { force, maxAgeMs, staleWhileRefresh });
+  const [claudeProbe, claudeStatusline] = usage.cache?.restored && !usage.claudeCode?.limits
+    ? await Promise.all([claudeApiUsageCache.value || readClaudeUsageSnapshot(), readClaudeStatusline().catch(() => null)])
+    : [null, null];
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+}
+
+async function currentCodexCreditScope() {
+  try {
+    const auth = JSON.parse(await fsp.readFile(path.join(CODEX_HOME, "auth.json"), "utf8"));
+    const claims = parseJwtClaims(auth.tokens?.access_token) || parseJwtClaims(auth.tokens?.id_token);
+    const identity = auth.tokens?.account_id || claims?.["https://api.openai.com/auth"]?.chatgpt_account_id;
+    return identity ? crypto.createHash("sha256").update(`codex-credits:${identity}`).digest("hex") : null;
+  } catch { return null; }
+}
+
+async function applyCodexCreditExpiry(usage) {
+  if (!usage.codex?.creditRows?.length) return usage;
+  const scope = await currentCodexCreditScope();
+  const expiresOn = scope && usage.codex.creditScope === scope ? await creditExpiryStore.get(scope) : null;
+  return { ...usage, codex: { ...usage.codex, creditRows: usage.codex.creditRows.map((row) =>
+    row.key === "codexCredits" && Number.isFinite(row.balance)
+      ? { ...row, expiresOn, expirySource: expiresOn ? "manual" : null } : row) } };
+}
+
+function overlayCurrentCodexQuota(usage, live, updatedAtMs, now = Date.now()) {
+  if (!live || !updatedAtMs || now - updatedAtMs > 90_000 || !usage.codex) return usage;
+  const overlay = (provider, snapshot, label) => snapshot ? { ...provider, status: "live",
+    limits: codexRateLimitsFromLive(snapshot, label), limitsUpdatedAt: live.source.updatedAt,
+    liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source },
+    ...(label === "Codex" ? { creditRows: codexCreditRowsFromLive(snapshot), creditScope: live.source.creditScope || null } : {}) } : provider;
+  const codex = overlay(usage.codex, live.codex, "Codex");
+  return { ...usage, codex: { ...codex, spark: overlay(codex.spark || {}, live.spark, "Codex 5.3 Spark") } };
+}
+
+let connectedBrowserRefreshAt = 0;
+let connectedBrowserRefresh = null;
+async function readConnectedAccountSnapshots(usage = usageCache.value) {
+  if (Date.now() - connectedBrowserRefreshAt > 60_000) {
+    connectedBrowserRefresh ||= kimiLogin.refresh().catch(() => {}).finally(() => { connectedBrowserRefreshAt = Date.now(); connectedBrowserRefresh = null; });
+    await connectedBrowserRefresh;
+  }
+  const [browser, keys] = await Promise.all([
+    readBrowserConnections({ usage }).catch(() => []), connectedAccountStore.refresh().catch(() => [])
+  ]);
+  return [...browser.filter((account) => account.managed || !account.accountId || !keys.some((key) => key.provider === account.provider && key.accountId === account.accountId)), ...keys];
+}
+
+function applyConnectedAccountQuota(provider, accounts) {
+  const connected = accounts.filter((account) => account.status === "connected" && account.managed);
+  if (!connected.length) return provider;
+  const latest = connected.slice().sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0));
+  // Account windows are not additive. Multiple accounts remain individually
+  // visible in connectedAccounts; never manufacture one combined percentage.
+  const limits = latest.length === 1 ? latest[0].limits : null;
+  return { ...provider, status: "live", limits, limitsUpdatedAt: latest[0].updatedAt || null,
+    source: { ...provider.source, hasConfiguredSource: true, connectedAccountCount: latest.length },
+    connectedAccountCount: latest.length, planType: latest.length === 1 ? latest[0].planType : null };
 }
 
 const LIVE_METRICS_RESPONSE_CACHE_MS = 4000;
@@ -1843,6 +2314,14 @@ app.post("/api/account-billing/snapshots", electronSyncMiddleware, async (req, r
   }
 });
 
+app.get("/api/codex-reset-history", authMiddleware, async (req, res) => {
+  try {
+    res.json(await readCodexResetHistory(Number(req.query.limit ?? 10)));
+  } catch (error) {
+    sendApiError(res, error, "codex_reset_history_read_failed");
+  }
+});
+
 app.get("/api/quota-history", authMiddleware, async (req, res) => {
   try {
     const events = await readQuotaEvents();
@@ -1863,6 +2342,24 @@ app.get("/api/quota-history", authMiddleware, async (req, res) => {
   } catch (error) {
     sendApiError(res, error, "quota_history_read_failed");
   }
+});
+
+app.get("/api/credits/codex-expiry", authMiddleware, async (_req, res) => {
+  try {
+    const scope = await currentCodexCreditScope();
+    res.json({ context: scope, expiresOn: scope ? await creditExpiryStore.get(scope) : null });
+  } catch (error) { sendApiError(res, error, "credit_expiry_read_failed"); }
+});
+
+app.post("/api/credits/codex-expiry", authMiddleware, async (req, res) => {
+  try {
+    const scope = await currentCodexCreditScope();
+    if (!scope || req.body?.context !== scope) return res.status(409).json({ error: "credit_account_changed" });
+    const expiresOn = req.body?.expiresOn;
+    if (expiresOn !== null && !validCreditExpiryDate(expiresOn)) return res.status(400).json({ error: "invalid_credit_expiry" });
+    await creditExpiryStore.set(scope, expiresOn);
+    res.json({ expiresOn });
+  } catch (error) { sendApiError(res, error, "credit_expiry_save_failed"); }
 });
 
 app.get("/api/subscriptions/settings", authMiddleware, async (_req, res) => {
@@ -1960,6 +2457,7 @@ app.post("/api/notifications/settings", authMiddleware, async (req, res) => {
     const current = await readNotificationSettings();
     const updated = {
       enabled: typeof body.enabled === "boolean" ? body.enabled : current.enabled,
+      resetsEnabled: typeof body.resetsEnabled === "boolean" ? body.resetsEnabled : current.resetsEnabled,
       pacingPercent: Number.isFinite(Number(body.pacingPercent))
         ? Math.max(50, Math.min(200, Number(body.pacingPercent)))
         : current.pacingPercent,
@@ -1988,10 +2486,24 @@ app.get("/api/notifications/check", electronSyncMiddleware, async (_req, res) =>
     const codex = usage?.codex || null;
     const claudeCode = usage?.claudeCode || null;
     const copilot = usage?.copilot || null;
-    const alerts = buildNotificationAlerts(settings, { codex, claudeCode, copilot });
-    res.json({ alerts });
+    const alerts = providerNotificationAlerts(settings, { codex, claudeCode, copilot });
+    res.json({ alerts: [...alerts, ...await quotaNotifications.events(settings)] });
   } catch (error) {
     sendApiError(res, error, "notification_check_failed");
+  }
+});
+
+// The paired phone gateway consumes the same thresholds as native alerts.
+// Return only notification metadata, never account or provider credentials.
+app.get("/api/notifications/mobile", authMiddleware, async (_req, res) => {
+  try {
+    const settings = await readNotificationSettings();
+    if (!settings.enabled) return res.json({ enabled: false, alerts: [], events: [] });
+    const usage = await readUsageDashboard({ maxAgeMs: NOTIFICATION_USAGE_MAX_AGE_MS });
+    const alerts = providerNotificationAlerts(settings, { codex: usage.codex, claudeCode: usage.claudeCode, copilot: usage.copilot });
+    res.json({ enabled: true, resetsEnabled: settings.resetsEnabled, alerts, events: await quotaNotifications.events(settings) });
+  } catch (error) {
+    sendApiError(res, error, "mobile_notifications_unavailable");
   }
 });
 
@@ -2751,6 +3263,7 @@ function buildReaderSources(connectedSources = []) {
 function defaultCodexSources() {
   return CODEX_HOMES.map((home) => defaultHomeSource("codex", "Codex", home, [
     { role: "sessions", path: path.join(home, "sessions"), kind: "directory" },
+    { role: "sessions", path: path.join(home, "multica-sessions"), kind: "directory" },
     { role: "archived_sessions", path: path.join(home, "archived_sessions"), kind: "directory" }
   ]));
 }
@@ -2969,13 +3482,15 @@ function createTimedCache() {
   };
 }
 
-async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs = 0 } = {}) {
+async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   const now = Date.now();
   if (!force && cache.value && now < cache.expiresAt) return cache.value;
   // Callers that tolerate staleness (e.g. background notification checks)
   // accept an expired value up to maxAgeMs old instead of triggering a rebuild.
   if (!force && maxAgeMs > 0 && cache.value && now - (cache.updatedAtMs || 0) < maxAgeMs) return cache.value;
-  if (cache.pending) return cache.pending;
+  const refreshingValue = () => ({ ...cache.value, cache: { ...(cache.value.cache || {}), stale: true, refreshing: true,
+    staleReason: "usage_refresh_in_progress", staleAt: new Date().toISOString() } });
+  if (cache.pending) return !force && staleWhileRefresh && cache.value ? refreshingValue() : cache.pending;
 
   const generation = cache.generation || 0;
   const pending = Promise.resolve()
@@ -3010,6 +3525,10 @@ async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs 
     });
 
   cache.pending = pending;
+  if (!force && staleWhileRefresh && cache.value) {
+    pending.catch(() => {});
+    return refreshingValue();
+  }
   return cache.pending;
 }
 
@@ -3229,7 +3748,7 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
       status: explicitStatus,
       parserStatus: explicitStatus,
       unavailableReason: accountBillingReasonCode(
-        raw.reason || raw.error,
+        raw.reason || raw.unavailableReason || raw.error,
         `account_billing_source_${explicitStatus}`
       )
     };
@@ -3258,7 +3777,7 @@ function sanitizeAccountBillingProviderSnapshot(raw, providerId, rootMeta = {}, 
       ...base,
       status: "missing",
       parserStatus: parserStatus === "parsed" ? "missing" : parserStatus,
-      unavailableReason: accountBillingReasonCode(raw.reason || raw.error, "account_billing_amount_missing")
+      unavailableReason: accountBillingReasonCode(raw.reason || raw.unavailableReason || raw.error, "account_billing_amount_missing")
     };
   }
 
@@ -4451,32 +4970,36 @@ async function readCodexUsage(options = {}) {
           rateLimitEvents.push(rateLimitEvent);
         }
       }
-      const usageEvent = normalizeUsageEvent({
+      const usageEvent = {
         providerId: "codex",
+        conversation: conversationDescriptor("codex", entry.chat?.sessionId || fileRecord.sessionId, entry.chat || {}),
+        chatContext: { cwd: entry.chat?.cwd, originator: entry.chat?.originator },
         sourceId: fileRecord.sourceId,
         eventId: entry.eventId,
         timestampMs,
         model: currentModel || entry.limitName || null,
         usage,
+        attribution: entry.attribution,
         evidence: {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
           sourceEventSha256: entry.sourceEventSha256,
-          sessionId: fileRecord.sessionId,
-          rolloutSessionId: fileRecord.sessionId
+          sessionId: entry.chat?.sessionId || fileRecord.sessionId,
+          rolloutSessionId: entry.chat?.sessionId || fileRecord.sessionId
         },
         metadata: {
           sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex",
           reasoningEffort
         }
-      });
-      if (!usageEvent) continue;
-      if (seenUsageEventKeys.has(usageEvent.dedupeKey)) {
+      };
+      const normalizedUsageEvent = normalizeUsageEvent(usageEvent);
+      if (!normalizedUsageEvent) continue;
+      if (seenUsageEventKeys.has(normalizedUsageEvent.dedupeKey)) {
         duplicateEventsSkipped += 1;
         continue;
       }
-      seenUsageEventKeys.add(usageEvent.dedupeKey);
+      seenUsageEventKeys.add(normalizedUsageEvent.dedupeKey);
       usageEvents.push(usageEvent);
       addUsage(aggregates, usage);
       if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
@@ -4526,6 +5049,7 @@ async function readCodexUsage(options = {}) {
     if (fileEvents) sessionsWithEvents += 1;
   }
 
+  await saveCodexHistoricalSamples(rateLimitEvents).catch(() => {});
   const daily = buildDaily(dailyMap);
   const liveRateLimits = await liveRateLimitsPromise;
   const codexPlan = preferredCodexPlan(liveRateLimits?.codex?.planType || null);
@@ -4553,6 +5077,7 @@ async function readCodexUsage(options = {}) {
     planType: codexPlan.planType,
     planSource: codexPlan.source,
     creditRows: liveCodexCreditRows,
+    creditScope: liveRateLimits?.source?.creditScope || null,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent
       ? {
@@ -4594,7 +5119,18 @@ async function parseCodexSessionFileEvents(fileRecord) {
   const events = [];
   let currentModel = null;
   let currentReasoningEffort = null;
+  let sessionAttribution = null;
+  const chat = { sessionId: fileRecord.sessionId || codexSessionId(fileRecord.file),
+    kind: fileRecord.file.split(path.sep).includes("multica-sessions") ? "multica" : "codex" };
   await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type === "session_meta") {
+      chat.sessionId = event.payload?.id || event.payload?.session_id || chat.sessionId;
+      chat.title = event.payload?.thread_name || event.payload?.title || null;
+      chat.cwd = event.payload?.cwd;
+      chat.originator = event.payload?.originator;
+      if (/multica/i.test(event.payload?.originator || "")) chat.kind = "multica";
+    }
+    if (event?.type === "session_meta") sessionAttribution = recordedAccountAttribution("codex", event.payload);
     if (event?.type === "turn_context" && event.payload?.model) {
       currentModel = event.payload.model;
       currentReasoningEffort = normalizeCodexReasoningEffort(event.payload.effort);
@@ -4611,12 +5147,14 @@ async function parseCodexSessionFileEvents(fileRecord) {
     const rateLimits = event.payload.rate_limits || null;
     events.push({
       timestamp: event.timestamp,
+      chat,
       timestampMs,
       model: currentModel,
       reasoningEffort: currentReasoningEffort,
       // Kept separately so model attribution survives rate-limit compaction.
       limitName: rateLimits?.limit_name || null,
       usage: event.payload.info?.last_token_usage || {},
+      attribution: recordedAccountAttribution("codex", event.payload) || sessionAttribution,
       info: event.payload.info || {},
       rateLimits,
       eventId: event.id || event.payload?.id || null,
@@ -4625,7 +5163,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       isSparkRateLimit: isCodexSparkRateLimit(rateLimits),
       isSparkUsage: isCodexSparkUsageEvent(currentModel, rateLimits)
     });
-  });
+  }, new Set(["session_meta", "turn_context", "event_msg"]));
   return compactCodexFileEvents(events);
 }
 
@@ -4711,6 +5249,7 @@ async function readCopilotUsage(options = {}) {
 
       usageEvents.push({
         providerId: "copilot",
+        conversation: conversationDescriptor("copilot", data.sessionId || data.conversationId),
         sourceId: fileRecord.sourceId,
         eventId: data.sessionId || data.conversationId || null,
         timestampMs,
@@ -5183,16 +5722,26 @@ async function readClaudeUsageProbe() {
   if (claudeApiUsageCache.value && now < claudeApiUsageCache.expiresAt) return claudeApiUsageCache.value;
   if (claudeApiUsageCache.pending) return claudeApiUsageCache.pending;
 
+  const previous = claudeApiUsageCache.value || await readClaudeUsageSnapshot();
   claudeApiUsageCache.pending = Promise.resolve()
     .then(fetchClaudeUsageProbe)
     .then((probe) => {
-      const value = normalizeClaudeApiUsageProbe(probe);
+      const incoming = normalizeClaudeApiUsageProbe(probe);
+      const value = retainLastKnownClaudeUsageProbe(previous, incoming);
       claudeApiUsageCache.value = value;
       claudeApiUsageCache.expiresAt = Date.now() + (value.usage ? CLAUDE_API_USAGE_CACHE_MS : Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000));
+      if (incoming.usage) {
+        saveClaudeUsageSnapshot(incoming).catch(() => {});
+        recordClaudeNotificationSample(incoming, probe.notificationScope).catch(() => {});
+      } else quotaNotifications.observe("claudeCode", null).catch(() => {});
       return value;
     })
     .catch((error) => {
-      const value = claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api");
+      quotaNotifications.observe("claudeCode", null).catch(() => {});
+      const value = retainLastKnownClaudeUsageProbe(
+        previous,
+        claudeApiProbe("unavailable", safeClaudeApiReason(error?.message, "claude_api_unavailable"), "claude_api")
+      );
       claudeApiUsageCache.value = value;
       claudeApiUsageCache.expiresAt = Date.now() + Math.min(CLAUDE_API_USAGE_CACHE_MS, 30_000);
       return value;
@@ -5202,6 +5751,33 @@ async function readClaudeUsageProbe() {
     });
 
   return claudeApiUsageCache.pending;
+}
+
+async function readClaudeUsageSnapshot(file = CLAUDE_USAGE_SNAPSHOT_FILE, nowMs = Date.now()) {
+  try {
+    const raw = JSON.parse(await fsp.readFile(file, "utf8"));
+    if (!normalizeOptionalDate(raw?.usage?.updatedAt || raw?.updatedAt)) return null;
+    const snapshot = normalizeClaudeApiUsageProbe(raw);
+    return snapshot.usage && hasCurrentClaudeUsageSnapshot(snapshot.usage, nowMs) ? snapshot : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveClaudeUsageSnapshot(probe, file = CLAUDE_USAGE_SNAPSHOT_FILE) {
+  const snapshot = normalizeClaudeApiUsageProbe(probe);
+  if (!snapshot.usage) return null;
+  const persisted = {
+    version: 1,
+    status: "available",
+    source: snapshot.source,
+    updatedAt: snapshot.updatedAt,
+    accountId: quotaAccountId(snapshot.accountId),
+    usage: snapshot.usage
+  };
+  await fsp.mkdir(path.dirname(file), { recursive: true });
+  await fsp.writeFile(file, `${JSON.stringify(persisted, null, 2)}\n`, { mode: 0o600 });
+  return normalizeClaudeApiUsageProbe(persisted);
 }
 
 async function fetchClaudeUsageProbe(options = {}) {
@@ -5224,6 +5800,8 @@ async function fetchClaudeUsageProbe(options = {}) {
     if (oauthProbe.status === "available") {
       return {
         ...oauthProbe,
+        accountId: quotaAccountId(oauthSession.accountId),
+        notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
         planType: oauthSession.planType || null,
         auth: summarizeClaudeOauthSession(oauthSession)
       };
@@ -5245,7 +5823,7 @@ async function fetchClaudeUsageProbe(options = {}) {
 async function fetchClaudeUsageWithAppCookies() {
   const cookies = readClaudeAppCookies();
   if (!cookies) return claudeApiProbe("missing", "claude_app_cookie_missing", "claude_app_cookie");
-  return fetchClaudeUsageWithAuth({
+  const probe = await fetchClaudeUsageWithAuth({
     orgId: cookies.lastActiveOrg,
     source: "claude_app_cookie",
     hostname: "claude.ai",
@@ -5253,6 +5831,14 @@ async function fetchClaudeUsageWithAppCookies() {
       Cookie: `sessionKey=${cookies.sessionKey}`
     }
   });
+  return { ...probe, notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
+}
+
+async function recordClaudeNotificationSample(probe, accountKey) {
+  const { resolvedLimits } = resolveClaudeUsageLimits({ apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt });
+  const windows = collectNotificationWindows({ claudeCode: { limits: resolvedLimits } });
+  await quotaNotifications.observe("claudeCode", { accountKey, planType: probe.auth?.planType || null, at: probe.updatedAt,
+    windows: windows.map((win) => ({ ...win, key: win.key })) });
 }
 
 async function readClaudeCliOauthSession(options = {}) {
@@ -5289,6 +5875,14 @@ async function readClaudeCliOauthSession(options = {}) {
     oauth.organizationId,
     oauth.organizationID
   );
+  // Bind identity to the session used for this measurement. A later auth probe
+  // cannot establish which account produced a saved provider-wide allowance.
+  const configOrg = firstNonEmptyString(account.organizationUuid, account.organizationUUID, account.organizationId, account.organizationID);
+  const configIdentities = [account.accountUuid, account.accountUUID, account.emailAddress, account.email]
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => claudeAccountIdentity({ ...(value.includes("@") ? { email: value } : { accountId: value }), orgId: configOrg }));
+  const accountId = authStatus?.loggedIn && authStatus.authMethod === "claude.ai" && configOrg && configOrg === orgId &&
+    configIdentities.includes(authStatus.accountId) ? quotaAccountId(authStatus.accountId) : null;
 
   return {
     status: "available",
@@ -5296,6 +5890,7 @@ async function readClaudeCliOauthSession(options = {}) {
     source: "claude_oauth",
     accessToken,
     orgId: orgId || null,
+    accountId,
     expiresAt: Number.isFinite(expiresAtMs) ? new Date(expiresAtMs).toISOString() : null,
     planType: extractClaudePlanType({ plan_type: oauth.subscriptionType || oauth.subscription_type }) ||
       authStatus?.planType ||
@@ -5521,15 +6116,59 @@ function normalizeClaudeApiUsageProbe(probe) {
     ? String(probe.status)
     : "unavailable";
   const usage = normalizeClaudeApiUsagePayload(probe?.usage, probe?.usage?.source || probe?.source || "claude_api");
+  // Normalizing a persisted measurement must preserve its observation time.
+  // Otherwise every restart turns old quota into an apparently fresh sample.
+  if (usage) usage.updatedAt = normalizeOptionalDate(probe?.usage?.updatedAt) || normalizeOptionalDate(probe?.updatedAt) || usage.updatedAt;
   return {
     status: usage ? "available" : status,
     reason: usage ? null : safeClaudeApiReason(probe?.reason, status === "missing" ? "claude_api_missing" : "claude_api_unavailable"),
     source: String(probe?.source || usage?.source || "claude_api").trim() || "claude_api",
     updatedAt: normalizeOptionalDate(probe?.updatedAt) || new Date().toISOString(),
+    accountId: quotaAccountId(probe?.accountId),
     usage,
     auth: probe?.auth || null,
     fallback: probe?.fallback || null
   };
+}
+
+function retainLastKnownClaudeUsageProbe(previous, incoming, nowMs = Date.now()) {
+  if (incoming?.usage || !previous?.usage || !hasCurrentClaudeUsageSnapshot(previous.usage, nowMs)) return incoming;
+  return {
+    ...previous,
+    status: "available",
+    reason: null,
+    fallback: {
+      source: incoming?.source || null,
+      reason: incoming?.reason || null
+    }
+  };
+}
+
+function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
+  const updatedAtMs = Date.parse(usage?.updatedAt || "");
+  if (!Number.isFinite(updatedAtMs) || nowMs - updatedAtMs > CLAUDE_API_USAGE_FALLBACK_MAX_AGE_MS) return false;
+  const hasCurrentWindow = (window, label, windowMinutes) => {
+    const normalized = claudeApiWindowToLimitWindow(window, label, windowMinutes);
+    return Boolean(normalized && !normalized.expired);
+  };
+  return Boolean(
+    hasCurrentWindow(usage?.five_hour, "5h", 300) ||
+      hasCurrentWindow(usage?.seven_day, "Woche", 10080) ||
+      hasCurrentWindow(usage?.seven_day_sonnet, "Nur Sonnet", 10080) ||
+      claudeApiFableLimitRows(usage).length
+  );
+}
+
+function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now(), statusline = null) {
+  if (!usage.cache?.restored || !usage.claudeCode || usage.claudeCode.limits) return usage;
+  const usableProbe = probe?.usage && hasCurrentClaudeUsageSnapshot(probe.usage, nowMs) ? probe : null;
+  const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
+    statusline, apiUsage: usableProbe?.usage, apiUsageSource: usableProbe?.source, apiUsageUpdatedAt: usableProbe?.usage?.updatedAt
+  });
+  if (!resolvedLimits) return usage;
+  return { ...usage, claudeCode: { ...usage.claudeCode, status: "live", limits: resolvedLimits,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource, quotaAccountId: !statusline?.limits ? quotaAccountId(usableProbe?.accountId) : null,
+    setup: { ...usage.claudeCode.setup, staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(usableProbe?.fallback) } } };
 }
 
 function summarizeClaudeApiUsageProbe(probe) {
@@ -5627,20 +6266,25 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
     const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
     const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
     const apiFableRows = claudeApiFableLimitRows(apiUsage);
+    const refreshed = new Set();
     let updated = false;
     if (apiFiveHour && !apiFiveHour.expired) {
+      refreshed.add("fiveHour");
       resolvedLimits = { ...resolvedLimits, fiveHour: apiFiveHour, currentSession: apiFiveHour };
       updated = true;
     }
     if (apiWeekly && !apiWeekly.expired) {
+      refreshed.add("weekly");
       resolvedLimits = { ...resolvedLimits, weekly: apiWeekly, allModels: apiWeekly };
       updated = true;
     }
     if (apiSonnet && !apiSonnet.expired) {
+      refreshed.add("sonnetOnly");
       resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
       updated = true;
     }
     if (apiFableRows.length) {
+      for (const row of apiFableRows) refreshed.add(row.key);
       resolvedLimits = { ...resolvedLimits, fable: apiFableRows[0], fableRows: apiFableRows };
       updated = true;
     }
@@ -5650,7 +6294,7 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
         "weekly",
         "claudeDesign",
         "sonnetOnly"
-      ]);
+      ]).map((row) => ({ ...row, updatedAt: refreshed.has(row.key) ? apiUsageUpdatedAt : statusline.updatedAt || null }));
       limitSource = apiUsageSource || "claude_api";
       resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
     }
@@ -5714,11 +6358,14 @@ async function readClaudeCodeUsage(options = {}) {
 
       usageEvents.push({
         providerId: "claudeCode",
+        conversation: conversationDescriptor("claudeCode", entry.sessionId || path.basename(fileRecord.file, ".jsonl"), entry.chat || {}),
+        chatContext: { cwd: entry.cwd },
         sourceId: fileRecord.sourceId,
         eventId: entry.requestId || entry.messageId || entry.uuid || null,
         timestampMs,
         model,
         usage: normalized,
+        attribution: entry.attribution,
         evidence: {
           realpath: fileRecord.realPath,
           realpathHash,
@@ -5726,7 +6373,8 @@ async function readClaudeCodeUsage(options = {}) {
           sourceEventSha256: entry.sourceEventSha256,
           requestId: entry.requestId,
           messageId: entry.messageId,
-          uuid: entry.uuid
+          uuid: entry.uuid,
+          sessionId: entry.sessionId || path.basename(fileRecord.file, ".jsonl")
         },
         metadata: {
           sourceGroupId: "claudeCode"
@@ -5761,7 +6409,7 @@ async function readClaudeCodeUsage(options = {}) {
   const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, directApiProbe] =
     await Promise.all([
       readClaudeStatusline(),
-      readClaudeAuthStatus(),
+      readClaudeAuthStatus().catch(() => null),
       readClaudeSettings(),
       pathExists(CLAUDE_STATUSLINE_SCRIPT),
       readClaudeBrowserCreditsSnapshot().catch(() => null),
@@ -5812,7 +6460,7 @@ async function readClaudeCodeUsage(options = {}) {
       scriptInstalled,
       statusFileFound: Boolean(statusline?.found),
       hasLimits: Boolean(resolvedLimits),
-      staleLimits: limitSource === "claude_statusline" && Boolean(statusline?.staleLimits)
+      staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(directApiUsage && directApiProbe?.fallback)
     },
     browserCredits: summarizeClaudeBrowserCredits(browserCredits),
     latest: latestEvent
@@ -5832,6 +6480,9 @@ async function readClaudeCodeUsage(options = {}) {
     totals: finalizeUsageAccumulator(usage),
     limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt,
+    // Mixed statusline/API rows do not prove one account identity. Keep those
+    // allowances as a visible local source rather than filling another profile.
+    quotaAccountId: !statusline?.limits && directApiUsage && limitSource === directApiProbe?.source ? quotaAccountId(directApiProbe.accountId) : null,
     planType,
     subscription: planResolution.subscription,
     subscriptionConnectionAction: planResolution.connectionAction,
@@ -5853,15 +6504,22 @@ async function readClaudeCodeUsage(options = {}) {
 
 async function parseClaudeTranscriptFileEvents(fileRecord) {
   const events = [];
+  const chat = {};
   await readJsonl(fileRecord.file, (event, meta) => {
+    if (event?.type === "custom-title" && typeof event.customTitle === "string") chat.title = event.customTitle;
+    if (event?.type === "summary" && !chat.title && typeof event.summary === "string") chat.title = event.summary;
     if (event?.type !== "assistant" || !event?.message?.usage) return;
     const timestampMs = Date.parse(event.timestamp);
     if (Number.isNaN(timestampMs)) return;
     events.push({
       timestamp: event.timestamp,
+      sessionId: event.sessionId || path.basename(fileRecord.file, ".jsonl"),
+      cwd: event.cwd,
+      chat,
       timestampMs,
       model: event.message.model || "unknown",
       usage: normalizeClaudeUsage(event.message.usage),
+      attribution: recordedAccountAttribution("claudeCode", event) || recordedAccountAttribution("claudeCode", event.message),
       requestId: event.requestId || null,
       messageId: event.message?.id || null,
       uuid: event.uuid || null,
@@ -6004,6 +6662,7 @@ async function readGeminiUsage(options = {}) {
       const { timestampMs, model, usage: normalized } = entry;
       usageEvents.push({
         providerId: "gemini",
+        conversation: conversationDescriptor("gemini", entry.sessionId),
         sourceId: fileRecord.sourceId,
         eventId: entry.eventId,
         timestampMs,
@@ -6106,6 +6765,7 @@ async function parseGeminiUsageFileEvents(fileRecord) {
       model: findModelName(event) || "gemini",
       usage: normalized,
       eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
+      sessionId: findFirstValue(event, ["sessionId", "session_id", "conversationId", "conversation_id"]) || null,
       line: meta?.line,
       index: meta?.index,
       sourceEventSha256: meta?.rawLineSha256 || meta?.rawObjectSha256
@@ -7007,7 +7667,7 @@ function normalizeOpenCodeGptMessageRow(row, fileRecord, index) {
       safeStatMtime(fileRecord.file),
     model: { providerID: row.provider_id, modelID: row.model_id },
     tokens: parseJsonObject(row.tokens),
-    meta: { sourceType: "opencode_message" }
+    meta: { sourceType: "opencode_message", sessionId: row.session_id }
   });
 }
 
@@ -7030,7 +7690,7 @@ function normalizeOpenCodeGptStepUsageRows(rows, fileRecord) {
       timestampMs: findTimestampMs(data) || started.timestampMs || safeStatMtime(fileRecord.file),
       model: started.model || normalizeOpenCodeModelRef(data.model),
       tokens: data.tokens,
-      meta: { seq: row.seq, aggregateId: row.aggregate_id, sourceType: "opencode_step" }
+      meta: { seq: row.seq, aggregateId: row.aggregate_id, sourceType: "opencode_step", sessionId: data.sessionID || row.aggregate_id }
     });
     if (event) events.push(event);
   }
@@ -7052,7 +7712,7 @@ function normalizeOpenCodeGptSessionRow(row, fileRecord, index) {
       reasoning: row.tokens_reasoning,
       cache: { read: row.tokens_cache_read, write: row.tokens_cache_write }
     },
-    meta: { sourceType: "opencode_session" }
+    meta: { sourceType: "opencode_session", sessionId: row.id }
   });
 }
 
@@ -7064,6 +7724,7 @@ function normalizeOpenCodeGptUsageEvent({ fileRecord, eventId, timestampMs, mode
   if (!usage.total_tokens || !Number.isFinite(timestampMs)) return null;
   return {
     providerId: "openCode",
+    conversation: conversationDescriptor("openCode", meta?.sessionId),
     sourceId: fileRecord.sourceId,
     eventId,
     timestampMs,
@@ -7578,8 +8239,13 @@ async function readOllamaUsage(options = {}) {
   };
 }
 
-function buildLocalAggregate(providers) {
-  const usageEvents = providers.flatMap((provider) => provider?._usageEvents || []);
+function buildLocalAggregate(providers, options = {}) {
+  const accountLabels = new Map((options.accounts || []).map((account) => [account.accountId || account.id, account.label]));
+  const usageEvents = attributeLocalUsageEvents(providers.flatMap((provider) => provider?._usageEvents || []), options).map((event) => {
+    const attribution = event.attribution;
+    if (accountLabels.has(attribution.accountId)) attribution.accountLabel = normalizeAttribution({ ...attribution, accountLabel: accountLabels.get(attribution.accountId) }).accountLabel;
+    return { ...event, attribution };
+  });
   if (usageEvents.length) {
     const aggregate = aggregateUsageEvents(usageEvents, { dailyHistoryDays: DAILY_HISTORY_DAYS });
     return {
@@ -7590,6 +8256,7 @@ function buildLocalAggregate(providers) {
       daily: aggregate.daily,
       slots: aggregate.slots,
       sources: aggregate.sources,
+      attribution: aggregate.attribution,
       eventStats: aggregate.stats
     };
   }
@@ -7826,20 +8493,9 @@ async function ollamaUsageFileRecords(sources) {
 // Returns the cached per-file extraction when size+mtime are unchanged,
 // otherwise re-parses the file via parseFile(fileRecord) and caches the result.
 async function readCachedFileEvents(cacheMap, fileRecord, parseFile) {
-  let stat;
-  try {
-    stat = await fsp.stat(fileRecord.file);
-  } catch {
-    cacheMap.delete(fileRecord.realPath);
-    return [];
-  }
-  const cached = cacheMap.get(fileRecord.realPath);
-  if (cached && cached.size === stat.size && cached.mtimeMs === stat.mtimeMs) {
-    return cached.events;
-  }
-  const events = await parseFile(fileRecord);
-  cacheMap.set(fileRecord.realPath, { size: stat.size, mtimeMs: stat.mtimeMs, events });
-  return events;
+  return readUsageFileEvents(cacheMap, fileRecord, parseFile, {
+    directory: usageFileCacheDirectories.get(cacheMap), version: usageFileCacheVersion
+  });
 }
 
 function pruneUsageFileScanCache(cacheMap, fileRecords) {
@@ -7850,12 +8506,18 @@ function pruneUsageFileScanCache(cacheMap, fileRecords) {
   }
 }
 
-async function readJsonl(file, onObject) {
+async function readJsonl(file, onObject, acceptedRootTypes = null) {
   const stream = fs.createReadStream(file, { encoding: "utf8" });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
   let lineNumber = 0;
   for await (const line of rl) {
     lineNumber += 1;
+    if (acceptedRootTypes) {
+      // Only recognize the standard top-level header. Other key orders and
+      // escaped values use the complete JSON parser as before.
+      const type = line.slice(0, 256).match(/^[ ]*[{][ ]*(?:"timestamp"[ ]*:[ ]*"[-0-9T:.+Z]*"[ ]*,[ ]*)?"type"[ ]*:[ ]*"([a-z_]+)"[ ]*[,}]/)?.[1];
+      if (type && !acceptedRootTypes.has(type)) continue;
+    }
     if (!line.trim()) continue;
     try {
       onObject(JSON.parse(line), {
@@ -8022,7 +8684,7 @@ async function readClaudeStatusline() {
     return {
       statusFile,
       found: true,
-      updatedAt: stat.mtime.toISOString(),
+      updatedAt: normalizeOptionalDate(raw.captured_at) || stat.mtime.toISOString(),
       ...extracted
     };
   } catch (error) {
@@ -8284,6 +8946,8 @@ async function probeClaudeAuthStatus() {
       status: "ok",
       planType: extractClaudePlanType(raw),
       loggedIn: parseBoolean(raw.loggedIn ?? raw.logged_in),
+      authMethod: ["claude.ai", "api_key", "oauth_token", "bedrock", "vertex", "foundry", "none"].includes(raw.authMethod) ? raw.authMethod : null,
+      accountId: claudeAccountIdentity(raw),
       orgId: firstNonEmptyString(raw.orgId, raw.org_id, raw.organizationUuid, raw.organization_uuid)
     };
   } catch {
@@ -8295,6 +8959,7 @@ function resolveClaudeBinary() {
   const candidates = [
     process.env.CLAUDE_BIN,
     process.env.CLAUDE_CLI_PATH,
+    path.join(os.homedir(), ".local", "bin", process.platform === "win32" ? "claude.exe" : "claude"),
     "/opt/homebrew/bin/claude",
     "/usr/local/bin/claude",
     "/usr/bin/claude"
@@ -8304,8 +8969,9 @@ function resolveClaudeBinary() {
     if (candidate && fs.existsSync(candidate)) return candidate;
   }
 
-  const which = spawnSync("which", ["claude"], { encoding: "utf8" });
-  if (which.status === 0 && which.stdout.trim()) return which.stdout.trim();
+  const which = spawnSync(process.platform === "win32" ? "where" : "which", ["claude"], { encoding: "utf8", timeout: 1000, windowsHide: true });
+  const found = which.status === 0 ? which.stdout.trim().split(/\r?\n/)[0] : null;
+  if (found && !/\.(cmd|bat)$/i.test(found)) return found;
   return null;
 }
 
@@ -8693,7 +9359,7 @@ async function pollGptAccountAuthChanges() {
   gptAccountAuthWatchPending = (async () => {
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
-    const codexHomes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)]);
+    const codexHomes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR), ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))]);
     const authFiles = [
       ...codexHomes.map((home) => path.join(home, "auth.json")),
       ...openCodeGptAccountAuthFiles(localSources.openCode)
@@ -8773,7 +9439,8 @@ async function readCodexGptAccountObservation(options = {}) {
   const refreshToken = Boolean(options.refreshToken);
   const codexHomes = uniquePaths(options.codexHomes || [
     ...CODEX_HOMES,
-    ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR)
+    ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR),
+    ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))
   ]);
   const observations = [];
   let profilesScanned = 0;
@@ -8846,7 +9513,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
     const account = response?.account;
     if (!account || !["chatgpt", "chatgptAuthTokens"].includes(String(account.type || ""))) return null;
     const [usageResult, rateLimitsResult] = await Promise.allSettled([
-      lease.client.request("account/usage/read", undefined),
+      options.limitsOnly ? Promise.resolve(null) : lease.client.request("account/usage/read", undefined),
       lease.client.request("account/rateLimits/read", undefined)
     ]);
     const liveLimits = rateLimitsResult.status === "fulfilled"
@@ -8854,10 +9521,11 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
       : null;
     const limits = codexRateLimitsFromLive(liveLimits?.codex, "Codex");
     const quotaCheckedAt = new Date().toISOString();
-    return createGptAccountObservation({
+    const observation = createGptAccountObservation({
       sourceId: "codex",
       sourceRef: codexHome,
       email: account.email,
+      accountId: rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null,
       planType: liveLimits?.codex?.planType || account.planType,
       seenAt: new Date().toISOString(),
       usage: usageResult.status === "fulfilled" ? usageResult.value : null,
@@ -8872,6 +9540,16 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
           ? "identity_and_limits"
           : "identity_only"
     });
+    if (observation && (liveLimits?.historySnapshot || liveLimits?.notificationSnapshot)) {
+      if (liveLimits.historySnapshot) {
+        codexResetProfileAccounts.set(codexHome, liveLimits.historySnapshot.accountKey);
+        liveLimits.historySnapshot.accountRef = observation.id;
+        liveLimits.historySnapshot.accountLabel = observation.label;
+      }
+      if (liveLimits.notificationSnapshot) liveLimits.notificationSnapshot.accountLabel = observation.label;
+      await recordCodexResetSnapshot(liveLimits.historySnapshot, liveLimits.notificationSnapshot);
+    }
+    return observation;
   } finally {
     if (lease.closeWhenDone) lease.client.close();
   }
@@ -9144,8 +9822,9 @@ async function readCodexLiveRateLimits() {
   return readThroughCache(codexLiveRateLimitsCache, cacheTtlMs, async () => {
     try {
       const client = await getCodexAppServer();
-      const response = await client.request("account/rateLimits/read", undefined);
-      return normalizeCodexLiveRateLimits(response);
+      const normalized = await readScopedCodexLiveRateLimits(client);
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
+      return normalized;
     } catch (error) {
       if (codexLiveRateLimitsCache.value) throw error;
       return {
@@ -9157,6 +9836,15 @@ async function readCodexLiveRateLimits() {
       };
     }
   });
+}
+
+async function readScopedCodexLiveRateLimits(client) {
+  const creditScope = await currentCodexCreditScope();
+  const response = await client.request("account/rateLimits/read", undefined);
+  const normalized = normalizeCodexLiveRateLimits(response);
+  primaryCodexResetAccountKey = normalized.historySnapshot?.accountKey || primaryCodexResetAccountKey;
+  normalized.source.creditScope = creditScope === await currentCodexCreditScope() ? creditScope : null;
+  return normalized;
 }
 
 function preferredCodexPlan(livePlanType) {
@@ -9260,6 +9948,8 @@ function normalizeCodexLiveRateLimits(response) {
   return {
     codex,
     spark,
+    historySnapshot: normalizeResetSnapshot(response),
+    notificationSnapshot: codexNotificationSample(response),
     source: {
       status: codex || spark ? "live" : "empty",
       source: "codex app-server",
@@ -9275,6 +9965,8 @@ function isCodexSparkSnapshot(snapshot) {
 
 const CODEX_FIVE_HOUR_WINDOW_MINUTES = 300;
 const CODEX_WEEKLY_WINDOW_MINUTES = 7 * 24 * 60;
+// Live and persisted Codex snapshots can describe the same reset a few seconds apart.
+const CODEX_RESET_TIME_JITTER_MS = 60 * 1000;
 const CODEX_RATE_LIMIT_SLOTS = ["primary", "secondary"];
 
 function codexRateLimitsFromLive(snapshot, labelPrefix) {
@@ -9296,7 +9988,7 @@ function codexCreditRowsFromLive(snapshot) {
   }
   const balance = Number(credits.balance);
   if (!Number.isFinite(balance)) return [];
-  return [{ key: "codexCredits", label: "Codex credits", valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
+  return [{ key: "codexCredits", label: "Codex credits", balance, valueLabel: `${formatCodexCreditBalance(balance)} credits` }];
 }
 
 function formatCodexCreditBalance(value) {
@@ -9393,7 +10085,7 @@ function buildCodexRateLimitBuckets(windows, extras = {}) {
 
 function codexWindowOutputRow(window) {
   const { canonicalKey, timestamp, ...row } = window;
-  return row;
+  return timestamp ? { ...row, observedAt: timestamp } : row;
 }
 
 function selectBestCodexWindows(windows) {
@@ -9413,7 +10105,9 @@ function preferCodexWindow(current, candidate) {
   if (Number.isFinite(candidateReset) || Number.isFinite(currentReset)) {
     if (!Number.isFinite(currentReset)) return candidate;
     if (!Number.isFinite(candidateReset)) return current;
-    if (candidateReset !== currentReset) return candidateReset > currentReset ? candidate : current;
+    if (Math.abs(candidateReset - currentReset) > CODEX_RESET_TIME_JITTER_MS) {
+      return candidateReset > currentReset ? candidate : current;
+    }
   }
   const candidateTime = Date.parse(candidate.timestamp || "");
   const currentTime = Date.parse(current.timestamp || "");
@@ -9512,7 +10206,11 @@ async function createCodexAppServer(options = {}) {
         continue;
       }
 
-      if (!message || !Object.prototype.hasOwnProperty.call(message, "id")) continue;
+      if (!message) continue;
+      if (!Object.prototype.hasOwnProperty.call(message, "id")) {
+        if (typeof options.onNotification === "function") options.onNotification(message);
+        continue;
+      }
       const entry = pending.get(String(message.id));
       if (!entry) continue;
       clearTimeout(entry.timeout);
@@ -9572,6 +10270,8 @@ function codexBinaryCandidates({
 
   if (platform === "darwin") {
     candidates.push(
+      "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+      platformPath.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex-cli", "CodexCLI.app", "Contents", "MacOS", "codex"),
       "/Applications/ChatGPT.app/Contents/Resources/codex",
       platformPath.join(homeDir, "Applications", "ChatGPT.app", "Contents", "Resources", "codex"),
       "/Applications/Codex.app/Contents/Resources/codex",
@@ -9970,11 +10670,11 @@ async function fetchText(url, options = {}) {
   return text;
 }
 
-function startOllamaProxy() {
+function startOllamaProxy(host) {
   const proxy = express();
   proxy.use(express.json({ limit: "50mb", type: "*/*" }));
   proxy.all("*", proxyOllamaRequest);
-  const server = proxy.listen(OLLAMA_PROXY_PORT, () => {
+  const server = proxy.listen(OLLAMA_PROXY_PORT, host, () => {
     console.log(`Ollama usage proxy listening on http://localhost:${OLLAMA_PROXY_PORT} -> ${OLLAMA_HOST}`);
   });
   server.on("error", (error) => {
@@ -10106,13 +10806,9 @@ async function readNotificationSettings() {
   try {
     const text = await fsp.readFile(NOTIFICATION_SETTINGS_FILE, "utf8");
     const data = JSON.parse(text);
-    return {
-      enabled: typeof data.enabled === "boolean" ? data.enabled : true,
-      pacingPercent: Number.isFinite(Number(data.pacingPercent)) ? Number(data.pacingPercent) : 100,
-      hardLimitPercent: Number.isFinite(Number(data.hardLimitPercent)) ? Number(data.hardLimitPercent) : 95
-    };
+    return notificationSettings(data);
   } catch {
-    return { enabled: true, pacingPercent: 100, hardLimitPercent: 95 };
+    return notificationSettings();
   }
 }
 
@@ -10388,11 +11084,32 @@ async function recordProviderQuotaSnapshots(providers) {
     events.push(...buildProviderQuotaEvents(provider));
   }
   if (events.length) await appendChangedQuotaEvents(events);
+  return events;
+}
+
+async function updateQuotaPace(events) {
+  const nowMs = Date.now();
+  let previous;
+  try {
+    previous = JSON.parse(await fsp.readFile(QUOTA_PACE_SAMPLES_FILE, "utf8"));
+    if (!Array.isArray(previous)) throw new Error("Invalid quota pace samples");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    previous = await readQuotaPaceTail(QUOTA_EVENTS_FILE, nowMs);
+  }
+  const samples = mergeQuotaPaceSamples(previous, events, nowMs);
+  if (JSON.stringify(samples) !== JSON.stringify(previous)) {
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    const tempFile = `${QUOTA_PACE_SAMPLES_FILE}.${process.pid}.tmp`;
+    await fsp.writeFile(tempFile, JSON.stringify(samples), { mode: 0o600 });
+    await fsp.rename(tempFile, QUOTA_PACE_SAMPLES_FILE);
+  }
+  return assessQuotaPace(samples, nowMs);
 }
 
 function buildProviderQuotaEvents(provider) {
   if (!provider || typeof provider !== "object" || !provider.id) return [];
-  const capturedAt = provider.limitsUpdatedAt || provider.updatedAt || new Date().toISOString();
+  const capturedAt = provider.limitsUpdatedAt || provider.liveRateLimits?.updatedAt || provider.updatedAt || new Date().toISOString();
   const source =
     provider.limitSource ||
     provider.liveRateLimits?.name ||
@@ -10527,7 +11244,7 @@ function quotaWindowEventFromLimitRow(provider, row, capturedAt, source) {
     provider,
     windowKey: quotaWindowKeyForWindow(rawWindowKey, windowMinutes),
     label: String(row.label || row.limitLabel || row.name || row.limitName || rawWindowKey),
-    capturedAt,
+    capturedAt: row.observedAt || capturedAt,
     source: source || null,
     usedPercent: clampPercent(usedPercent),
     remainingPercent: clampPercent(row.remainingPercent ?? row.remaining_percentage ?? 100 - usedPercent),
@@ -10789,9 +11506,18 @@ function clampPercent(value) {
   return Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : null;
 }
 
+function providerNotificationAlerts(settings, usageMap) {
+  return Object.entries(usageMap).flatMap(([provider, value]) =>
+    buildNotificationAlerts(settings, { [provider]: value }).map((alert) => ({ ...alert, provider })));
+}
+
 function buildNotificationAlerts(settings, usageMap) {
   const alerts = [];
   const now = Date.now();
+  for (const row of usageMap.codex?.creditRows || []) {
+    const alert = creditExpiryAlert(row, new Date(now));
+    if (alert) alerts.push(alert);
+  }
   const windows = collectNotificationWindows(usageMap);
   for (const win of windows) {
     const { key: windowKey, label, usedPercent, windowMinutes, resetsAt } = win;
@@ -10885,6 +11611,114 @@ function collectNotificationWindows(usageMap) {
   return windows;
 }
 
+let codexResetWriteQueue = Promise.resolve();
+let lastCodexResetSnapshot = null;
+const lastCodexResetByAccount = new Map();
+const codexResetProfileAccounts = new Map();
+let primaryCodexResetAccountKey = null;
+let codexHistoricalImport = null;
+let legacyCodexQuotaPromise = null;
+
+function queueCodexResetWrite(write) {
+  const next = codexResetWriteQueue.then(write);
+  codexResetWriteQueue = next.catch(() => {});
+  return next;
+}
+
+async function recordCodexResetSnapshot(snapshot, notificationSample) {
+  if (notificationSample || snapshot?.kind === "gap") await quotaNotifications.observe("codex", notificationSample || null, snapshot?.accountKey);
+  if (!snapshot) return Promise.resolve();
+  return queueCodexResetWrite(async () => {
+    const key = snapshot.accountKey || "unassigned";
+    const previousSnapshot = lastCodexResetByAccount.get(key);
+    if (previousSnapshot) {
+      const { at: previousAt, ...previous } = previousSnapshot;
+      if (Date.parse(snapshot.at) < Date.parse(previousAt)) return;
+      const { at, ...current } = snapshot;
+      if (JSON.stringify(previous) === JSON.stringify(current) && Date.parse(at) - Date.parse(previousAt) < (snapshot.kind === "gap" ? 5 * 60000 : 60000)) return;
+    }
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    await fsp.appendFile(CODEX_RESET_SNAPSHOTS_FILE, `${JSON.stringify(snapshot)}\n`, { mode: 0o600 });
+    lastCodexResetSnapshot = snapshot;
+    lastCodexResetByAccount.set(key, snapshot);
+  });
+}
+
+async function saveCodexHistoricalSamples(events) {
+  const incoming = codexHistoricalSamples(events);
+  if (!incoming.length) return;
+  await queueCodexResetWrite(async () => {
+    if (!codexHistoricalImport) {
+      try { codexHistoricalImport = JSON.parse(await fsp.readFile(CODEX_RESET_IMPORT_FILE, "utf8")); }
+      catch (error) { if (error.code !== "ENOENT") throw error; codexHistoricalImport = []; }
+    }
+    const merged = codexHistoricalSamples([...codexHistoricalImport, ...incoming]);
+    if (JSON.stringify(merged) === JSON.stringify(codexHistoricalImport)) return;
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    const temporary = `${CODEX_RESET_IMPORT_FILE}.tmp`;
+    await fsp.writeFile(temporary, JSON.stringify(merged), { mode: 0o600 });
+    await fsp.rename(temporary, CODEX_RESET_IMPORT_FILE);
+    codexHistoricalImport = merged;
+  });
+}
+
+async function readCodexResetHistory(limit = 10) {
+  if (!legacyCodexQuotaPromise) {
+    legacyCodexQuotaPromise = (async () => {
+      const events = [];
+      try {
+        await readJsonl(QUOTA_EVENTS_FILE, (event) => {
+          if (event.provider === "codex" && event.type === "quota_window" && Number(event.windowMinutes) === 10080) events.push(event);
+        });
+      } catch (error) { if (error.code !== "ENOENT") throw error; }
+      return codexHistoricalSamples(events);
+    })().catch((error) => { legacyCodexQuotaPromise = null; throw error; });
+  }
+  const records = [];
+  try { await readJsonl(CODEX_RESET_SNAPSHOTS_FILE, (record) => records.push(record)); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  let imported = [];
+  try { imported = JSON.parse(await fsp.readFile(CODEX_RESET_IMPORT_FILE, "utf8")); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  if (lastCodexResetSnapshot && lastCodexResetSnapshot.at > (records.at(-1)?.at || "")) records.push(lastCodexResetSnapshot);
+  return buildAccountHistories(records, [...await legacyCodexQuotaPromise, ...imported], { limit, accounts: (await readGptAccountRegistry(DATA_DIR)).accounts });
+}
+
+function startCodexResetCollector() {
+  if (!CODEX_LIVE_RATE_LIMITS_ENABLED) return () => {};
+  let stopped = false, running = false;
+  const tick = async () => {
+    if (stopped || running) return;
+    running = true;
+    try {
+      const client = await getCodexAppServer();
+      const normalized = await readScopedCodexLiveRateLimits(client);
+      if (!normalized.notificationSnapshot?.windows.length) throw new Error("Codex quota unavailable");
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
+      codexLiveRateLimitsCache.value = normalized;
+      codexLiveRateLimitsCache.updatedAtMs = Date.now();
+      codexLiveRateLimitsCache.expiresAt = Date.now() + CODEX_LIVE_RATE_LIMITS_CACHE_MS;
+    } catch {
+      await recordCodexResetSnapshot({ kind: "gap", accountKey: primaryCodexResetAccountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+    }
+    try {
+      const homes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR), ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))]);
+      for (const home of homes) {
+        if (stopped) break;
+        try { await readCodexProfileGptAccountObservation(home, { limitsOnly: true }); }
+        catch {
+          const accountKey = codexResetProfileAccounts.get(home);
+          if (accountKey) await recordCodexResetSnapshot({ kind: "gap", accountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+        }
+      }
+    } finally { running = false; }
+  };
+  const first = setTimeout(tick, 1000);
+  const timer = setInterval(tick, 60000);
+  first.unref?.(); timer.unref?.();
+  return () => { stopped = true; clearTimeout(first); clearInterval(timer); };
+}
+
 async function appendOllamaUsageLog(event) {
   await fsp.mkdir(DATA_DIR, { recursive: true });
   await fsp.appendFile(OLLAMA_USAGE_FILE, `${JSON.stringify(event)}\n`);
@@ -10929,16 +11763,29 @@ function stopLocalSyncCollector() {
 
 function startDashboard(options = {}) {
   const port = Number(options.port ?? PORT);
-  const dashboardServer = app.listen(port, () => {
+  const dashboardServer = app.listen(port, options.host, () => {
     const address = dashboardServer.address();
     const actualPort = typeof address === "object" && address ? address.port : port;
     currentDashboardUrl = `http://localhost:${actualPort}`;
     console.log(`LLM usage dashboard listening on http://localhost:${actualPort}`);
   });
-  const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy();
+  const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy(options.host);
   startGptAccountAuthWatch();
   startLocalSyncCollector();
   dashboardServer.once("close", stopLocalSyncCollector);
+  const stopCodexResetCollector = startCodexResetCollector();
+  deviceSync.initialize().catch(() => { deviceSync.error = "storage_unavailable"; });
+  let syncReading = false;
+  const syncCollector = setInterval(async () => {
+    if (!deviceSync.config.enabled || syncReading) return;
+    syncReading = true;
+    try { await readUsageDashboard({ maxAgeMs: 30_000 }); }
+    catch { deviceSync.error = "capture_failed"; }
+    finally { syncReading = false; }
+  }, 60_000);
+  syncCollector.unref?.();
+  dashboardServer.once("close", () => { clearInterval(syncCollector); usageAggregation.close().catch(() => {}); gptLogin.close(); claudeLogin.close().catch(() => {}); kimiRuntime.close().then(() => kimiLogin.close()).catch(() => {}); deviceSync.stop().catch(() => {}); });
+  dashboardServer.once("close", stopCodexResetCollector);
   return { dashboardServer, ollamaProxyServer };
 }
 
@@ -10957,6 +11804,13 @@ module.exports = {
   invalidateTimedCache,
   readThroughCache,
   _test: {
+    parseCodexSessionFileEvents,
+    parseClaudeTranscriptFileEvents,
+    buildLocalAggregate,
+    createCodexAppServer,
+    recordCodexResetSnapshot,
+    saveCodexHistoricalSamples,
+    readCodexResetHistory,
     copilotLimitsFromQuota,
     resolveGlmCodingPlanBase,
     readGlmCodingPlanAuth,
@@ -10979,6 +11833,10 @@ module.exports = {
     mergeUpdateSettingsPatch,
     codexBinaryCandidates,
     codexRateLimitsFromLive,
+    codexCreditRowsFromLive,
+    applyCodexCreditExpiry,
+    readScopedCodexLiveRateLimits,
+    overlayCurrentCodexQuota,
     codexRateLimitsFromUsagePayload,
     codexRateLimitsFromEvents,
     codexSparkRateLimitsFromEvents,
@@ -10993,6 +11851,10 @@ module.exports = {
     fetchClaudeUsageWithAuth,
     normalizeClaudeApiUsagePayload,
     normalizeClaudeApiUsageProbe,
+    readClaudeUsageSnapshot,
+    saveClaudeUsageSnapshot,
+    retainLastKnownClaudeUsageProbe,
+    overlayRestoredClaudeQuota,
     summarizeClaudeApiUsageProbe,
     resolveClaudeUsageLimits,
     buildNotificationAlerts,

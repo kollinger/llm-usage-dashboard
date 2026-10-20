@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
 
 const require = createRequire(import.meta.url);
 const { discoverSources } = require("../lib/source-discovery.js");
@@ -22,6 +23,29 @@ try {
   assert.equal(codex.paths.find((entry) => entry.role === "sessions")?.permission, "readable");
   assert.equal(codex.paths.find((entry) => entry.role === "archived_sessions")?.permission, "missing");
   assert.equal(discovery.counts.readable, 1);
+
+  const multicaHome = path.join(tmp, "multica-only", ".codex");
+  const multicaSessions = path.join(multicaHome, "multica-sessions", "default", "workspace", "project", "2026", "10", "02");
+  await fs.mkdir(multicaSessions, { recursive: true });
+  const usageFixture = [
+    { type: "turn_context", payload: { model: "gpt-fixture", effort: "high" } },
+    { type: "event_msg", timestamp: "2026-10-02T12:00:00Z", payload: { type: "token_count", info: { last_token_usage: { input_tokens: 100, output_tokens: 10, total_tokens: 110 } } } }
+  ].map((entry) => JSON.stringify(entry)).join("\n");
+  const rolloutName = "rollout-2026-10-02T12-00-00-fixture.jsonl";
+  await fs.writeFile(path.join(multicaSessions, rolloutName), usageFixture);
+  const readDefaultCodex = () => JSON.parse(execFileSync(process.execPath, ["-e", `
+    require(${JSON.stringify(require.resolve("../server.js"))}).readCodexUsage().then((usage) => {
+      console.log(JSON.stringify({ total: usage.totals.allTime.totalTokens, models: [...new Set(usage._usageEvents.map((row) => row.model))] }));
+    });
+  `], { env: { ...process.env, HOME: path.dirname(multicaHome), CODEX_HOME: multicaHome, DATA_DIR: path.join(tmp, "data"), CODEX_LIVE_RATE_LIMITS: "false", LLM_USAGE_CODEX_HOMES: "" }, encoding: "utf8" }));
+  assert.deepEqual(readDefaultCodex(), { total: 110, models: ["gpt-fixture"] }, "Multica-only Codex history is read without manual source setup");
+  const multicaDiscovery = await discoverSources({ platform: "darwin", codexHomes: [multicaHome] });
+  const multicaCandidate = multicaDiscovery.candidates.find((source) => source.providerId === "codex");
+  assert.equal(multicaCandidate.accessStatus, "readable");
+  assert.equal(multicaCandidate.paths.find((entry) => entry.path === path.join(multicaHome, "multica-sessions"))?.permission, "readable");
+  await fs.mkdir(path.join(multicaHome, "sessions"), { recursive: true });
+  await fs.writeFile(path.join(multicaHome, "sessions", rolloutName), usageFixture);
+  assert.deepEqual(readDefaultCodex(), { total: 110, models: ["gpt-fixture"] }, "a copied rollout in normal and Multica history counts once");
 
   const openCodeDataDir = path.join(tmp, ".local", "share", "opencode");
   await fs.mkdir(openCodeDataDir, { recursive: true });

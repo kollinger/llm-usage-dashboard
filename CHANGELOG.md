@@ -1,5 +1,525 @@
 # Changelog
 
+## 1.11.0-preview.1 - 2026-10-20
+
+### Added
+
+- macOS menu-bar quota popup with an adaptive Retina icon, account filters and favorites, provider colors, and all 27 supported languages. Click the icon to open or close it; Escape and clicking outside dismiss it while background collection continues.
+
+### Improved
+
+- The menu-bar popup and compact window share display preferences. Larger account lists scroll, and missing, stale and zero quota readings remain distinct.
+
+## 1.10.1-preview.7 - 2026-10-20
+
+### Improved
+
+- Merge pull request #53 from kollinger/kol-660-dashboard-whatsapp
+
+### Fixed
+
+- Colour widget quota bars by provider (KOL-660)
+
+## 1.10.1-preview.6 - 2026-10-20
+
+### Fixed
+
+- Existing KDE panel widgets now refresh to compact icons when the app starts or updates the widget, without restarting Plasma; desktop widgets, panel placement and saved preferences are preserved.
+
+## 1.10.1-preview.5 - 2026-10-20
+
+### Fixed
+
+- Desktop update checks skip unpublished tags and incomplete platform releases, preserve the preview setting, and report network or integrity failures safely.
+
+## 1.10.1-preview.4 - 2026-10-20
+
+### Fixed
+
+- Claude total and model-specific weekly quotas have distinct localized labels in the KDE widget, panel popup and compact window, with values and resets kept separate.
+- Five accounts remain fully visible in the compact window with long translated quota names and wider system fonts; Arabic RTL labels stay readable.
+
+## 1.10.1-preview.3 - 2026-10-20
+
+### Fixed
+
+- Keep five accounts fully visible in the compact window at macOS content sizes, including long translated quota names.
+- Includes the distinct Claude total/model weekly labels and readable Arabic RTL support prepared in 1.10.1-preview.2, whose macOS build did not pass release verification.
+
+## 1.10.1-preview.2 - 2026-10-20
+
+### Fixed
+
+- Claude weekly quotas now distinguish all-model and model-specific limits in the KDE desktop widget, panel popup and compact window, preserving each limit's values and reset time.
+- Long quota names wrap clearly, with localized scope labels and Arabic text direction support in all 27 languages.
+
+## 1.10.1-preview.1 - 2026-10-20
+
+### Fixed
+
+- KDE widget updates now distinguish the package on disk from the view loaded by Plasma, with persistent reload guidance and retryable installation failures.
+
+### Improved
+
+- Panel and desktop setup guidance is clearer in all 27 supported languages.
+
+## 1.10.0-preview.1 - 2026-10-20
+
+### Added
+
+- Compact KDE panel icon with a click-to-open, scrollable account overview on every panel edge.
+
+### Improved
+
+- Keep the desktop Plasmoid and compact window, with shared quota data, favorites and provider filters.
+
+### Fixed
+
+- Includes the independently verified local Claude quota correction from 1.9.0-preview.2.
+
+## 1.9.0-preview.2 - 2026-10-20
+
+### Improved
+
+- Merge pull request #41 from kollinger/kol-653-dashboard-whatsapp
+
+### Fixed
+
+- Show local Claude quotas in desktop widgets
+
+## 1.9.0-preview.1 - 2026-10-19
+
+### Added
+
+- Add native Plasma desktop quota widget
+
+### Improved
+
+- Merge pull request #40 from kollinger/kol-652-dashboard-whatsapp
+- Measure widget polling after native close completes
+- Prepare 1.9.0 preview release line
+
+### Fixed
+
+- Explain Plasma session restart after widget updates
+- Publish Plasma archive through existing CI asset pattern
+
+## 1.8.0-preview.6 - 2026-10-19
+
+### Improved
+
+- Merge pull request #38 from kollinger/kol-647-dashboard-whatsapp
+
+### Fixed
+
+- Show the rejected private VPN source and exact allowance
+
+## 1.8.0-preview.5 - 2026-10-19
+
+### Added
+
+- Add compact desktop account quota widget
+
+### Improved
+
+- Merge pull request #39 from kollinger/kol-650-dashboard-whatsapp
+
+### Fixed
+
+- Await widget pin state before another toggle
+- Fit desktop widget within native work areas
+
+## 1.8.0-preview.4 - 2026-10-19
+
+### Improved
+
+- Isolate desktop HTTPS proxy release checks
+- Merge pull request #36 from kollinger/kol-646-dashboard-whatsapp
+- Keep the M1 out of release build gates
+- Keep the M1 out of release build gates
+- Explain existing VPN phone access
+
+### Fixed
+
+- Allow narrowly scoped VPN phone access
+
+## 1.8.0-preview.3 - 2026-10-18
+
+### Chat and ticket usage
+
+- See the top ten chats and tickets by token usage or dated API-price equivalent, with a searchable complete list.
+- Expand Codex, Claude Code and linked Multica tickets to inspect models, input/output/cache tokens and individual runs.
+- Filter by period, source, provider, model and installation; keep copied records and Multica runtime overlap counted once.
+- Use the same ranking and details in the paired phone browser, including the default All installations view when device sync is disabled.
+- Keep missing titles, attribution and pricing coverage visible. API equivalents are reference values, not actual subscription charges.
+
+This new view advances the 1.7 baseline to the 1.8 minor version. Preview.3 includes the phone gateway and default-scope fixes verified during local review. The macOS app was built, installed and checked on the M1; macOS and Windows downloads remain unsigned previews.
+
+Full release notes: [1.8 chat and ticket usage](docs/releases/1.8.0.md).
+
+## 1.7.0-preview.6 - 2026-10-17
+
+- Apply the same cross-platform permission check to persisted quota-notification state. Preview.5 was not published because this remaining Unix-only assertion failed on Windows.
+- Includes the full 1.7 phone, notification and account-reset changes below.
+
+## 1.7.0-preview.5 - 2026-10-17
+
+- Fix Windows verification of private phone-state files: assert POSIX permission bits on macOS/Linux, matching the existing cross-platform account-store tests. Windows retains the functional pairing and HTTPS checks.
+- Includes the full 1.7 phone, notification and account-reset changes below. Preview.4 was not published because this check failed on Windows.
+
+## 1.7.0-preview.4 - 2026-10-17
+
+- Connect a phone directly in desktop Settings → Phone, with 24-hour one-use pairing links, renewed long-lived phone sessions, a Home Screen icon and two provider columns.
+- Configure an optional user-managed HTTPS origin for private Tailscale access and Web Push. The desktop restores its loopback-only proxy after restarts; LAN access remains independent.
+- Keep reset notices and last measured percentages tied to each Codex account on desktop and phone. Detect provider reset events without Matrix.
+- Preserve Claude quota readings across partial refreshes and improve recent-pace forecasts.
+- Show account-specific credit expiry dates when supplied by a verified source or entered by the user, with advance warnings; do not invent an expiry date.
+- Clarify group delivery: Gerhard and Reinhard can both request ordinary product changes through the bot, independent review and preview release without another Gerhard gate.
+
+This preview completes the unreleased 1.7 phone feature. Private remote access needs user-managed Tailscale Serve (or an equivalent trusted HTTPS proxy). Locked-phone push needs permission and a running computer; physical iPhone delivery remains a device test. macOS is ad-hoc signed and requires manual DMG installation.
+
+Full setup and release notes: [1.7 phone access and account resets](docs/releases/1.7.0.md).
+
+## 1.7.0-preview.3 - 2026-10-17
+
+- Fix multi-account Codex reset history: show each account separately, retain independently sampled resets, and label older logs without an account as unassigned.
+- Show the last measured percentage and timestamp before a reset separately from the maximum observed consumption.
+- Keep notification baselines separate for every account and include the account and previous percentage in desktop and phone reset notices.
+- Collect additional signed-in Codex profiles in the background without starting model turns.
+
+This preview fixes the existing multi-account and reset behavior in the unreleased 1.7 feature; the product minor version is unchanged.
+
+## 1.7.0-preview.2 - 2026-10-15
+
+- Accept the installed desktop window’s localhost address when opening phone setup, while continuing to reject other windows, ports and origins.
+
+## 1.7.0-preview.1 - 2026-10-15
+
+### Phone access in the desktop app
+
+- Connect a phone from Settings → Phone using a QR code or a copied link.
+- Keep phone access running with the desktop app, restore it after restarts, and recover when a local network returns.
+- Preserve existing prototype phone pairings while giving new installations their own private pairing group.
+- Add an off switch and clear messages for unavailable networks or a conflicting local service.
+- Keep phone access on the trusted local network; HTTPS push and access away from home remain separately configured.
+
+This new desktop feature advances the unreleased mobile work from the 1.6 baseline to the 1.7 minor version. This preview is a local review build, not a published release.
+
+## 1.6.0-preview.12 - 2026-10-06
+
+### Accounts and devices
+
+- Add and manage multiple ChatGPT/Codex and Claude Code accounts in compact settings.
+- Connect Kimi Code, GLM/Z.AI Coding Plan, OpenAI API, Anthropic API and Moonshot API accounts with their supported sign-in or key methods.
+- Pair trusted installations for encrypted direct usage sync, then inspect all devices together or just one computer.
+- Compare recorded tokens by installation, account, provider and model, with model details in chart tooltips and copied records counted once.
+
+### Resets and performance
+
+- Inspect Codex reset history and credits, with manual, scheduled, provider-inferred and unknown causes distinguished by their evidence.
+- Preserve manual-reset evidence across a short failed status poll.
+- Restore saved charts after restart and refresh in the background; speed up large histories and installation switching.
+- Include Multica Codex session logs and keep this computer's live account limits visible.
+- Refresh compatible desktop/build dependencies, including Electron 42.11.10 and electron-builder 26.15.3, and update proxy-addr to patched 2.0.8.
+
+### Preview notes
+
+- Direct sync needs reachable paired devices on a LAN or existing private network.
+- Kimi Code exposes quotas; Moonshot API exposes balance. Complete token history is unavailable for these connections.
+- macOS is ad-hoc signed without notarization; install the DMG manually. Windows installers are unsigned.
+- Full notes: [1.6 release](docs/releases/1.6.0.md).
+
+## 1.6.0-preview.11 - 2026-10-06
+
+### Fixed
+
+- Recognize manual Codex resets when a non-expired reset credit disappears across
+  a short failed status poll. Keep inferred versus confirmed evidence and recording
+  gaps visible; ambiguous accounts, overlapping windows and expiry stay unknown.
+
+## 1.6.0-preview.10 - 2026-10-05
+
+### Fixed
+
+- Restore completed token charts immediately after a restart, with the saved
+  timestamp and a visible background-update notice; read live Codex limits separately.
+- Calculate provider and Spark histories in one pass, preserving model totals,
+  copied-record deduplication and each provider's full date range.
+- Verify encrypted device histories in a background worker so startup does not
+  block the dashboard HTTP server.
+- Cancel obsolete chart requests when switching installations.
+- Recheck actual source read access before using extraction caches, including
+  Windows access-control permissions.
+
+## 1.6.0-preview.9 - 2026-10-05
+
+### Fixed
+
+- Skip parsing unrelated Codex message payloads while scanning large or active
+  logs. Token events, model context and source line identities are preserved.
+
+## 1.6.0-preview.8 - 2026-10-05
+
+### Fixed
+
+- Reuse private, compressed token extractions after app restarts instead of
+  rereading unchanged Codex, Claude and Gemini transcripts.
+- Recheck source permissions, file fingerprints and parser versions; safely
+  rebuild missing or damaged caches from the original logs.
+
+## 1.6.0-preview.7 - 2026-10-05
+
+### Fixed
+
+- Speed up large token histories by reusing device attribution across views
+  and avoiding repeated daily calculations.
+- Apply device changes made during a pending request immediately afterward,
+  without displaying the previous device's response under the new selection.
+
+## 1.6.0-preview.6 - 2026-10-05
+
+### Fixed
+
+- Omit zero minutes from compact whole-hour durations, including recent quota
+  pace measurements; retain actual minute values.
+
+## 1.6.0-preview.5 - 2026-10-05
+
+### Fixed
+
+- Automatically include Codex logs written into Multica session directories in
+  local history, model breakdowns and device sync.
+- Detect installations that only contain Multica sessions, while counting
+  copied rollouts once across normal and Multica history.
+
+## 1.6.0-preview.4 - 2026-10-05
+
+### Added
+
+- Show the recorded models and their token totals directly in installation
+  chart tooltips, for the selected day or time window.
+- Keep unknown models and shared observations explicit without counting copied
+  usage twice.
+
+## 1.6.0-preview.3 - 2026-10-05
+
+### Fixed
+
+- Keep this computer's current Codex limits and active account status visible
+  when viewing usage from all connected installations.
+- Calculate combined histories in the background and reuse the last completed
+  view while refreshing, so large histories do not block the desktop interface.
+- Avoid rewriting the encrypted sync history when its snapshots are unchanged.
+
+## 1.6.0-preview.2 - 2026-10-05
+
+### Fixed
+
+- Keep pairing reliable while installations collect or synchronize large histories.
+- Use clearly separated installation and account colors that stay consistent across date filters.
+
+## 1.6.0-preview.1 - 2026-10-05
+
+### Added
+
+- Compare recorded token usage by installation or account in the charts,
+  with matching legends, period totals and hover details.
+- Show unknown account ownership explicitly and distinguish logs observed on
+  several installations from records observed on one installation. Shared
+  events still count only once in the combined view.
+
+### Fixed
+
+- Keep a signed snapshot stable throughout a direct transfer so new local
+  activity does not repeatedly interrupt the first sync of a large history.
+
+### Preview limits
+
+- Historical account attribution requires account evidence in the original
+  record. A currently signed-in account does not establish who owned old usage.
+- An installation identifies where a record was observed; copied or migrated
+  logs do not prove where the model request originally ran.
+
+## 1.5.0-preview.2 - 2026-10-05
+
+### Fixed
+
+- Keep recent quota pace available when measurements cover only part of the
+  selected window, and display the duration actually measured.
+- Apply the same freshness limit to every pace window so short refresh delays
+  do not hide only the 30-minute view.
+
+## 1.5.0-preview.1 - 2026-10-05
+
+### Added
+
+- Compact account manager with provider selection, browser sign-in for ChatGPT,
+  Claude Code and Kimi Code, and separate key connections for GLM, Kimi Code,
+  OpenAI API, Anthropic API and Moonshot API.
+- Isolated local provider profiles and encrypted local API-key storage. Kimi
+  prepares its pinned official helper on first browser sign-in.
+- Installation overview with this computer always visible and a guided pairing
+  flow, directly accessible from the dashboard header.
+- Individual provider account quotas/reports and sanitized account snapshots
+  in direct device sync, without adding overlapping API reports to local tokens.
+
+### Improved
+
+- Split settings into Accounts, Installations, General and Advanced tabs.
+- Explain provider-specific access and missing measurements; API admin keys are
+  distinct from consumer subscriptions. Update all 27 interface languages.
+
+### Preview limits
+
+- Claude Code must be installed; its official quota statusline needs actual
+  session activity before values appear. Kimi initially exposes account quotas,
+  not a reconstructed token history. API report coverage varies by provider.
+- Use this version on every paired installation for the expanded account sync.
+  Direct network reachability is still required; no relay is introduced.
+
+## 1.4.0-preview.2 - 2026-10-04
+
+### Fixed
+
+- Support large usage histories up to one million stable events per device.
+- Transfer only changed event blocks after the first sync, including quota-only
+  changes, while verifying the complete signed snapshot before accepting it.
+- Preserve the local view with a visible coverage error if the initial local
+  snapshot cannot be created, instead of showing an empty combined total.
+
+## 1.4.0-preview.1 - 2026-10-04
+
+### Added
+
+- Add multiple GPT accounts through OpenAI sign-in with separate local Codex
+  profiles, and show account cards directly in the dashboard.
+- Optional encrypted direct device sync, one-use pairing, automatic LAN
+  rediscovery, offline snapshot history, and all-device/per-device usage views.
+- Deduplicate stable local usage events across devices and show missing coverage.
+  Credentials and conversation content never enter device sync.
+
+### Security
+
+- Serve icons locally and bind the desktop dashboard/proxy to loopback.
+- Restrict account and pairing controls to the local app with origin/Host checks.
+- Update affected Express/updater transitive dependencies to patched versions.
+
+### Preview limits
+
+- Direct reachability is required: no external discovery, relay, or automatic
+  router/VPN setup. See [accounts and direct sync](docs/accounts-and-direct-sync.md)
+  for supported sources, network limits, and the current security model.
+
+## 1.3.0-preview.3 - 2026-10-04
+
+### Fixed
+
+- Show the cause separately from the timing of each Codex reset: credit-backed
+  manual reset, inferred OpenAI reset without credit use, scheduled, or unknown.
+- Keep historical causes unknown when credit evidence is missing, and show
+  cause counts for the selected history period. Early timing alone is not an
+  OpenAI reset; the person who triggered a reset remains unknown.
+
+## 1.3.0-preview.2 - 2026-10-03
+
+### Fixed
+
+- Show the quota usage fill in the reset-history table in both light and dark themes.
+
+## 1.3.0-preview.1 - 2026-10-03
+
+### Added
+
+- Local Codex reset history with available reset credits, announced reset dates,
+  estimated window duration, early resets, and highest observed quota usage.
+- Read-only background recording while the app runs, with account-separated live
+  snapshots and reconstruction from existing quota/session logs.
+- Evidence labels distinguish confirmed credit redemptions, inferred redemptions,
+  stale overlapping windows, and recording gaps. No reset is consumed by the app.
+
+## 1.2.0-preview.4 - 2026-10-02
+
+### Fixed
+
+- Keep recent-pace estimates visible through short quota refresh delays,
+  while treating older samples as stale according to the selected time window.
+
+## 1.2.0-preview.3 - 2026-10-02
+
+### Fixed
+
+- Find the Codex CLI in its current macOS app location so installed desktop
+  builds can read live quota limits instead of falling back to old session logs.
+- Date Codex limit badges from the quota reading itself, not from a failed
+  refresh attempt or an unrelated token event.
+- Keep recent-pace history together when two sources report the same weekly
+  reset a few seconds apart.
+
+## 1.2.0-preview.2 - 2026-10-02
+
+### Added
+
+- Show recent weekly quota pace for 30 minutes, 1 hour, 2 hours, or 5 hours,
+  including an estimated time until the limit at that pace. Each provider card
+  now keeps its own selected comparison window and gauge/bar view.
+- Show the exact day total and hovered model's tokens in history bar tooltips.
+
+### Fixed
+
+- Keep the chosen language across desktop app restarts, even when Electron
+  assigns a new local port.
+- Hide the 5-hour summary tile when no active provider reports that limit.
+- Label recent pace with the selected comparison window and show the time
+  remaining until exhaustion directly.
+- Correct pricing of input tokens that were not served from cache.
+
+## 1.2.0-preview.1 - 2026-10-01
+
+### Added
+
+- Filter the API model catalog while typing a model name or API alias, with
+  case-insensitive partial matches and translated empty-result feedback.
+- Add GPT-6.1 Sol to the API model catalog with official input, cached-input,
+  cache-write, and output rates. Keep GPT-6 Sol as a separate historical model.
+
+### Updated
+
+- Add GPT-6 Sol and GPT-6 Luna with official API token prices, cache-write
+  prices, API/Codex aliases, and token limits. GPT-6 Terra is not listed
+  because OpenAI has not published or exposed that model.
+- Refresh the supported provider-price catalog, including current Claude Sonnet
+  5 and DeepSeek V4.1 rates, plus the complete Arena Text score snapshot from
+  September 13, 2026. Newly released GPT-6 Sol and Luna intentionally show no
+  Arena Text score until that leaderboard publishes comparable results.
+
+## 1.1.0-preview.19 - 2026-09-12
+
+### Added
+
+- Add the missing OpenAI GPT-6 Astra provider model with its official API token
+  rates, cache-write rate, and context/output limits.
+
+## 1.1.0-preview.18 - 2026-09-12
+
+### Fixed
+
+- Refresh the API pricing catalog with current official provider data, including
+  the revised GPT-5.6 Sol and Claude Sonnet 5 rates.
+
+### Added
+
+- Add current Gemini, Grok, Qwen, and Mistral model rows while preserving
+  retired Mistral aliases as explicitly unpriced historical mappings.
+
+## 1.1.0-preview.17 - 2026-09-11
+
+### Fixed
+
+- Keep Claude visible in the standard provider view when the current week has
+  recorded usage, even without current-day token activity.
+- Retain an unexpired, last-confirmed Claude quota snapshot across app restarts
+  and temporary live refresh failures instead of hiding the provider card.
+
 ## 1.1.0-preview.16 - 2026-08-10
 
 ### Added

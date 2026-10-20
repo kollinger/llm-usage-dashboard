@@ -7,13 +7,20 @@
     <title data-i18n="app.title">LLM Usage</title>
     <script src="/theme-bootstrap.js"></script>
     <link rel="stylesheet" href="/styles.css" />
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <link rel="stylesheet" href="/chat-usage.css" />
+    <script src="/vendor/lucide/lucide.js" defer></script>
+    <script src="/connections.js" defer></script>
+    <script src="/chat-usage.js" defer></script>
+    <script src="/provider-colors.js" defer></script>
     <script src="/app.js" defer></script>
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div class="top-actions">
+          <button class="text-button ghost" id="desktopWidgetBtn" type="button" data-i18n="widget.open" hidden></button>
+          <button class="text-button ghost" id="accountsManagerBtn" type="button" data-i18n="connections.accounts"></button>
+          <button class="text-button ghost" id="installationsManagerBtn" type="button" data-i18n="connections.installations"></button>
           <button class="icon-button" id="refreshBtn" aria-label="Aktualisieren" title="Aktualisieren" data-i18n-aria-label="actions.refresh" data-i18n-title="actions.refresh">
             <i data-lucide="refresh-cw"></i>
           </button>
@@ -28,10 +35,18 @@
         </div>
       </header>
 
+      <p class="settings-desc" id="usageRefreshNotice" role="status" hidden></p>
+
+      <div class="device-view-controls" id="deviceViewControls" hidden>
+        <label class="field"><span data-i18n="deviceSync.view">Devices</span><select id="deviceViewSelect"></select></label>
+        <p class="settings-desc" id="deviceSyncCoverage" role="status"></p>
+      </div>
+
       <div class="dashboard-layout" id="dashboardLayout">
-      <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf nach Anbieter" data-i18n-aria-label="chart.overviewAria" data-dashboard-panel-id="overview-history" data-dashboard-panel-label-key="chart.overviewAria" hidden>
+      <section class="panel overview-history-panel" id="overviewHistoryPanel" aria-label="Token-Verlauf" data-i18n-aria-label="chart.svgAria" data-dashboard-panel-id="overview-history" data-dashboard-panel-label-key="chart.svgAria" hidden>
         <div class="overview-history-toolbar">
           <nav id="overviewHistoryFilterBar" class="chart-filter-bar overview-history-filter-bar" aria-label="Zeitraum" data-i18n-aria-label="chart.filterBarAria"></nav>
+          <div id="overviewHistoryBreakdownToggle" class="chart-breakdown-control"></div>
           <nav id="overviewHistoryModeToggle" class="chart-mode-toggle overview-history-mode-toggle" aria-label="Ansichtsmodus" data-i18n-aria-label="chart.modeToggleAria"></nav>
         </div>
         <div id="overviewHistoryChart" class="overview-history-chart"></div>
@@ -39,7 +54,7 @@
       </section>
 
       <section class="summary-strip" id="summaryStrip" aria-label="Übersicht" data-i18n-aria-label="summary.ariaLabel" data-dashboard-panel-id="overview" data-dashboard-panel-label-key="summary.ariaLabel">
-        <div class="metric-tile" data-summary-metric-id="five-hour" data-summary-metric-label-key="summary.fiveHourOpen">
+        <div class="metric-tile" data-summary-metric-id="five-hour" data-summary-metric-label-key="summary.fiveHourOpen" hidden>
           <span data-i18n="summary.fiveHourOpen">5h frei</span>
           <strong id="fiveHourOpen">--</strong>
           <span class="metric-note" data-i18n="summary.quotaWindowNote">Provider-Zeitfenster</span>
@@ -64,6 +79,11 @@
           <strong id="recordDayTokens">--</strong>
           <span class="metric-note" id="recordDayDate" hidden></span>
         </div>
+      </section>
+
+      <section class="panel" id="accountOverviewPanel" hidden data-dashboard-panel-id="accounts" data-dashboard-panel-label-key="connections.accounts">
+        <div class="panel-heading"><h2 data-i18n="connections.accounts"></h2></div>
+        <div id="accountOverviewList" class="gpt-account-list"></div>
       </section>
 
       <section class="panel diagnostics-panel" id="sourceDiagnosticsSection" hidden aria-label="Quellen-Diagnose" data-i18n-aria-label="diagnostics.ariaLabel" data-dashboard-panel-id="diagnostics" data-dashboard-panel-label-key="diagnostics.heading">
@@ -99,6 +119,18 @@
         <section class="provider-grid" id="providerGrid" aria-label="Anbieter" data-i18n-aria-label="providers.gridAria"></section>
       </section>
 
+      <section class="panel codex-reset-panel" data-dashboard-panel-id="codex-resets" data-dashboard-panel-label-key="codexResets.title">
+        <div class="panel-heading">
+          <h2 data-i18n="codexResets.title">Codex · Reset-Historie</h2>
+          <select id="codexResetPeriod" aria-label="Zeitraum" data-i18n-aria-label="codexResets.period">
+            <option value="10" data-i18n="codexResets.last10">Letzte 10 Fenster</option>
+            <option value="30" data-i18n="codexResets.last30">Letzte 30 Fenster</option>
+            <option value="0" data-i18n="codexResets.all">Alle Fenster</option>
+          </select>
+        </div>
+        <div id="codexResetHistory" aria-live="polite"></div>
+      </section>
+
       <section class="usage-layout" data-dashboard-panel-id="token-history" data-dashboard-panel-label-key="chart.heading">
         <div class="panel chart-panel">
           <div class="panel-heading chart-heading">
@@ -107,7 +139,7 @@
               <div class="chart-heading-row">
                 <h2 id="chartTitle" data-i18n="chart.heading">Token-Verlauf aus Logs</h2>
                 <nav id="chartModeToggle" class="chart-mode-toggle" aria-label="Ansichtsmodus" data-i18n-aria-label="chart.modeToggleAria"></nav>
-                <nav id="chartBreakdownToggle" class="chart-mode-toggle chart-breakdown-toggle" aria-label="Token-Aufschlüsselung" data-i18n-aria-label="chart.breakdownToggleAria"></nav>
+                <div id="chartBreakdownToggle" class="chart-breakdown-control"></div>
               </div>
             </div>
             <div class="chart-heading-tools">
@@ -121,6 +153,8 @@
           <div id="chartLegend" class="chart-legend" aria-label="Legende" data-i18n-aria-label="chart.legendAria"></div>
         </div>
       </section>
+
+      <section class="panel chat-usage-panel" id="chatUsagePanel" hidden aria-labelledby="chatUsageHeading" data-dashboard-panel-id="chat-usage" data-dashboard-panel-label-key="chatUsage.heading"></section>
 
       <section class="panel split-panel token-mix-panel" data-dashboard-panel-id="token-mix" data-dashboard-panel-label-key="tokenMix.heading">
         <div>
@@ -163,6 +197,10 @@
           </div>
         </div>
         <div class="price-view-panel" id="pricingApiView">
+          <label class="field pricing-model-filter">
+            <span data-i18n="pricing.modelFilter.label">Modellname filtern</span>
+            <input id="pricingModelFilter" type="search" autocomplete="off" aria-controls="priceRows" data-i18n-placeholder="pricing.modelFilter.placeholder" placeholder="Zum Beispiel Sol, 6.1 oder Claude">
+          </label>
           <div class="price-table-wrap">
             <table class="price-table">
               <thead>
@@ -210,28 +248,86 @@
       </form>
     </dialog>
 
+    <dialog id="desktopWidgetDialog" class="modal" aria-labelledby="desktopWidgetHeading">
+      <form method="dialog" class="modal-body">
+        <div class="modal-heading">
+          <h2 id="desktopWidgetHeading" data-i18n="widget.open"></h2>
+          <button class="icon-button" value="cancel" data-i18n-aria-label="actions.close"><i data-lucide="x"></i></button>
+        </div>
+        <p data-i18n="plasma.compactHelp"></p>
+        <button type="button" class="text-button" id="compactWidgetBtn" data-i18n="plasma.compact"></button>
+        <hr />
+        <h3 data-i18n="plasma.title"></h3>
+        <p data-i18n="plasma.installHelp"></p>
+        <p id="plasmaWidgetStatus" role="status" aria-live="polite"></p>
+        <button type="button" class="text-button" id="plasmaWidgetInstall" data-i18n="plasma.install" disabled></button>
+      </form>
+    </dialog>
+
+    <dialog id="creditExpiryDialog" class="modal">
+      <form class="modal-body" id="creditExpiryForm">
+        <div class="modal-heading">
+          <h2 data-i18n="credits.expiryEdit"></h2>
+          <button type="button" class="icon-button" id="creditExpiryClose" data-i18n-aria-label="actions.close"><i data-lucide="x"></i></button>
+        </div>
+        <p data-i18n="credits.expiryHelp"></p>
+        <label class="field"><span data-i18n="credits.expiryDate"></span><input type="date" id="creditExpiryDate" /></label>
+        <p id="creditExpiryStatus" role="status"></p>
+        <div class="modal-actions"><button type="submit" class="text-button" id="creditExpirySave" data-i18n="credits.expirySave"></button></div>
+      </form>
+    </dialog>
     <dialog id="settingsDialog" class="modal">
       <div class="modal-body settings-modal-body">
+        <div class="settings-sticky">
         <div class="modal-heading settings-modal-heading">
           <h2 data-i18n="settings.heading">Einstellungen</h2>
           <button class="icon-button" type="button" id="settingsCloseBtn" aria-label="Schließen" title="Schließen" data-i18n-aria-label="actions.close" data-i18n-title="actions.close">
             <i data-lucide="x"></i>
           </button>
         </div>
-        <div class="settings-preferences">
-          <label class="field theme-field">
-            <span data-i18n="settings.theme.label">Theme</span>
-            <select id="themeSelect" aria-label="Theme" data-i18n-aria-label="settings.theme.label">
-              <option value="system" data-i18n="settings.theme.system">System</option>
-              <option value="light" data-i18n="settings.theme.light">Light</option>
-              <option value="dark" data-i18n="settings.theme.dark">Dark</option>
-            </select>
-          </label>
-          <label class="field language-field">
-            <span data-i18n="settings.language.label">Sprache</span>
-            <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>
-          </label>
+        <nav class="settings-tabs" role="tablist" aria-label="Settings" data-i18n-aria-label="settings.heading">
+          <button type="button" class="settings-tab" id="settingsTabAccounts" role="tab" aria-controls="settingsPanelAccounts" aria-selected="true" tabindex="0" data-settings-tab="accounts" data-i18n="connections.accounts"></button>
+          <button type="button" class="settings-tab" id="settingsTabInstallations" role="tab" aria-controls="settingsPanelInstallations" aria-selected="false" tabindex="-1" data-settings-tab="installations" data-i18n="connections.installations"></button>
+          <button type="button" class="settings-tab" id="settingsTabMobile" role="tab" aria-controls="settingsPanelMobile" aria-selected="false" tabindex="-1" data-settings-tab="mobile" data-i18n="settings.mobile.title"></button>
+          <button type="button" class="settings-tab" id="settingsTabGeneral" role="tab" aria-controls="settingsPanelGeneral" aria-selected="false" tabindex="-1" data-settings-tab="general" data-i18n="connections.general"></button>
+          <button type="button" class="settings-tab" id="settingsTabAdvanced" role="tab" aria-controls="settingsPanelAdvanced" aria-selected="false" tabindex="-1" data-settings-tab="advanced" data-i18n="connections.advanced"></button>
+        </nav>
         </div>
+        <div class="settings-tab-content">
+        <section class="settings-tab-panel" id="settingsPanelAccounts" role="tabpanel" aria-labelledby="settingsTabAccounts" data-settings-panel="accounts">
+          <div class="connection-panel-heading"><h3 data-i18n="connections.accounts"></h3><div class="connection-actions">
+            <button class="text-button ghost" id="accountsRefreshBtn" type="button" data-i18n="actions.refresh"></button>
+            <button class="text-button" id="accountAddBtn" type="button" data-i18n="connections.addAccount"></button>
+          </div></div>
+          <p class="settings-desc" data-i18n="connections.privacy"></p>
+          <p class="settings-desc" id="accountsMessage" role="status" aria-live="polite"></p>
+          <div class="connection-list" id="managedAccountList"></div>
+          <section class="connection-wizard" id="accountWizard" hidden aria-labelledby="accountWizardHeading">
+            <div class="connection-panel-heading"><h4 id="accountWizardHeading" data-i18n="connections.chooseProvider"></h4><button type="button" class="text-button ghost" id="accountWizardClose" data-i18n="actions.close"></button></div>
+            <div id="accountProviderChooser" class="account-provider-chooser"></div>
+            <form id="accountConnectForm" hidden>
+              <button type="button" class="text-button ghost" id="accountProviderBack" data-i18n="connections.back"></button>
+              <h4 id="accountProviderName"></h4>
+              <p id="accountProviderDescription" class="settings-desc"></p>
+              <label class="field"><span data-i18n="connections.accountLabel"></span><input id="accountConnectionLabel" type="text" maxlength="60" autocomplete="off" /></label>
+              <div id="accountMethods" class="connection-actions"></div>
+              <div id="accountKeyFields" hidden>
+                <label class="field"><span id="accountKeyLabel" data-i18n="connections.apiKey"></span><input id="accountApiKey" type="password" autocomplete="new-password" spellcheck="false" /></label>
+                <label class="field" id="accountRegionField" hidden><span data-i18n="connections.region"></span><select id="accountRegion"><option value="global" data-i18n="connections.global"></option><option value="china" data-i18n="connections.china"></option></select></label>
+              </div>
+              <p id="accountMethodHelp" class="settings-desc"></p>
+              <a id="accountMethodHelpLink" class="text-button ghost" target="_blank" rel="noopener noreferrer" hidden data-i18n="connections.setupHelp"></a>
+              <button type="submit" class="text-button" id="accountConnectBtn" data-i18n="connections.connect"></button>
+            </form>
+            <div class="account-login-status" id="accountLogin" hidden aria-live="polite">
+              <p id="accountLoginMessage"></p>
+              <p id="accountLoginCode" class="account-user-code" hidden></p>
+              <a class="text-button" id="accountLoginLink" target="_blank" rel="noopener noreferrer" hidden data-i18n="connections.openSignIn"></a>
+              <button class="text-button ghost" id="accountLoginCancel" type="button" data-i18n="actions.close"></button>
+            </div>
+          </section>
+          <details class="settings-advanced account-detected-details">
+            <summary data-i18n="connections.detectedDetails"></summary>
         <section class="settings-section gpt-accounts-settings" id="gptAccountsSection" aria-label="GPT accounts" data-i18n-aria-label="gptAccounts.ariaLabel">
           <div class="gpt-accounts-settings-heading">
             <div>
@@ -248,48 +344,82 @@
             OpenCode tokens are measured for OpenCode as a whole because its message database does not record which account produced each message.
           </p>
         </section>
-        <section class="settings-section sync-settings" id="syncSettingsSection" aria-label="Privater Geräte-Sync" data-i18n-aria-label="sync.title">
-          <h3 data-i18n="sync.title">Privater Geräte-Sync</h3>
-          <p class="settings-desc" data-i18n="sync.description">Normalisierte Usage automatisch und idempotent mit einem privaten Collector abgleichen.</p>
-          <p class="settings-state-note neutral-note" data-i18n="sync.privacy">Übertragen werden nur normalisierte Token-, Modell-, Zeit- und Zuordnungsdaten – keine Prompts, Transkripte, Rohlogs, Zugangsdaten oder lokalen Pfade.</p>
-          <label class="field toggle-field">
-            <input type="checkbox" id="syncEnabled" />
-            <span data-i18n="sync.enabled">Hintergrund-Sync aktivieren</span>
-          </label>
-          <div class="sync-settings-fields">
-            <label class="field">
-              <span data-i18n="sync.serverUrl">Private Collector-URL</span>
-              <input type="url" id="syncServerUrl" placeholder="http://100.64.0.5:4177" autocomplete="off" spellcheck="false" />
-            </label>
-            <label class="field">
-              <span data-i18n="sync.deviceName">Gerätename</span>
-              <input type="text" id="syncDeviceName" maxlength="80" autocomplete="off" />
-            </label>
-            <label class="field" id="syncPairingCodeField">
-              <span data-i18n="sync.pairingCode">Pairing-Code</span>
-              <input type="text" id="syncPairingCode" maxlength="9" autocomplete="one-time-code" spellcheck="false" />
-            </label>
-          </div>
-          <div class="settings-section-actions sync-settings-actions">
-            <button type="button" class="text-button ghost" id="syncSaveBtn" data-i18n="sync.save">Einstellungen speichern</button>
-            <button type="button" class="text-button ghost" id="syncCreateSpaceBtn" data-i18n="sync.createSpace">Sync-Space erstellen</button>
-            <button type="button" class="text-button" id="syncJoinBtn" data-i18n="sync.join">Mit Code verbinden</button>
-            <button type="button" class="text-button ghost" id="syncNewPairingCodeBtn" data-i18n="sync.newPairingCode" hidden>Neuen Pairing-Code erzeugen</button>
-            <button type="button" class="text-button ghost" id="syncNowBtn" data-i18n="sync.syncNow" hidden>Jetzt abgleichen</button>
-            <button type="button" class="text-button ghost danger-button" id="syncDisconnectBtn" data-i18n="sync.disconnect" hidden>Verbindung trennen</button>
-          </div>
-          <div class="sync-pairing-output" id="syncPairingOutput" hidden role="status" aria-live="polite"></div>
-          <dl class="diag-list sync-status-list">
-            <dt data-i18n="sync.connection">Verbindung</dt>
-            <dd id="syncConnectionStatus">--</dd>
-            <dt data-i18n="sync.pending">Offline-Puffer</dt>
-            <dd id="syncPendingStatus">--</dd>
-            <dt data-i18n="sync.lastSuccess">Letzter erfolgreicher Sync</dt>
-            <dd id="syncLastSuccess">--</dd>
-            <dt data-i18n="sync.lastError">Letzter Fehler</dt>
-            <dd id="syncLastError">--</dd>
-          </dl>
+          </details>
         </section>
+        <section class="settings-tab-panel" id="settingsPanelInstallations" role="tabpanel" aria-labelledby="settingsTabInstallations" data-settings-panel="installations" hidden>
+          <section id="deviceSyncSection">
+            <div class="connection-panel-heading"><h3 data-i18n="connections.installations"></h3><button class="text-button" id="deviceSyncConnectBtn" type="button" data-i18n="connections.connectInstallation"></button></div>
+            <p class="settings-desc" data-i18n="connections.installationsHelp"></p>
+            <div id="deviceSyncPeers" class="connection-list"></div>
+            <section id="devicePairWizard" class="connection-wizard" hidden aria-labelledby="devicePairHeading">
+              <div class="connection-panel-heading"><h4 id="devicePairHeading" data-i18n="connections.connectInstallation"></h4><button type="button" class="text-button ghost" id="devicePairClose" data-i18n="actions.close"></button></div>
+              <p class="settings-desc" data-i18n="connections.pairHelp"></p>
+              <div class="connection-actions" id="devicePairChoice">
+                <button class="text-button" id="deviceSyncInviteBtn" type="button" data-i18n="deviceSync.invite"></button>
+                <button class="text-button ghost" id="devicePairPasteBtn" type="button" data-i18n="connections.haveCode"></button>
+              </div>
+              <div id="devicePairCodeFields" hidden>
+                <label class="field"><span data-i18n="deviceSync.code"></span><textarea id="deviceSyncCode" rows="3" autocomplete="off" spellcheck="false"></textarea></label>
+                <div class="connection-actions">
+                  <button class="text-button ghost" id="deviceSyncCopyBtn" type="button" data-i18n="deviceSync.copy"></button>
+                  <button class="text-button" id="deviceSyncJoinBtn" type="button" data-i18n="deviceSync.join"></button>
+                </div>
+              </div>
+            </section>
+            <p id="deviceSyncMessage" class="settings-desc" role="status" aria-live="polite"></p>
+            <details class="settings-advanced">
+              <summary data-i18n="connections.syncOptions"></summary>
+              <label class="field toggle-field"><input type="checkbox" id="deviceSyncEnabled" /><span data-i18n="deviceSync.enabled"></span></label>
+              <label class="field"><span data-i18n="deviceSync.name"></span><input id="deviceSyncName" type="text" maxlength="60" autocomplete="off" /></label>
+              <button class="text-button ghost" id="deviceSyncRefreshBtn" type="button" data-i18n="actions.refresh"></button>
+              <p class="settings-desc" data-i18n="deviceSync.privacy"></p>
+              <p class="settings-desc" data-i18n="deviceSync.networkLimit"></p>
+            </details>
+          </section>
+        </section>
+        <section class="settings-tab-panel" id="settingsPanelMobile" role="tabpanel" aria-labelledby="settingsTabMobile" data-settings-panel="mobile" hidden>
+          <h3 data-i18n="settings.mobile.title"></h3>
+          <p class="settings-desc" data-i18n="settings.mobile.help"></p>
+          <p class="settings-desc" data-i18n="mobilePrototype.httpWarning"></p>
+          <p id="mobileAccessStatus" class="settings-desc" role="status" aria-live="polite"></p>
+          <div class="connection-actions">
+            <button type="button" class="text-button" id="mobileAccessOpen" data-i18n="settings.mobile.open"></button>
+            <button type="button" class="text-button ghost" id="mobileAccessDisable" data-i18n="settings.mobile.stop" hidden></button>
+          </div>
+          <label class="field" id="mobileAccessAddressField" hidden><span data-i18n="settings.mobile.address"></span><input id="mobileAccessAddress" type="url" readonly /></label>
+          <details id="mobileVpnSettings">
+            <summary data-i18n="settings.mobile.vpnTitle"></summary>
+            <p class="settings-desc" id="mobileVpnHelp" data-i18n="settings.mobile.vpnHelp"></p>
+            <label class="field"><span data-i18n="settings.mobile.vpnNetworks"></span><textarea id="mobileVpnNetworks" rows="3" maxlength="512" dir="ltr" autocomplete="off" spellcheck="false" aria-describedby="mobileVpnHelp"></textarea></label>
+            <button type="button" class="text-button" id="mobileVpnSave" data-i18n="settings.mobile.vpnSave"></button>
+            <p id="mobileVpnStatus" class="settings-desc" role="status" aria-live="polite"></p>
+          </details>
+          <details>
+            <summary data-i18n="mobilePrototype.notificationsConnectionHelp"></summary>
+            <p class="settings-desc" data-i18n="settings.mobile.remoteSetup"></p>
+            <div class="source-command-block"><pre dir="ltr">tailscale serve --bg --https=443 http://127.0.0.1:41781</pre></div>
+            <label class="field"><span data-i18n="settings.mobile.remoteOrigin"></span><input id="mobileHttpsOrigin" type="url" placeholder="https://computer.tailnet.ts.net" autocomplete="off" spellcheck="false" /></label>
+            <button type="button" class="text-button" id="mobileHttpsSave" data-i18n="settings.mobile.remoteSave"></button>
+            <button type="button" class="text-button" id="mobileHttpsOpen" data-i18n="settings.mobile.remoteOpen" hidden></button>
+            <p class="settings-desc" data-i18n="mobilePrototype.notificationsHelp"></p>
+            <a href="https://tailscale.com/docs/features/tailscale-serve" target="_blank" rel="noopener noreferrer">Tailscale Serve</a>
+          </details>
+        </section>
+        <section class="settings-tab-panel" id="settingsPanelGeneral" role="tabpanel" aria-labelledby="settingsTabGeneral" data-settings-panel="general" hidden>
+        <div class="settings-preferences">
+          <label class="field theme-field">
+            <span data-i18n="settings.theme.label">Theme</span>
+            <select id="themeSelect" aria-label="Theme" data-i18n-aria-label="settings.theme.label">
+              <option value="system" data-i18n="settings.theme.system">System</option>
+              <option value="light" data-i18n="settings.theme.light">Light</option>
+              <option value="dark" data-i18n="settings.theme.dark">Dark</option>
+            </select>
+          </label>
+          <label class="field language-field">
+            <span data-i18n="settings.language.label">Sprache</span>
+            <select id="languageSelect" aria-label="Sprache" data-i18n-aria-label="settings.language.label"></select>
+          </label>
+        </div>
         <div class="settings-section">
           <h3 data-i18n="settings.notifications.title">Limits & Warnungen</h3>
           <p class="settings-desc" data-i18n="settings.notifications.description">Warnungen beziehen sich auf reale 5-Stunden- und Wochenfenster sowie Projektionen, nicht auf API-Kosten.</p>
@@ -302,6 +432,10 @@
             <span id="notificationPermissionNoticeBody" data-i18n="settings.notifications.systemGuideDefault">Erlaube Mitteilungen für LLM Usage Dashboard in den Systemeinstellungen, starte die App neu, wenn du den Schalter gerade geändert hast, und teste danach erneut.</span>
           </div>
           <div id="notificationThresholds" class="notification-thresholds" hidden>
+            <label class="field toggle-field">
+              <input type="checkbox" id="notificationResetsEnabled" />
+              <span data-i18n="settings.notifications.resetsEnabled"></span>
+            </label>
             <p class="settings-desc" data-i18n="settings.notifications.thresholdsHelp">Tempo-Warnung nutzt die aktuelle Verbrauchsrate, harte Grenze nutzt den gemessenen Verbrauch im jeweiligen 5h-/Wochenlimit.</p>
             <label class="field">
               <span data-i18n="settings.notifications.pacingLabel">Tempo-Warnung bei projiziertem Verbrauch (%)</span>
@@ -356,6 +490,89 @@
             </div>
           </details>
         </div>
+        <div class="settings-section" id="updateSettingsSection" hidden>
+          <h3 data-i18n="settings.updates.title">App-Updates</h3>
+          <p class="settings-desc" data-i18n="settings.updates.description">Automatische Update-Prüfungen sind immer aktiv; nur Preview-Releases sind optional.</p>
+          <p class="settings-state-note" data-i18n="settings.updates.alwaysOn">Automatische Update-Prüfung ist immer aktiv.</p>
+          <label class="field toggle-field">
+            <input type="checkbox" id="allowPrereleaseUpdates" />
+            <span data-i18n="settings.updates.allowPrerelease">Preview-Releases einschließen</span>
+          </label>
+          <div class="update-diagnostics" id="updateDiagnostics">
+            <details class="settings-advanced"><summary data-i18n="settings.updates.diagTitle">Update diagnostics</summary>
+            <dl class="diag-list">
+              <dt data-i18n="settings.updates.diagState">State</dt>
+              <dd id="updateDiagState">--</dd>
+              <dt data-i18n="settings.updates.diagSupport">Support</dt>
+              <dd id="updateDiagSupport">--</dd>
+              <dt data-i18n="settings.updates.diagLastCheck">Last check</dt>
+              <dd id="updateDiagLastCheck">--</dd>
+              <dt data-i18n="settings.updates.diagVersion">App version</dt>
+              <dd id="updateDiagVersion">--</dd>
+              <dt data-i18n="settings.updates.diagAvailable">Available version</dt>
+              <dd id="updateDiagAvailable">--</dd>
+              <dt data-i18n="settings.updates.diagError">Last error</dt>
+              <dd id="updateDiagError">--</dd>
+            </dl>
+            </details>
+            <div class="diag-test-row">
+              <button type="button" class="text-button" id="updateCheckBtn" data-i18n="settings.updates.checkNow">Check now</button>
+              <p class="settings-desc" id="updateCheckStatus" hidden></p>
+            </div>
+            <div class="notification-permission-notice" id="updateNotice" hidden role="status" aria-live="polite">
+              <strong data-i18n="settings.updates.noticeTitle">Update attention needed</strong>
+              <span id="updateNoticeBody"></span>
+            </div>
+          </div>
+        </div>
+        </section>
+        <section class="settings-tab-panel" id="settingsPanelAdvanced" role="tabpanel" aria-labelledby="settingsTabAdvanced" data-settings-panel="advanced" hidden>
+          <details class="settings-advanced" id="collectorSyncSettings">
+            <summary data-i18n="sync.title"></summary>
+        <section class="settings-section sync-settings" id="syncSettingsSection" aria-label="Privater Geräte-Sync" data-i18n-aria-label="sync.title">
+          <h3 data-i18n="sync.title">Privater Geräte-Sync</h3>
+          <p class="settings-desc" data-i18n="sync.description">Normalisierte Usage automatisch und idempotent mit einem privaten Collector abgleichen.</p>
+          <p class="settings-state-note neutral-note" data-i18n="sync.privacy">Übertragen werden nur normalisierte Token-, Modell-, Zeit- und Zuordnungsdaten – keine Prompts, Transkripte, Rohlogs, Zugangsdaten oder lokalen Pfade.</p>
+          <label class="field toggle-field">
+            <input type="checkbox" id="syncEnabled" />
+            <span data-i18n="sync.enabled">Hintergrund-Sync aktivieren</span>
+          </label>
+          <div class="sync-settings-fields">
+            <label class="field">
+              <span data-i18n="sync.serverUrl">Private Collector-URL</span>
+              <input type="url" id="syncServerUrl" placeholder="http://100.64.0.5:4177" autocomplete="off" spellcheck="false" />
+            </label>
+            <label class="field">
+              <span data-i18n="sync.deviceName">Gerätename</span>
+              <input type="text" id="syncDeviceName" maxlength="80" autocomplete="off" />
+            </label>
+            <label class="field" id="syncPairingCodeField">
+              <span data-i18n="sync.pairingCode">Pairing-Code</span>
+              <input type="text" id="syncPairingCode" maxlength="9" autocomplete="one-time-code" spellcheck="false" />
+            </label>
+          </div>
+          <div class="settings-section-actions sync-settings-actions">
+            <button type="button" class="text-button ghost" id="syncSaveBtn" data-i18n="sync.save">Einstellungen speichern</button>
+            <button type="button" class="text-button ghost" id="syncCreateSpaceBtn" data-i18n="sync.createSpace">Sync-Space erstellen</button>
+            <button type="button" class="text-button" id="syncJoinBtn" data-i18n="sync.join">Mit Code verbinden</button>
+            <button type="button" class="text-button ghost" id="syncNewPairingCodeBtn" data-i18n="sync.newPairingCode" hidden>Neuen Pairing-Code erzeugen</button>
+            <button type="button" class="text-button ghost" id="syncNowBtn" data-i18n="sync.syncNow" hidden>Jetzt abgleichen</button>
+            <button type="button" class="text-button ghost danger-button" id="syncDisconnectBtn" data-i18n="sync.disconnect" hidden>Verbindung trennen</button>
+          </div>
+          <div class="sync-pairing-output" id="syncPairingOutput" hidden role="status" aria-live="polite"></div>
+          <dl class="diag-list sync-status-list">
+            <dt data-i18n="sync.connection">Verbindung</dt>
+            <dd id="syncConnectionStatus">--</dd>
+            <dt data-i18n="sync.pending">Offline-Puffer</dt>
+            <dd id="syncPendingStatus">--</dd>
+            <dt data-i18n="sync.lastSuccess">Letzter erfolgreicher Sync</dt>
+            <dd id="syncLastSuccess">--</dd>
+            <dt data-i18n="sync.lastError">Letzter Fehler</dt>
+            <dd id="syncLastError">--</dd>
+          </dl>
+        </section>
+          </details>
+          <details class="settings-advanced"><summary data-i18n="settings.subscriptions.title"></summary>
         <div class="settings-section">
           <h3 data-i18n="settings.subscriptions.title">Abo-Kosten</h3>
           <p class="settings-desc" data-i18n="settings.subscriptions.description">Automatisch erkannte Pläne und Kosten werden aus sicheren lokalen Signalen übernommen; fehlende Daten werden nicht als echte Kosten gezählt.</p>
@@ -389,60 +606,8 @@
             </div>
           </details>
         </div>
-        <div class="settings-section" id="updateSettingsSection" hidden>
-          <h3 data-i18n="settings.updates.title">App-Updates</h3>
-          <p class="settings-desc" data-i18n="settings.updates.description">Automatische Update-Prüfungen sind immer aktiv; nur Preview-Releases sind optional.</p>
-          <p class="settings-state-note" data-i18n="settings.updates.alwaysOn">Automatische Update-Prüfung ist immer aktiv.</p>
-          <label class="field toggle-field">
-            <input type="checkbox" id="allowPrereleaseUpdates" />
-            <span data-i18n="settings.updates.allowPrerelease">Preview-Releases einschließen</span>
-          </label>
-          <div class="update-diagnostics" id="updateDiagnostics">
-            <h4 class="settings-subheading" data-i18n="settings.updates.diagTitle">Update diagnostics</h4>
-            <dl class="diag-list">
-              <dt data-i18n="settings.updates.diagState">State</dt>
-              <dd id="updateDiagState">--</dd>
-              <dt data-i18n="settings.updates.diagSupport">Support</dt>
-              <dd id="updateDiagSupport">--</dd>
-              <dt data-i18n="settings.updates.diagLastCheck">Last check</dt>
-              <dd id="updateDiagLastCheck">--</dd>
-              <dt data-i18n="settings.updates.diagVersion">App version</dt>
-              <dd id="updateDiagVersion">--</dd>
-              <dt data-i18n="settings.updates.diagAvailable">Available version</dt>
-              <dd id="updateDiagAvailable">--</dd>
-              <dt data-i18n="settings.updates.diagError">Last error</dt>
-              <dd id="updateDiagError">--</dd>
-            </dl>
-            <div class="diag-test-row">
-              <button type="button" class="text-button" id="updateCheckBtn" data-i18n="settings.updates.checkNow">Check now</button>
-              <p class="settings-desc" id="updateCheckStatus" hidden></p>
-            </div>
-            <div class="notification-permission-notice" id="updateNotice" hidden role="status" aria-live="polite">
-              <strong data-i18n="settings.updates.noticeTitle">Update attention needed</strong>
-              <span id="updateNoticeBody"></span>
-            </div>
-          </div>
-        </div>
-        <div class="settings-section">
-          <h3 data-i18n="settings.supportReport.title">Diagnosebericht</h3>
-          <p class="settings-desc" data-i18n="settings.supportReport.description">Erzeuge einen redigierten Supportbericht fuer Multica oder WhatsApp, wenn lokale Quellen fehlen oder keine Usage liefern.</p>
-          <p class="settings-state-note neutral-note" data-i18n="settings.supportReport.privacyNote">Der Bericht enthaelt nur Metadaten und redigierte Pfade, keine Rohlogs, Prompts, Secrets oder Provider-Payloads.</p>
-          <div class="settings-section-actions support-report-actions">
-            <button type="button" class="text-button" id="supportReportDownloadBtn">
-              <i data-lucide="download"></i>
-              <span data-i18n="settings.supportReport.downloadJson">JSON-Bericht speichern</span>
-            </button>
-            <button type="button" class="text-button ghost" id="supportReportCopyBtn">
-              <i data-lucide="copy"></i>
-              <span data-i18n="settings.supportReport.copySummary">Zusammenfassung kopieren</span>
-            </button>
-          </div>
-          <p class="settings-desc" id="supportReportStatus" hidden></p>
-          <label class="field support-report-field">
-            <span data-i18n="settings.supportReport.summaryLabel">Kompakte Zusammenfassung</span>
-            <textarea id="supportReportSummary" rows="7" readonly aria-label="Kompakte Zusammenfassung" data-i18n-aria-label="settings.supportReport.summaryLabel" data-i18n-placeholder="settings.supportReport.emptySummary"></textarea>
-          </label>
-        </div>
+          </details>
+          <details class="settings-advanced"><summary data-i18n="settings.sources.title"></summary>
         <div class="settings-section">
           <h3 data-i18n="settings.sources.title">Lokale Quellen</h3>
           <p class="settings-desc" data-i18n="settings.sources.description">Verbundene Quellen verwalten, Zugriff prüfen und ACL-Kommandos kopieren.</p>
@@ -464,7 +629,32 @@
             </div>
           </div>
         </div>
+          </details>
+          <details class="settings-advanced"><summary data-i18n="settings.supportReport.title"></summary>
+        <div class="settings-section">
+          <h3 data-i18n="settings.supportReport.title">Diagnosebericht</h3>
+          <p class="settings-desc" data-i18n="settings.supportReport.description">Erzeuge einen redigierten Supportbericht fuer Multica oder WhatsApp, wenn lokale Quellen fehlen oder keine Usage liefern.</p>
+          <p class="settings-state-note neutral-note" data-i18n="settings.supportReport.privacyNote">Der Bericht enthaelt nur Metadaten und redigierte Pfade, keine Rohlogs, Prompts, Secrets oder Provider-Payloads.</p>
+          <div class="settings-section-actions support-report-actions">
+            <button type="button" class="text-button" id="supportReportDownloadBtn">
+              <i data-lucide="download"></i>
+              <span data-i18n="settings.supportReport.downloadJson">JSON-Bericht speichern</span>
+            </button>
+            <button type="button" class="text-button ghost" id="supportReportCopyBtn">
+              <i data-lucide="copy"></i>
+              <span data-i18n="settings.supportReport.copySummary">Zusammenfassung kopieren</span>
+            </button>
+          </div>
+          <p class="settings-desc" id="supportReportStatus" hidden></p>
+          <label class="field support-report-field">
+            <span data-i18n="settings.supportReport.summaryLabel">Kompakte Zusammenfassung</span>
+            <textarea id="supportReportSummary" rows="7" readonly aria-label="Kompakte Zusammenfassung" data-i18n-aria-label="settings.supportReport.summaryLabel" data-i18n-placeholder="settings.supportReport.emptySummary"></textarea>
+          </label>
+        </div>
+          </details>
+        </section>
         <p class="settings-toast" id="settingsToast" hidden aria-live="polite"></p>
+        </div>
       </div>
     </dialog>
   </body>
