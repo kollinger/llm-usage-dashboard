@@ -37,9 +37,16 @@ Item {
     }
     function number(value, digits) { return Number(value).toLocaleString(Qt.locale(language), "f", digits || 0); }
     function date(value) { return value && isFinite(Date.parse(value)) ? new Date(value).toLocaleString(Qt.locale(language), "dd MMM hh:mm") : t("widget.unavailable"); }
-    function quotaLabel(window) {
-        if (window.windowMinutes === 300) return t("limits.fiveHour");
-        if (window.windowMinutes === 10080) return t("limits.weekly");
+    function quotaLabel(window, provider) {
+        if (window.key === "fiveHour" || window.windowMinutes === 300) return t("limits.fiveHour");
+        if (window.key === "weekly" || window.key === "allModels" || window.windowMinutes === 10080) {
+            var period = t("limits.weekly");
+            if (provider !== "claude") return period;
+            var scopeKey = window.key === "weekly" || window.key === "allModels" ? "allModels" :
+                window.key === "sonnetOnly" ? "sonnetOnly" : window.key === "claudeDesign" ? "claudeDesign" : null;
+            var scope = scopeKey ? t("limits." + scopeKey) : window.label || t("limits.default");
+            return t("widget.scopedPeriod", {scope: scope, period: period});
+        }
         return window.label || (window.windowMinutes ? t("widget.minutes", {minutes: number(window.windowMinutes)}) : t("widget.title"));
     }
     function toggleFavorite(id) {
@@ -187,7 +194,14 @@ Item {
                                     spacing: 2
                                     RowLayout {
                                         Layout.fillWidth: true
-                                        Controls.Label { text: view.quotaLabel(quota.modelData); Layout.fillWidth: true; elide: Text.ElideRight; font.pixelSize: view.textSize }
+                                        Controls.Label {
+                                            objectName: "quotaLabel" + card.index + "_" + quota.index
+                                            text: view.quotaLabel(quota.modelData, card.modelData.provider)
+                                            Layout.fillWidth: true; Layout.minimumWidth: 0
+                                            wrapMode: Text.Wrap; textFormat: Text.PlainText; font.pixelSize: view.textSize
+                                            Controls.ToolTip.text: text; Controls.ToolTip.visible: quotaHover.hovered
+                                            HoverHandler { id: quotaHover }
+                                        }
                                         Controls.Label {
                                             objectName: "remaining" + card.index + "_" + quota.index
                                             text: quota.remaining === null ? "—" : view.t("limits.leftValue", {percent: view.number(quota.remaining, 1)})
@@ -196,6 +210,7 @@ Item {
                                     }
                                     Controls.ProgressBar {
                                         id: meter
+                                        objectName: "quotaMeter" + card.index + "_" + quota.index
                                         Layout.fillWidth: true; from: 0; to: 100; value: quota.remaining === null ? 0 : quota.remaining
                                         Layout.preferredHeight: 6; Layout.minimumHeight: 6; Layout.maximumHeight: 6
                                         clip: true
@@ -210,9 +225,10 @@ Item {
                                             }
                                         }
                                         visible: quota.remaining !== null
-                                        Accessible.name: view.quotaLabel(quota.modelData)
+                                        Accessible.name: view.quotaLabel(quota.modelData, card.modelData.provider)
                                     }
                                     Controls.Label {
+                                        objectName: "quotaReset" + card.index + "_" + quota.index
                                         Layout.fillWidth: true
                                         text: view.t("limits.resetPrefix", {time: view.date(quota.modelData.resetsAt)})
                                         wrapMode: Text.Wrap; font.pixelSize: view.textSize

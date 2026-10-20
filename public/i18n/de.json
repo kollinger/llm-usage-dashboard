@@ -1372,6 +1372,7 @@
     "sessions": "{count} Sitzungen"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Lokale Quelle",
     "open": "Desktop-Widget",
     "title": "Kontingente pro Konto",

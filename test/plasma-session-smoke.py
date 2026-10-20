@@ -18,7 +18,8 @@ ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = "local.llm-usage-dashboard.quotas"
 MODE = sys.argv[1] if len(sys.argv) > 1 else "x11"
 PANEL = "--panel" in sys.argv
-EVIDENCE = ROOT / ".cache" / ("kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)
+QUOTA_LABELS = "--quota-labels" in sys.argv
+EVIDENCE = ROOT / ".cache" / ("quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 profile = Path(tempfile.mkdtemp(prefix="llm-plasma-qa-"))
 env = os.environ.copy()
@@ -206,7 +207,7 @@ def exercise_panels(shell, fixture):
     # The private first-run shell may create its default panel asynchronously.
     time.sleep(3)
     evaluate("panels().forEach(p=>p.remove());")
-    for edge in ["bottom", "top", "left", "right"]:
+    for edge in (["bottom"] if QUOTA_LABELS else ["bottom", "top", "left", "right"]):
         if edge == "left":
             run(["plasma-apply-colorscheme", "BreezeDark"])
         info = json.loads(evaluate("var p=new Panel; p.location='" + edge + "'; p.height=48; p.floating=false; p.hiding='none'; var w=p.addWidget('" + PLUGIN + "'); print(JSON.stringify({panel:p.id,widget:w.id}));"))
@@ -237,7 +238,7 @@ def exercise_panels(shell, fixture):
         opened(point)
         pointer(*point)
         closed()
-        if edge != "right":
+        if edge != ("bottom" if QUOTA_LABELS else "right"):
             evaluate("panelById(" + str(info["panel"]) + ").remove();")
             time.sleep(1)
 
@@ -245,7 +246,7 @@ def exercise_panels(shell, fixture):
     # verifies a fresh Arabic/scaled view after reconnecting to the same bridge.
     update(fixture, localClaude=True, language="ar")
     snapshot = json.loads(run(["/usr/bin/python3", "-I", str(ROOT / "plasma/contents/code/read_snapshot.py")]))["snapshot"]
-    favorite = next(a["id"] for a in snapshot["accounts"] if a["provider"] == "claude" and "local" in a["sources"])
+    favorite = next(a["id"] for a in snapshot["accounts"] if a["provider"] == "claude" and (QUOTA_LABELS or "local" in a["sources"]))
     config = {"favorites": [favorite], "view": "favorites", "provider": "claude", "scale": 1.3}
     evaluate("var w=panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + "); w.currentConfigGroup=['General'];" +
              ";".join("w.writeConfig(" + json.dumps(k) + "," + json.dumps(v) + ")" for k, v in config.items()) + ";")
@@ -267,8 +268,9 @@ def exercise_panels(shell, fixture):
     capture("panel-restored-arabic-scaled")
     pointer(*point)
     closed()
-    (EVIDENCE / "panel-results.json").write_text(json.dumps({"mode": MODE, "cycles": sequence, "restoredPreferences": True, "localClaudeSource": True}, indent=2))
-    print("Plasma " + MODE + ": all four panel edges; two click/Escape/outside-close cycles each; square stable icon; native remove/re-add and persisted shell restoration passed.")
+    (EVIDENCE / "panel-results.json").write_text(json.dumps({"mode": MODE, "cycles": sequence, "restoredPreferences": True,
+                                                           "localClaudeSource": not QUOTA_LABELS, "quotaScopes": QUOTA_LABELS}, indent=2))
+    print("Plasma " + MODE + ": " + ("Claude weekly quota labels, bottom panel" if QUOTA_LABELS else "all four panel edges") + "; two click/Escape/outside-close cycles each; square stable icon; native remove/re-add and persisted shell restoration passed.")
 
 
 try:
@@ -305,7 +307,7 @@ try:
     fixture.stdout = io.TextIOWrapper(fixture.stdout, encoding="utf8")
     assert fixture.stdout.readline().strip() == "fixture-ready"
     if PANEL:
-        update(fixture, language="de", count=12)
+        update(fixture, language="de", count=12, quotaLabels=QUOTA_LABELS)
     if MODE == "wayland":
         compositor = start(["kwin_wayland", "--x11-display", env["DISPLAY"], "--width", "1600", "--height", "1100", "--socket", "plasma-test", "--no-lockscreen", "--no-global-shortcuts", "--no-kactivities"], "kwin")
         wait_for(lambda: (profile / "plasma-test").exists(), "nested Wayland compositor")
@@ -318,6 +320,11 @@ try:
     assert evaluate("print(knownWidgetTypes.indexOf('" + PLUGIN + "') >= 0)") == "true", "Add Widgets registry must discover the installed applet"
     (EVIDENCE / "dbus-api.txt").write_text(run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell"]))
     if PANEL:
+        if QUOTA_LABELS:
+            widget_id = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
+            time.sleep(3)
+            capture("claude-scopes-desktop-german")
+            evaluate("desktops()[0].widgetById(" + str(widget_id) + ").remove();")
         exercise_panels(shell, fixture)
     for cycle in range(0 if PANEL else 2):
         result = evaluate("var d=desktops()[0]; var w=d.addWidget('" + PLUGIN + "'); print(w.id);")

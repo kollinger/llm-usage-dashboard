@@ -9,7 +9,7 @@ const http = require("node:http");
 const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const { createDesktopWidget } = require("../electron/desktop-widget");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture, claudeUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture } = require("./fixtures/desktop-widget.cjs");
 const { readPlasmaSnapshot } = require("../lib/plasma-bridge");
 const { createPlasmaWidget } = require("../electron/plasma-widget");
 app.setPath("userData", process.env.WIDGET_NATIVE_PROFILE);
@@ -121,6 +121,40 @@ app.on("window-all-closed", () => {});
   await layout(widget, true);
   assert.equal(await evaluate(widget, "document.querySelector('.widget-track').getAttribute('aria-valuenow')"), "0");
   assert.equal(await evaluate(widget, "document.querySelectorAll('.widget-window[data-status=unavailable] .widget-track').length"), 0);
+
+  count = 1; fixture = claudeQuotaLabelsFixture();
+  await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);
+  const quotaRows = buildDesktopWidgetSnapshot(fixture).accounts[0].windows;
+  const labels = await evaluate(widget, "[...document.querySelectorAll('.widget-window-label')].map(node => node.textContent.replace(/[\\u2068\\u2069]/g, ''))");
+  assert.deepEqual(labels.slice(0, 6), ["5h", "All models · Week", "Sonnet only · Week", "Fable · Week", "Fable Extended · Week", "Claude Design · Week"]);
+  assert.equal(new Set(labels).size, quotaRows.length);
+  assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-window')].map(node => node.dataset.status)"), quotaRows.map(row => row.status));
+  assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-window')].map(node => node.querySelector('.widget-track')?.getAttribute('aria-valuenow') ?? null)"), quotaRows.map(row => row.remainingPercent === null ? null : String(row.remainingPercent)));
+  const english = JSON.parse(await fs.readFile(path.resolve(__dirname, "../public/i18n/en.json"), "utf8"));
+  const date = value => new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-reset')].map(node => node.textContent)"),
+    quotaRows.map(row => english.limits.resetPrefix.replace("{time}", date(row.resetsAt))));
+  for (const code of ["de", "ar", "fi"]) {
+    language = code; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+    await until(() => evaluate(widget, `document.documentElement.lang === '${code}'`), `quota scopes ${code}`);
+    for (let cycle = 0; cycle < 2; cycle++) {
+      for (const width of wayland ? [780] : [601, 600, 599, 420, 780]) {
+        if (!wayland) widget.setSize(width, 700);
+        await pause(70); await layout(widget);
+        assert.equal(await evaluate(widget, `(() => {
+          return [...document.querySelectorAll('.widget-window-heading')].every(node => {
+            const label = node.querySelector('.widget-window-label'), value = node.querySelector('.widget-window-value');
+            const a = label.getBoundingClientRect(), b = value.getBoundingClientRect();
+            return label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1 &&
+              (a.right <= b.left + 1 || b.right <= a.left + 1);
+          });
+        })()`), true, `${code}/${width}: scope wraps without truncation or value overlap`);
+      }
+    }
+    if (code !== "fi") await capture(widget, `claude-scopes-${code}`);
+  }
+  language = "en"; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+  await until(() => evaluate(widget, "document.documentElement.lang === 'en'"), "restore quota scope language");
 
   count = 3; fixture = claudeUsageFixture();
   await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);

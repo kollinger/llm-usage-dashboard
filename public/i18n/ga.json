@@ -1372,6 +1372,7 @@
     "sessions": "{count} seisiún"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Foinse áitiúil",
     "open": "Giuirléid deisce",
     "title": "Cuótaí cuntais",

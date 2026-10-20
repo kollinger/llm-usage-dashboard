@@ -5,7 +5,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture, claudeUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture } = require("./fixtures/desktop-widget.cjs");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const fixtures = {};
 for (const count of [0, 1, 5, 12, 80]) {
@@ -14,6 +14,7 @@ for (const count of [0, 1, 5, 12, 80]) {
   fixtures[count] = buildDesktopWidgetSnapshot(usage);
 }
 fixtures.claude = buildDesktopWidgetSnapshot(claudeUsageFixture());
+fixtures.claudeLabels = buildDesktopWidgetSnapshot(claudeQuotaLabelsFixture());
 await fs.mkdir(path.join(root, "dist/plasma"), { recursive: true });
 if (process.env.PLASMA_SCREENSHOTS_DIR) await fs.mkdir(process.env.PLASMA_SCREENSHOTS_DIR, { recursive: true });
 await fs.writeFile(path.join(root, "dist/plasma/Fixtures.js"), ".pragma library\nvar cases = " + JSON.stringify(fixtures) +

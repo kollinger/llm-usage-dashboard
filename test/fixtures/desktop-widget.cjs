@@ -34,4 +34,22 @@ function claudeUsageFixture(now = Date.now()) {
       managed: true, status: "connected", updatedAt: time, limits: limits(41) }
   ], claudeCode: { status: "live", limitsUpdatedAt: time, limits: limits(0), quotaAccountId: null } };
 }
-module.exports = { widgetUsageFixture, claudeUsageFixture };
+function claudeQuotaLabelsFixture(now = Date.now()) {
+  const time = new Date(now).toISOString();
+  const rows = [
+    { key: "fiveHour", label: "5h", windowMinutes: 300, remainingPercent: 0 },
+    { key: "weekly", label: "Alle Modelle", windowMinutes: 10080, usedPercent: 55 },
+    { key: "sonnetOnly", label: "Nur Sonnet", windowMinutes: 10080, usedPercent: 0 },
+    { key: "fable", label: "Fable", windowMinutes: 10080, remainingPercent: 80 },
+    { key: "fable-2", label: "Fable Extended", windowMinutes: 10080, remainingPercent: 61,
+      updatedAt: new Date(now - 3_600_000).toISOString() },
+    { key: "claudeDesign", label: "Claude Design", windowMinutes: 10080, remainingPercent: 15 },
+    { key: "futureModel", label: "Future model with a very long scope name for wrapping and RTL checks", windowMinutes: 10080,
+      remainingPercent: null },
+    { key: "unknownWeekly", windowMinutes: 10080 },
+    { key: "fable-3", label: "Fable Zero", windowMinutes: 10080, remainingPercent: 0 }
+  ].map((row, index) => ({ ...row, resetsAt: new Date(now + (index === 8 ? -1 : index + 1) * 3_600_000).toISOString() }));
+  return { generatedAt: time, connectedAccounts: [{ id: "synthetic-claude-quota-labels", provider: "claude",
+    label: "Claude · Synthetic quota scopes", status: "connected", updatedAt: time, limits: { rows } }] };
+}
+module.exports = { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture };

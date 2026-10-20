@@ -1372,6 +1372,7 @@
     "sessions": "{count} seanssi"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Kohalik allikas",
     "open": "Töölaua vidin",
     "title": "Kontode kvoodid",
