@@ -1372,6 +1372,7 @@
     "sessions": "{count} sesiones"
   },
   "widget": {
+    "localSource": "Fuente local",
     "open": "Widget de escritorio",
     "title": "Cuotas por cuenta",
     "filters": "Filtrar cuentas",

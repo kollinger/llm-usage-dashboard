@@ -1372,6 +1372,7 @@
     "sessions": "{count} istuntoa"
   },
   "widget": {
+    "localSource": "Paikallinen lähde",
     "open": "Työpöytäwidget",
     "title": "Tilikohtaiset kiintiöt",
     "filters": "Suodata tilejä",

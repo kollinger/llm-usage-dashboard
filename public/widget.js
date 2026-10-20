@@ -65,7 +65,7 @@
     const favorite = preferences.favorites.includes(account.id);
     const label = account.labelIndex ? `${account.label} · ${number(account.labelIndex)}` : account.label;
     const action = t(favorite ? "widget.removeFavorite" : "widget.addFavorite", { name: label });
-    const sources = (account.sources || []).map((source) => ({ codex: "Codex", openCode: "OpenCode" }[source])).filter(Boolean).join(" · ");
+    const sources = (account.sources || []).map((source) => ({ codex: "Codex", openCode: "OpenCode", local: t("widget.localSource") }[source])).filter(Boolean).join(" · ");
     return `<article class="widget-account" role="listitem" data-account="${escape(account.id)}">
       <button class="widget-star" data-favorite="${escape(account.id)}" type="button" aria-pressed="${favorite}" aria-label="${escape(action)}" title="${escape(action)}">${favorite ? "★" : "☆"}</button>
       <div class="widget-identity"><div class="widget-name-line" title="${escape(label)}"><bdi class="widget-name">${escape(account.label)}</bdi>${account.labelIndex ? `<span class="widget-number">${escape(number(account.labelIndex))}</span>` : ""}</div><span class="widget-source" title="${escape(providerNames[account.provider])}">${escape(sources || providerNames[account.provider])}</span></div>

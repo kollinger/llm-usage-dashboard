@@ -1372,6 +1372,7 @@
     "sessions": "{count} 个会话"
   },
   "widget": {
+    "localSource": "本地来源",
     "open": "桌面小组件",
     "title": "各账户配额",
     "filters": "筛选账户",

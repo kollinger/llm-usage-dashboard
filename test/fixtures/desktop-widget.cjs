@@ -21,4 +21,17 @@ function widgetUsageFixture(count = 5, now = Date.now()) {
     }))
   };
 }
-module.exports = { widgetUsageFixture };
+function claudeUsageFixture(now = Date.now()) {
+  const time = new Date(now).toISOString();
+  const limits = (remainingPercent) => ({ rows: [
+    { key: "fiveHour", windowMinutes: 300, remainingPercent, resetsAt: new Date(now + 3_600_000).toISOString() },
+    { key: "weekly", windowMinutes: 10080, remainingPercent: null, resetsAt: null }
+  ] });
+  return { generatedAt: time, connectedAccounts: [
+    { id: "synthetic-claude-personal", accountId: `claude-${"a".repeat(24)}`, provider: "claude", label: "Claude · Personal",
+      managed: true, status: "connected", updatedAt: new Date(now - 3_600_000).toISOString(), limits: limits(73) },
+    { id: "synthetic-claude-team", accountId: `claude-${"b".repeat(24)}`, provider: "claude", label: "Claude · Team",
+      managed: true, status: "connected", updatedAt: time, limits: limits(41) }
+  ], claudeCode: { status: "live", limitsUpdatedAt: time, limits: limits(0), quotaAccountId: null } };
+}
+module.exports = { widgetUsageFixture, claudeUsageFixture };

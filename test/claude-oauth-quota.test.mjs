@@ -11,6 +11,8 @@ process.env.CODEX_LIVE_RATE_LIMITS = "false";
 
 const require = createRequire(import.meta.url);
 const { _test } = require("../server.js");
+const { claudeAccountIdentity } = require("../lib/claude-accounts");
+const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
 
 await assertClaudeOauthSessionReadsTokenAndOrg();
 await assertClaudeOauthExpiredTokenIsUnavailable();
@@ -24,6 +26,25 @@ assertClaudeLastKnownUsageSurvivesTemporaryRefreshFailure();
 await assertClaudeUsageSnapshotSurvivesRestart();
 await assertClaudeHistoryDoesNotImplyLogin();
 assertClaudeQuotaOverlaysRestoredConsumption();
+assertPartialClaudeRefreshPreservesWindowAge();
+
+function assertPartialClaudeRefreshPreservesWindowAge() {
+  const now = Date.now(), old = new Date(now - 3_600_000).toISOString(), fresh = new Date(now).toISOString();
+  const statusline = { updatedAt: old, limits: {
+    fiveHour: { remainingPercent: 0, usedPercent: 100, windowMinutes: 300 },
+    weekly: { remainingPercent: 10, usedPercent: 90, windowMinutes: 10080 }
+  } };
+  const resolved = _test.resolveClaudeUsageLimits({ statusline, apiUsage: { seven_day: { utilization: 20 } }, apiUsageUpdatedAt: fresh });
+  let projected = buildDesktopWidgetSnapshot({ claudeCode: { status: "live", limits: resolved.resolvedLimits, limitsUpdatedAt: resolved.resolvedLimitsUpdatedAt } }, now);
+  assert.equal(projected.accounts[0].windows[0].measuredAt, old);
+  assert.equal(projected.accounts[0].windows[0].status, "stale", "a weekly refresh cannot freshen a stale five-hour quota");
+  assert.equal(projected.accounts[0].windows[1].status, "current");
+  statusline.updatedAt = null;
+  const unknown = _test.resolveClaudeUsageLimits({ statusline, apiUsage: { seven_day: { utilization: 20 } }, apiUsageUpdatedAt: fresh });
+  projected = buildDesktopWidgetSnapshot({ claudeCode: { status: "live", limits: unknown.resolvedLimits, limitsUpdatedAt: unknown.resolvedLimitsUpdatedAt } }, now);
+  assert.equal(projected.accounts[0].windows[0].measuredAt, null);
+  assert.equal(projected.accounts[0].windows[0].status, "stale");
+}
 
 async function assertClaudeOauthSessionReadsTokenAndOrg() {
   const root = await mkdtemp(path.join(os.tmpdir(), "claude-oauth-"));
@@ -58,6 +79,16 @@ async function assertClaudeOauthSessionReadsTokenAndOrg() {
     assert.equal(session.orgId, "11111111-2222-4333-8444-555555555555");
     assert.equal(session.source, "claude_oauth");
     assert.equal(session.credentialsFileFound, true);
+    assert.equal(session.accountId, null, "quota without matching account evidence stays unscoped");
+    const email = "fixture@example.invalid", orgId = "11111111-2222-4333-8444-555555555555";
+    await writeFile(configFile, JSON.stringify({ oauthAccount: { emailAddress: email, organizationUuid: orgId } }));
+    const identity = claudeAccountIdentity({ email, orgId });
+    const scoped = await _test.readClaudeCliOauthSession({ credentialsFiles: [credentialsFile], configFile,
+      authStatus: { loggedIn: true, authMethod: "claude.ai", accountId: identity, orgId } });
+    assert.equal(scoped.accountId, identity);
+    const mismatch = await _test.readClaudeCliOauthSession({ credentialsFiles: [credentialsFile], configFile,
+      authStatus: { loggedIn: true, authMethod: "claude.ai", accountId: identity, orgId: "synthetic-other-org" } });
+    assert.equal(mismatch.accountId, null, "config and active session organization must agree");
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -412,7 +443,9 @@ async function assertClaudeUsageSnapshotSurvivesRestart() {
     const confirmed = _test.normalizeClaudeApiUsageProbe({
       status: "available",
       source: "claude_app_cookie",
+      accountId: `claude-${"a".repeat(24)}`,
       usage: {
+        updatedAt: new Date(now - 3_600_000).toISOString(),
         seven_day: { utilization: 76, resets_at: new Date(now + 2 * 24 * 60 * 60 * 1000).toISOString() }
       }
     });
@@ -422,6 +455,13 @@ async function assertClaudeUsageSnapshotSurvivesRestart() {
     assert.equal(restored.status, "available");
     assert.equal(restored.usage.seven_day.utilization, 76);
     assert.equal(restored.auth, null);
+    assert.equal(restored.accountId, confirmed.accountId);
+    assert.equal(restored.usage.updatedAt, new Date(now - 3_600_000).toISOString(), "disk restore never restamps an old measurement");
+    const overlay = _test.overlayRestoredClaudeQuota({ cache: { restored: true }, claudeCode: { status: "live" } }, restored, now);
+    const projected = buildDesktopWidgetSnapshot(overlay, now);
+    assert.equal(projected.accounts.length, 1);
+    assert.equal(projected.accounts[0].windows[0].status, "stale", "restored quota stays visibly old in widgets");
+    assert.equal(projected.accounts[0].windows[0].remainingPercent, 24);
 
     const unavailable = _test.normalizeClaudeApiUsageProbe({
       status: "missing",
@@ -430,6 +470,8 @@ async function assertClaudeUsageSnapshotSurvivesRestart() {
     });
     const retained = _test.retainLastKnownClaudeUsageProbe(restored, unavailable, now);
     assert.equal(retained.usage.seven_day.utilization, 76);
+    await writeFile(snapshotFile, JSON.stringify({ status: "available", usage: { seven_day: confirmed.usage.seven_day } }));
+    assert.equal(await _test.readClaudeUsageSnapshot(snapshotFile, now), null, "saved quota without an observation time cannot appear fresh");
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -471,4 +513,11 @@ function assertClaudeQuotaOverlaysRestoredConsumption() {
   const partial = _test.overlayRestoredClaudeQuota(history, noWeekly, now);
   assert.equal(partial.claudeCode.limits.fiveHour.usedPercent, 0);
   assert.equal(partial.claudeCode.limits.weekly, null, "an unreported weekly window must remain unavailable");
+  const localStatusline = { updatedAt: new Date(now).toISOString(), limits: { rows: [
+    { key: "fiveHour", remainingPercent: 0, windowMinutes: 300, resetsAt: new Date(now + 3_600_000).toISOString() }
+  ] } };
+  const cold = _test.overlayRestoredClaudeQuota({ ...history, claudeCode: { ...history.claudeCode, status: "empty" } }, null, now, localStatusline);
+  assert.equal(cold.claudeCode.status, "live");
+  assert.equal(cold.claudeCode.quotaAccountId, null);
+  assert.equal(buildDesktopWidgetSnapshot(cold, now).accounts[0].windows[0].remainingPercent, 0, "cold restored history immediately overlays local quota without auth");
 }

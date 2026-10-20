@@ -1372,6 +1372,7 @@
     "sessions": "{count} relací"
   },
   "widget": {
+    "localSource": "Místní zdroj",
     "open": "Widget na plochu",
     "title": "Kvóty účtů",
     "filters": "Filtrovat účty",

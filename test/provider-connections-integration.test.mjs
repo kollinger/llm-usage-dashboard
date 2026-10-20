@@ -10,6 +10,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { safeMeasurement, providerAccountIdentity } = require("../lib/provider-account-store");
+const { claudeAccountIdentity, mergeClaudeLocalAccounts } = require("../lib/claude-accounts");
 const { sanitizeConnections } = require("../lib/device-sync-data");
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const source = await fsp.readFile(path.join(root, "server.js"), "utf8");
@@ -30,7 +31,7 @@ const probe = serverFunction("probeClaudeAuthStatus", {
   resolveClaudeBinary: () => "fixture-cli",
   execFileAsync: async () => ({ stdout: JSON.stringify({ loggedIn: true, authMethod, email: "fixture@example.invalid", orgId: "fixture-org" }) }),
   CLAUDE_AUTH_STATUS_TIMEOUT_MS: 100, extractClaudePlanType: () => null,
-  parseBoolean: Boolean, firstNonEmptyString: (...values) => values.find((value) => typeof value === "string" && value) || null, crypto
+  parseBoolean: Boolean, firstNonEmptyString: (...values) => values.find((value) => typeof value === "string" && value) || null, crypto, claudeAccountIdentity
 });
 let localClaude = await probe();
 assert.equal(localClaude.authMethod, "api_key");
@@ -41,7 +42,7 @@ const readConnections = serverFunction("readBrowserConnections", {
   readManagedGptProfiles: async () => [], gptAccountsCache: { value: { accounts: [] } },
   claudeLogin: { profiles: async () => claudeProfiles },
   kimiLogin: { profiles: async () => kimiProfiles }, readClaudeAuthStatus: async () => localClaude,
-  readClaudeProfileMeasurement: async () => ({}), usageCache, safeMeasurement, DATA_DIR: "/unused", path,
+  readClaudeProfileMeasurement: async () => ({}), usageCache, safeMeasurement, mergeClaudeLocalAccounts, DATA_DIR: "/unused", path,
   readGlmCodingPlanAuth: async () => ({ status: "available", provider: "zai", accessToken: fixtureKey }), providerAccountIdentity
 });
 assert.equal((await readConnections()).length, 0, "API-key auth must not create a Claude subscription connection");
@@ -56,12 +57,15 @@ assert.equal((await probe()).authMethod, null, "unknown auth method diagnostics 
 const measuredAt = new Date().toISOString();
 const limits = { rows: [{ key: "weekly", usedPercent: 15, remainingPercent: 85 }] };
 claudeProfiles = [{ id: "fixture-profile", accountId: localClaude.accountId, authenticated: true }];
-usageCache.value.claudeCode = { limits, limitsUpdatedAt: measuredAt };
+usageCache.value.claudeCode = { status: "live", limits, limitsUpdatedAt: measuredAt, quotaAccountId: localClaude.accountId };
 const linked = await readConnections();
 assert.equal(linked.length, 1, "the same detected and managed Claude account is shown once");
 assert.equal(linked[0].limits.rows[0].usedPercent, 15, "verified matching account identity reuses available local quota");
 localClaude = { ...localClaude, accountId: `claude-${"b".repeat(24)}` };
+assert.equal((await readConnections()).find((account) => account.managed).limits.rows[0].usedPercent, 15, "measurement identity stays bound when current auth changes");
+usageCache.value.claudeCode.quotaAccountId = localClaude.accountId;
 assert.equal((await readConnections()).find((account) => account.managed).limits, null, "another account's quota must not be attributed to the managed profile");
+delete usageCache.value.claudeCode;
 claudeProfiles = []; localClaude = { loggedIn: false };
 kimiProfiles = [{ id: "fixture-kimi", status: "connected", measurement: { status: "unavailable", error: "auth_failed" } }];
 let kimi = (await readConnections())[0];

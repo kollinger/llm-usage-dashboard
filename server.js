@@ -23,6 +23,7 @@ const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
 const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
+const { claudeAccountIdentity, quotaAccountId, mergeClaudeLocalAccounts } = require("./lib/claude-accounts");
 const { DeviceSync } = require("./lib/device-sync");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
@@ -643,13 +644,14 @@ async function readManagedGptProfiles() {
   return profiles;
 }
 
-async function readBrowserConnections({ force = false } = {}) {
+async function readBrowserConnections({ force = false, usage = usageCache.value } = {}) {
+  const isolated = (reader, fallback) => Promise.resolve().then(reader).catch(() => fallback);
   const [profiles, registry, claudeProfiles, kimiProfiles, localClaude] = await Promise.all([
-    readManagedGptProfiles(),
-    force ? readGptAccounts({ force: true }) : Promise.resolve(gptAccountsCache.value || null).then((value) => value || readGptAccountRegistry(DATA_DIR).then(publicGptAccountRegistry)),
-    claudeLogin.profiles({ refresh: force }),
-    force ? kimiLogin.refresh().then(() => kimiLogin.profiles()) : kimiLogin.profiles(),
-    readClaudeAuthStatus()
+    isolated(() => readManagedGptProfiles(), []),
+    isolated(() => force ? readGptAccounts({ force: true }) : Promise.resolve(gptAccountsCache.value || null).then((value) => value || readGptAccountRegistry(DATA_DIR).then(publicGptAccountRegistry)), { accounts: [] }),
+    isolated(() => claudeLogin.profiles({ refresh: force }), []),
+    isolated(() => force ? kimiLogin.refresh().then(() => kimiLogin.profiles()) : kimiLogin.profiles(), []),
+    isolated(() => readClaudeAuthStatus(), {})
   ]);
   const accounts = (registry.accounts || []).map((account) => {
     const profile = profiles.find((item) => item.accountId === account.id);
@@ -663,25 +665,15 @@ async function readBrowserConnections({ force = false } = {}) {
   }
   for (const profile of claudeProfiles) {
     const configDir = path.join(DATA_DIR, "claude-profiles", profile.id);
-    let measurement = await readClaudeProfileMeasurement(configDir);
-    const detectedUsage = usageCache.value?.claudeCode;
-    if (profile.accountId && profile.accountId === localClaude.accountId && localClaude.authMethod === "claude.ai" && detectedUsage?.limits?.rows?.length &&
-        (!measurement.limits?.rows?.length || Date.parse(detectedUsage.limitsUpdatedAt || detectedUsage.updatedAt) > Date.parse(measurement.updatedAt || 0))) {
-      measurement = { limits: detectedUsage.limits, updatedAt: detectedUsage.limitsUpdatedAt || detectedUsage.updatedAt };
-    }
+    const measurement = await readClaudeProfileMeasurement(configDir).catch(() => ({}));
     accounts.push({ id: `claude:${profile.id}`, accountId: profile.accountId || null, provider: "claude", label: profile.label || "Claude Code",
       kind: "subscription", managed: true, status: profile.authenticated ? "connected" : "unavailable", ...safeMeasurement({ ...measurement, planType: profile.planType }), detailCode: measurement?.limits ? null : "limits_unavailable" });
-  }
-  if (localClaude.loggedIn && localClaude.authMethod === "claude.ai" && !accounts.some((account) => account.accountId && account.accountId === localClaude.accountId)) {
-    const usage = usageCache.value?.claudeCode;
-    accounts.push({ id: "detected:claude", accountId: localClaude.accountId || null, provider: "claude", label: "Claude Code", kind: "subscription", managed: false, status: "connected",
-      ...safeMeasurement({ limits: usage?.limits, updatedAt: usage?.limitsUpdatedAt || null, planType: localClaude.planType }) });
   }
   for (const profile of kimiProfiles) accounts.push({ id: `kimi:${profile.id}`, accountId: profile.accountId || null, provider: "kimi", label: profile.label || "Kimi Code", kind: "subscription", managed: true,
     status: profile.measurement?.error === "auth_failed" ? "auth_required" : ["connected", "available", "live"].includes(profile.status) ? "connected" : profile.status || "unavailable",
     detailCode: profile.measurement?.error === "auth_failed" ? "invalid_key" : profile.measurement?.status === "unavailable" ? "limits_unavailable" : null,
     ...safeMeasurement(profile.measurement) });
-  const glm = usageCache.value?.glm;
+  const glm = usage?.glm;
   if (!glm?.connectedAccountCount && glm?.limits?.rows?.length) {
     const auth = await readGlmCodingPlanAuth().catch(() => null);
     const accountId = auth?.status === "available" && auth.accessToken
@@ -689,7 +681,8 @@ async function readBrowserConnections({ force = false } = {}) {
     accounts.push({ id: "detected:glm", accountId, provider: "glm", label: "GLM / Z.AI", kind: "subscription", managed: false, status: "connected",
       ...safeMeasurement({ limits: glm.limits, updatedAt: glm.limitsUpdatedAt || glm.updatedAt }) });
   }
-  return accounts;
+  return mergeClaudeLocalAccounts(accounts, usage?.claudeCode, localClaude).map((account) =>
+    account.provider === "claude" ? { ...account, ...safeMeasurement(account) } : account);
 }
 
 async function readClaudeProfileMeasurement(configDir) {
@@ -1247,7 +1240,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     const viewFingerprint = await usageViewCache.context();
     const connectedSettings = await readSourceSettings(DATA_DIR).catch(() => ({ sources: [] }));
     const localSources = buildReaderSources(connectedSettings.sources || []);
-    for (const profile of await claudeLogin.profileSources()) {
+    for (const profile of await claudeLogin.profileSources().catch(() => [])) {
       localSources.claudeCode.push(defaultHomeSource("claudeCode", "Claude Code", profile.configDir, [
         { role: "projects", path: path.join(profile.configDir, "projects"), kind: "directory" }
       ]));
@@ -1277,8 +1270,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
       glmRaw,
       ollamaRaw,
       openaiRaw,
-      anthropicRaw,
-      connectedAccounts
+      anthropicRaw
     ] = await Promise.all([
       readSubscriptionSettings().catch(() => sanitizeSubscriptionSettings({})),
       readAccountBillingSnapshots().catch(() =>
@@ -1298,9 +1290,12 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
       readGlmUsage({ sources: localSources.glm }).catch((error) => providerError("glm", error)),
       readOllamaUsage({ sources: localSources.ollama }).catch((error) => providerError("ollama", error)),
       readOpenAiUsage().catch((error) => providerError("openai", error)),
-      readAnthropicUsage().catch((error) => providerError("anthropic", error)),
-      readConnectedAccountSnapshots().catch(() => [])
+      readAnthropicUsage().catch((error) => providerError("anthropic", error))
     ]);
+
+    // Connections consume this scan's measurements, including on a cold start.
+    // Reading the previous usageCache here loses Claude's first quota sample.
+    const connectedAccounts = await readConnectedAccountSnapshots({ claudeCode: claudeCodeRaw, glm: glmRaw }).catch(() => []);
 
     const codex = mergeProviderSubscription(codexRaw, subscriptions.codex, "codex", officialPricing, accountBilling);
     const copilot = mergeProviderSubscription(copilotRaw, subscriptions.copilot, "copilot", officialPricing, accountBilling);
@@ -1392,10 +1387,10 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
     await usageViewCache.write("local", viewFingerprint, value);
     return value;
   }, { force, maxAgeMs, staleWhileRefresh });
-  const claudeProbe = usage.cache?.restored
-    ? claudeApiUsageCache.value || await readClaudeUsageSnapshot()
-    : null;
-  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+  const [claudeProbe, claudeStatusline] = usage.cache?.restored && !usage.claudeCode?.limits
+    ? await Promise.all([claudeApiUsageCache.value || readClaudeUsageSnapshot(), readClaudeStatusline().catch(() => null)])
+    : [null, null];
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
 async function currentCodexCreditScope() {
@@ -1428,14 +1423,15 @@ function overlayCurrentCodexQuota(usage, live, updatedAtMs, now = Date.now()) {
 
 let connectedBrowserRefreshAt = 0;
 let connectedBrowserRefresh = null;
-async function readConnectedAccountSnapshots() {
+async function readConnectedAccountSnapshots(usage = usageCache.value) {
   if (Date.now() - connectedBrowserRefreshAt > 60_000) {
     connectedBrowserRefresh ||= kimiLogin.refresh().catch(() => {}).finally(() => { connectedBrowserRefreshAt = Date.now(); connectedBrowserRefresh = null; });
     await connectedBrowserRefresh;
   }
-  const browser = await readBrowserConnections();
-  const keys = await connectedAccountStore.refresh();
-  return [...browser.filter((account) => account.managed || !account.accountId || !keys.some((key) => key.accountId === account.accountId)), ...keys];
+  const [browser, keys] = await Promise.all([
+    readBrowserConnections({ usage }).catch(() => []), connectedAccountStore.refresh().catch(() => [])
+  ]);
+  return [...browser.filter((account) => account.managed || !account.accountId || !keys.some((key) => key.provider === account.provider && key.accountId === account.accountId)), ...keys];
 }
 
 function applyConnectedAccountQuota(provider, accounts) {
@@ -5470,7 +5466,9 @@ async function readClaudeUsageProbe() {
 
 async function readClaudeUsageSnapshot(file = CLAUDE_USAGE_SNAPSHOT_FILE, nowMs = Date.now()) {
   try {
-    const snapshot = normalizeClaudeApiUsageProbe(JSON.parse(await fsp.readFile(file, "utf8")));
+    const raw = JSON.parse(await fsp.readFile(file, "utf8"));
+    if (!normalizeOptionalDate(raw?.usage?.updatedAt || raw?.updatedAt)) return null;
+    const snapshot = normalizeClaudeApiUsageProbe(raw);
     return snapshot.usage && hasCurrentClaudeUsageSnapshot(snapshot.usage, nowMs) ? snapshot : null;
   } catch {
     return null;
@@ -5485,6 +5483,7 @@ async function saveClaudeUsageSnapshot(probe, file = CLAUDE_USAGE_SNAPSHOT_FILE)
     status: "available",
     source: snapshot.source,
     updatedAt: snapshot.updatedAt,
+    accountId: quotaAccountId(snapshot.accountId),
     usage: snapshot.usage
   };
   await fsp.mkdir(path.dirname(file), { recursive: true });
@@ -5512,6 +5511,7 @@ async function fetchClaudeUsageProbe(options = {}) {
     if (oauthProbe.status === "available") {
       return {
         ...oauthProbe,
+        accountId: quotaAccountId(oauthSession.accountId),
         notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
         planType: oauthSession.planType || null,
         auth: summarizeClaudeOauthSession(oauthSession)
@@ -5586,6 +5586,14 @@ async function readClaudeCliOauthSession(options = {}) {
     oauth.organizationId,
     oauth.organizationID
   );
+  // Bind identity to the session used for this measurement. A later auth probe
+  // cannot establish which account produced a saved provider-wide allowance.
+  const configOrg = firstNonEmptyString(account.organizationUuid, account.organizationUUID, account.organizationId, account.organizationID);
+  const configIdentities = [account.accountUuid, account.accountUUID, account.emailAddress, account.email]
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => claudeAccountIdentity({ ...(value.includes("@") ? { email: value } : { accountId: value }), orgId: configOrg }));
+  const accountId = authStatus?.loggedIn && authStatus.authMethod === "claude.ai" && configOrg && configOrg === orgId &&
+    configIdentities.includes(authStatus.accountId) ? quotaAccountId(authStatus.accountId) : null;
 
   return {
     status: "available",
@@ -5593,6 +5601,7 @@ async function readClaudeCliOauthSession(options = {}) {
     source: "claude_oauth",
     accessToken,
     orgId: orgId || null,
+    accountId,
     expiresAt: Number.isFinite(expiresAtMs) ? new Date(expiresAtMs).toISOString() : null,
     planType: extractClaudePlanType({ plan_type: oauth.subscriptionType || oauth.subscription_type }) ||
       authStatus?.planType ||
@@ -5818,11 +5827,15 @@ function normalizeClaudeApiUsageProbe(probe) {
     ? String(probe.status)
     : "unavailable";
   const usage = normalizeClaudeApiUsagePayload(probe?.usage, probe?.usage?.source || probe?.source || "claude_api");
+  // Normalizing a persisted measurement must preserve its observation time.
+  // Otherwise every restart turns old quota into an apparently fresh sample.
+  if (usage) usage.updatedAt = normalizeOptionalDate(probe?.usage?.updatedAt) || normalizeOptionalDate(probe?.updatedAt) || usage.updatedAt;
   return {
     status: usage ? "available" : status,
     reason: usage ? null : safeClaudeApiReason(probe?.reason, status === "missing" ? "claude_api_missing" : "claude_api_unavailable"),
     source: String(probe?.source || usage?.source || "claude_api").trim() || "claude_api",
     updatedAt: normalizeOptionalDate(probe?.updatedAt) || new Date().toISOString(),
+    accountId: quotaAccountId(probe?.accountId),
     usage,
     auth: probe?.auth || null,
     fallback: probe?.fallback || null
@@ -5857,15 +5870,16 @@ function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
   );
 }
 
-function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now()) {
-  if (!usage.cache?.restored || !usage.claudeCode || usage.claudeCode.limits || !probe?.usage ||
-      !hasCurrentClaudeUsageSnapshot(probe.usage, nowMs)) return usage;
+function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now(), statusline = null) {
+  if (!usage.cache?.restored || !usage.claudeCode || usage.claudeCode.limits) return usage;
+  const usableProbe = probe?.usage && hasCurrentClaudeUsageSnapshot(probe.usage, nowMs) ? probe : null;
   const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
-    apiUsage: probe.usage, apiUsageSource: probe.source, apiUsageUpdatedAt: probe.usage.updatedAt
+    statusline, apiUsage: usableProbe?.usage, apiUsageSource: usableProbe?.source, apiUsageUpdatedAt: usableProbe?.usage?.updatedAt
   });
   if (!resolvedLimits) return usage;
-  return { ...usage, claudeCode: { ...usage.claudeCode, limits: resolvedLimits,
-    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource } };
+  return { ...usage, claudeCode: { ...usage.claudeCode, status: "live", limits: resolvedLimits,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource, quotaAccountId: !statusline?.limits ? quotaAccountId(usableProbe?.accountId) : null,
+    setup: { ...usage.claudeCode.setup, staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(usableProbe?.fallback) } } };
 }
 
 function summarizeClaudeApiUsageProbe(probe) {
@@ -5963,20 +5977,25 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
     const apiWeekly = claudeApiWindowToLimitWindow(apiUsage.seven_day, "Woche", 10080);
     const apiSonnet = claudeApiWindowToLimitWindow(apiUsage.seven_day_sonnet, "Nur Sonnet", 10080);
     const apiFableRows = claudeApiFableLimitRows(apiUsage);
+    const refreshed = new Set();
     let updated = false;
     if (apiFiveHour && !apiFiveHour.expired) {
+      refreshed.add("fiveHour");
       resolvedLimits = { ...resolvedLimits, fiveHour: apiFiveHour, currentSession: apiFiveHour };
       updated = true;
     }
     if (apiWeekly && !apiWeekly.expired) {
+      refreshed.add("weekly");
       resolvedLimits = { ...resolvedLimits, weekly: apiWeekly, allModels: apiWeekly };
       updated = true;
     }
     if (apiSonnet && !apiSonnet.expired) {
+      refreshed.add("sonnetOnly");
       resolvedLimits = { ...resolvedLimits, sonnetOnly: apiSonnet };
       updated = true;
     }
     if (apiFableRows.length) {
+      for (const row of apiFableRows) refreshed.add(row.key);
       resolvedLimits = { ...resolvedLimits, fable: apiFableRows[0], fableRows: apiFableRows };
       updated = true;
     }
@@ -5986,7 +6005,7 @@ function resolveClaudeUsageLimits({ statusline = null, apiUsage = null, apiUsage
         "weekly",
         "claudeDesign",
         "sonnetOnly"
-      ]);
+      ]).map((row) => ({ ...row, updatedAt: refreshed.has(row.key) ? apiUsageUpdatedAt : statusline.updatedAt || null }));
       limitSource = apiUsageSource || "claude_api";
       resolvedLimitsUpdatedAt = apiUsageUpdatedAt;
     }
@@ -6100,7 +6119,7 @@ async function readClaudeCodeUsage(options = {}) {
   const [statusline, authStatus, settingsInfo, scriptInstalled, browserCredits, directApiProbe] =
     await Promise.all([
       readClaudeStatusline(),
-      readClaudeAuthStatus(),
+      readClaudeAuthStatus().catch(() => null),
       readClaudeSettings(),
       pathExists(CLAUDE_STATUSLINE_SCRIPT),
       readClaudeBrowserCreditsSnapshot().catch(() => null),
@@ -6151,7 +6170,7 @@ async function readClaudeCodeUsage(options = {}) {
       scriptInstalled,
       statusFileFound: Boolean(statusline?.found),
       hasLimits: Boolean(resolvedLimits),
-      staleLimits: limitSource === "claude_statusline" && Boolean(statusline?.staleLimits)
+      staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(directApiUsage && directApiProbe?.fallback)
     },
     browserCredits: summarizeClaudeBrowserCredits(browserCredits),
     latest: latestEvent
@@ -6171,6 +6190,9 @@ async function readClaudeCodeUsage(options = {}) {
     totals: finalizeUsageAccumulator(usage),
     limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt,
+    // Mixed statusline/API rows do not prove one account identity. Keep those
+    // allowances as a visible local source rather than filling another profile.
+    quotaAccountId: !statusline?.limits && directApiUsage && limitSource === directApiProbe?.source ? quotaAccountId(directApiProbe.accountId) : null,
     planType,
     subscription: planResolution.subscription,
     subscriptionConnectionAction: planResolution.connectionAction,
@@ -8359,7 +8381,7 @@ async function readClaudeStatusline() {
     return {
       statusFile,
       found: true,
-      updatedAt: stat.mtime.toISOString(),
+      updatedAt: normalizeOptionalDate(raw.captured_at) || stat.mtime.toISOString(),
       ...extracted
     };
   } catch (error) {
@@ -8622,7 +8644,7 @@ async function probeClaudeAuthStatus() {
       planType: extractClaudePlanType(raw),
       loggedIn: parseBoolean(raw.loggedIn ?? raw.logged_in),
       authMethod: ["claude.ai", "api_key", "oauth_token", "bedrock", "vertex", "foundry", "none"].includes(raw.authMethod) ? raw.authMethod : null,
-      accountId: raw.accountId || raw.email ? `claude-${crypto.createHash("sha256").update(JSON.stringify([raw.accountId || String(raw.email).trim().toLowerCase(), raw.orgId || null])).digest("hex").slice(0, 24)}` : null,
+      accountId: claudeAccountIdentity(raw),
       orgId: firstNonEmptyString(raw.orgId, raw.org_id, raw.organizationUuid, raw.organization_uuid)
     };
   } catch {

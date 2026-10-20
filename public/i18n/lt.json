@@ -1372,6 +1372,7 @@
     "sessions": "{count} seansų"
   },
   "widget": {
+    "localSource": "Vietinis šaltinis",
     "open": "Darbalaukio valdiklis",
     "title": "Paskyrų kvotos",
     "filters": "Filtruoti paskyras",

@@ -1372,6 +1372,7 @@
     "sessions": "{count} sesji"
   },
   "widget": {
+    "localSource": "Źródło lokalne",
     "open": "Widżet pulpitu",
     "title": "Limity kont",
     "filters": "Filtruj konta",
