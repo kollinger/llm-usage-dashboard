@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.10.0-preview.1 - 2026-10-20
+
+### Added
+
+- Compact KDE panel icon with a click-to-open, scrollable account overview on every panel edge.
+
+### Improved
+
+- Keep the desktop Plasmoid and compact window, with shared quota data, favorites and provider filters.
+
+### Fixed
+
+- Includes the independently verified local Claude quota correction from 1.9.0-preview.2.
+
 ## 1.9.0-preview.2 - 2026-10-20
 
 ### Improved
