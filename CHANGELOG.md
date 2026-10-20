@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.11.0-preview.2 - 2026-10-20
+
+### Improved
+
+- Merge pull request #56 from kollinger/kol-648-dashboard-whatsapp
+
+### Fixed
+
+- Start usage histories at latest after delayed layout (KOL-648)
+
 ## 1.11.0-preview.1 - 2026-10-20
 
 ### Added
