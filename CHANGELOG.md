@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.1-preview.6 - 2026-10-20
+
+### Fixed
+
+- Existing KDE panel widgets now refresh to compact icons when the app starts or updates the widget, without restarting Plasma; desktop widgets, panel placement and saved preferences are preserved.
+
 ## 1.10.1-preview.5 - 2026-10-20
 
 ### Fixed
