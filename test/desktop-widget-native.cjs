@@ -43,6 +43,9 @@ const server = http.createServer(async (req, res) => {
     const file = path.resolve(root, relative);
     if (!file.startsWith(`${root}${path.sep}`)) { res.writeHead(403); res.end(); return; }
     let body = await fs.readFile(file);
+    if (relative === "widget.css" && process.env.WIDGET_NATIVE_FONT) {
+      body = body.toString() + `\n.desktop-widget { font-family: ${JSON.stringify(process.env.WIDGET_NATIVE_FONT)}, sans-serif; }\n`;
+    }
     if (relative === "widget.js") {
       // Shorten only the display poll for bounded lifecycle tests. Track each
       // renderer separately to prove destroyed windows stop requesting data.
@@ -67,7 +70,7 @@ async function layout(window, expectAll = false) {
   const result = await evaluate(window, `(() => {
     const list = document.getElementById('widgetList'), rows = [...document.querySelectorAll('.widget-account')];
     const rect = list.getBoundingClientRect();
-    return { width: innerWidth, height: innerHeight, rootOverflow: document.documentElement.scrollWidth > innerWidth,
+    return { language: document.documentElement.lang, width: innerWidth, height: innerHeight, rootOverflow: document.documentElement.scrollWidth > innerWidth,
       listHeight: list.clientHeight, listContent: list.scrollHeight, rowHeights: rows.map(row => row.getBoundingClientRect().height),
       listScroll: list.scrollHeight > list.clientHeight + 1,
       overlap: rows.some((row, i) => i && row.getBoundingClientRect().top < rows[i-1].getBoundingClientRect().bottom),
