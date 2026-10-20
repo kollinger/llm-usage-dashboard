@@ -15,6 +15,7 @@ const { EVENT_TYPES } = require("../lib/quota-notifications");
 const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
 const { createDesktopWidget } = require("./desktop-widget");
 const { createPlasmaWidget } = require("./plasma-widget");
+const { configurePublishedUpdates, safeUpdateError } = require("./published-update-provider");
 
 let dashboardServer = null;
 let ollamaProxyServer = null;
@@ -878,7 +879,7 @@ function registerAutoUpdaterEvents(autoUpdater) {
   autoUpdater.on("error", (error) => {
     writeUpdateStatus({
       state: "error",
-      lastError: error?.message || String(error || "update_error")
+      lastError: safeUpdateError(error).code
     }).catch(() => {});
   });
 }
@@ -905,12 +906,13 @@ async function ensureAutoUpdater() {
     try {
       ({ autoUpdater } = require("electron-updater"));
     } catch (error) {
-      await writeUpdateStatus({ state: "error", lastError: error?.message || "electron_updater_missing" });
+      await writeUpdateStatus({ state: "error", lastError: "electron_updater_missing" });
       return { ok: false, reason: "electron_updater_missing" };
     }
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.logger = null;
+    configurePublishedUpdates(autoUpdater);
     registerAutoUpdaterEvents(autoUpdater);
     autoUpdaterRef = autoUpdater;
   }
@@ -934,11 +936,12 @@ async function checkForUpdates(reason = "scheduled") {
       downloadPercent: null,
       lastError: null
     });
-    await ready.autoUpdater.checkForUpdates();
+    const result = await ready.autoUpdater.checkForUpdates();
+    if (result?.downloadPromise) await result.downloadPromise;
   })().catch((error) => {
     return writeUpdateStatus({
       state: "error",
-      lastError: error?.message || String(error || "update_check_failed")
+      lastError: safeUpdateError(error).code
     });
   }).finally(() => {
     updateCheckPending = null;
