@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
 const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { gptDuplicateUsageFixture } = require("./fixtures/gpt-duplicate.cjs");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const fixtures = {};
 for (const count of [0, 1, 5, 12, 80]) {
@@ -16,6 +17,7 @@ for (const count of [0, 1, 5, 12, 80]) {
 fixtures.claude = buildDesktopWidgetSnapshot(claudeUsageFixture());
 fixtures.claudeLabels = buildDesktopWidgetSnapshot(claudeQuotaLabelsFixture());
 fixtures.providerColors = buildDesktopWidgetSnapshot(providerColorsUsageFixture());
+fixtures.gptDuplicate = buildDesktopWidgetSnapshot(gptDuplicateUsageFixture());
 await fs.mkdir(path.join(root, "dist/plasma"), { recursive: true });
 if (process.env.PLASMA_SCREENSHOTS_DIR) await fs.mkdir(process.env.PLASMA_SCREENSHOTS_DIR, { recursive: true });
 await fs.writeFile(path.join(root, "dist/plasma/Fixtures.js"), ".pragma library\nvar cases = " + JSON.stringify(fixtures) +

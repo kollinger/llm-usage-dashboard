@@ -26,8 +26,15 @@ Item {
     }))
     signal preferencesChanged(var favorites, string accountView, string provider, real scale)
     signal refreshRequested()
+    onSnapshotChanged: migrateFavorites()
+    onFavoritesChanged: migrateFavorites()
     LayoutMirroring.enabled: rtl
     LayoutMirroring.childrenInherit: true
+
+    function migrateFavorites() {
+        var mapped = Model.canonicalFavorites(snapshot, favorites);
+        if (JSON.stringify(mapped) !== JSON.stringify(favorites)) preferencesChanged(mapped, accountView, provider, textScale);
+    }
 
     function t(key, values) {
         var dictionary = Translations.catalog[language] || Translations.catalog.en;
@@ -50,11 +57,8 @@ Item {
         }
         return window.label || (window.windowMinutes ? t("widget.minutes", {minutes: number(window.windowMinutes)}) : t("widget.title"));
     }
-    function toggleFavorite(id) {
-        var next = favorites.slice();
-        var index = next.indexOf(id);
-        if (index >= 0) next.splice(index, 1); else if (next.length < 512) next.push(id);
-        preferencesChanged(next, accountView, provider, textScale);
+    function toggleFavorite(account) {
+        preferencesChanged(Model.toggleFavorite(account, favorites), accountView, provider, textScale);
     }
 
     Timer { interval: 30000; running: true; repeat: true; onTriggered: view.now = Date.now() }
@@ -167,12 +171,12 @@ Item {
                             }
                             Controls.ToolButton {
                                 objectName: "favorite" + card.index
-                                text: view.favorites.indexOf(card.modelData.id) >= 0 ? "★" : "☆"
+                                text: Model.favorite(card.modelData, view.favorites) ? "★" : "☆"
                                 font.pixelSize: view.textSize + 2
                                 implicitHeight: 24 * view.textScale
-                                Accessible.name: view.t(view.favorites.indexOf(card.modelData.id) >= 0 ? "widget.removeFavorite" : "widget.addFavorite", {name: card.modelData.label})
+                                Accessible.name: view.t(Model.favorite(card.modelData, view.favorites) ? "widget.removeFavorite" : "widget.addFavorite", {name: card.modelData.label})
                                 Controls.ToolTip.text: Accessible.name; Controls.ToolTip.visible: hovered
-                                onClicked: view.toggleFavorite(card.modelData.id)
+                                onClicked: view.toggleFavorite(card.modelData)
                             }
                         }
                         Controls.Label {

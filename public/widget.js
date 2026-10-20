@@ -68,10 +68,13 @@
       <div class="widget-reset">${escape(reset)}</div><div class="widget-quality${stale ? " widget-stale" : ""}">${escape(freshness)}</div>
     </div>`;
   }
+  function isFavorite(account) {
+    return [account.id, ...(account.aliases || [])].some((id) => preferences.favorites.includes(id));
+  }
   function renderAccount(account) {
     const accent = window.llmUsageProviderColors.quotaAccent(account.provider,
       getComputedStyle(document.documentElement).getPropertyValue("--track").trim());
-    const favorite = preferences.favorites.includes(account.id);
+    const favorite = isFavorite(account);
     const label = account.labelIndex ? `${account.label} · ${number(account.labelIndex)}` : account.label;
     const action = t(favorite ? "widget.removeFavorite" : "widget.addFavorite", { name: label });
     const sources = (account.sources || []).map((source) => ({ codex: "Codex", openCode: "OpenCode", local: t("widget.localSource") }[source])).filter(Boolean).join(" · ");
@@ -83,16 +86,21 @@
   }
   function render() {
     if (!Object.keys(fallback).length) return;
+    const mapped = [...new Set(preferences.favorites.map((id) =>
+      snapshot?.accounts.find((account) => (account.aliases || []).includes(id))?.id || id))];
+    if (JSON.stringify(mapped) !== JSON.stringify(preferences.favorites)) {
+      preferences.favorites = mapped;
+      savePreferences();
+    }
     const top = list.scrollTop;
     const focused = document.activeElement?.dataset.favorite;
     const accounts = snapshot?.accounts || [];
     const shown = accounts.filter((account) => (preferences.provider === "all" || preferences.provider === account.provider) &&
-      (preferences.view === "all" || preferences.favorites.includes(account.id)));
+      (preferences.view === "all" || isFavorite(account)));
     const groups = [...new Set(shown.map((account) => account.provider))];
-    const favoriteSet = new Set(preferences.favorites);
     list.innerHTML = groups.length ? groups.map((provider) => {
       const items = shown.filter((account) => account.provider === provider).sort((a, b) =>
-        Number(favoriteSet.has(b.id)) - Number(favoriteSet.has(a.id)));
+        Number(isFavorite(b)) - Number(isFavorite(a)));
       return `<section class="widget-group"><h2>${escape(providerNames[provider])}</h2><div role="list">${items.map(renderAccount).join("")}</div></section>`;
     }).join("") : `<div class="widget-empty"><p>${escape(t(!snapshot ? "widget.loading" : accounts.length ? "widget.emptyFiltered" : "widget.empty"))}</p></div>`;
     list.scrollTop = top;
@@ -163,7 +171,12 @@
     const star = event.target.closest("[data-favorite]");
     if (!star) return;
     const id = star.dataset.favorite;
-    preferences.favorites = preferences.favorites.includes(id) ? preferences.favorites.filter((value) => value !== id) : [...preferences.favorites, id];
+    const account = snapshot?.accounts.find((item) => item.id === id);
+    if (!account) return;
+    const selected = isFavorite(account);
+    const handles = [id, ...(account.aliases || [])];
+    preferences.favorites = preferences.favorites.filter((value) => !handles.includes(value));
+    if (!selected) preferences.favorites.push(id);
     savePreferences(); render();
   });
   const removeAppearance = bridge?.onAppearance(({ theme, language: value }) => {

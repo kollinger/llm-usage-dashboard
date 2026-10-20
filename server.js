@@ -23,6 +23,7 @@ const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
 const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
+const { mergeGptQuotaLimits } = require("./lib/gpt-account-quota");
 const { claudeAccountIdentity, quotaAccountId, mergeClaudeLocalAccounts } = require("./lib/claude-accounts");
 const { DeviceSync } = require("./lib/device-sync");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
@@ -9730,12 +9731,14 @@ function dedupeOpenCodeAccountObservations(observations) {
     const current = byAccount.get(observation.id);
     const currentHasLimits = Boolean(current?.limits?.rows?.length);
     const candidateHasLimits = Boolean(observation?.limits?.rows?.length);
-    if (!current || (candidateHasLimits && !currentHasLimits) || (
+    const preferred = !current || (candidateHasLimits && !currentHasLimits) || (
       candidateHasLimits === currentHasLimits &&
       Date.parse(observation.quotaCheckedAt || observation.seenAt || "") > Date.parse(current.quotaCheckedAt || current.seenAt || "")
-    )) {
-      byAccount.set(observation.id, observation);
-    }
+    ) ? observation : current;
+    const limits = mergeGptQuotaLimits([current || {}, observation]);
+    const limitsUpdatedAt = (limits?.rows || []).reduce((latest, row) =>
+      Date.parse(row.updatedAt) > (Date.parse(latest) || 0) ? row.updatedAt : latest, null);
+    byAccount.set(observation.id, { ...preferred, limits, limitsUpdatedAt });
   }
   return [...byAccount.values()];
 }
