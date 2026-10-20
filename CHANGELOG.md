@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.9.0-preview.2 - 2026-10-20
+
+### Improved
+
+- Merge pull request #41 from kollinger/kol-653-dashboard-whatsapp
+
+### Fixed
+
+- Show local Claude quotas in desktop widgets
+
 ## 1.9.0-preview.1 - 2026-10-19
 
 ### Added
