@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.1-preview.1 - 2026-10-20
+
+### Fixed
+
+- KDE widget updates now distinguish the package on disk from the view loaded by Plasma, with persistent reload guidance and retryable installation failures.
+
+### Improved
+
+- Panel and desktop setup guidance is clearer in all 27 supported languages.
+
 ## 1.10.0-preview.1 - 2026-10-20
 
 ### Added
