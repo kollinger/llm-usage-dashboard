@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.1-preview.3 - 2026-10-20
+
+### Fixed
+
+- Keep five accounts fully visible in the compact window at macOS content sizes, including long translated quota names.
+- Includes the distinct Claude total/model weekly labels and readable Arabic RTL support prepared in 1.10.1-preview.2, whose macOS build did not pass release verification.
+
 ## 1.10.1-preview.2 - 2026-10-20
 
 ### Fixed
