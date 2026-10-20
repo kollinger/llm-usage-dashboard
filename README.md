@@ -220,12 +220,18 @@ close it. The popup keeps the same provider filter, favorites and text size
 settings for that widget and scrolls when there are more accounts than fit.
 The desktop widget and the app's separate compact window remain available.
 
+Once installed, the native widget is synchronized when the dashboard starts
+after an update. Existing panel instances are refreshed with their display
+preferences, shortcuts and panel positions preserved. Desktop instances keep
+their size and settings. The installer retains previous package sources while
+running applets may still refer to them.
+
 Run `npm run plasma:build` to build the native archive under `dist/plasma/`.
 `npm run test:plasma` verifies locale, data, bridge, security and installer
 contracts. `npm run test:plasma:native` runs the synthetic Qt rendering suite
 after building the package (a Qt 6 graphical session or `QT_QPA_PLATFORM=offscreen`
 is required). Internal full-desktop checks use
-`xvfb-run -a -s '-screen 0 1600x1100x24' dbus-run-session -- python3 test/plasma-session-smoke.py x11`
+`xvfb-run -d -s '-screen 0 1600x1100x24' dbus-run-session -- python3 test/plasma-session-smoke.py x11`
 and the same command with `wayland`. They install/update in a temporary user
 profile and exercise actual native add/resize/remove/re-add cycles; Wayland uses
 a nested KWin compositor with host input. These optional tools are development
@@ -246,6 +252,11 @@ vertical instances before upgrading, verifies the active per-user package,
 captures the still-cached view (including remove/re-add), then checks restored
 icons, desktop sizing, preferences and form-factor changes after a private shell
 restart. It never restarts or changes the user's real session.
+Add `--live-upgrade` to that historical-package lane to exercise the actual app
+startup and installer: both old full panel views must become compact icons
+before a shell restart, including saved preferences, neighboring widgets,
+multiple instances, repeated startup and newly added instances using the same
+plugin ID. The lane then checks private-shell restoration and popup lifecycles.
 When running graphical checks concurrently, use distinct Xvfb display numbers
 or `xvfb-run -d` where available to allocate each display atomically.
 

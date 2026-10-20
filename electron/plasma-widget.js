@@ -3,17 +3,19 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const os = require("node:os");
+const semver = require("semver");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
 const { trustedFrame } = require("./desktop-widget");
 const { startPlasmaBridge, readPlasmaSnapshot } = require("../lib/plasma-bridge");
+const { activatePackage, repairPanels, PLUGIN_ID } = require("./plasma-package");
 const runFile = promisify(execFile);
-const PLUGIN_ID = "local.llm-usage-dashboard.quotas";
 const ARCHIVE_NAME = "llm-usage-dashboard.plasmoid";
 
 function createPlasmaWidget({ app, ipcMain, session, origin, getMainWindow, getLanguage,
   platform = process.platform, environment = process.env, run = runFile }) {
   let bridge = null, installing = null;
+  let repairFailed = false, panelsReady = false;
   const archive = app.isPackaged ? path.join(process.resourcesPath, "plasma", ARCHIVE_NAME)
     : path.join(__dirname, "..", "dist", "plasma", ARCHIVE_NAME);
   const dataHome = environment.XDG_DATA_HOME && path.isAbsolute(environment.XDG_DATA_HOME)
@@ -32,7 +34,26 @@ function createPlasmaWidget({ app, ipcMain, session, origin, getMainWindow, getL
     let bundled = false;
     try { await fs.access(archive); bundled = true; } catch { /* Development package not built yet. */ }
     return { supported: available && bundled, installed: Boolean(installedVersion), installedVersion,
-      version: app.getVersion(), connected: Boolean(bridge), reason: !available ? "requirements" : !bundled ? "package" : null };
+      version: app.getVersion(), connected: Boolean(bridge), panelsReady,
+      ...(repairFailed ? { success: false } : {}), reason: !available ? "requirements" : !bundled ? "package" : null };
+  };
+  const synchronize = (force) => {
+    if (installing) return installing;
+    installing = (async () => {
+      const before = await status();
+      if (!before.supported) return before;
+      try {
+        const active = await activatePackage({ archive, dataHome, version: app.getVersion(), run, options });
+        const refreshed = await repairPanels({ source: active.source, version: app.getVersion(), force: force || active.changed, run, options });
+        panelsReady = refreshed !== null;
+        repairFailed = false;
+        return { ...await status(), success: true };
+      } catch {
+        repairFailed = true; panelsReady = false;
+        return { ...await status(), success: false };
+      }
+    })().finally(() => { installing = null; });
+    return installing;
   };
   const trusted = (event) => trustedFrame(event, getMainWindow(), `${origin}/`) ||
     trustedFrame(event, getMainWindow(), `${origin}/index.html`);
@@ -40,23 +61,9 @@ function createPlasmaWidget({ app, ipcMain, session, origin, getMainWindow, getL
     if (!trusted(event)) throw new Error("untrusted_plasma_request");
     return status();
   });
-  ipcMain.handle("plasma:install", async (event) => {
+  ipcMain.handle("plasma:install", (event) => {
     if (!trusted(event)) throw new Error("untrusted_plasma_request");
-    if (installing) return installing;
-    installing = (async () => {
-      const before = await status();
-      if (!before.supported) return before;
-      try {
-        // Explicit package root confines both install and update to this user.
-        // No shell, sudo, downloaded code or caller-selected package/path.
-        const root = path.join(dataHome, "plasma", "plasmoids");
-        await run("kpackagetool6", ["--type", "Plasma/Applet", "--packageroot", root,
-          before.installed ? "--upgrade" : "--install", archive], options);
-        const after = await status();
-        return { ...after, success: after.installedVersion === app.getVersion() };
-      } catch { return { ...await status(), success: false }; }
-    })().finally(() => { installing = null; });
-    return installing;
+    return synchronize(true);
   });
   return {
     status,
@@ -66,8 +73,14 @@ function createPlasmaWidget({ app, ipcMain, session, origin, getMainWindow, getL
         bridge = await startPlasmaBridge({ runtimeDirectory: environment.XDG_RUNTIME_DIR,
           readSnapshot: () => readPlasmaSnapshot(session, origin), getLanguage });
       } catch { /* No private session runtime: native widget stays unavailable. */ }
+      // An application update must also reach an already installed native
+      // widget. First-time installation remains the user's explicit choice.
+      const current = await status();
+      const newerInstalled = semver.valid(current.installedVersion) && semver.valid(app.getVersion()) && semver.gt(current.installedVersion, app.getVersion());
+      if (current.supported && current.installed && !newerInstalled) await synchronize(false);
     },
     async dispose() {
+      await installing;
       ipcMain.removeHandler("plasma:status"); ipcMain.removeHandler("plasma:install");
       await bridge?.close(); bridge = null;
     }
