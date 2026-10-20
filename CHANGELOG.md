@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.1-preview.2 - 2026-10-20
+
+### Fixed
+
+- Claude weekly quotas now distinguish all-model and model-specific limits in the KDE desktop widget, panel popup and compact window, preserving each limit's values and reset time.
+- Long quota names wrap clearly, with localized scope labels and Arabic text direction support in all 27 languages.
+
 ## 1.10.1-preview.1 - 2026-10-20
 
 ### Fixed
