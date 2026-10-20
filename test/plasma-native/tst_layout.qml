@@ -80,6 +80,38 @@ TestCase {
         verify(findChild(accountView, "accountCount").text.indexOf("حساب") >= 0);
         capture("arabic-scaled");
     }
+    function test_panel_popup() {
+        // The shell uses 560x680 for panels. At large text sizes the account
+        // grid changes columns; all rows must remain reachable by scrolling.
+        test.height = 680;
+        accountView.language = "de";
+        accountView.snapshot = Fixtures.cases[12];
+        for (var cycle = 0; cycle < 2; cycle++) {
+            [320, 519, 520, 560].forEach(function(width) {
+                test.width = width;
+                accountView.textScale = width === 560 ? 1.3 : 1;
+                waitForRendering(accountView);
+                verify(list().width > 0 && list().width <= width);
+                verify(list().height > 0 && list().height < test.height);
+                verify(list().contentHeight > list().height);
+                list().positionViewAtEnd();
+                waitForRendering(accountView);
+                verify(list().contentY > 0, "Overflow accounts must be reachable");
+                list().positionViewAtBeginning();
+                tryCompare(list(), "contentY", 0);
+            });
+        }
+        mouseClick(findChild(accountView, "favorite0"));
+        var favorites = accountView.favorites.slice();
+        test.width = 780; test.height = 840;
+        test.width = 560; test.height = 680;
+        compare(accountView.favorites[0], favorites[0], "Changing representation size preserves preferences");
+        capture("panel-german-scaled");
+        accountView.language = "ar";
+        waitForRendering(accountView);
+        verify(accountView.rtl);
+        capture("panel-arabic-scaled");
+    }
     function test_connection_states() {
         accountView.connectionStatus = "unavailable";
         tryVerify(function() { return findChild(accountView, "quality0_0").text.indexOf("Stale") >= 0; });

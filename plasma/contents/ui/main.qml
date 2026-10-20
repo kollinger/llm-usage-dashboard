@@ -1,19 +1,17 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as Plasma5Support
 import "../code/Translations.js" as Translations
 
 PlasmoidItem {
     id: root
-    implicitWidth: 780
-    implicitHeight: 840
-    Layout.minimumWidth: 320
-    Layout.minimumHeight: 300
-    Layout.preferredWidth: 780
-    Layout.preferredHeight: 840
-    preferredRepresentation: fullRepresentation
+    readonly property bool inPanel: Plasmoid.formFactor === PlasmaCore.Types.Horizontal || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+    // Let Plasma supply its native square icon, keyboard activation and popup
+    // lifecycle. Desktop constraints belong to the full view, not the panel.
+    preferredRepresentation: inPanel ? compactRepresentation : fullRepresentation
     property var snapshot: null
     property string connectionStatus: "loading"
     property string language: Qt.locale().name.split(/[_-]/)[0]
@@ -49,10 +47,10 @@ PlasmoidItem {
     fullRepresentation: AccountView {
         Layout.minimumWidth: 320
         Layout.minimumHeight: 300
-        Layout.preferredWidth: 780
-        Layout.preferredHeight: 840
-        implicitWidth: 780
-        implicitHeight: 840
+        Layout.preferredWidth: root.inPanel ? 560 : 780
+        Layout.preferredHeight: root.inPanel ? 680 : 840
+        implicitWidth: Layout.preferredWidth
+        implicitHeight: Layout.preferredHeight
         snapshot: root.snapshot
         language: root.language
         connectionStatus: root.connectionStatus

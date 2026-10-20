@@ -191,6 +191,13 @@ must keep running; unavailable apps and stale readings are labeled, and signing
 out clears the widget on its next read. Only display preferences and opaque
 favorite handles persist in Plasma configuration; quota snapshots stay in memory.
 
+The same widget can be added to a Plasma panel through its **Add Widgets**
+menu. Horizontal and vertical panels show a single native icon; click it to
+open the account overview, then click again, press Escape, or click outside to
+close it. The popup keeps the same provider filter, favorites and text size
+settings for that widget and scrolls when there are more accounts than fit.
+The desktop widget and the app's separate compact window remain available.
+
 Run `npm run plasma:build` to build the native archive under `dist/plasma/`.
 `npm run test:plasma` verifies locale, data, bridge, security and installer
 contracts. `npm run test:plasma:native` runs the synthetic Qt rendering suite
@@ -203,6 +210,13 @@ a nested KWin compositor with host input. These optional tools are development
 dependencies only, not bundled services. Verified session versions and evidence
 are recorded with each release candidate; Plasma 5 and non-KDE sessions do not
 support the native package.
+
+Append `--panel` to either internal session check for real icon/popup operation
+at all four edges, repeated click/Escape/outside-click closing, remove/re-add,
+and restoration of saved filters/favorites after restarting the private shell.
+This lane also needs Python D-Bus and PyGObject for compositor observations.
+When running graphical checks concurrently, use distinct Xvfb display numbers
+or `xvfb-run -d` where available to allocate each display atomically.
 
 The widget uses the dashboard's theme and all 27 supported languages, including
 Arabic RTL. It retains Electron's isolated, sandboxed renderer and a separate
