@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "تم اكتشاف {active} من {count} حسابات معروفة · الفحص {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "تسجيل الدخول غير متاح. ثبّت Codex CLI أو حاول مجددًا."
     },
     "connectionHelp": "تُكتشف تسجيلات Codex وOpenCode الحالية تلقائيًا. أضف حسابات GPT أخرى دون استبدالها.",
-    "loginPrivacy": "يتصل تسجيل الدخول بـ OpenAI. تبقى بيانات الاعتماد في ملف محلي منفصل ولا تُرسل إلى المطور أو الأجهزة المقترنة."
+    "loginPrivacy": "يتصل تسجيل الدخول بـ OpenAI. تبقى بيانات الاعتماد في ملف محلي منفصل ولا تُرسل إلى المطور أو الأجهزة المقترنة.",
+    "profileNote": "تم اكتشاف ملف OpenCode؛ الاستخدام الحالي غير مؤكد.",
+    "quotaUnavailable": "تعذرت قراءة الحدود. أعد الفحص أو سجّل الدخول مجددًا في التطبيق المصدر.",
+    "savedLimits": "حدود محفوظة · قديمة",
+    "identityUnverified": "الهوية غير مؤكدة. السجل المحفوظ غير منسوب إلى مساحة عمل.",
+    "openCodeUsage": "استخدام OpenCode؛ الحساب غير معروف. تظهر حدود الحساب ضمن الحسابات."
   },
   "codexResets": {
     "title": "Codex · سجل إعادة التعيين",

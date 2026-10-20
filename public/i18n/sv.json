@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} hittade av {count} kända konton · skannat {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Inloggning är inte tillgänglig. Installera Codex CLI eller försök igen."
     },
     "connectionHelp": "Befintliga Codex- och OpenCode-inloggningar upptäcks automatiskt. Lägg till GPT-konton utan att ersätta dem.",
-    "loginPrivacy": "Inloggningen kommunicerar med OpenAI. Inloggningsuppgifter stannar i en separat lokal profil och skickas inte till utvecklaren eller parkopplade enheter."
+    "loginPrivacy": "Inloggningen kommunicerar med OpenAI. Inloggningsuppgifter stannar i en separat lokal profil och skickas inte till utvecklaren eller parkopplade enheter.",
+    "profileNote": "OpenCode-profil hittad; aktuell användning är inte bekräftad.",
+    "quotaUnavailable": "Gränser kunde inte läsas. Skanna igen eller logga in igen i källappen.",
+    "savedLimits": "Sparade gränser · inaktuella",
+    "identityUnverified": "Identitet ej verifierad. Sparad historik är inte kopplad till en arbetsyta.",
+    "openCodeUsage": "OpenCode-användning; konto okänt. Kontogränser visas under Konton."
   },
   "codexResets": {
     "title": "Codex · Återställningshistorik",

@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} braite as {count} cuntas aitheanta · scanadh {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Níl síniú isteach ar fáil. Suiteáil Codex CLI nó bain triail eile as."
     },
     "connectionHelp": "Aimsítear sínithe isteach Codex agus OpenCode go huathoibríoch. Cuir cuntais GPT leis gan iad a athsholáthar.",
-    "loginPrivacy": "Déanann an síniú isteach cumarsáid le OpenAI. Fanann dintiúir i bpróifíl áitiúil ar leith agus ní sheoltar chuig an bhforbróir ná chuig gléasanna péireáilte iad."
+    "loginPrivacy": "Déanann an síniú isteach cumarsáid le OpenAI. Fanann dintiúir i bpróifíl áitiúil ar leith agus ní sheoltar chuig an bhforbróir ná chuig gléasanna péireáilte iad.",
+    "profileNote": "Próifíl OpenCode braite; níl an úsáid reatha deimhnithe.",
+    "quotaUnavailable": "Níor léadh na teorainneacha. Scan arís nó sínigh isteach arís san aip fhoinseach.",
+    "savedLimits": "Teorainneacha sábháilte · as dáta",
+    "identityUnverified": "Aitheantas gan fíorú. Níl an stair sábháilte sannta do spás oibre.",
+    "openCodeUsage": "Úsáid OpenCode; cuntas anaithnid. Taispeántar teorainneacha faoi Cuntais."
   },
   "codexResets": {
     "title": "Codex · Stair athshocruithe",

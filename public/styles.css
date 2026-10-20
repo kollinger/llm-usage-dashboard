@@ -543,8 +543,14 @@ textarea {
   display: grid;
   gap: 2px;
   min-width: 92px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   color: var(--muted);
   font-size: 0.72rem;
+}
+
+.gpt-account-metrics small {
+  font-size: inherit;
 }
 
 .gpt-account-metrics strong {

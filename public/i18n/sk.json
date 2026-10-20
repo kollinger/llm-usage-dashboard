@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Zistených {active} z {count} známych účtov · kontrola {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Prihlásenie nie je dostupné. Nainštalujte Codex CLI alebo skúste znova."
     },
     "connectionHelp": "Existujúce prihlásenia Codex a OpenCode sa zistia automaticky. Pridajte ďalšie účty GPT bez ich nahradenia.",
-    "loginPrivacy": "Prihlásenie komunikuje s OpenAI. Prihlasovacie údaje zostávajú v samostatnom miestnom profile a neposielajú sa vývojárovi ani spárovaným zariadeniam."
+    "loginPrivacy": "Prihlásenie komunikuje s OpenAI. Prihlasovacie údaje zostávajú v samostatnom miestnom profile a neposielajú sa vývojárovi ani spárovaným zariadeniam.",
+    "profileNote": "Zistený profil OpenCode; aktuálne používanie nie je potvrdené.",
+    "quotaUnavailable": "Limity sa nepodarilo načítať. Zopakujte kontrolu alebo prihlásenie v zdrojovej aplikácii.",
+    "savedLimits": "Uložené limity · zastarané",
+    "identityUnverified": "Identita nie je overená. Uložená história nie je priradená k pracovnému priestoru.",
+    "openCodeUsage": "Použitie OpenCode; účet nie je známy. Limity účtov sú v Účtoch."
   },
   "codexResets": {
     "title": "Codex · História resetov",

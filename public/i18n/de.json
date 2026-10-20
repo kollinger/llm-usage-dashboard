@@ -67,7 +67,7 @@
     "rechecked": "Account-Erfassung abgeschlossen.",
     "recheckError": "Account-Erfassung fehlgeschlagen: {message}",
     "recheckErrorFallback": "Unbekannter Fehler",
-    "summary": "{active} von {count} bekannten Accounts aktiv · erfasst {time}",
+    "summary": "{active} erkannt von {count} bekannten Konten · geprüft {time}",
     "notScanned": "Accounts wurden noch nicht erfasst.",
     "empty": "Noch kein ChatGPT-Account gefunden",
     "guidance": "In Codex oder OpenCode anmelden und danach neu erfassen. Früher erkannte Accounts bleiben als Verlauf in dieser Liste.",
@@ -92,7 +92,12 @@
       "failed": "Anmeldung nicht verfügbar. Installiere Codex CLI oder versuche es erneut."
     },
     "connectionHelp": "Vorhandene Codex- und OpenCode-Anmeldungen werden automatisch erkannt. Hier kannst du weitere GPT-Accounts hinzufügen, ohne sie zu ersetzen.",
-    "loginPrivacy": "Die Anmeldung kommuniziert mit OpenAI. Zugangsdaten bleiben in einem getrennten lokalen Profil und werden weder an den Entwickler noch an gekoppelte Geräte gesendet."
+    "loginPrivacy": "Die Anmeldung kommuniziert mit OpenAI. Zugangsdaten bleiben in einem getrennten lokalen Profil und werden weder an den Entwickler noch an gekoppelte Geräte gesendet.",
+    "profileNote": "OpenCode-Profil erkannt; aktuelle Verwendung nicht bestätigt.",
+    "quotaUnavailable": "Limits konnten nicht gelesen werden. Erneut prüfen oder in der Quell-App anmelden.",
+    "savedLimits": "Gespeicherte Limits · veraltet",
+    "identityUnverified": "Identität nicht verifiziert. Gespeicherter Verlauf ist keinem Workspace zugeordnet.",
+    "openCodeUsage": "OpenCode-Nutzung; Kontozuordnung nicht verfügbar. Kontolimits stehen unter Konten."
   },
   "chart": {
     "eyebrow": "Lokale Erfassung",

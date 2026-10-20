@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} misjuba minn {count} kontijiet magħrufa · skennjat {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Il-login mhux disponibbli. Installa Codex CLI jew erġa’ pprova."
     },
     "connectionHelp": "Il-logins eżistenti ta’ Codex u OpenCode jinstabu awtomatikament. Żid kontijiet GPT mingħajr ma tibdilhom.",
-    "loginPrivacy": "Il-login jikkomunika ma’ OpenAI. Il-kredenzjali jibqgħu fi profil lokali separat u ma jintbagħtux lill-iżviluppatur jew lill-apparati mqabbla."
+    "loginPrivacy": "Il-login jikkomunika ma’ OpenAI. Il-kredenzjali jibqgħu fi profil lokali separat u ma jintbagħtux lill-iżviluppatur jew lill-apparati mqabbla.",
+    "profileNote": "Instab profil OpenCode; l-użu attwali mhux ikkonfermat.",
+    "quotaUnavailable": "Il-limiti ma setgħux jinqraw. Erġa’ skennja jew idħol fl-app tas-sors.",
+    "savedLimits": "Limiti ssejvjati · skaduti",
+    "identityUnverified": "Identità mhux ivverifikata. L-istorja ssejvjata mhix assenjata lil spazju tax-xogħol.",
+    "openCodeUsage": "Użu OpenCode; kont mhux magħruf. Il-limiti jidhru taħt Kontijiet."
   },
   "codexResets": {
     "title": "Codex · Storja tar-resets",

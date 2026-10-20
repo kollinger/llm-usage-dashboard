@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Detectate {active} din {count} conturi cunoscute · scanare {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Autentificarea nu este disponibilă. Instalează Codex CLI sau încearcă din nou."
     },
     "connectionHelp": "Autentificările Codex și OpenCode existente sunt detectate automat. Adaugă conturi GPT fără a le înlocui.",
-    "loginPrivacy": "Autentificarea comunică cu OpenAI. Datele de autentificare rămân într-un profil local separat și nu sunt trimise dezvoltatorului sau dispozitivelor asociate."
+    "loginPrivacy": "Autentificarea comunică cu OpenAI. Datele de autentificare rămân într-un profil local separat și nu sunt trimise dezvoltatorului sau dispozitivelor asociate.",
+    "profileNote": "Profil OpenCode detectat; utilizarea curentă nu este confirmată.",
+    "quotaUnavailable": "Limitele nu au putut fi citite. Scanați sau autentificați-vă din nou în aplicația sursă.",
+    "savedLimits": "Limite salvate · învechite",
+    "identityUnverified": "Identitate neverificată. Istoricul salvat nu este atribuit unui spațiu de lucru.",
+    "openCodeUsage": "Utilizare OpenCode; cont necunoscut. Limitele sunt afișate în Conturi."
   },
   "codexResets": {
     "title": "Codex · Istoricul resetărilor",

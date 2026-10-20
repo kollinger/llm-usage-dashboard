@@ -160,7 +160,8 @@ function renderConnectedAccount(account, { controls = false } = {}) {
   const metrics = (account.limits?.rows || []).map((row) => {
     const remaining = Number.isFinite(row.remainingPercent) ? row.remainingPercent : Number.isFinite(row.usedPercent) ? 100 - row.usedPercent : null;
     const label = row.label || (row.key === "fiveHour" ? t("labels.fiveHourLeft") : row.key === "weekly" ? t("labels.weekLeft") : t("gptAccounts.limit"));
-    return `<span>${escapeHtml(label)}: ${escapeHtml(remaining === null ? connectionText("status.unavailable") : formatLimitRemainingPercent({ remainingPercent: remaining }))}</span>`;
+    return `<span>${escapeHtml(label)}: ${escapeHtml(remaining === null ? connectionText("status.unavailable") : formatLimitRemainingPercent({ remainingPercent: remaining }))}${row.resetsAt
+      ? ` · ${escapeHtml(t("limits.resetPrefix", { time: formatDateTime(row.resetsAt) }))}` : ""}</span>`;
   });
   if (Number.isFinite(account.tokenTotal)) metrics.push(`<span>${escapeHtml(t(account.periodDays === 7 ? "labels.tokens7d" : "summary.tokensTotal"))}: ${escapeHtml(formatTokens(account.tokenTotal))}</span>`);
   if (Number.isFinite(account.costTotal)) metrics.push(`<span>${escapeHtml(t(account.periodDays === 7 ? "labels.cost7d" : "labels.cost"))}: ${escapeHtml(formatMoney(account.costTotal, account.currency))}</span>`);
@@ -168,6 +169,10 @@ function renderConnectedAccount(account, { controls = false } = {}) {
   if (!metrics.length) metrics.push(`<span>${escapeHtml(connectionText("status.unavailable"))}</span>`);
   return `<article class="connection-row account-manager-row"><div class="connection-row-content"><strong>${escapeHtml(account.label || connectionProviderLabel(provider))}</strong>
     <p class="settings-desc">${escapeHtml(connectionProviderLabel(provider))} · ${escapeHtml(connectionText(`status.${status}`))}${account.updatedAt ? ` · ${escapeHtml(formatRelativeUpdatedAt(account.updatedAt))}` : ""}</p>
+    ${account.provider === "gpt" && account.planType ? `<p class="settings-desc">${escapeHtml(account.planType)}</p>` : ""}
+    ${account.applications?.length ? `<p class="settings-desc">${account.applications.map((id) => escapeHtml(t(`gptAccounts.sources.${id}`, {}, id))).join(" · ")}</p>` : ""}
+    ${account.applications?.includes("openCode") ? `<p class="settings-desc">${escapeHtml(t("gptAccounts.profileNote"))}</p>` : ""}
+    ${account.provider === "gpt" && account.quotaStatus !== "current" ? `<p class="settings-desc">${escapeHtml(t(account.identityQuality === "email" ? "gptAccounts.identityUnverified" : account.quotaStatus === "stale" ? "gptAccounts.savedLimits" : "gptAccounts.quotaUnavailable"))}</p>` : ""}
     ${account.detailCode && connectionErrorKey(account.detailCode) !== "connections.failed" ? `<p class="settings-desc connection-account-error">${escapeHtml(t(connectionErrorKey(account.detailCode)))}</p>` : ""}
     <div class="account-inline-limits">${metrics.join("")}</div></div>
     ${controls && account.managed ? `<button class="text-button ghost" type="button" data-remove-account="${escapeHtml(account.id)}">${escapeHtml(connectionText("remove"))}</button>` : !account.managed ? `<span class="connection-badge">${escapeHtml(connectionText("automatic"))}</span>` : ""}</article>`;

@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Otkriveno {active} od {count} poznatih računa · provjera {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Prijava nije dostupna. Instalirajte Codex CLI ili pokušajte ponovno."
     },
     "connectionHelp": "Postojeće prijave Codex i OpenCode otkrivaju se automatski. Dodajte GPT račune bez njihove zamjene.",
-    "loginPrivacy": "Prijava komunicira s OpenAI-jem. Vjerodajnice ostaju u odvojenom lokalnom profilu i ne šalju se razvojnom programeru ili uparenim uređajima."
+    "loginPrivacy": "Prijava komunicira s OpenAI-jem. Vjerodajnice ostaju u odvojenom lokalnom profilu i ne šalju se razvojnom programeru ili uparenim uređajima.",
+    "profileNote": "Otkriven profil OpenCode; trenutačna upotreba nije potvrđena.",
+    "quotaUnavailable": "Ograničenja nisu pročitana. Ponovite provjeru ili prijavu u izvornoj aplikaciji.",
+    "savedLimits": "Spremljena ograničenja · zastarjela",
+    "identityUnverified": "Identitet nije potvrđen. Spremljena povijest nije pridružena radnom prostoru.",
+    "openCodeUsage": "Upotreba OpenCodea; račun nepoznat. Ograničenja računa prikazana su u Računima."
   },
   "codexResets": {
     "title": "Codex · Povijest resetiranja",

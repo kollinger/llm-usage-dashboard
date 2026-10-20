@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Открити {active} от {count} познати акаунта · проверка {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Входът не е достъпен. Инсталирайте Codex CLI или опитайте отново."
     },
     "connectionHelp": "Съществуващите входове в Codex и OpenCode се откриват автоматично. Добавете GPT акаунти, без да ги заменяте.",
-    "loginPrivacy": "Входът комуникира с OpenAI. Данните за вход остават в отделен локален профил и не се изпращат на разработчика или сдвоените устройства."
+    "loginPrivacy": "Входът комуникира с OpenAI. Данните за вход остават в отделен локален профил и не се изпращат на разработчика или сдвоените устройства.",
+    "profileNote": "Открит е профил в OpenCode; текущата употреба не е потвърдена.",
+    "quotaUnavailable": "Лимитите не са прочетени. Сканирайте или влезте отново в изходното приложение.",
+    "savedLimits": "Запазени лимити · остарели",
+    "identityUnverified": "Самоличността не е потвърдена. Запазената история не е свързана с работно пространство.",
+    "openCodeUsage": "Употреба в OpenCode; акаунтът е неизвестен. Лимитите са в Акаунти."
   },
   "codexResets": {
     "title": "Codex · История на нулиранията",

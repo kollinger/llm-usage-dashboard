@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} gedetecteerd van {count} bekende accounts · gescand {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Aanmelden niet beschikbaar. Installeer Codex CLI of probeer opnieuw."
     },
     "connectionHelp": "Bestaande Codex- en OpenCode-aanmeldingen worden automatisch herkend. Voeg hier meer GPT-accounts toe zonder ze te vervangen.",
-    "loginPrivacy": "Aanmelden communiceert met OpenAI. Inloggegevens blijven in een apart lokaal profiel en worden niet naar de ontwikkelaar of gekoppelde apparaten gestuurd."
+    "loginPrivacy": "Aanmelden communiceert met OpenAI. Inloggegevens blijven in een apart lokaal profiel en worden niet naar de ontwikkelaar of gekoppelde apparaten gestuurd.",
+    "profileNote": "OpenCode-profiel gevonden; huidig gebruik niet bevestigd.",
+    "quotaUnavailable": "Limieten konden niet worden gelezen. Scan opnieuw of meld je opnieuw aan in de bronapp.",
+    "savedLimits": "Opgeslagen limieten · verouderd",
+    "identityUnverified": "Identiteit niet geverifieerd. Opgeslagen geschiedenis is niet aan een werkruimte gekoppeld.",
+    "openCodeUsage": "OpenCode-gebruik; account onbekend. Accountlimieten staan onder Accounts."
   },
   "codexResets": {
     "title": "Codex · Resetgeschiedenis",

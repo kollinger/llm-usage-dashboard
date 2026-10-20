@@ -114,6 +114,7 @@ context.readBrowserConnections = serverFunction("readBrowserConnections", contex
 context.connectedAccountStore.refresh = async () => [];
 let collected = false;
 const scan = {
+  gptAccountsCache: { value: null },
   usageCache: { value: null }, USAGE_CACHE_MS: 1, usageViewCache: { context: async () => "synthetic", read: async () => null, write: async () => {} },
   readThroughCache: async (_cache, _age, load) => load(), readSourceSettings: async () => ({ sources: [] }), DATA_DIR: "/synthetic",
   buildReaderSources: () => ({ claudeCode: [], codex: [], openCode: [] }), claudeLogin: { profileSources: async () => [] },

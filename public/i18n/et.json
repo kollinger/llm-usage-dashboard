@@ -1061,7 +1061,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Tuvastatud {active} kontot {count} teadaolevast · kontroll {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1086,7 +1086,12 @@
       "failed": "Sisselogimine pole saadaval. Paigalda Codex CLI või proovi uuesti."
     },
     "connectionHelp": "Olemasolevad Codexi ja OpenCode’i sisselogimised tuvastatakse automaatselt. Lisa GPT-kontosid neid asendamata.",
-    "loginPrivacy": "Sisselogimine suhtleb OpenAI-ga. Volitused jäävad eraldi kohalikku profiili ega lähe arendajale ega seotud seadmetele."
+    "loginPrivacy": "Sisselogimine suhtleb OpenAI-ga. Volitused jäävad eraldi kohalikku profiili ega lähe arendajale ega seotud seadmetele.",
+    "profileNote": "OpenCode’i profiil tuvastatud; praegune kasutus pole kinnitatud.",
+    "quotaUnavailable": "Piirmäärasid ei saanud lugeda. Kontrolli uuesti või logi lähterakenduses uuesti sisse.",
+    "savedLimits": "Salvestatud piirmäärad · aegunud",
+    "identityUnverified": "Identiteet kinnitamata. Salvestatud ajalugu pole tööruumiga seotud.",
+    "openCodeUsage": "OpenCode’i kasutus; konto teadmata. Kontode piirmäärad on jaotises Kontod."
   },
   "codexResets": {
     "title": "Codex · Lähtestuste ajalugu",

@@ -241,7 +241,7 @@ const els = {
 
 const providerMeta = {
   codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: window.llmUsageProviderColors.accent("codex") },
-  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: window.llmUsageProviderColors.accent("openCode") },
+  openCode: { name: "OpenCode", kickerKey: "providers.openCode.kicker", accent: window.llmUsageProviderColors.accent("openCode") },
   codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: window.llmUsageProviderColors.accent("codexSpark") },
   copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: window.llmUsageProviderColors.accent("copilot") },
   claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: window.llmUsageProviderColors.accent("claudeCode") },
@@ -255,7 +255,7 @@ const providerMeta = {
 
 const providerBrandMeta = {
   codex: { label: "Codex", mark: "Cx", logo: "codex.svg", accent: providerMeta.codex.accent },
-  openCode: { label: "OpenCode GPT", mark: "OC", logo: "openai.svg", accent: providerMeta.openCode.accent },
+  openCode: { label: "OpenCode", mark: "OC", logo: "openai.svg", accent: providerMeta.openCode.accent },
   codexSpark: { label: "Codex Spark", mark: "Sp", logo: "codex.svg", accent: providerMeta.codexSpark.accent },
   copilot: { label: "GitHub Copilot", mark: "GH", logo: "github-copilot.svg", accent: providerMeta.copilot.accent },
   claudeCode: { label: "Claude Code", mark: "Cl", logo: "claude.svg", accent: providerMeta.claudeCode.accent },
@@ -4806,9 +4806,16 @@ function renderGptAccount(account) {
   const activeSources = sources.filter((source) => source.active);
   const codexSource = sources.find((source) => source.id === "codex");
   const limitSource = gptAccountLimitSource(sources);
-  const hasCurrentLimits = Boolean(limitSource?.active && limitSource?.quotaStatus === "ready");
+  const hasCurrentLimits = gptAccountLimitsCurrent(limitSource);
   const lifetimeTokens = codexSource?.usage?.summary?.lifetimeTokens;
-  const limits = (limitSource?.limits?.rows || []).slice(0, 2);
+  const limits = limitSource?.limits?.rows || [];
+  const quotaFailure = activeSources.find((source) => source.quotaStatus === "unavailable");
+  const quotaMessage = !hasCurrentLimits ? t(account.identityQuality === "email"
+    ? "gptAccounts.identityUnverified"
+    : ["auth_required", "credentials_missing"].includes(quotaFailure?.quotaReason)
+      ? "connections.status.auth_required"
+      : quotaFailure?.quotaReason === "identity_unverified" ? "gptAccounts.identityUnverified"
+        : limits.length ? "gptAccounts.savedLimits" : "gptAccounts.quotaUnavailable") : "";
   const sourceBadges = sources.map((source) => `
     <span class="gpt-account-source${source.active ? " is-active" : ""}">
       ${escapeHtml(t(`gptAccounts.sources.${source.id}`, {}, source.id))}
@@ -4819,7 +4826,9 @@ function renderGptAccount(account) {
     metrics.push(`<span><strong>${escapeHtml(formatTokens(lifetimeTokens))}</strong>${escapeHtml(t("gptAccounts.lifetimeTokens"))}</span>`);
   }
   for (const limit of limits) {
-    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(gptAccountLimitLabel(limit))}</span>`);
+    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(gptAccountLimitLabel(limit))}${limit.resetsAt
+      ? `<small>${escapeHtml(t("limits.resetPrefix", { time: formatDateTime(limit.resetsAt) }))}</small>` : ""}${!hasCurrentLimits || (limit.resetsAt && Date.parse(limit.resetsAt) <= Date.now())
+        ? `<small>${escapeHtml(t("gptAccounts.savedLimits"))}</small>` : ""}</span>`);
   }
   if (!limits.length) {
     metrics.push(`<span><strong>${escapeHtml(t("liveMetrics.unavailable"))}</strong>${escapeHtml(t("gptAccounts.limit"))}</span>`);
@@ -4837,17 +4846,16 @@ function renderGptAccount(account) {
           </div>
           <div class="gpt-account-sources">${sourceBadges}</div>
         </div>
-        <span class="gpt-account-state">${escapeHtml(t(account.active ? "gptAccounts.active" : "gptAccounts.historical"))}${account.active && limits.length && !hasCurrentLimits
-          ? ` · ${escapeHtml(t("gptAccounts.limit"))}: ${escapeHtml(t("gptAccounts.historical"))}`
+        <span class="gpt-account-state">${escapeHtml(t(account.active ? "connections.status.detected" : "gptAccounts.historical"))}${account.active && limits.length && !hasCurrentLimits
+          ? ` · ${escapeHtml(t("gptAccounts.savedLimits"))}`
           : ""}</span>
       </div>
       ${metrics.length ? `<div class="gpt-account-metrics">${metrics.join("")}</div>` : ""}
+      ${quotaMessage ? `<p class="gpt-account-seen">${escapeHtml(quotaMessage)}</p>` : ""}
+      ${activeSources.some((source) => source.id === "openCode") ? `<p class="gpt-account-seen">${escapeHtml(t("gptAccounts.profileNote"))}</p>` : ""}
       <div class="gpt-account-seen">
         ${escapeHtml(t("gptAccounts.lastSeen", { time: formatRelativeUpdatedAt(account.lastSeenAt) }))}
-        ${activeSources.length ? ` · ${escapeHtml(t(
-          activeSources.length === 1 ? "gptAccounts.activeSourceCountOne" : "gptAccounts.activeSourceCount",
-          { count: activeSources.length }
-        ))}` : ""}${limitFreshness}
+        ${limitFreshness}
       </div>
     </article>
   `;
@@ -4863,15 +4871,24 @@ function gptAccountLimitSource(sources, options = {}) {
   return (Array.isArray(sources) ? sources : [])
     .filter((source) => (
       (source?.limits?.rows || []).length > 0 &&
-      (!options.currentOnly || (source.active && source.quotaStatus === "ready"))
+      (!options.currentOnly || gptAccountLimitsCurrent(source))
     ))
     .sort((left, right) => {
+      const currentDelta = Number(gptAccountLimitsCurrent(right)) - Number(gptAccountLimitsCurrent(left));
+      if (currentDelta) return currentDelta;
       const activeDelta = Number(Boolean(right.active)) - Number(Boolean(left.active));
       if (activeDelta) return activeDelta;
       const timeDelta = Date.parse(right.limitsUpdatedAt || "") - Date.parse(left.limitsUpdatedAt || "");
       if (Number.isFinite(timeDelta) && timeDelta) return timeDelta;
       return String(left.id || "").localeCompare(String(right.id || ""));
     })[0] || null;
+}
+
+function gptAccountLimitsCurrent(source) {
+  const updatedAt = Date.parse(source?.limitsUpdatedAt || "");
+  const age = Date.now() - updatedAt;
+  return Boolean(source?.active && source.quotaStatus === "ready" && Number.isFinite(age) && age >= -60_000 && age <= 15 * 60_000 &&
+    source.limits?.rows?.some((row) => !row.resetsAt || Date.parse(row.resetsAt) > Date.now()));
 }
 
 async function recheckGptAccounts() {
@@ -5886,7 +5903,7 @@ function normalizeLocalProvider(id, provider) {
     subscription,
     subscriptionConnectionAction: provider?.subscriptionConnectionAction || subscription?.connectionAction || null,
     subscriptionConflict: provider?.subscriptionConflict || subscription?.conflict || null,
-    message: localizeProviderMessage(
+    message: id === "openCode" && Number(provider?.totals?.allTime?.totalTokens) > 0 ? t("gptAccounts.openCodeUsage") : localizeProviderMessage(
       provider?.message,
       id === "copilot"
         ? "providers.messages.copilotLogTokens"
@@ -11609,8 +11626,8 @@ function formatPercent(value) {
 
 function formatLimitRemainingPercent(limit) {
   if (!limit) return "--";
-  if (Number.isFinite(Number(limit.remainingPercent))) return formatPercent(limit.remainingPercent);
-  if (Number.isFinite(Number(limit.usedPercent))) return formatPercent(Math.max(0, 100 - Number(limit.usedPercent)));
+  if (limit.remainingPercent != null && limit.remainingPercent !== "" && Number.isFinite(Number(limit.remainingPercent))) return formatPercent(limit.remainingPercent);
+  if (limit.usedPercent != null && limit.usedPercent !== "" && Number.isFinite(Number(limit.usedPercent))) return formatPercent(Math.max(0, 100 - Number(limit.usedPercent)));
   return "--";
 }
 
