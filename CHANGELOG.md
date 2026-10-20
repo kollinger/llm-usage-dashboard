@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.11.0-preview.4 - 2026-10-21
+
+### Improved
+
+- Merge pull request #58 from kollinger/kol-663-dashboard-whatsapp
+
+### Fixed
+
+- Deduplicate verified ChatGPT widget accounts (KOL-663)
+
 ## 1.11.0-preview.3 - 2026-10-20
 
 ### Added
