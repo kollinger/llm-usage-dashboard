@@ -1372,7 +1372,7 @@
     "sessions": "{count} Sitzungen"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Lokale Quelle",
     "open": "Desktop-Widget",
     "title": "Kontingente pro Konto",
@@ -1419,5 +1419,38 @@
     "bounded": "Auf {count} begrenzt; nutze Favoriten oder den Anbieterfilter.",
     "current": "KDE-Paket ist aktuell",
     "reloadHelp": "Die von Plasma geladene Version lässt sich hier nicht prüfen. Bleibt nach dem Update die alte Ansicht, speichere deine Arbeit, melde dich von Plasma ab und wieder an. Auch Entfernen und erneutes Hinzufügen kann die alte Ansicht aus dem Zwischenspeicher laden."
+  },
+  "sync": {
+    "title": "Privater Geräte-Sync",
+    "description": "Normalisierte Usage automatisch und idempotent mit einem privaten Collector abgleichen.",
+    "privacy": "Übertragen werden nur normalisierte Token-, Modell-, Zeit- und Zuordnungsdaten – keine Prompts, Transkripte, Rohlogs, Zugangsdaten oder lokalen Pfade.",
+    "enabled": "Hintergrund-Sync aktivieren",
+    "serverUrl": "Private Collector-URL",
+    "deviceName": "Gerätename",
+    "pairingCode": "Pairing-Code",
+    "save": "Sync-Einstellungen speichern",
+    "createSpace": "Sync-Space erstellen",
+    "join": "Mit Code verbinden",
+    "newPairingCode": "Neuen Pairing-Code erzeugen",
+    "syncNow": "Jetzt abgleichen",
+    "disconnect": "Verbindung trennen",
+    "connection": "Verbindung",
+    "pending": "Offline-Puffer",
+    "lastSuccess": "Letzter erfolgreicher Sync",
+    "lastError": "Letzter Fehler",
+    "deviceFilter": "Geräte",
+    "allDevices": "Alle Geräte",
+    "thisDevice": "Dieses Gerät",
+    "unknownDevice": "Gerät unbekannt",
+    "connected": "Verbunden als {device}",
+    "notConnected": "Nicht verbunden",
+    "queued": "{count} Ereignisse vorgemerkt",
+    "saved": "Sync-Einstellungen gespeichert.",
+    "pairingCreated": "Pairing-Code erzeugt.",
+    "synced": "Sync abgeschlossen.",
+    "disconnected": "Sync-Verbindung und lokale Zugangsdaten wurden gelöscht.",
+    "disconnectConfirm": "Dieses Gerät trennen und seine lokalen Sync-Zugangsdaten sowie den Puffer löschen?",
+    "actionFailed": "Sync-Aktion fehlgeschlagen: {message}",
+    "fallbackLocal": "Privater Sync ist nicht erreichbar; lokale Daten werden angezeigt. {message}"
   }
 }

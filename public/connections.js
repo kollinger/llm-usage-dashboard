@@ -315,6 +315,11 @@ function renderConnections(usage) {
     overview.insertAdjacentHTML("beforeend", additionalAccounts.map((account) => renderConnectedAccount(account)).join(""));
   }
   if (usage?.deviceSync) renderDeviceSync(usage.deviceSync);
+  if (connectionState.selectedDevice === "collector") {
+    connectionElement("deviceSyncCoverage").textContent = state.syncViewError
+      ? t("sync.fallbackLocal", { message: state.syncViewError }) : t("sync.description");
+    return;
+  }
   const coverage = usage?.syncCoverage;
   connectionElement("deviceSyncCoverage").textContent = coverage?.unavailable
     ? `${t("deviceSync.local")} · ${t("deviceSync.errors.default")}`
@@ -329,14 +334,16 @@ function renderDeviceSync(sync) {
   connectionElement("deviceSyncEnabled").checked = sync.enabled;
   if (document.activeElement !== connectionElement("deviceSyncName")) connectionElement("deviceSyncName").value = sync.name || "";
   connectionElement("deviceSyncRefreshBtn").disabled = !sync.enabled || connectionState.busy;
-  connectionElement("deviceViewControls").hidden = !sync.enabled;
+  const collectorAvailable = Boolean(state.syncStatus?.enabled && state.syncStatus?.connected);
+  connectionElement("deviceViewControls").hidden = !sync.enabled && !collectorAvailable;
   const devices = sync.devices || [];
   const peers = sync.peers || [];
-  const values = ["all", "local", ...devices.map((device) => device.id)];
+  const values = ["all", "local", ...devices.map((device) => device.id), ...(collectorAvailable ? ["collector"] : [])];
   if (!values.includes(connectionState.selectedDevice)) connectionState.selectedDevice = "local";
   connectionElement("deviceViewSelect").innerHTML = [
     `<option value="local">${escapeHtml(t("deviceSync.local"))}</option>`,
     `<option value="all">${escapeHtml(t("deviceSync.all"))}</option>`,
+    ...(collectorAvailable ? [`<option value="collector">${escapeHtml(t("sync.title"))}</option>`] : []),
     ...devices.filter((device) => device.id !== sync.deviceId).map((device) => `<option value="${escapeHtml(device.id)}">${escapeHtml(device.name)}</option>`)
   ].join("");
   connectionElement("deviceViewSelect").value = connectionState.selectedDevice;

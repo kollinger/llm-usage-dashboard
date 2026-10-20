@@ -1372,7 +1372,7 @@
     "sessions": "{count} 个会话"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "本地来源",
     "open": "桌面小组件",
     "title": "各账户配额",
@@ -1419,5 +1419,38 @@
     "bounded": "最多显示 {count} 个；请使用收藏或提供商筛选。",
     "current": "KDE 软件包已是最新",
     "reloadHelp": "此处无法检查 Plasma 已加载的版本。如果更新后仍显示旧视图，请保存工作，注销 Plasma 后重新登录。移除并重新添加部件也可能继续使用缓存的旧视图。"
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
   }
 }

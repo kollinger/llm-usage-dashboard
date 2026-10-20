@@ -38,10 +38,12 @@ const {
   normalizeConnectedSource,
   readSourceSettings
 } = require("./lib/source-settings");
-const { aggregateUsageEvents, hashEvidencePath, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
+const { aggregateUsageEvents, hashEvidencePath, normalizeUsageEvent, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
 const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildAccountHistories } = require("./lib/codex-reset-history");
 const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
+const { SyncLedger } = require("./lib/sync-ledger");
+const { LocalSyncClient, safeDelayUntil } = require("./lib/sync-client");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
   codexAccountObservationsFromAuth,
@@ -57,6 +59,12 @@ const {
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
+const SYNC_DATA_DIR = path.join(DATA_DIR, "cloud-sync");
+const SYNC_CLIENT_DATA_DIR = path.join(DATA_DIR, "cloud-sync-client");
+const SYNC_COLLECTOR_ENABLED = parseBoolean(process.env.LLM_USAGE_SYNC_COLLECTOR_ENABLED || "false");
+const SYNC_COLLECTOR_ADMIN_TOKEN = String(process.env.LLM_USAGE_SYNC_COLLECTOR_ADMIN_TOKEN || "").trim();
+const SYNC_SERVER_URL = String(process.env.LLM_USAGE_SYNC_SERVER_URL || "").trim();
+const SYNC_BACKGROUND_INTERVAL_MS = Math.max(5_000, envMs("LLM_USAGE_SYNC_INTERVAL_SECONDS", 60));
 const chatMetadataReader = createChatMetadataReader();
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
@@ -472,6 +480,16 @@ const LIVE_METRICS_PROCESS_GROUPS = [
 ];
 
 const app = express();
+const syncLedger = new SyncLedger({
+  dataDir: SYNC_DATA_DIR,
+  collectorVersion: packageInfo.version
+});
+const localSyncClient = new LocalSyncClient({
+  dataDir: SYNC_CLIENT_DATA_DIR,
+  appVersion: packageInfo.version,
+  collectorVersion: packageInfo.version,
+  serverUrl: SYNC_SERVER_URL
+});
 let currentDashboardUrl = null;
 const anthropicCache = createTimedCache();
 const openaiUsageCache = createTimedCache();
@@ -517,6 +535,9 @@ let gptAccountAuthWatchTimer = null;
 let gptAccountAuthWatchInitialTimer = null;
 let gptAccountAuthWatchSignature = null;
 let gptAccountAuthWatchPending = null;
+let localSyncCollectorTimer = null;
+let localSyncCollectorRunning = false;
+let localSyncCollectorStopped = true;
 
 function markInteractiveUsageRequest() {
   const wasIdle = !isInteractiveUsageRecent();
@@ -939,6 +960,54 @@ function electronSyncMiddleware(req, res, next) {
   return next();
 }
 
+function syncCollectorMiddleware(_req, res, next) {
+  if (!SYNC_COLLECTOR_ENABLED) {
+    return res.status(404).json({ error: "sync_collector_disabled", message: "Private sync collector is disabled." });
+  }
+  return next();
+}
+
+function syncCollectorAdminMiddleware(req, res, next) {
+  if (!SYNC_COLLECTOR_ENABLED) {
+    return res.status(404).json({ error: "sync_collector_disabled", message: "Private sync collector is disabled." });
+  }
+  if (!SYNC_COLLECTOR_ADMIN_TOKEN) return authMiddleware(req, res, next);
+  const token = bearerToken(req);
+  if (!safeTokenEqual(token, SYNC_COLLECTOR_ADMIN_TOKEN)) {
+    return res.status(401).json({ error: "sync_admin_forbidden", message: "Sync collector admin token is invalid." });
+  }
+  return next();
+}
+
+function bearerToken(req) {
+  const value = String(req.get("authorization") || "").trim();
+  const match = value.match(/^Bearer\s+(.+)$/iu);
+  return match ? match[1].trim() : "";
+}
+
+function requiredDeviceToken(req) {
+  const token = bearerToken(req);
+  if (!token) {
+    const error = new Error("A device bearer token is required.");
+    error.statusCode = 401;
+    error.code = "sync_device_forbidden";
+    throw error;
+  }
+  return token;
+}
+
+function safeTokenEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function requestOrigin(req) {
+  if (currentDashboardUrl) return currentDashboardUrl;
+  const host = String(req.get("host") || `127.0.0.1:${PORT}`).replace(/[\r\n]/gu, "");
+  return `${req.protocol === "https" ? "https" : "http"}://${host}`;
+}
+
 function hasOidcConfig() {
   return Boolean(
     process.env.OIDC_ISSUER_URL &&
@@ -1036,6 +1105,11 @@ app.get("/auth/oidc/callback", async (req, res) => {
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
     markInteractiveUsageRequest();
+    const collectorSync = {
+      ...(await localSyncClient.readPublicStatus()),
+      collectorEnabled: SYNC_COLLECTOR_ENABLED
+    };
+    const sendUsage = (value) => res.json({ ...value, sync: collectorSync });
     const force = parseBoolean(req.query.force);
     const usage = await readUsageDashboard({ force, staleWhileRefresh: !force });
     const selected = typeof req.query.device === "string" ? req.query.device : "local";
@@ -1046,26 +1120,26 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
           !cached.devices?.some((device) => deviceSync.config.revoked.includes(device.id)) &&
           (selected === "all" || cached.devices?.some((device) => device.id === selected))) {
         const combined = refreshCombinedUsageMetadata(usage, cached.value, [], selected);
-        return res.json({ ...combined, cache: cached.value.cache, deviceSync: sync });
+        return sendUsage({ ...combined, cache: cached.value.cache, deviceSync: sync });
       }
     }
     if (sync.enabled && selected !== "local") {
       if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
       if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
-        return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
+        return sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
       }
       const snapshots = [...deviceSync.snapshots.values()];
       const combined = await usageAggregation.get(usage, snapshots, selected, { force });
       const currentSync = deviceSync.status();
-      if (!currentSync.enabled) return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: currentSync });
+      if (!currentSync.enabled) return sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: currentSync });
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
       if (snapshots.length !== deviceSync.snapshots.size || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id))) {
         return res.status(409).json({ error: "device_scope_changed" });
       }
-      return res.json({ ...combined, deviceSync: currentSync });
+      return sendUsage({ ...combined, deviceSync: currentSync });
     }
-    res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
+    sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
   }
@@ -1227,6 +1301,201 @@ app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
   }
 });
 
+app.use("/api/sync/local", authMiddleware, localControlMiddleware);
+
+app.post("/api/sync/spaces", syncCollectorAdminMiddleware, async (req, res) => {
+  try {
+    const connection = await syncLedger.createSpace({
+      displayName: req.body?.displayName,
+      deviceName: req.body?.deviceName,
+      platform: req.body?.platform,
+      appVersion: req.body?.appVersion
+    });
+    res.status(201).json(connection);
+  } catch (error) {
+    sendApiError(res, error, "sync_space_create_failed");
+  }
+});
+
+app.post("/api/sync/pairing-codes", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.status(201).json(await syncLedger.createPairingCode(requiredDeviceToken(req), {
+      ttlMs: req.body?.ttlMs
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_pairing_create_failed");
+  }
+});
+
+app.post("/api/sync/devices", syncCollectorMiddleware, async (req, res) => {
+  try {
+    const connection = await syncLedger.joinWithPairingCode({
+      code: req.body?.code,
+      deviceName: req.body?.deviceName,
+      platform: req.body?.platform,
+      appVersion: req.body?.appVersion
+    });
+    res.status(201).json(connection);
+  } catch (error) {
+    sendApiError(res, error, "sync_device_join_failed");
+  }
+});
+
+app.get("/api/sync/devices", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.json({ devices: await syncLedger.listDevices(requiredDeviceToken(req)) });
+  } catch (error) {
+    sendApiError(res, error, "sync_devices_read_failed");
+  }
+});
+
+app.delete("/api/sync/devices/:id", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.json(await syncLedger.revokeDevice(requiredDeviceToken(req), req.params.id));
+  } catch (error) {
+    sendApiError(res, error, "sync_device_revoke_failed");
+  }
+});
+
+app.post("/api/sync/usage", syncCollectorMiddleware, async (req, res) => {
+  try {
+    const result = await syncLedger.upload(requiredDeviceToken(req), req.body);
+    res.status(result.conflicts.length ? 409 : 200).json(result);
+  } catch (error) {
+    sendApiError(res, error, "sync_usage_upload_failed");
+  }
+});
+
+app.get("/api/sync/usage", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.json(await syncLedger.queryUsage(requiredDeviceToken(req), {
+      deviceId: req.query.device_id,
+      providerId: req.query.provider,
+      dailyHistoryDays: DAILY_HISTORY_DAYS
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_usage_read_failed");
+  }
+});
+
+app.get("/api/sync/integrity", syncCollectorMiddleware, async (req, res) => {
+  try {
+    await syncLedger.authenticateDevice(requiredDeviceToken(req));
+    res.json(await syncLedger.verify());
+  } catch (error) {
+    sendApiError(res, error, "sync_integrity_read_failed");
+  }
+});
+
+app.post("/api/sync/reconcile", syncCollectorAdminMiddleware, async (_req, res) => {
+  try {
+    res.json(await syncLedger.reconcile());
+  } catch (error) {
+    sendApiError(res, error, "sync_reconcile_failed");
+  }
+});
+
+app.get("/api/sync/local/status", authMiddleware, async (_req, res) => {
+  try {
+    res.json({
+      ...(await localSyncClient.readPublicStatus()),
+      collectorEnabled: SYNC_COLLECTOR_ENABLED
+    });
+  } catch (error) {
+    sendApiError(res, error, "sync_status_read_failed");
+  }
+});
+
+app.post("/api/sync/local/settings", authMiddleware, async (req, res) => {
+  try {
+    res.json(await localSyncClient.updateSettings(req.body || {}));
+  } catch (error) {
+    sendApiError(res, error, "sync_settings_save_failed");
+  }
+});
+
+app.post("/api/sync/local/create-space", authMiddleware, async (req, res) => {
+  try {
+    if (!SYNC_COLLECTOR_ENABLED) {
+      const error = new Error("Private sync collector is disabled on this dashboard.");
+      error.statusCode = 409;
+      error.code = "sync_collector_disabled";
+      throw error;
+    }
+    const serverUrl = req.body?.serverUrl || SYNC_SERVER_URL || requestOrigin(req);
+    const connection = await syncLedger.createSpace({
+      displayName: req.body?.displayName,
+      deviceName: req.body?.deviceName,
+      platform: process.platform,
+      appVersion: packageInfo.version
+    });
+    const status = await localSyncClient.attachConnection(connection, {
+      serverUrl,
+      deviceName: req.body?.deviceName
+    });
+    res.status(201).json({ status, space: connection.space, device: connection.device });
+  } catch (error) {
+    sendApiError(res, error, "sync_local_space_create_failed");
+  }
+});
+
+app.post("/api/sync/local/join", authMiddleware, async (req, res) => {
+  try {
+    res.status(201).json(await localSyncClient.join({
+      serverUrl: req.body?.serverUrl,
+      deviceName: req.body?.deviceName,
+      pairingCode: req.body?.pairingCode
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_join_failed");
+  }
+});
+
+app.post("/api/sync/local/pairing-code", authMiddleware, async (req, res) => {
+  try {
+    res.status(201).json(await localSyncClient.createPairingCode({ ttlMs: req.body?.ttlMs }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_pairing_failed");
+  }
+});
+
+app.post("/api/sync/local/sync-now", authMiddleware, async (_req, res) => {
+  try {
+    await readUsageDashboard({ force: true });
+    const result = await localSyncClient.flush({ force: true });
+    res.json({ result, status: await localSyncClient.readPublicStatus() });
+  } catch (error) {
+    sendApiError(res, error, "sync_local_run_failed");
+  }
+});
+
+app.get("/api/sync/local/devices", authMiddleware, async (_req, res) => {
+  try {
+    res.json({ devices: await localSyncClient.listDevices() });
+  } catch (error) {
+    sendApiError(res, error, "sync_local_devices_failed");
+  }
+});
+
+app.get("/api/sync/local/usage", authMiddleware, async (req, res) => {
+  try {
+    res.json(await localSyncClient.queryUsage({
+      deviceId: req.query.device_id,
+      providerId: req.query.provider
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_usage_failed");
+  }
+});
+
+app.delete("/api/sync/local/connection", authMiddleware, async (req, res) => {
+  try {
+    res.json(await localSyncClient.disconnect({ clearQueue: req.query.keep_queue !== "1" }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_disconnect_failed");
+  }
+});
+
 async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   if (force) prepareForcedGptAccountRefresh();
   if (!force && !usageCache.value) {
@@ -1365,6 +1634,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
         if (deviceSync.error === "capture_failed") deviceSync.error = null;
       } catch { deviceSync.error = "capture_failed"; }
     }
+    const syncUsageEvents = providers
+      .flatMap((provider) => provider?._usageEvents || []);
+    await localSyncClient.captureUsageEvents(syncUsageEvents).catch(async (error) => {
+      await localSyncClient.recordError(error).catch(() => {});
+    });
 
     const now = new Date().toISOString();
     const value = {
@@ -4671,8 +4945,10 @@ async function readCodexUsage(options = {}) {
   let latestEvent = null;
   let eventCount = 0;
   let sessionsWithEvents = 0;
+  let duplicateEventsSkipped = 0;
   const rateLimitEvents = [];
   const usageEvents = [];
+  const seenUsageEventKeys = new Set();
 
   pruneUsageFileScanCache(usageFileScanCaches.codex, files);
   for (const fileRecord of files) {
@@ -4694,7 +4970,7 @@ async function readCodexUsage(options = {}) {
           rateLimitEvents.push(rateLimitEvent);
         }
       }
-      usageEvents.push({
+      const usageEvent = {
         providerId: "codex",
         conversation: conversationDescriptor("codex", entry.chat?.sessionId || fileRecord.sessionId, entry.chat || {}),
         chatContext: { cwd: entry.chat?.cwd, originator: entry.chat?.originator },
@@ -4708,6 +4984,7 @@ async function readCodexUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
+          sourceEventSha256: entry.sourceEventSha256,
           sessionId: entry.chat?.sessionId || fileRecord.sessionId,
           rolloutSessionId: entry.chat?.sessionId || fileRecord.sessionId
         },
@@ -4715,7 +4992,15 @@ async function readCodexUsage(options = {}) {
           sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex",
           reasoningEffort
         }
-      });
+      };
+      const normalizedUsageEvent = normalizeUsageEvent(usageEvent);
+      if (!normalizedUsageEvent) continue;
+      if (seenUsageEventKeys.has(normalizedUsageEvent.dedupeKey)) {
+        duplicateEventsSkipped += 1;
+        continue;
+      }
+      seenUsageEventKeys.add(normalizedUsageEvent.dedupeKey);
+      usageEvents.push(usageEvent);
       addUsage(aggregates, usage);
       if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
       if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(last24h, usage);
@@ -4781,7 +5066,9 @@ async function readCodexUsage(options = {}) {
       codexHomes: CODEX_HOMES,
       rootsScanned: roots,
       filesScanned: files.length,
-      duplicatesSkipped,
+      duplicatesSkipped: duplicatesSkipped + duplicateEventsSkipped,
+      duplicateFilesSkipped: duplicatesSkipped,
+      duplicateEventsSkipped,
       sessionsWithEvents,
       eventCount,
       liveRateLimits: liveRateLimits?.source || null
@@ -4872,6 +5159,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       rateLimits,
       eventId: event.id || event.payload?.id || null,
       line: meta?.line,
+      sourceEventSha256: meta?.rawLineSha256,
       isSparkRateLimit: isCodexSparkRateLimit(rateLimits),
       isSparkUsage: isCodexSparkUsageEvent(currentModel, rateLimits)
     });
@@ -4971,6 +5259,7 @@ async function readCopilotUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash: hashEvidencePath(fileRecord.realPath),
           line: meta?.line,
+          sourceEventSha256: meta?.rawLineSha256,
           sessionStart: data.sessionStartTime || timestampMs
         },
         metadata: {
@@ -6081,6 +6370,7 @@ async function readClaudeCodeUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
+          sourceEventSha256: entry.sourceEventSha256,
           requestId: entry.requestId,
           messageId: entry.messageId,
           uuid: entry.uuid,
@@ -6233,7 +6523,8 @@ async function parseClaudeTranscriptFileEvents(fileRecord) {
       requestId: event.requestId || null,
       messageId: event.message?.id || null,
       uuid: event.uuid || null,
-      line: meta?.line
+      line: meta?.line,
+      sourceEventSha256: meta?.rawLineSha256
     });
   });
   return events;
@@ -6381,7 +6672,8 @@ async function readGeminiUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
-          index: entry.index
+          index: entry.index,
+          sourceEventSha256: entry.sourceEventSha256
         },
         metadata: {
           sourceGroupId: "gemini"
@@ -6475,7 +6767,8 @@ async function parseGeminiUsageFileEvents(fileRecord) {
       eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
       sessionId: findFirstValue(event, ["sessionId", "session_id", "conversationId", "conversation_id"]) || null,
       line: meta?.line,
-      index: meta?.index
+      index: meta?.index,
+      sourceEventSha256: meta?.rawLineSha256 || meta?.rawObjectSha256
     });
   });
   return events;
@@ -7681,7 +7974,8 @@ function normalizeGlmUsageImportEvent(event, fileRecord, meta) {
       realpath: fileRecord.realPath,
       realpathHash: hashEvidencePath(fileRecord.realPath),
       line: meta?.line,
-      index: meta?.index
+      index: meta?.index,
+      sourceEventSha256: meta?.rawLineSha256 || meta?.rawObjectSha256
     },
     metadata: {
       sourceGroupId: "glm",
@@ -7870,7 +8164,8 @@ async function readOllamaUsage(options = {}) {
         evidence: {
           realpath: fileRecord.realPath,
           realpathHash: hashEvidencePath(fileRecord.realPath),
-          line: meta?.line
+          line: meta?.line,
+          sourceEventSha256: meta?.rawLineSha256
         },
         metadata: {
           sourceGroupId: "ollama"
@@ -8225,7 +8520,11 @@ async function readJsonl(file, onObject, acceptedRootTypes = null) {
     }
     if (!line.trim()) continue;
     try {
-      onObject(JSON.parse(line), { file, line: lineNumber });
+      onObject(JSON.parse(line), {
+        file,
+        line: lineNumber,
+        rawLineSha256: crypto.createHash("sha256").update(line).digest("hex")
+      });
     } catch {
       // Corrupt or partial JSONL lines can happen during active writes.
     }
@@ -8241,7 +8540,11 @@ async function readUsageObjects(file, onObject) {
     const parsed = JSON.parse(await fsp.readFile(file, "utf8"));
     let index = 0;
     visitJson(parsed, (object) => {
-      onObject(object, { file, index });
+      onObject(object, {
+        file,
+        index,
+        rawObjectSha256: crypto.createHash("sha256").update(JSON.stringify(object)).digest("hex")
+      });
       index += 1;
     });
   } catch {
@@ -11421,6 +11724,43 @@ async function appendOllamaUsageLog(event) {
   await fsp.appendFile(OLLAMA_USAGE_FILE, `${JSON.stringify(event)}\n`);
 }
 
+function startLocalSyncCollector() {
+  if (localSyncCollectorTimer || localSyncCollectorRunning) return;
+  localSyncCollectorStopped = false;
+  const schedule = (delayMs) => {
+    if (localSyncCollectorStopped) return;
+    const safeDelayMs = Math.max(0, Number(delayMs) || 0);
+    localSyncCollectorTimer = setTimeout(run, safeDelayMs);
+    if (typeof localSyncCollectorTimer.unref === "function") localSyncCollectorTimer.unref();
+  };
+  const run = async () => {
+    localSyncCollectorTimer = null;
+    if (localSyncCollectorRunning) return schedule(SYNC_BACKGROUND_INTERVAL_MS);
+    localSyncCollectorRunning = true;
+    try {
+      const status = await localSyncClient.readPublicStatus();
+      if (status.enabled && status.connected) {
+        await readUsageDashboard();
+        await localSyncClient.flush();
+      }
+    } catch (error) {
+      await localSyncClient.recordError(error).catch(() => {});
+    } finally {
+      localSyncCollectorRunning = false;
+      const status = await localSyncClient.readPublicStatus().catch(() => null);
+      const retryDelayMs = safeDelayUntil(status?.nextRetryAt, Date.now());
+      schedule(retryDelayMs > 0 ? Math.min(retryDelayMs, SYNC_BACKGROUND_INTERVAL_MS) : SYNC_BACKGROUND_INTERVAL_MS);
+    }
+  };
+  schedule(Math.min(1500, SYNC_BACKGROUND_INTERVAL_MS));
+}
+
+function stopLocalSyncCollector() {
+  localSyncCollectorStopped = true;
+  if (localSyncCollectorTimer) clearTimeout(localSyncCollectorTimer);
+  localSyncCollectorTimer = null;
+}
+
 function startDashboard(options = {}) {
   const port = Number(options.port ?? PORT);
   const dashboardServer = app.listen(port, options.host, () => {
@@ -11431,6 +11771,8 @@ function startDashboard(options = {}) {
   });
   const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy(options.host);
   startGptAccountAuthWatch();
+  startLocalSyncCollector();
+  dashboardServer.once("close", stopLocalSyncCollector);
   const stopCodexResetCollector = startCodexResetCollector();
   deviceSync.initialize().catch(() => { deviceSync.error = "storage_unavailable"; });
   let syncReading = false;
