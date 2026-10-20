@@ -3,6 +3,7 @@ import CoreGraphics
 import Foundation
 
 let point = CGPoint(x: Double(CommandLine.arguments[1])!, y: Double(CommandLine.arguments[2])!)
+print("macOS input probe: postEventAccess=\(CGPreflightPostEventAccess()) target=\(point)")
 CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: point, mouseButton: .left)!.post(tap: .cghidEventTap)
 CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left)!.post(tap: .cghidEventTap)
 Thread.sleep(forTimeInterval: 0.07)

@@ -398,9 +398,27 @@ app.on("window-all-closed", () => {});
     assert(template.isTemplateImage());
     assert(template.getScaleFactors().includes(2), "Retina representation is packaged");
     assert(tray.getBounds().width > 0, "native menu-bar item is placed");
+    const nativeEvents = [];
+    for (const name of ["mouse-down", "mouse-up", "click"]) tray.on(name, () => { nativeEvents.push(name); });
+    app.on("browser-window-created", (_event, created) => {
+      for (const name of ["ready-to-show", "focus", "blur", "closed"]) created.on(name, () => {
+        console.log(`macOS panel event: ${name}`);
+      });
+    });
+    // Distinguish panel behavior from the CI host's external-input permission.
+    tray.emit("click");
+    await until(() => Boolean(controller.getPopupWindow()?.isVisible()), "native panel opens through registered tray action");
+    await ready(controller.getPopupWindow());
+    controller.getPopupWindow().webContents.sendInputEvent({ type: "keyDown", keyCode: "Escape" });
+    await until(() => !controller.getPopupWindow(), "native panel preliminary Escape");
+    nativeEvents.length = 0;
     const { execFile } = require("node:child_process");
     const { promisify } = require("node:util");
-    const click = async (x, y) => promisify(execFile)("/usr/bin/swift", [path.join(__dirname, "mac-menu-bar-click.swift"), String(x), String(y)], { timeout: 60_000 });
+    const click = async (x, y) => {
+      const result = await promisify(execFile)("/usr/bin/swift", [path.join(__dirname, "mac-menu-bar-click.swift"), String(x), String(y)], { timeout: 60_000 });
+      console.log(result.stdout.trim());
+      console.log(`macOS tray input: ${JSON.stringify({ bounds: tray.getBounds(), events: nativeEvents })}`);
+    };
     for (let cycle = 0; cycle < 2; cycle++) {
       const anchor = tray.getBounds();
       await click(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2);
