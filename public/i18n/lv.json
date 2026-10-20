@@ -1408,13 +1408,15 @@
     "compactHelp": "Atsevišķs lietotnes logs Linux, macOS un Windows sistēmām.",
     "install": "Instalēt KDE logrīku",
     "update": "Atjaunināt KDE logrīku",
-    "installHelp": "Instalē tikai jūsu lietotājam. Labais klikšķis uz darbvirsmas → Pievienot logrīkus → LLM Usage Dashboard. Pēc atjaunināšanas izrakstieties no Plasma un piesakieties vēlreiz, lai ielādētu jauno versiju.",
-    "installed": "Instalētā versija: {version}.",
+    "installHelp": "Instalē tikai jūsu lietotājam. Ar labo peles pogu noklikšķiniet uz paneļa → Pievienot logrīkus → LLM Usage Dashboard, lai iegūtu kompaktu ikonu ar atveramu pārskatu. Darbvirsmā tiek rādīts lielais logrīks.",
+    "installed": "Logrīka pakotne diskā: {version}.",
     "installing": "Instalē…",
     "requirements": "Nepieciešams Plasma 6, kpackagetool6, Python 3 un iekļautā logrīka pakotne.",
     "unsupported": "Vietējam logrīkam nepieciešams Linux ar Plasma 6. Šeit izmantojiet kompakto logu.",
     "installError": "Instalēšana neizdevās. Pārbaudiet Plasma 6 prasības un mēģiniet vēlreiz.",
     "offline": "Lietotne nav pieejama. Palaidiet darbvirsmas lietotni; iepriekšējie rādījumi ir novecojuši.",
-    "bounded": "Ierobežots līdz {count}; izmantojiet izlasi vai pakalpojumu sniedzēja filtru."
+    "bounded": "Ierobežots līdz {count}; izmantojiet izlasi vai pakalpojumu sniedzēja filtru.",
+    "current": "KDE pakotne ir atjaunināta",
+    "reloadHelp": "Šeit nevar pārbaudīt Plasma ielādēto versiju. Ja pēc atjaunināšanas paliek vecais skats, saglabājiet darbu, izrakstieties no Plasma un pierakstieties vēlreiz. Logrīka noņemšana un atkārtota pievienošana var izmantot veco kešatmiņā saglabāto skatu."
   }
 }
