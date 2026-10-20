@@ -67,6 +67,15 @@ const state = {
   pendingSubscriptionReread: null,
   subscriptionRereadProvider: null,
   sourceOps: {},
+  syncStatus: null,
+  syncDevices: [],
+  syncUsage: null,
+  syncUsagePayload: null,
+  syncDeviceFilter: "all",
+  syncViewError: "",
+  syncViewLoading: false,
+  syncPairingCode: null,
+  syncActionPending: false,
   settingsAutosaveTimers: {},
   settingsToastTimer: null,
   activeRendererNotifications: new Set(),
@@ -92,11 +101,30 @@ const els = {
   gptAccountList: document.getElementById("gptAccountList"),
   gptAccountsNote: document.getElementById("gptAccountsNote"),
   gptAccountsRecheckBtn: document.getElementById("gptAccountsRecheckBtn"),
+  syncSettingsSection: document.getElementById("syncSettingsSection"),
+  syncEnabled: document.getElementById("syncEnabled"),
+  syncServerUrl: document.getElementById("syncServerUrl"),
+  syncDeviceName: document.getElementById("syncDeviceName"),
+  syncPairingCodeField: document.getElementById("syncPairingCodeField"),
+  syncPairingCode: document.getElementById("syncPairingCode"),
+  syncSaveBtn: document.getElementById("syncSaveBtn"),
+  syncCreateSpaceBtn: document.getElementById("syncCreateSpaceBtn"),
+  syncJoinBtn: document.getElementById("syncJoinBtn"),
+  syncNewPairingCodeBtn: document.getElementById("syncNewPairingCodeBtn"),
+  syncNowBtn: document.getElementById("syncNowBtn"),
+  syncDisconnectBtn: document.getElementById("syncDisconnectBtn"),
+  syncPairingOutput: document.getElementById("syncPairingOutput"),
+  syncConnectionStatus: document.getElementById("syncConnectionStatus"),
+  syncPendingStatus: document.getElementById("syncPendingStatus"),
+  syncLastSuccess: document.getElementById("syncLastSuccess"),
+  syncLastError: document.getElementById("syncLastError"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
   layoutResetBtn: document.getElementById("layoutResetBtn"),
   layoutLiveRegion: document.getElementById("layoutLiveRegion"),
   providerFilterBtn: document.getElementById("providerFilterBtn"),
+  syncDeviceFilterWrap: document.getElementById("syncDeviceFilterWrap"),
+  syncDeviceFilter: document.getElementById("syncDeviceFilter"),
   loginBtn: document.getElementById("loginBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
   loginDialog: document.getElementById("loginDialog"),
@@ -351,6 +379,7 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
+const SYNC_DEVICE_FILTER_STORAGE_KEY = "llmUsage.syncDeviceFilter";
 const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
 const LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
@@ -2392,6 +2421,7 @@ async function init() {
   loadThemePreference();
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
+  loadSyncDeviceFilterPreference();
   loadDashboardSectionOrderPreference();
   applyDashboardSectionOrder();
   loadSummaryMetricOrderPreference();
@@ -2438,6 +2468,7 @@ function bindEvents() {
   els.settingsBtn.addEventListener("click", openSettings);
   els.layoutResetBtn?.addEventListener("click", resetLayoutOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
+  els.syncDeviceFilter?.addEventListener("change", () => setSyncDeviceFilter(els.syncDeviceFilter.value));
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.mobileAccessOpen.addEventListener("click", () => changeMobileAccess(true));
   els.mobileAccessDisable.addEventListener("click", () => changeMobileAccess(false));
@@ -2470,6 +2501,12 @@ function bindEvents() {
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
+  els.syncSaveBtn?.addEventListener("click", saveSyncSettings);
+  els.syncCreateSpaceBtn?.addEventListener("click", createSyncSpace);
+  els.syncJoinBtn?.addEventListener("click", joinSyncSpace);
+  els.syncNewPairingCodeBtn?.addEventListener("click", createSyncPairingCode);
+  els.syncNowBtn?.addEventListener("click", runSyncNow);
+  els.syncDisconnectBtn?.addEventListener("click", disconnectSync);
   setupConnections();
   els.supportReportDownloadBtn?.addEventListener("click", downloadSupportReport);
   els.supportReportCopyBtn?.addEventListener("click", copySupportReportSummary);
@@ -2585,7 +2622,8 @@ function bindEvents() {
   els.pricingModelFilter?.addEventListener("input", () => {
     state.pricingModelFilter = els.pricingModelFilter.value;
     if (state.usage) {
-      renderPricing(state.usage.local, chartRowsForCurrentRange(state.usage.local), buildProviders(state.usage));
+      const local = activeDashboardUsage();
+      renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
     }
   });
   els.pricingViewToggle?.addEventListener("click", (event) => {
@@ -2595,7 +2633,8 @@ function bindEvents() {
       ? button.dataset.pricingView
       : "api";
     if (state.usage) {
-      renderPricing(state.usage.local, chartRowsForCurrentRange(state.usage.local), buildProviders(state.usage));
+      const local = activeDashboardUsage();
+      renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
     }
   });
   els.loginForm.addEventListener("submit", login);
@@ -2768,6 +2807,7 @@ function rerenderLanguageSensitiveViews() {
     renderLiveGauges(state.systemMetrics);
     renderSourceSettings();
   }
+  renderSyncSettings();
   refreshIcons();
 }
 
@@ -2790,9 +2830,10 @@ function sortPricing(key) {
       : pricingSortDefaults[key] || "asc";
   state.pricingSort = { key, direction };
   if (state.usage) {
+    const local = activeDashboardUsage();
     renderPricing(
-      state.usage.local,
-      chartRowsForCurrentRange(state.usage.local),
+      local,
+      chartRowsForCurrentRange(local),
       buildProviders(state.usage)
     );
   }
@@ -2804,6 +2845,116 @@ function loadProviderFilterPreference() {
   } catch {
     state.showAllProviders = false;
   }
+}
+
+function loadSyncDeviceFilterPreference() {
+  try {
+    const value = String(localStorage.getItem(SYNC_DEVICE_FILTER_STORAGE_KEY) || "all");
+    state.syncDeviceFilter = validSyncDeviceFilter(value) ? value : "all";
+  } catch {
+    state.syncDeviceFilter = "all";
+  }
+}
+
+function validSyncDeviceFilter(value) {
+  return ["all", "this", "unknown"].includes(value) || /^device_[a-zA-Z0-9]+$/u.test(value);
+}
+
+async function setSyncDeviceFilter(value) {
+  state.syncDeviceFilter = validSyncDeviceFilter(value) ? value : "all";
+  try {
+    localStorage.setItem(SYNC_DEVICE_FILTER_STORAGE_KEY, state.syncDeviceFilter);
+  } catch {
+    // The selection still works for this session when storage is unavailable.
+  }
+  requestChartLatestForViewChange();
+  requestOverviewHistoryLatestForViewChange();
+  await loadSyncUsageView({ renderAfter: true });
+}
+
+function activeDashboardUsage() {
+  if (connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected && state.syncUsage) return state.syncUsage;
+  return state.usage?.local || null;
+}
+
+async function loadSyncUsageView({ renderAfter = false } = {}) {
+  const requestId = state.syncViewRequestId = (state.syncViewRequestId || 0) + 1;
+  const isCurrent = () => requestId === state.syncViewRequestId && connectionState.selectedDevice === "collector";
+  const connected = Boolean(connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected);
+  if (!connected) {
+    state.syncDevices = [];
+    state.syncUsage = null;
+    state.syncUsagePayload = null;
+    state.syncViewError = "";
+    state.syncViewLoading = false;
+    if (renderAfter && state.usage) renderUsageIfChanged({ force: true });
+    return;
+  }
+  state.syncViewLoading = true;
+  try {
+    const deviceResult = await fetchJson(`/api/sync/local/devices?ts=${Date.now()}`);
+    if (!isCurrent()) return;
+    state.syncDevices = Array.isArray(deviceResult.devices) ? deviceResult.devices : [];
+    if (
+      state.syncDeviceFilter.startsWith("device_") &&
+      !state.syncDevices.some((device) => device.id === state.syncDeviceFilter)
+    ) {
+      state.syncDeviceFilter = "all";
+      try {
+        localStorage.setItem(SYNC_DEVICE_FILTER_STORAGE_KEY, "all");
+      } catch {
+        // Keep the in-memory fallback when storage is unavailable.
+      }
+    }
+    const params = new URLSearchParams({
+      device_id: state.syncDeviceFilter,
+      ts: String(Date.now())
+    });
+    const payload = await fetchJson(`/api/sync/local/usage?${params.toString()}`);
+    if (!isCurrent()) return;
+    state.syncUsagePayload = payload;
+    state.syncUsage = payload.usage || null;
+    state.syncViewError = "";
+  } catch (error) {
+    if (!isCurrent()) return;
+    state.syncUsage = null;
+    state.syncUsagePayload = null;
+    state.syncViewError = error.message || t("sync.actionFailed");
+  } finally {
+    if (requestId === state.syncViewRequestId) {
+      state.syncViewLoading = false;
+      if (renderAfter && state.usage && isCurrent()) renderUsageIfChanged({ force: true });
+    }
+  }
+}
+
+function renderSyncDeviceFilter() {
+  if (!els.syncDeviceFilterWrap || !els.syncDeviceFilter) return;
+  const connected = Boolean(connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected);
+  els.syncDeviceFilterWrap.hidden = !connected;
+  if (!connected) {
+    els.syncDeviceFilter.innerHTML = "";
+    return;
+  }
+  const currentDeviceId = state.syncStatus?.deviceId;
+  const options = [
+    { value: "all", label: t("sync.allDevices") },
+    { value: "this", label: t("sync.thisDevice") },
+    ...state.syncDevices
+      .filter((device) => device.id !== currentDeviceId)
+      .map((device) => ({ value: device.id, label: device.displayName || device.id })),
+    { value: "unknown", label: t("sync.unknownDevice") }
+  ];
+  if (!options.some((option) => option.value === state.syncDeviceFilter)) state.syncDeviceFilter = "all";
+  els.syncDeviceFilter.innerHTML = options.map((option) => {
+    return `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`;
+  }).join("");
+  els.syncDeviceFilter.value = state.syncDeviceFilter;
+  els.syncDeviceFilter.disabled = state.syncViewLoading;
+  els.syncDeviceFilterWrap.dataset.status = state.syncViewError ? "error" : "ready";
+  els.syncDeviceFilterWrap.title = state.syncViewError
+    ? t("sync.fallbackLocal", { message: state.syncViewError })
+    : "";
 }
 
 function loadDashboardSectionOrderPreference() {
@@ -4220,7 +4371,7 @@ function systemMetricsPollDelayMs() {
 }
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
-  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: !state.auth || state.auth.authenticated, force });
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: connectionState.selectedDevice !== "collector" && (!state.auth || state.auth.authenticated), force });
   if (state.loadingUsage) {
     if (connectionState.selectedDevice !== state.loadingUsageDevice) {
       state.queuedUsageScope = true;
@@ -4250,7 +4401,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
     params.set("lang", state.language || DEFAULT_LANGUAGE);
-    params.set("device", requestedDevice);
+    params.set("device", requestedDevice === "collector" ? "local" : requestedDevice);
     if (force) params.set("force", "1");
     // Subscription history changes rarely; refresh it on force and on a slow
     // cadence instead of alongside every usage poll.
@@ -4274,6 +4425,17 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     }
     if (refreshSubscriptionHistory && subscriptionHistory) state.subscriptionHistoryFetchedAt = Date.now();
     state.usage = usage;
+    state.syncStatus = usage.sync || null;
+    if (!connectionState.collectorScopeInitialized && state.syncStatus) {
+      connectionState.collectorScopeInitialized = true;
+      if (!usage.deviceSync?.enabled && state.syncStatus.enabled && state.syncStatus.connected) connectionState.selectedDevice = "collector";
+    }
+    const loadedSource = connectionState.selectedDevice;
+    await loadSyncUsageView({ renderAfter: false });
+    if (connectionState.selectedDevice !== loadedSource) {
+      state.queuedUsageScope = true;
+      return;
+    }
     state.subscriptionHistory = subscriptionHistory || state.subscriptionHistory || { version: 1, entries: [] };
     renderUsageIfChanged({ force });
   } catch (error) {
@@ -4427,9 +4589,11 @@ function renderLocked() {
   updateSummaryMetricLayout();
   updateProviderViewNotice([], []);
   updateProviderFilterControl([], []);
+  renderSyncDeviceFilter();
   updateLayoutControls([], []);
   renderSourceDiagnostics();
   renderSourceSettings();
+  renderSyncSettings();
   renderGptAccounts(null);
 }
 
@@ -4438,7 +4602,7 @@ function renderLocked() {
 // few polls (so relative-time labels stay honest) still render normally.
 function renderUsageIfChanged({ force = false } = {}) {
   const volatileKeys = new Set(["generatedAt", "updatedAt"]);
-  const signature = `${state.language}|${JSON.stringify(state.usage, (key, value) =>
+  const signature = `${state.language}|${state.syncDeviceFilter}|${state.syncViewError}|${JSON.stringify(state.syncUsage)}|${JSON.stringify(state.usage, (key, value) =>
     volatileKeys.has(key) ? undefined : value
   )}|${JSON.stringify(state.subscriptionHistory)}`;
   const unchanged = signature === state.lastUsageRenderSignature;
@@ -4452,8 +4616,9 @@ function renderUsageIfChanged({ force = false } = {}) {
 }
 
 function render() {
-  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: !state.auth || state.auth.authenticated });
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: connectionState.selectedDevice !== "collector" && (!state.auth || state.auth.authenticated) });
   const usage = state.usage;
+  const local = activeDashboardUsage();
   const historyNotice = document.getElementById("usageRefreshNotice");
   if (historyNotice) {
     historyNotice.hidden = !usage.cache?.refreshing;
@@ -4471,13 +4636,14 @@ function render() {
   applyDashboardSectionOrder();
   updateProviderViewNotice(providers);
   updateProviderFilterControl(providers, visibleProviders);
+  renderSyncDeviceFilter();
   updateLayoutControls(providers, visibleProviders);
-  const allDaily = usage.local?.daily || [];
+  const allDaily = local?.daily || [];
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
-  const chartRows = buildHistoryRowsForFilter(usage.local, filteredDaily, state.chartTimeFilter);
-  const selectedRangeRows = usageRowsForSelectedRange(usage.local, chartRows);
-  renderSummary(visibleProviders, usage.local, filteredDaily);
+  const chartRows = buildHistoryRowsForFilter(local, filteredDaily, state.chartTimeFilter);
+  const selectedRangeRows = usageRowsForSelectedRange(local, chartRows);
+  renderSummary(visibleProviders, local, filteredDaily);
   renderGptAccounts(usage.gptAccounts);
   renderConnections(usage);
   renderCodexResetHistory();
@@ -4507,11 +4673,12 @@ function render() {
     els.sourceTotals.innerHTML = renderTokenBreakdownSummary(chartRows, state.chartBreakdownMode);
   }
   els.chartWindowInsights.innerHTML = renderChartWindowInsights(chartRows, state.chartMode, state.chartBreakdownMode);
-  renderTokenList(usage.local?.totals?.allTime);
+  renderTokenList(local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
-  renderPricing(usage.local, chartRows, providers);
+  renderPricing(local, chartRows, providers);
   renderSourceDiagnostics();
   renderSourceSettings();
+  renderSyncSettings();
   refreshIcons();
 }
 
@@ -5212,7 +5379,7 @@ function renderOverviewHistory(daily) {
     : chartTokenSegmentEntries(activeRows, state.chartBreakdownMode);
   const rawMax = Math.max(...rows.map((row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0)), mode === "costs" ? 0.01 : 1);
   const scale = mode === "costs" ? chartCostScale(rawMax) : chartTokenScale(rawMax);
-  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(state.usage?.local?.daily || []);
+  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(activeDashboardUsage()?.daily || []);
   els.overviewHistoryModeToggle.innerHTML = renderChartModeToggle();
   if (els.overviewHistoryBreakdownToggle) {
     els.overviewHistoryBreakdownToggle.hidden = mode === "costs";
@@ -10044,6 +10211,7 @@ async function openSettings(tab = "accounts") {
   renderSourceSettings();
   renderSupportReport();
   await Promise.all([
+    loadSyncSettings(),
     loadSubscriptionSettings(),
     loadUpdateSettingsAndStatus(),
     loadNotificationSettings(),
@@ -10052,6 +10220,176 @@ async function openSettings(tab = "accounts") {
     loadConnectionSettings(),
     loadMobileAccess()
   ]);
+}
+
+async function loadSyncSettings() {
+  if (!els.syncSettingsSection) return null;
+  try {
+    const status = await fetchJson(`/api/sync/local/status?ts=${Date.now()}`);
+    state.syncStatus = status;
+    renderSyncSettings();
+    renderSyncDeviceFilter();
+    return status;
+  } catch (error) {
+    state.syncViewError = error.message || t("sync.actionFailed");
+    renderSyncSettings();
+    return null;
+  }
+}
+
+function renderSyncSettings() {
+  if (!els.syncSettingsSection) return;
+  const status = state.syncStatus || {};
+  const connected = Boolean(status.connected);
+  const busy = Boolean(state.syncActionPending);
+  if (els.syncEnabled && document.activeElement !== els.syncEnabled) els.syncEnabled.checked = Boolean(status.enabled);
+  if (els.syncServerUrl && document.activeElement !== els.syncServerUrl) els.syncServerUrl.value = status.serverUrl || "";
+  if (els.syncDeviceName && document.activeElement !== els.syncDeviceName) els.syncDeviceName.value = status.deviceName || "";
+  if (els.syncPairingCodeField) els.syncPairingCodeField.hidden = connected;
+  if (els.syncPairingCode) els.syncPairingCode.disabled = connected || busy;
+  if (els.syncServerUrl) els.syncServerUrl.disabled = connected || busy;
+  if (els.syncDeviceName) els.syncDeviceName.disabled = connected || busy;
+  if (els.syncEnabled) els.syncEnabled.disabled = busy;
+  if (els.syncSaveBtn) els.syncSaveBtn.disabled = busy;
+  if (els.syncCreateSpaceBtn) {
+    els.syncCreateSpaceBtn.hidden = connected || !status.collectorEnabled;
+    els.syncCreateSpaceBtn.disabled = busy;
+  }
+  if (els.syncJoinBtn) {
+    els.syncJoinBtn.hidden = connected;
+    els.syncJoinBtn.disabled = busy;
+  }
+  for (const button of [els.syncNewPairingCodeBtn, els.syncNowBtn, els.syncDisconnectBtn]) {
+    if (!button) continue;
+    button.hidden = !connected;
+    button.disabled = busy;
+  }
+  if (els.syncPairingOutput) {
+    const pairing = state.syncPairingCode;
+    els.syncPairingOutput.hidden = !pairing?.code;
+    els.syncPairingOutput.textContent = pairing?.code
+      ? `${pairing.code}${pairing.expiresAt ? ` · ${formatDateTime(pairing.expiresAt)}` : ""}`
+      : "";
+  }
+  if (els.syncConnectionStatus) {
+    els.syncConnectionStatus.textContent = connected
+      ? t("sync.connected", { device: status.deviceName || status.deviceId || "--" })
+      : t("sync.notConnected");
+  }
+  if (els.syncPendingStatus) {
+    els.syncPendingStatus.textContent = t("sync.queued", { count: formatNumber(status.pendingCount || 0) });
+  }
+  if (els.syncLastSuccess) els.syncLastSuccess.textContent = formatDateTime(status.lastSuccessAt);
+  if (els.syncLastError) els.syncLastError.textContent = state.syncViewError || status.lastError || "--";
+}
+
+async function saveSyncSettings() {
+  await runSyncAction(async () => {
+    const status = await fetchJson("/api/sync/local/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        enabled: Boolean(els.syncEnabled?.checked),
+        serverUrl: String(els.syncServerUrl?.value || "").trim(),
+        deviceName: String(els.syncDeviceName?.value || "").trim()
+      })
+    });
+    state.syncStatus = { ...status, collectorEnabled: state.syncStatus?.collectorEnabled };
+    if (status.enabled && status.connected) connectionState.selectedDevice = "collector";
+    await loadSyncUsageView({ renderAfter: true });
+    showSettingsToast(t("sync.saved"), "ready");
+  });
+}
+
+async function createSyncSpace() {
+  await runSyncAction(async () => {
+    const serverUrl = String(els.syncServerUrl?.value || "").trim();
+    await fetchJson("/api/sync/local/create-space", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        serverUrl,
+        deviceName: String(els.syncDeviceName?.value || "").trim()
+      })
+    });
+    await loadSyncSettings();
+    connectionState.selectedDevice = "collector";
+    await loadUsage({ force: true });
+    showSettingsToast(t("sync.saved"), "ready");
+  });
+}
+
+async function joinSyncSpace() {
+  await runSyncAction(async () => {
+    await fetchJson("/api/sync/local/join", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        serverUrl: String(els.syncServerUrl?.value || "").trim(),
+        deviceName: String(els.syncDeviceName?.value || "").trim(),
+        pairingCode: String(els.syncPairingCode?.value || "").trim()
+      })
+    });
+    if (els.syncPairingCode) els.syncPairingCode.value = "";
+    await loadSyncSettings();
+    connectionState.selectedDevice = "collector";
+    await loadUsage({ force: true });
+    showSettingsToast(t("sync.saved"), "ready");
+  });
+}
+
+async function createSyncPairingCode() {
+  await runSyncAction(async () => {
+    state.syncPairingCode = await fetchJson("/api/sync/local/pairing-code", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}"
+    });
+    showSettingsToast(t("sync.pairingCreated"), "ready");
+  });
+}
+
+async function runSyncNow() {
+  await runSyncAction(async () => {
+    const response = await fetchJson("/api/sync/local/sync-now", { method: "POST" });
+    state.syncStatus = {
+      ...(response.status || state.syncStatus),
+      collectorEnabled: state.syncStatus?.collectorEnabled
+    };
+    await loadSyncUsageView({ renderAfter: true });
+    showSettingsToast(t("sync.synced"), "ready");
+  });
+}
+
+async function disconnectSync() {
+  if (typeof window.confirm === "function" && !window.confirm(t("sync.disconnectConfirm"))) return;
+  await runSyncAction(async () => {
+    await fetchJson("/api/sync/local/connection", { method: "DELETE" });
+    state.syncPairingCode = null;
+    state.syncUsage = null;
+    state.syncUsagePayload = null;
+    state.syncDevices = [];
+    await loadSyncSettings();
+    await loadUsage({ force: true });
+    showSettingsToast(t("sync.disconnected"), "ready");
+  });
+}
+
+async function runSyncAction(action) {
+  if (state.syncActionPending) return;
+  state.syncActionPending = true;
+  state.syncViewError = "";
+  renderSyncSettings();
+  try {
+    await action();
+  } catch (error) {
+    state.syncViewError = error.message || t("sync.actionFailed");
+    showSettingsToast(t("sync.actionFailed", { message: state.syncViewError }), "error", { persistMs: 5000 });
+  } finally {
+    state.syncActionPending = false;
+    renderSyncSettings();
+    renderSyncDeviceFilter();
+  }
 }
 
 function renderMobileAccess(value = {}, busy = false) {

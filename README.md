@@ -23,6 +23,8 @@ LLM Usage Dashboard is an independent project by [Gerhard Kollinger](https://git
 - Chat and ticket rankings: top 10 or a searchable paginated list, token/API-equivalent sorting, provider/model filters, and expandable usage and run details.
 - Multilingual UI with system-language detection and a settings language selector.
 - Optional password login and OIDC/SSO.
+- Optional private cloud sync with deliberate pairing, restart-safe uploads,
+  global event deduplication, and per-device dashboard filters.
 - Electron builds for macOS, Linux AppImage, and Windows.
 
 ## Chat and ticket usage
@@ -82,6 +84,34 @@ npm start
 Open <http://localhost:4177>.
 
 By default the dashboard is local-unlocked. Set `DASHBOARD_PASSWORD` if you expose the port beyond your own machine. If `SESSION_SECRET` is unset, the server generates a random one on startup; set a stable value if you want login sessions to survive restarts.
+
+## Private Cloud Sync
+
+Cloud sync is an opt-in private MVP. One trusted dashboard can run the
+collector, while each desktop or web installation remains fully usable in
+local-only mode. Connected devices upload only normalized usage metrics and
+safe lineage identifiers—never prompts, transcripts, raw provider payloads,
+credentials, account identities, absolute paths, usernames, or command lines.
+
+Enable a private collector with:
+
+```text
+LLM_USAGE_SYNC_COLLECTOR_ENABLED=true
+LLM_USAGE_SYNC_COLLECTOR_ADMIN_TOKEN=<long-random-secret>
+```
+
+Then open **Settings → Advanced → Private device sync**, enable sync, enter the server URL
+and a safe device label, and create the first private space. Generate a
+short-lived one-time pairing code on that device to join another. The main
+dashboard can show all devices, this device, a named device, or records with
+unknown attribution. Failed uploads remain in a local outbox and retry after a
+restart.
+
+Keep the collector behind a private network or authenticated HTTPS endpoint.
+Its append-only ledger, conflict audit, credentials, and client queue live in
+the ignored data directory. See [Private Cloud Sync MVP](docs/cloud-sync-mvp.md)
+for the event contract, API, integrity/reconciliation behavior, configuration,
+and verification commands.
 
 ## Desktop App
 
@@ -389,6 +419,10 @@ OPENAI_ADMIN_KEY=
 ANTHROPIC_ADMIN_KEY=
 ANTHROPIC_WORKSPACE_ID=
 ANTHROPIC_API_CACHE_SECONDS=60
+LLM_USAGE_SYNC_COLLECTOR_ENABLED=false
+LLM_USAGE_SYNC_COLLECTOR_ADMIN_TOKEN=
+LLM_USAGE_SYNC_SERVER_URL=
+LLM_USAGE_SYNC_INTERVAL_SECONDS=60
 ```
 
 OIDC/SSO is optional:

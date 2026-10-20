@@ -131,6 +131,7 @@ const scan = {
   chatMetadataReader: { read: async () => ({ sessions: {} }) }, uniquePaths: (values) => values, CODEX_HOMES: [],
   sourcePathEntries: () => [], deviceSync: { config: {}, snapshots: new Map() }, DAILY_HISTORY_DAYS: 180,
   usageAggregation: { aggregateLocal: async () => ({ local: {} }) }, buildLocalAggregate: () => ({}), stripProviderUsageEvents: (value) => value,
+  localSyncClient: { captureUsageEvents: async () => ({ skipped: "sync_disabled_or_unpaired" }) },
   overlayRestoredClaudeQuota: (value) => value, overlayCurrentCodexQuota: (value) => value, codexLiveRateLimitsCache: {}, applyCodexCreditExpiry: async (value) => value
 };
 for (const name of ["readCodexUsage", "readOpenCodeGptUsage", "readCopilotUsage", "readGeminiUsage", "readGlmUsage", "readOllamaUsage", "readOpenAiUsage", "readAnthropicUsage"])

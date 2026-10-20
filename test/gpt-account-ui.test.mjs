@@ -111,7 +111,7 @@ assert.deepEqual(Array.from(connections[0].applications), ["codex", "openCode"])
 assert.equal(connections[1].limits.rows[0].remainingPercent, 15);
 assert.equal(connections[1].quotaStatus, "stale");
 assert.equal(connections[1].status, "auth_required");
-vm.runInContext(await fs.readFile(new URL("../public/connections.js", import.meta.url), "utf8"), context);
+// readDashboardSource includes connections.js alongside the dashboard scripts.
 context.accountsFixture = connections;
 const connectionHtml = vm.runInContext("accountsFixture.map(account => renderConnectedAccount(account)).join('')", context);
 for (const text of ["plus", "team", "OpenCode", "78%", "15%", "2099", english.gptAccounts.savedLimits, english.gptAccounts.profileNote, english.connections.status.auth_required]) {
