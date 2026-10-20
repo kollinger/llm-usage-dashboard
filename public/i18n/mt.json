@@ -1372,6 +1372,7 @@
     "sessions": "{count} sessjonijiet"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Sors lokali",
     "open": "Widget tad-desktop",
     "title": "Kwoti tal-kontijiet",

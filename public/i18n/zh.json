@@ -1372,6 +1372,7 @@
     "sessions": "{count} 个会话"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "本地来源",
     "open": "桌面小组件",
     "title": "各账户配额",

@@ -1372,6 +1372,7 @@
     "sessions": "{count} sesijas"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Lokāls avots",
     "open": "Darbvirsmas logrīks",
     "title": "Kontu kvotas",

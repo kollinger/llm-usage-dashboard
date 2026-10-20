@@ -1372,6 +1372,7 @@
     "sessions": "{count} сеансов"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Локальный источник",
     "open": "Виджет рабочего стола",
     "title": "Квоты аккаунтов",

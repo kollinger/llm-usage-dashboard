@@ -161,4 +161,45 @@ TestCase {
         verify(findChild(accountView, "accountSource0").text.length > 0);
         capture("claude-local-arabic");
     }
+    function test_claude_quota_scopes() {
+        accountView.snapshot = Fixtures.cases.claudeLabels;
+        tryCompare(list(), "count", 1);
+        var rows = Fixtures.cases.claudeLabels.accounts[0].windows;
+        var labels = ["5h", "All models · Week", "Sonnet only · Week", "Fable · Week", "Fable Extended · Week",
+                      "Claude Design · Week", rows[6].label + " · Week", "Limit · Week", "Fable Zero · Week"];
+        rows.forEach(function(row, index) {
+            var label = findChild(accountView, "quotaLabel0_" + index);
+            tryVerify(function() { return label.text.replace(/[\u2068\u2069]/g, "") === labels[index]; });
+            compare(findChild(accountView, "remaining0_" + index).text,
+                    row.remainingPercent === null ? "—" : accountView.t("limits.leftValue", {percent: accountView.number(row.remainingPercent, 1)}));
+            compare(findChild(accountView, "quotaReset0_" + index).text,
+                    accountView.t("limits.resetPrefix", {time: accountView.date(row.resetsAt)}));
+            compare(findChild(accountView, "quotaMeter0_" + index).visible, row.remainingPercent !== null);
+            var quality = findChild(accountView, "quality0_" + index).text;
+            if (row.status === "stale") verify(quality.indexOf("Stale") >= 0);
+            else compare(quality, accountView.t(row.status === "unavailable" ? "widget.unavailable" : "widget.qualityMeasured"));
+        });
+        ["de", "ar", "fi"].forEach(function(language) {
+            accountView.language = language;
+            for (var cycle = 0; cycle < 2; cycle++) {
+                [320, 539, 540, 541, 560, 780].forEach(function(width) {
+                    test.width = width; test.height = width === 780 ? 840 : 680;
+                    accountView.textScale = width === 560 ? 1.3 : 1;
+                    wait(40); waitForRendering(accountView);
+                    rows.forEach(function(row, index) {
+                        var label = findChild(accountView, "quotaLabel0_" + index);
+                        verify(label.width > 0 && label.paintedWidth <= label.width + 1, "Scope fits its column: " + language + "/" + width);
+                        verify(!label.truncated && label.height >= label.paintedHeight, "Full wrapped scope remains readable");
+                        compare(label.text, accountView.quotaLabel(row, "claude"));
+                    });
+                    verify(list().width <= test.width && list().height > 0);
+                    list().positionViewAtEnd(); waitForRendering(accountView);
+                    verify(list().contentY >= 0);
+                    list().positionViewAtBeginning();
+                    if (cycle === 1 && (language === "de" && width === 780 || language === "ar" && width === 560))
+                        capture("claude-scopes-" + language + "-" + width);
+                });
+            }
+        });
+    }
 }

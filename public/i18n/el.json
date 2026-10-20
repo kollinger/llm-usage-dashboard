@@ -1372,6 +1372,7 @@
     "sessions": "{count} συνεδρίες"
   },
   "widget": {
+    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
     "localSource": "Τοπική πηγή",
     "open": "Γραφικό στοιχείο επιφάνειας εργασίας",
     "title": "Όρια ανά λογαριασμό",

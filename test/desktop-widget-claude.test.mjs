@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import "./quota-labels.test.mjs";
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import path from "node:path";

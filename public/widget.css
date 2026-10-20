@@ -33,7 +33,7 @@ html:has(.desktop-widget) { font-size: 14px; height: 100%; }
 .widget-windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .8rem; min-width: 0; }
 .widget-window { min-width: 0; }
 .widget-window-heading { display: flex; gap: .35rem; justify-content: space-between; align-items: baseline; }
-.widget-window-label { color: var(--ink-muted); font-size: .93rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.widget-window-label { color: var(--ink-muted); font-size: .93rem; min-width: 0; overflow-wrap: anywhere; unicode-bidi: plaintext; }
 .widget-window-value { font-size: 1.08rem; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .widget-track { height: 4px; background: var(--track); border-radius: 4px; overflow: hidden; margin: .25rem 0; }
 .widget-track span { display: block; height: 100%; background: var(--green); }

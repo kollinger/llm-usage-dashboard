@@ -39,18 +39,25 @@
     });
     render();
   }
-  function windowLabel(window) {
+  function windowLabel(window, provider) {
     if (window.key === "fiveHour" || window.windowMinutes === 300) return t("limits.fiveHour");
-    if (window.key === "weekly" || window.windowMinutes === 10080) return t("limits.weekly");
+    if (window.key === "weekly" || window.key === "allModels" || window.windowMinutes === 10080) {
+      const period = t("limits.weekly");
+      if (provider !== "claude") return period;
+      const scopeKey = window.key === "weekly" || window.key === "allModels" ? "allModels" :
+        window.key === "sonnetOnly" ? "sonnetOnly" : window.key === "claudeDesign" ? "claudeDesign" : null;
+      const scope = scopeKey ? t(`limits.${scopeKey}`) : window.label || t("limits.default");
+      return t("widget.scopedPeriod", { scope, period });
+    }
     return window.label || (window.windowMinutes ? t("widget.minutes", { minutes: number(window.windowMinutes) }) : t("limits.default"));
   }
-  function renderWindow(window) {
+  function renderWindow(window, provider) {
     const remaining = typeof window.remainingPercent === "number" && Number.isFinite(window.remainingPercent) ? window.remainingPercent : null;
     const stale = remaining !== null && (failed || window.status === "stale" || !window.measuredAt ||
       Date.now() - Date.parse(window.measuredAt) > (snapshot?.staleAfterMs || 900_000) ||
       (window.resetsAt && Date.parse(window.resetsAt) <= Date.now()));
     const status = remaining === null ? "unavailable" : stale ? "stale" : "current";
-    const label = windowLabel(window);
+    const label = windowLabel(window, provider);
     const value = remaining === null ? "—" : t("limits.leftValue", { percent: number(remaining, 1) });
     const reset = t("limits.resetPrefix", { time: date(window.resetsAt) });
     const qualityKey = { measured: "qualityMeasured", calculated_from_logs: "qualityCalculated", estimated: "qualityEstimated" }[window.quality] || "unavailable";
@@ -69,7 +76,7 @@
     return `<article class="widget-account" role="listitem" data-account="${escape(account.id)}">
       <button class="widget-star" data-favorite="${escape(account.id)}" type="button" aria-pressed="${favorite}" aria-label="${escape(action)}" title="${escape(action)}">${favorite ? "★" : "☆"}</button>
       <div class="widget-identity"><div class="widget-name-line" title="${escape(label)}"><bdi class="widget-name">${escape(account.label)}</bdi>${account.labelIndex ? `<span class="widget-number">${escape(number(account.labelIndex))}</span>` : ""}</div><span class="widget-source" title="${escape(providerNames[account.provider])}">${escape(sources || providerNames[account.provider])}</span></div>
-      ${account.windows?.length ? `<div class="widget-windows">${account.windows.map(renderWindow).join("")}</div>` : `<p class="widget-missing">${escape(t("widget.noQuota"))}</p>`}
+      ${account.windows?.length ? `<div class="widget-windows">${account.windows.map((window) => renderWindow(window, account.provider)).join("")}</div>` : `<p class="widget-missing">${escape(t("widget.noQuota"))}</p>`}
     </article>`;
   }
   function render() {
