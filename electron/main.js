@@ -14,6 +14,7 @@ const { notificationMessage } = require("../lib/mobile-notifications");
 const { EVENT_TYPES } = require("../lib/quota-notifications");
 const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
 const { createDesktopWidget } = require("./desktop-widget");
+const { createMacMenuBar } = require("./mac-menu-bar");
 const { createPlasmaWidget } = require("./plasma-widget");
 const { configurePublishedUpdates, safeUpdateError } = require("./published-update-provider");
 
@@ -39,6 +40,7 @@ let lastNotificationStatusSignature = null;
 let themePreference = "system";
 let languagePreference = null;
 let desktopWidget = null;
+let macMenuBar = null;
 let plasmaWidget = null;
 // Plan-probe backoff state per domain: { until, failures, planType, successAt }
 const planProbeBackoff = new Map();
@@ -2578,6 +2580,8 @@ app.whenReady().then(async () => {
       }
     }
   });
+  macMenuBar = createMacMenuBar({ Tray: require("electron").Tray, nativeImage: require("electron").nativeImage,
+    screen: require("electron").screen, widget: desktopWidget });
   mobileAccess = createDesktopMobileAccess({ dataDir: process.env.LLM_USAGE_DATA_DIR,
     upstream: `http://127.0.0.1:${port}`, label: os.hostname(),
     legacyDirectory: path.join(app.getPath("appData"), "LLM Usage Dashboard LAN Prototype", "mobile-prototype") });
@@ -2621,6 +2625,7 @@ app.on("before-quit", (event) => {
     event.preventDefault(); mobileShutdown = true; clearInterval(mobileRefreshTimer);
     Promise.allSettled([mobileAccess?.stop(), plasmaWidget?.dispose()]).finally(() => app.quit()); return;
   }
+  macMenuBar?.dispose(); macMenuBar = null;
   desktopWidget?.dispose(); desktopWidget = null;
   removeInstanceMarker().catch(() => {});
   closeServer(dashboardServer);

@@ -96,7 +96,7 @@ class FakeWindow extends EventEmitter {
     super(); this.options = options; this.bounds = { ...options }; this.pinned = false; this.destroyed = false;
     this.webContents = new EventEmitter(); this.webContents.mainFrame = { url: "" };
     this.webContents.setWindowOpenHandler = (handler) => { this.newWindow = handler; };
-    this.webContents.send = () => {}; windows.push(this);
+    this.sent = []; this.webContents.send = (...args) => this.sent.push(args); windows.push(this);
   }
   isDestroyed() { return this.destroyed; }
   isMinimized() { return false; }
@@ -157,6 +157,39 @@ try {
     assert.equal(controller.getWindow(), null);
   }
   assert.deepEqual(targets, ["accounts", "accounts", "accounts"]);
+  controller.open();
+  const compact = controller.getWindow();
+  const savedBounds = { ...compact.getBounds() };
+  for (let cycle = 0; cycle < 3; cycle++) {
+    controller.openPopup({ x: 40, y: 30, width: 780, height: 700 });
+    const popup = controller.getPopupWindow();
+    controller.openPopup({ x: 40, y: 30, width: 780, height: 700 });
+    assert.equal(controller.getPopupWindow(), popup);
+    assert.equal(popup.options.frame, false);
+    assert.equal(popup.options.webPreferences.sandbox, true);
+    assert.equal(popup.options.webPreferences.contextIsolation, true);
+    assert.equal(handlers.get("widget:state")(event(popup)).presentation, "popup");
+    assert.equal(handlers.get("widget:state")(event(popup)).pinSupported, false);
+    assert.throws(() => handlers.get("widget:pin")(event(popup), true), /unsupported_widget_setting/);
+    assert.throws(() => handlers.get("widget:open")(event(popup)), /untrusted_widget_request/);
+    assert.throws(() => handlers.get("widget:state")({ ...event(popup), senderFrame: { url: popup.webContents.mainFrame.url } }), /untrusted_widget_request/);
+    handlers.get("widget:preferences")(event(popup), { provider: "claude", scale: 1.3 });
+    assert.equal(controller.state().preferences.provider, "claude", "preferences are shared with the compact window");
+    assert.equal(compact.sent.at(-1)[0], "widget:state-changed");
+    assert.equal(compact.sent.at(-1)[1].preferences.provider, "claude");
+    assert.equal(popup.sent.length, 0, "do not echo an older optimistic edit back over the sender's newer inputs");
+    let prevented = false;
+    popup.webContents.emit("will-navigate", { preventDefault() { prevented = true; } }, "http://localhost:1234/");
+    assert(prevented);
+    if (cycle === 0) {
+      popup.webContents.emit("before-input-event", { preventDefault() {} }, { type: "keyDown", key: "Escape" });
+    } else if (cycle === 1) popup.emit("blur");
+    else handlers.get("widget:close")(event(popup));
+    assert.equal(controller.getPopupWindow(), null);
+    assert.equal(controller.getWindow(), compact, "closing the popup preserves the separate compact window");
+    assert.deepEqual(compact.getBounds(), savedBounds);
+  }
+  handlers.get("widget:preferences")(event(compact), { scale: 1.15 });
   controller.dispose(); assert.equal(handlers.size, 0); assert.equal(screen.listenerCount("display-removed"), 0);
   controller = createDesktopWidget({ ...options, isWayland: true });
   controller.open();

@@ -111,6 +111,7 @@
     el("widgetFavorites").setAttribute("aria-pressed", String(preferences.view === "favorites"));
     el("widgetCount").textContent = t("widget.count", { shown: number(shown.length), total: number(accounts.length) });
     const pin = el("widgetPin");
+    el("widgetClose").hidden = nativeState.presentation !== "popup";
     pin.hidden = !nativeState.pinSupported;
     pin.setAttribute("aria-pressed", String(Boolean(nativeState.pinned)));
     pin.setAttribute("aria-label", t(nativeState.pinned ? "widget.unpin" : "widget.pin"));
@@ -145,6 +146,7 @@
   el("widgetDashboard").addEventListener("click", () => dashboard("dashboard"));
   el("widgetAccounts").addEventListener("click", () => dashboard("accounts"));
   el("widgetRefresh").addEventListener("click", refresh);
+  el("widgetClose").addEventListener("click", () => bridge?.close().catch(() => {}));
   el("widgetPin").addEventListener("click", async () => {
     const button = el("widgetPin");
     button.disabled = true;
@@ -168,12 +170,17 @@
     if (theme) window.llmUsageTheme?.setPreference(theme);
     if (value && value !== language) loadLanguage(value).catch(() => { failed = true; render(); });
   });
+  const removeState = bridge?.onState((value) => {
+    nativeState = value;
+    if (value.preferences) preferences = value.preferences;
+    render();
+  });
   window.addEventListener("storage", (event) => {
     if (event.key === "llmUsage.language" && event.newValue) loadLanguage(event.newValue).catch(() => {});
   });
   const themeObserver = new MutationObserver(render);
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); request?.abort(); removeAppearance?.(); themeObserver.disconnect(); }, { once: true });
+  window.addEventListener("pagehide", () => { stopped = true; clearTimeout(timer); request?.abort(); removeAppearance?.(); removeState?.(); themeObserver.disconnect(); }, { once: true });
   (async () => {
     nativeState = await bridge?.getState().catch(() => ({})) || {};
     if (nativeState.preferences) preferences = nativeState.preferences;

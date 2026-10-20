@@ -6,8 +6,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const http = require("node:http");
-const { app, BrowserWindow, ipcMain, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, screen, Tray, nativeImage } = require("electron");
 const { createDesktopWidget } = require("../electron/desktop-widget");
+const { createMacMenuBar, popupBounds } = require("../electron/mac-menu-bar");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
 const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
 const providerColors = require("../public/provider-colors");
@@ -124,7 +125,7 @@ async function checkProviderColors(window) {
     assert.equal(item.windows[0].color, item.windows[2].color, "real zero keeps its provider identity");
   }
 }
-let controller, main, plasmaInstaller;
+let controller, main, plasmaInstaller, menuBar;
 app.on("window-all-closed", () => {});
 (async () => {
   await app.whenReady();
@@ -377,13 +378,138 @@ app.on("window-all-closed", () => {});
     await until(() => evaluate(main, "!document.getElementById('desktopWidgetDialog').open"), "compact-window choice closes installer dialog");
   }
   console.log("Plasma installer UI: actual dashboard HTML/JS/IPC, separate compact/native choices and German/Arabic responsive dialog passed.");
+  // Reuse the real, sandboxed widget renderer and synthetic authenticated server
+  // for menu-bar/native-panel checks on every desktop CI runner.
+  await evaluate(widget, "window.llmUsageWidget.savePreferences({ favorites: [], view: 'all', provider: 'all', scale: 1 })");
+  widget.close(); main.close(); main = null;
+  count = 5; fixture = widgetUsageFixture(count); requirePlasmaAuth = false;
+  language = "en"; theme = "light";
+  menuBar = createMacMenuBar({ Tray, nativeImage, screen, widget: controller });
+  const tray = menuBar.getTray();
+  const area = screen.getPrimaryDisplay().workArea;
+  const openPopup = () => {
+    if (tray) tray.emit("click");
+    else controller.openPopup(popupBounds({ x: area.x + area.width - 30, y: area.y - 24, width: 18, height: 24 }, area));
+    return controller.getPopupWindow();
+  };
+  if (process.platform === "darwin") {
+    assert(tray, "actual native macOS Tray exists");
+    const template = nativeImage.createFromPath(path.resolve(__dirname, "../electron/assets/menu-barTemplate.png"));
+    assert(template.isTemplateImage());
+    assert(template.getScaleFactors().includes(2), "Retina representation is packaged");
+    console.log(`macOS initial tray bounds: ${JSON.stringify(tray.getBounds())}`);
+    // Cocoa lays out a newly added status item on the next native run-loop
+    // turn. Its width can be assigned before its height/position are ready.
+    await until(() => { const bounds = tray.getBounds(); return bounds.width > 0 && bounds.height > 0; }, "native menu-bar item is placed");
+    console.log(`macOS placed tray bounds: ${JSON.stringify(tray.getBounds())}`);
+    const nativeEvents = [];
+    for (const name of ["mouse-down", "mouse-up", "click"]) tray.on(name, () => { nativeEvents.push(name); });
+    app.on("browser-window-created", (_event, created) => {
+      for (const name of ["ready-to-show", "focus", "blur", "closed"]) created.on(name, () => {
+        console.log(`macOS panel event: ${name}`);
+      });
+    });
+    // Distinguish panel behavior from the CI host's external-input permission.
+    tray.emit("click");
+    await until(() => Boolean(controller.getPopupWindow()?.isVisible()), "native panel opens through registered tray action");
+    await ready(controller.getPopupWindow());
+    controller.getPopupWindow().webContents.sendInputEvent({ type: "keyDown", keyCode: "Escape" });
+    await until(() => !controller.getPopupWindow(), "native panel preliminary Escape");
+    nativeEvents.length = 0;
+    const { execFile } = require("node:child_process");
+    const { promisify } = require("node:util");
+    const click = async (x, y) => {
+      const result = await promisify(execFile)("/usr/bin/swift", [path.join(__dirname, "mac-menu-bar-click.swift"), String(x), String(y)], { timeout: 60_000 });
+      console.log(result.stdout.trim());
+      console.log(`macOS tray input: ${JSON.stringify({ bounds: tray.getBounds(), events: nativeEvents })}`);
+    };
+    for (let cycle = 0; cycle < 2; cycle++) {
+      const anchor = tray.getBounds();
+      await click(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2);
+      await until(() => Boolean(controller.getPopupWindow()?.isVisible()), "real macOS menu-bar click opens native panel");
+      await ready(controller.getPopupWindow());
+      const actual = controller.getPopupWindow().getBounds();
+      const expected = popupBounds(anchor, screen.getDisplayMatching(anchor).workArea);
+      assert.deepEqual(actual, expected, "native panel is anchored below menu-bar item");
+      await click(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2);
+      await until(() => !controller.getPopupWindow(), "real second menu-bar click closes native panel");
+    }
+    await click(tray.getBounds().x + 5, tray.getBounds().y + 5);
+    await until(() => Boolean(controller.getPopupWindow()?.isVisible()), "native outside-click setup");
+    await click(area.x + 5, area.y + area.height - 5);
+    await until(() => !controller.getPopupWindow(), "real click outside dismisses panel");
+    console.log("macOS native menu bar: template/Retina image, actual OS clicks, anchored panel, repeated toggle and outside-click dismissal passed.");
+  } else assert.equal(tray, null, "Linux/Windows do not create a macOS tray");
+  let popup = openPopup(); await ready(popup);
+  assert.equal(await evaluate(popup, "typeof require + ':' + typeof process"), "undefined:undefined");
+  assert.equal(await evaluate(popup, "document.getElementById('widgetPin').hidden"), true);
+  assert.equal(await evaluate(popup, "document.getElementById('widgetClose').hidden"), false);
+  assert.equal(await evaluate(popup, "window.llmUsageWidget.setPinned(true).then(() => false, () => true)"), true);
+  await evaluate(popup, "location.href = '/'; true"); await pause(70);
+  assert.equal(popup.webContents.getURL(), `${origin}/widget.html`);
+  assert.equal(await evaluate(popup, "window.open('/')"), null);
+  for (const code of languages) {
+    language = code; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+    await until(() => evaluate(popup, `document.documentElement.lang === '${code}'`), `popup locale ${code}`);
+    await layout(popup, popup.getBounds().width >= 780 && popup.getBounds().height >= 645);
+  }
+  for (const [code, preference] of [["en", "light"], ["de", "dark"], ["ar", "light"]]) {
+    language = code; theme = preference;
+    controller.updateTheme({ preference: theme, color: theme === "dark" ? "#0f1512" : "#f6f7f4" });
+    await until(() => evaluate(popup, `document.documentElement.lang === '${code}' && document.documentElement.dataset.theme === '${theme}'`), `popup ${code}/${theme}`);
+    for (const scale of [1, 1.15, 1.3, 1]) {
+      await evaluate(popup, `document.getElementById('widgetScale').value = '${scale}'; document.getElementById('widgetScale').dispatchEvent(new Event('change'))`);
+      await layout(popup);
+    }
+    await capture(popup, `menubar-five-${code}-${theme}`);
+  }
+  count = 24; fixture = widgetUsageFixture(count);
+  await evaluate(popup, "document.getElementById('widgetRefresh').click()"); await ready(popup);
+  assert((await layout(popup)).listScroll);
+  await evaluate(popup, "document.querySelector('[data-favorite]').click(); document.getElementById('widgetFavorites').click()");
+  await until(() => evaluate(popup, "document.querySelectorAll('.widget-account').length === 1"), "popup favorites");
+  await evaluate(popup, "document.getElementById('widgetAll').click(); document.getElementById('widgetProvider').value = 'claude'; document.getElementById('widgetProvider').dispatchEvent(new Event('change'))");
+  assert.equal(controller.state().preferences.provider, "claude");
+  popup.webContents.sendInputEvent({ type: "keyDown", keyCode: "Escape" });
+  await until(() => !controller.getPopupWindow(), "native Escape dismisses panel");
+  for (let cycle = 0; cycle < 2; cycle++) {
+    popup = openPopup();
+    await until(() => evaluate(popup, "document.getElementById('widgetProvider').value === 'claude' && document.querySelectorAll('.widget-account').length > 0").catch(() => false), "popup filter survives reopening");
+    const oldGeneration = String(generation);
+    // Native OS focus transfer produces the real blur event (no event replay).
+    const outside = new BrowserWindow({ width: 200, height: 150, show: false });
+    outside.show(); outside.focus();
+    await until(() => !controller.getPopupWindow(), "native focus outside dismisses panel");
+    outside.close();
+    const retiredAt = Date.now(); await pause(350);
+    assert.equal((requests.get(oldGeneration) || []).filter((startedAt) => startedAt > retiredAt).length, 0, "closed popup renderer retires its display timer");
+    assert.equal(controller.getWindow(), null, "tray never opens the full dashboard or compact window");
+  }
+  popup = openPopup();
+  await until(() => evaluate(popup, "document.querySelectorAll('.widget-account').length > 0").catch(() => false), "popup before state synchronization");
+  // Both views share one preferences owner and one IPC registration. Open the
+  // compact window, dismiss the panel, then reopen it beside the compact view.
+  controller.open(); widget = controller.getWindow();
+  await until(() => evaluate(widget, "document.getElementById('widgetProvider').value === 'claude'").catch(() => false), "compact inherits popup filter");
+  controller.closePopup(); popup = openPopup();
+  await until(() => evaluate(popup, "document.querySelectorAll('.widget-account').length > 0").catch(() => false), "popup beside compact window");
+  await evaluate(popup, "document.getElementById('widgetProvider').value = 'all'; document.getElementById('widgetProvider').dispatchEvent(new Event('change')); document.getElementById('widgetAll').click()");
+  await until(() => evaluate(widget, "document.getElementById('widgetProvider').value === 'all' && document.querySelectorAll('.widget-account').length === 24"), "live preferences synchronized into compact window");
+  status = 401; await pause(250);
+  await until(() => evaluate(popup, "document.querySelectorAll('.widget-account').length === 0"), "popup logout clears quota data");
+  status = 200; await ready(popup);
+  await evaluate(popup, "document.getElementById('widgetClose').click(); true");
+  await until(() => !controller.getPopupWindow(), "localized popup close button");
+  assert.equal(controller.getWindow(), widget);
+  menuBar.dispose(); menuBar = null;
+  console.log(`Menu-bar popup native: ${process.platform}; all 27 locales, five/24 accounts, theme/scale, zero/missing/stale, Escape/focus/close, shared preferences, logout and renderer lifecycle passed.`);
   console.log(`Desktop widget native: ${process.platform}/${wayland ? "Wayland" : "native"}; ${process.env.WIDGET_NATIVE_NO_SANDBOX === "1" ? "CI OS-sandbox exception; " : "standard launcher; "}0/1/2/5/10/24 accounts, 27 locales, theme/scale, boundary layouts, zero/missing/stale, controls, isolation and three lifecycle cycles passed.`);
 })().then(async () => {
-  controller?.dispose(); main?.close(); server.closeAllConnections();
+  menuBar?.dispose(); controller?.dispose(); main?.close(); server.closeAllConnections();
   await plasmaInstaller?.dispose();
   await new Promise((resolve) => server.close(resolve)); app.exit(0);
 }).catch(async (error) => {
   console.error(error);
   if (controller?.getWindow() && !controller.getWindow().isDestroyed()) await capture(controller.getWindow(), "failure").catch(() => {});
-  controller?.dispose(); main?.close(); server.closeAllConnections(); server.close(); app.exit(1);
+  menuBar?.dispose(); controller?.dispose(); main?.close(); server.closeAllConnections(); server.close(); app.exit(1);
 });

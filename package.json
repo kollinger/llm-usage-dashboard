@@ -1,6 +1,6 @@
 {
   "name": "llm-usage-dashboard",
-  "version": "1.10.1-preview.7",
+  "version": "1.11.0-preview.1",
   "private": true,
   "description": "Local dashboard for Codex, OpenAI, Anthropic/Claude, Gemini, and local LLM token usage.",
   "author": {
@@ -29,14 +29,15 @@
     "prototype:mobile": "node scripts/mobile-lan-prototype.cjs",
     "test:mobile-prototype": "node test/mobile-lan-prototype.test.mjs && node test/mobile-vpn-access.test.mjs && node test/mobile-notifications.test.mjs && node test/quota-notifications.test.mjs && node test/desktop-mobile-access.test.mjs && node test/reset-account-attribution.test.mjs",
     "dist:mobile-prototype:mac": "electron-builder --mac dmg zip --universal --config.extraMetadata.main=electron/mobile-prototype.js --config.extraMetadata.version=1.7.0-lan-prototype.1 --config.productName=\"LLM Usage Dashboard LAN Prototype\" --config.appId=local.llm-usage-dashboard.lan-prototype --config.directories.output=dist/mobile-prototype --publish never",
-    "test:desktop-widget": "node test/provider-colors.test.mjs && node test/desktop-widget.test.mjs && node test/desktop-widget-claude.test.mjs && node test/desktop-widget-api.test.mjs",
+    "test:desktop-widget": "node test/provider-colors.test.mjs && node test/desktop-widget.test.mjs && node test/desktop-widget-claude.test.mjs && node test/desktop-widget-api.test.mjs && node test/mac-menu-bar.test.mjs",
     "test:desktop-widget:native": "node test/run-desktop-widget-native.mjs",
     "test:desktop-widget:ci": "node test/run-desktop-widget-ci.mjs",
     "plasma:build": "node scripts/build-plasmoid.mjs",
     "test:plasma": "node test/plasma-widget.test.mjs && node test/plasma-package.test.mjs",
     "test:plasma:native": "npm run plasma:build && node test/run-plasma-native.mjs",
     "test:updates": "node test/published-updates.test.mjs",
-    "test:updates:native": "node test/run-published-updates-native.mjs"
+    "test:updates:native": "node test/run-published-updates-native.mjs",
+    "postdist:mac": "node test/verify-mac-menu-bar-package.mjs"
   },
   "dependencies": {
     "builder-util-runtime": "9.7.0",
