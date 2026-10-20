@@ -131,6 +131,20 @@ Version numbers follow Semantic Versioning:
 
 The workflow builds macOS, Linux, and Windows packages on native GitHub-hosted runners, uploads them as workflow artifacts, and attaches them to a GitHub Release. Release artifacts are currently unsigned prereleases; macOS Gatekeeper and Windows SmartScreen may warn until code signing/notarization certificates are configured as repository secrets.
 
+Desktop update checks use the public GitHub releases API and select the highest
+newer SemVer allowed by the preview setting. Unpublished tags, missing platform
+metadata and missing installers are skipped. Metadata version, installer name,
+size and SHA512 must agree; the existing updater verifies the downloaded bytes.
+Checks never offer a downgrade. Authentication, rate-limit, network and integrity
+failures remain errors, recorded as fixed diagnostic codes without response
+bodies, credentials or local paths. No GitHub token is required. Existing macOS
+signing requirements still apply.
+
+`npm run test:updates` covers synthetic release selection and error boundaries.
+`npm run test:updates:native` exercises the actual Electron updater against an
+isolated local fixture, including Linux download checksum rejection/recovery.
+The existing desktop-build CI runs this native check on each platform.
+
 ### Desktop quota widget
 
 In the desktop app, choose **Desktop widget → Compact window** in the dashboard toolbar. The
