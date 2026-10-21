@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.11.0-preview.5 - 2026-10-21
+
+### Improved
+
+- Merge pull request #59 from kollinger/kol-664-dashboard-whatsapp
+- Record GPT identity upgrade regression evidence (KOL-664)
+
+### Fixed
+
+- Retain GPT upgrade history without duplicate quota accounts (KOL-664)
+
 ## 1.11.0-preview.4 - 2026-10-21
 
 ### Improved
