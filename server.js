@@ -690,7 +690,7 @@ async function readBrowserConnections({ force = false, usage = usageCache.value 
       ...safeMeasurement({ limits: source?.limits, updatedAt: source?.limitsUpdatedAt || account.lastSeenAt, planType: account.planType }) };
   });
   for (const profile of profiles) {
-    if (!accounts.some((account) => account.id === `gpt:${profile.id}`)) accounts.push({ id: `gpt:${profile.id}`, accountId: profile.accountId, provider: "gpt", label: profile.label, kind: "subscription", managed: true, status: "connected", updatedAt: null });
+    if (!accounts.some((account) => account.provider === "gpt" && account.accountId === profile.accountId)) accounts.push({ id: `gpt:${profile.id}`, accountId: profile.accountId, provider: "gpt", label: profile.label, kind: "subscription", managed: true, status: "connected", updatedAt: null });
   }
   for (const profile of claudeProfiles) {
     const configDir = path.join(DATA_DIR, "claude-profiles", profile.id);

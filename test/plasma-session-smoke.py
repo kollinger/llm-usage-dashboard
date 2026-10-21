@@ -13,17 +13,19 @@ import sys
 import tempfile
 import time
 import signal
+import re
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = "local.llm-usage-dashboard.quotas"
 MODE = sys.argv[1] if len(sys.argv) > 1 else "x11"
 PANEL = "--panel" in sys.argv
 QUOTA_LABELS = "--quota-labels" in sys.argv
+GPT_LIFECYCLE = "--gpt-lifecycle" in sys.argv
 UPGRADE = os.environ.get("PLASMA_UPGRADE_ARCHIVE")
 LIVE_UPGRADE = "--live-upgrade" in sys.argv
 assert not UPGRADE or PANEL, "Use --panel with PLASMA_UPGRADE_ARCHIVE"
 assert not LIVE_UPGRADE or UPGRADE, "Use PLASMA_UPGRADE_ARCHIVE with --live-upgrade"
-EVIDENCE = Path(os.environ.get("PLASMA_QA_EVIDENCE", ROOT / ".cache" / ("quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)))
+EVIDENCE = Path(os.environ.get("PLASMA_QA_EVIDENCE", ROOT / ".cache" / ("kol-664" if GPT_LIFECYCLE else "quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)))
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 profile = Path(tempfile.mkdtemp(prefix="llm-plasma-qa-"))
 env = os.environ.copy()
@@ -125,6 +127,60 @@ def update(fixture, **values):
     fixture.stdin.write(json.dumps(values) + "\n")
     fixture.stdin.flush()
     assert fixture.stdout.readline().strip() == "fixture-updated"
+
+
+def exercise_gpt(shell, fixture):
+    widget_id = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
+
+    def rendered(name, count=2, stale=False):
+        def observed():
+            capture(name)
+            text = run(["tesseract", str(EVIDENCE / (name + ".png")), "stdout", "-l", os.environ.get("PLASMA_OCR_LANGUAGE", "eng"), "--psm", "11"])
+            return re.search(str(count) + r"\s*of\s*2\s+accounts", text) and (("stale" in text.lower()) == stale)
+        wait_for(observed, "native rendered account count and freshness: " + name, timeout=20)
+
+    def refresh():
+        rect = geometry(widget_id)
+        run(["xdotool", "mousemove", str(round(rect["x"] + rect["width"] - 28)),
+             str(round(rect["y"] + 60)), "click", "1"])
+
+    time.sleep(3)
+    rendered("gpt-initial-two-workspaces")
+    for cycle in range(2):
+        update(fixture, action="login")
+        refresh()
+        rendered("gpt-relogin-" + str(cycle))
+        update(fixture, failed=True)
+        refresh()
+        rendered("gpt-failed-refresh-" + str(cycle), stale=True)
+        update(fixture, action="restart")
+        refresh()
+        rendered("gpt-restored-registry-" + str(cycle), stale=True)
+        update(fixture, failed=False)
+        refresh()
+        rendered("gpt-recovered-" + str(cycle))
+    snapshot = json.loads(run(["/usr/bin/python3", "-I", str(ROOT / "plasma/contents/code/read_snapshot.py")]))["snapshot"]
+    assert len(snapshot["accounts"]) == 2
+    assert any(a["windows"][0]["remainingPercent"] == 0 for a in snapshot["accounts"])
+    favorite = snapshot["accounts"][0]["id"]
+    evaluate("var w=desktops()[0].widgetById(" + str(widget_id) + ");w.currentConfigGroup=['General'];w.writeConfig('favorites'," + json.dumps([favorite]) + ");w.writeConfig('view','favorites');")
+    shell.terminate()
+    shell.wait(timeout=15)
+    shell = start(["plasmashell", "--no-respawn"], "plasmashell-restarted")
+    wait_for(lambda: evaluate("print(desktops()[0].widgets().length)") != "0", "native shell restored")
+    time.sleep(3)
+    rendered("gpt-native-restarted-favorite", count=1)
+    evaluate("var w=desktops()[0].widgetById(" + str(widget_id) + ");w.currentConfigGroup=['General'];w.writeConfig('view','all');")
+    # Reload the private shell so its typed config binding consumes the change.
+    shell.terminate()
+    shell.wait(timeout=15)
+    shell = start(["plasmashell", "--no-respawn"], "plasmashell-normal")
+    time.sleep(3)
+    rendered("gpt-native-restored-all")
+    (EVIDENCE / "gpt-lifecycle-results.json").write_text(json.dumps({"mode": MODE,
+        "nativeAccountCount": 2, "nativeFavoriteCount": 1, "reloginRefreshRestartCycles": 2,
+        "realHttpBridgeHelper": True, "installedPackageUpdated": True, "normalViewRestored": True}, indent=2))
+    print("Plasma GPT lifecycle: actual rendered 2-of-2 accounts, two re-login/refresh/failure/registry-restart cycles, native shell restart with 1-of-2 favorite and restored All passed.")
 
 
 def exercise_panels(shell, fixture):
@@ -432,7 +488,7 @@ try:
         metadata.write_text(json.dumps(installed))
         run(["kpackagetool6", "--type", "Plasma/Applet", "--upgrade", str(ROOT / "dist/plasma/llm-usage-dashboard.plasmoid")])
         assert json.loads(metadata.read_text())["KPlugin"]["Version"] == json.loads((ROOT / "package.json").read_text())["version"]
-    fixture = start(["node", "test/fixtures/plasma-bridge.cjs"], "fixture", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    fixture = start(["node", "test/fixtures/plasma-gpt-lifecycle.mjs" if GPT_LIFECYCLE else "test/fixtures/plasma-bridge.cjs"], "fixture", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     # Popen pipe is bytes so only this controlled fixture stream gets text mode.
     import io
     fixture.stdin = io.TextIOWrapper(fixture.stdin, encoding="utf8", write_through=True)
@@ -451,6 +507,8 @@ try:
     wait_for(lambda: evaluate("print(desktops().length)") != "0", "private Plasma desktop")
     assert evaluate("print(knownWidgetTypes.indexOf('" + PLUGIN + "') >= 0)") == "true", "Add Widgets registry must discover the installed applet"
     (EVIDENCE / "dbus-api.txt").write_text(run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell"]))
+    if GPT_LIFECYCLE:
+        exercise_gpt(shell, fixture)
     if PANEL:
         if QUOTA_LABELS:
             widget_id = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
@@ -458,7 +516,7 @@ try:
             capture("claude-scopes-desktop-german")
             evaluate("desktops()[0].widgetById(" + str(widget_id) + ").remove();")
         exercise_panels(shell, fixture)
-    for cycle in range(0 if PANEL else 2):
+    for cycle in range(0 if PANEL or GPT_LIFECYCLE else 2):
         result = evaluate("var d=desktops()[0]; var w=d.addWidget('" + PLUGIN + "'); print(w.id);")
         widget_id = int(result)
         time.sleep(3)
@@ -470,7 +528,7 @@ try:
         capture("desktop-resized-" + str(cycle))
         evaluate("var w=desktops()[0].widgetById(" + str(widget_id) + "); w.remove();")
         assert evaluate("print(desktops()[0].widgets().filter(w=>w.type==='" + PLUGIN + "').length)") == "0"
-    if not PANEL:
+    if not PANEL and not GPT_LIFECYCLE:
         # Leave one normal widget for a final screenshot and verify load logs.
         evaluate("desktops()[0].addWidget('" + PLUGIN + "');")
         time.sleep(3)
@@ -481,7 +539,7 @@ try:
     log = (EVIDENCE / "plasmashell.log").read_text()
     for marker in ["Type AccountView unavailable", "Cannot assign", "ReferenceError", "SyntaxError"]:
         assert marker not in log, "Native QML load error: " + marker
-    if not PANEL:
+    if not PANEL and not GPT_LIFECYCLE:
         print("Plasma " + MODE + ": per-user install/update/discovery; two add/resize/remove cycles; re-add passed. Synthetic evidence: " + str(EVIDENCE.relative_to(ROOT)))
 finally:
     for child in reversed(children):
