@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Nulstillingsperiode",
+      "week": "Kalenderuge",
+      "billing": "Abonnementsperiode",
+      "anchor": "Start på en faktureringsperiode",
+      "selectedCost": "Valgt periode",
+      "loading": "Indlæser omkostninger…",
+      "error": "Perioden kunne ikke indlæses.",
+      "noReset": "Ingen registreret nulstillingsperiode. Vælg en anden periode.",
+      "estimated": "Nulstillingsgrænser er delvist anslået",
+      "anchorHelp": "Angiv startdatoen for en faktureringsperiode.",
+      "unassigned": "{tokens} tokens uden sikker kontotilknytning er udeladt.",
+      "current": "Aktuel"
     }
   },
   "providers": {

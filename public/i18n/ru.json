@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Период сброса",
+      "week": "Календарная неделя",
+      "billing": "Расчётный период подписки",
+      "anchor": "Начало расчётного периода",
+      "selectedCost": "Выбранный период",
+      "loading": "Загрузка расходов…",
+      "error": "Не удалось загрузить период.",
+      "noReset": "Нет записанного периода сброса. Выберите другой период.",
+      "estimated": "Границы сброса частично оценочные",
+      "anchorHelp": "Введите дату начала расчётного периода.",
+      "unassigned": "Исключено {tokens} токенов без надёжной привязки к аккаунту.",
+      "current": "Текущий"
     }
   },
   "providers": {

@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Atkūrimo laikotarpis",
+      "week": "Kalendorinė savaitė",
+      "billing": "Prenumeratos atsiskaitymo laikotarpis",
+      "anchor": "Atsiskaitymo laikotarpio pradžia",
+      "selectedCost": "Pasirinktas laikotarpis",
+      "loading": "Įkeliamos išlaidos…",
+      "error": "Nepavyko įkelti laikotarpio.",
+      "noReset": "Nėra įrašyto atkūrimo laikotarpio. Pasirinkite kitą.",
+      "estimated": "Atkūrimo ribos iš dalies apskaičiuotos",
+      "anchorHelp": "Įveskite atsiskaitymo laikotarpio pradžios datą.",
+      "unassigned": "Neįtraukta {tokens} žetonų be patikimo susiejimo su paskyra.",
+      "current": "Dabartinis"
     }
   },
   "providers": {

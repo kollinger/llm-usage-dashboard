@@ -12,6 +12,7 @@
     <script src="/connections.js" defer></script>
     <script src="/chat-usage.js" defer></script>
     <script src="/provider-colors.js" defer></script>
+    <script src="/usage-periods.js" defer></script>
     <script src="/app.js" defer></script>
   </head>
   <body>
@@ -196,6 +197,8 @@
             <span id="pricingMeta" class="soft-label">--</span>
           </div>
         </div>
+        <div id="pricingPeriodControls" class="pricing-period-controls"></div>
+        <p id="pricingPeriodStatus" class="cost-summary-note" role="status" aria-live="polite"></p>
         <div class="price-view-panel" id="pricingApiView">
           <label class="field pricing-model-filter">
             <span data-i18n="pricing.modelFilter.label">Modellname filtern</span>
@@ -211,8 +214,8 @@
                   <th><button class="sort-button" type="button" data-price-sort="input" data-i18n="pricing.columns.input">Input</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="cache" data-i18n="pricing.columns.cache">Cache</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="output" data-i18n="pricing.columns.output">Output</button></th>
-                  <th><button class="sort-button" type="button" data-price-sort="today" data-i18n="pricing.columns.today">Heute</button></th>
-                  <th><button class="sort-button" type="button" data-price-sort="total" data-i18n="pricing.columns.total">Gesamt</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="today" data-i18n="chart.filters.today">Heute</button></th>
+                  <th><button class="sort-button" type="button" data-price-sort="total" data-i18n="pricing.periods.selectedCost">Gesamt</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="status" data-i18n="pricing.columns.status">Status</button></th>
                   <th><button class="sort-button" type="button" data-price-sort="source" data-i18n="pricing.columns.source">Quelle</button></th>
                 </tr>

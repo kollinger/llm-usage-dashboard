@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Atiestatīšanas periods",
+      "week": "Kalendārā nedēļa",
+      "billing": "Abonementa norēķinu periods",
+      "anchor": "Norēķinu perioda sākums",
+      "selectedCost": "Atlasītais periods",
+      "loading": "Ielādē izmaksas…",
+      "error": "Neizdevās ielādēt periodu.",
+      "noReset": "Nav ierakstīta atiestatīšanas perioda. Izvēlieties citu.",
+      "estimated": "Atiestatīšanas robežas daļēji aplēstas",
+      "anchorHelp": "Ievadiet norēķinu perioda sākuma datumu.",
+      "unassigned": "Izslēgti {tokens} tokeni bez drošas piesaistes kontam.",
+      "current": "Pašreizējais"
     }
   },
   "providers": {

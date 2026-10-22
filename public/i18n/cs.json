@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Období resetu",
+      "week": "Kalendářní týden",
+      "billing": "Fakturační období předplatného",
+      "anchor": "Začátek fakturačního období",
+      "selectedCost": "Vybrané období",
+      "loading": "Načítání nákladů…",
+      "error": "Období se nepodařilo načíst.",
+      "noReset": "Není zaznamenáno období resetu. Vyberte jiné období.",
+      "estimated": "Hranice resetu jsou částečně odhadnuté",
+      "anchorHelp": "Zadejte začátek fakturačního období.",
+      "unassigned": "Vyloučeno {tokens} tokenů bez spolehlivého přiřazení k účtu.",
+      "current": "Aktuální"
     }
   },
   "providers": {

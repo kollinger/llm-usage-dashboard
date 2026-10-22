@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Återställningsperiod",
+      "week": "Kalendervecka",
+      "billing": "Abonnemangets faktureringsperiod",
+      "anchor": "Början av en faktureringsperiod",
+      "selectedCost": "Vald period",
+      "loading": "Laddar kostnader…",
+      "error": "Perioden kunde inte laddas.",
+      "noReset": "Ingen registrerad återställningsperiod. Välj en annan period.",
+      "estimated": "Återställningsgränser är delvis uppskattade",
+      "anchorHelp": "Ange startdatum för en faktureringsperiod.",
+      "unassigned": "{tokens} token utan tillförlitlig kontotilldelning har uteslutits.",
+      "current": "Aktuell"
     }
   },
   "providers": {

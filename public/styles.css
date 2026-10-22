@@ -4464,3 +4464,9 @@ textarea {
   .chart-group-field { flex-wrap: wrap; }
   .chart-group-field select { min-width: 120px; max-width: 100%; }
 }
+
+.pricing-period-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 16px 0; }
+.pricing-period-controls .field { flex: 1 1 160px; min-width: 0; }
+.pricing-period-controls select, .pricing-period-controls input { width: 100%; min-height: 40px; }
+.pricing-period-navigation { display: flex; flex-wrap: wrap; gap: 6px; }
+.pricing-period-navigation button:disabled { opacity: 0.45; cursor: default; }

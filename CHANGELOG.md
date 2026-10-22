@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.0-preview.1 - 2026-10-22
+
+### Added
+
+- Evaluate API-equivalent costs for the selected provider’s current reset period by default. Browse previous reset periods, calendar weeks and subscription billing cycles independently of the token charts.
+- Configure a billing-cycle start date per provider. Exact usage timestamps determine which requests belong to each period; estimated reset boundaries and unattributed account usage remain explicit.
+
+### Versioning
+
+- Minor increment for a new user-visible period analysis and navigation feature.
+
 ## 1.12.0-preview.2 - 2026-10-22
 
 ### Added

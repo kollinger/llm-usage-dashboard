@@ -769,3 +769,9 @@ gap. Historical causes stay unknown because the old logs lack credit evidence.
 Cause counts apply to the selected 10, 30, or all windows, independently of
 credit-event totals since live recording began. No reset is attributed to a
 particular person or device.
+
+### Cost periods
+
+The API cost panel has its own provider and period controls. It defaults to the current recorded reset period and supports previous/next reset periods, calendar weeks and subscription billing cycles. Billing cycles require a start date, saved per provider in this browser; a billing month is not assumed to begin on the first day of the calendar month.
+
+Costs use deduplicated usage events in the exact half-open interval `[start, end)`, including resets within a day. Recorded Codex account windows filter to that account when its identity is available; unassigned tokens are reported separately. Estimated reset boundaries remain marked. Missing reset history is shown as unavailable, and another period type can still be selected. Remote-only installations do not borrow the local device’s reset history. These figures remain API equivalents using the dashboard’s stated pricing catalog, not provider invoices.

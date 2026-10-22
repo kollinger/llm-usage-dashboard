@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Visszaállítási időszak",
+      "week": "Naptári hét",
+      "billing": "Előfizetési számlázási időszak",
+      "anchor": "Számlázási időszak kezdete",
+      "selectedCost": "Kiválasztott időszak",
+      "loading": "Költségek betöltése…",
+      "error": "Az időszak nem tölthető be.",
+      "noReset": "Nincs rögzített visszaállítási időszak. Válasszon másik időszakot.",
+      "estimated": "A visszaállítási határok részben becsültek",
+      "anchorHelp": "Adja meg egy számlázási időszak kezdőnapját.",
+      "unassigned": "{tokens} token kizárva, mert nem rendelhető megbízhatóan fiókhoz.",
+      "current": "Jelenlegi"
     }
   },
   "providers": {

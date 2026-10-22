@@ -75,10 +75,23 @@ base = `http://127.0.0.1:${server.address().port}`;
 fixtureOrigins.add(base);
 try {
   assert.equal((await fetch(`${base}/api/chat-usage`)).status, 401);
+  assert.equal((await fetch(`${base}/api/usage-period`)).status, 401);
   const login = await fetch(`${base}/api/auth/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: "fixture-password" }) });
   assert.equal(login.status, 200);
   const headers = { Cookie: login.headers.get("set-cookie").split(";")[0] };
   const get = (query = "") => fetch(`${base}/api/chat-usage${query}`, { headers });
+  const periodQuery = new URLSearchParams({ from: new Date(Date.parse(timestamp) - 1).toISOString(),
+    to: new Date(Date.parse(timestamp) + 1).toISOString(), provider: "codex", device: "all" });
+  const periodResponse = await fetch(`${base}/api/usage-period?${periodQuery}`, { headers });
+  assert.equal(periodResponse.status, 200);
+  const periodReport = await periodResponse.json();
+  assert.equal(periodReport.totals.totalTokens, 100, "real parser-to-worker query isolates the provider and exact timestamp");
+  assert.equal(periodResponse.headers.get("cache-control"), "no-store");
+  for (const secret of ["SECRET", "/private/fixture", root, session, "request1", "message1"]) assert(!JSON.stringify(periodReport).includes(secret), secret);
+  assert.equal((await fetch(`${base}/api/usage-period?from=bad&to=bad`, { headers })).status, 400);
+  const unknownDevice = new URLSearchParams(periodQuery); unknownDevice.set("device", "c".repeat(32));
+  assert.equal((await fetch(`${base}/api/usage-period?${unknownDevice}`, { headers })).status, 400);
+
   assert.equal((await get("?period=wrong")).status, 400);
   assert.equal((await get("?timeZone=wrong")).status, 400);
   assert.equal((await get("?id=../secret")).status, 400);
@@ -118,6 +131,9 @@ try {
     body: JSON.stringify({ code: signToken(phoneGateway.group, "pair", 60_000) }) });
   assert.equal(pair.status, 200);
   const phoneHeaders = { Cookie: pair.headers.get("set-cookie").split(";")[0] };
+  const phonePeriod = await nativeFetch(`${phoneOrigin}/api/usage-period?${periodQuery}`, { headers: phoneHeaders });
+  assert.equal(phonePeriod.status, 200, "paired phones can read the same scoped cost period");
+  assert.equal((await phonePeriod.json()).totals.totalTokens, 100);
   const phoneList = await nativeFetch(`${phoneOrigin}/api/chat-usage?device=all&period=all&timeZone=Europe%2FVienna`, { headers: phoneHeaders });
   assert.equal(phoneList.status, 200);
   const phoneReport = await phoneList.json();

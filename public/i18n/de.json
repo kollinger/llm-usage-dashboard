@@ -364,6 +364,20 @@
       "empty": "Noch keine Abo- oder Fixkostendaten verfügbar.",
       "previous": "Vorherige Kosten",
       "delta": "Änderung"
+    },
+    "periods": {
+      "reset": "Reset-Periode",
+      "week": "Kalenderwoche",
+      "billing": "Abo-Abrechnungsperiode",
+      "anchor": "Beginn einer Abrechnungsperiode",
+      "selectedCost": "Ausgewählter Zeitraum",
+      "loading": "Kosten werden geladen…",
+      "error": "Der Zeitraum konnte nicht geladen werden.",
+      "noReset": "Keine belegte Reset-Periode verfügbar. Wähle einen anderen Zeitraum.",
+      "estimated": "Reset-Grenzen teilweise geschätzt",
+      "anchorHelp": "Trage den Beginn einer Abrechnungsperiode ein.",
+      "unassigned": "{tokens} Tokens ohne sichere Kontozuordnung ausgeschlossen.",
+      "current": "Aktuell"
     }
   },
   "providers": {

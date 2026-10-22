@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Perjodu ta’ reset",
+      "week": "Ġimgħa kalendarja",
+      "billing": "Perjodu tal-kont tas-sottoskrizzjoni",
+      "anchor": "Bidu ta’ perjodu tal-kont",
+      "selectedCost": "Perjodu magħżul",
+      "loading": "Qed jitgħabbew l-ispejjeż…",
+      "error": "Dan il-perjodu ma setax jitgħabba.",
+      "noReset": "M’hemmx perjodu ta’ reset irreġistrat. Agħżel perjodu ieħor.",
+      "estimated": "Il-limiti tar-reset huma parzjalment stmati",
+      "anchorHelp": "Daħħal id-data tal-bidu ta’ perjodu tal-kont.",
+      "unassigned": "Ġew esklużi {tokens} tokens mingħajr attribuzzjoni affidabbli tal-kont.",
+      "current": "Attwali"
     }
   },
   "providers": {

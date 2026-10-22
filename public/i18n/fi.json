@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Nollausjakso",
+      "week": "Kalenteriviikko",
+      "billing": "Tilauksen laskutusjakso",
+      "anchor": "Laskutusjakson alku",
+      "selectedCost": "Valittu jakso",
+      "loading": "Ladataan kustannuksia…",
+      "error": "Jaksoa ei voitu ladata.",
+      "noReset": "Tallennettua nollausjaksoa ei ole. Valitse toinen jakso.",
+      "estimated": "Nollausrajat ovat osittain arvioituja",
+      "anchorHelp": "Anna laskutusjakson alkamispäivä.",
+      "unassigned": "{tokens} tokenia jätettiin pois epävarman tilikohdistuksen vuoksi.",
+      "current": "Nykyinen"
     }
   },
   "providers": {

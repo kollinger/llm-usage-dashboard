@@ -44,6 +44,19 @@ const state = {
   usageProjectionMode: "bar",
   usageProjectionModes: {},
   quotaPaceWindowMinutesByCard: {},
+  pricingPeriodKind: "reset",
+  pricingPeriodOffset: 0,
+  pricingProvider: "codex",
+  pricingResetWindow: "weekly",
+  pricingResetAccount: "",
+  pricingPeriodReport: null,
+  pricingPeriodKey: "",
+  pricingPeriodPending: "",
+  pricingPeriodError: false,
+  pricingPeriodCatalog: null,
+  pricingCatalogPending: false,
+  pricingCatalogAt: 0,
+  pricingPeriodLabel: "",
   pricingView: "api",
   pricingModelFilter: "",
   pricingSort: { key: "total", direction: "desc" },
@@ -229,6 +242,8 @@ const els = {
   liveHistoryChart: document.getElementById("liveHistoryChart"),
   liveHistoryLegend: document.getElementById("liveHistoryLegend"),
   tokenList: document.getElementById("tokenList"),
+  pricingPeriodControls: document.getElementById("pricingPeriodControls"),
+  pricingPeriodStatus: document.getElementById("pricingPeriodStatus"),
   pricingViewToggle: document.getElementById("pricingViewToggle"),
   pricingApiView: document.getElementById("pricingApiView"),
   pricingUsedModels: document.getElementById("pricingUsedModels"),
@@ -2626,6 +2641,14 @@ function bindEvents() {
       renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
     }
   });
+  els.pricingPeriodControls?.addEventListener("change", handlePricingPeriodChange);
+  els.pricingPeriodControls?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pricing-period-step]");
+    if (!button || button.disabled) return;
+    state.pricingPeriodOffset = button.dataset.pricingPeriodStep === "current" ? 0
+      : Math.min(0, state.pricingPeriodOffset + Number(button.dataset.pricingPeriodStep));
+    refreshPricingPeriodView();
+  });
   els.pricingViewToggle?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-pricing-view]");
     if (!button) return;
@@ -4564,6 +4587,10 @@ function renderLocked() {
   renderLiveGauges(null);
   els.tokenList.innerHTML = "";
   if (els.pricingViewToggle) els.pricingViewToggle.innerHTML = "";
+  if (els.pricingPeriodControls) els.pricingPeriodControls.innerHTML = "";
+  if (els.pricingPeriodStatus) els.pricingPeriodStatus.textContent = "";
+  state.pricingPeriodKey = "";
+  state.pricingPeriodReport = null;
   if (els.pricingApiView) els.pricingApiView.hidden = false;
   if (els.pricingUsedModels) {
     els.pricingUsedModels.innerHTML = "";
@@ -7980,26 +8007,164 @@ function roundSvg(value) {
   return Math.round(Number(value) * 10) / 10;
 }
 
+function pricingBillingAnchor() {
+  try { return localStorage.getItem(`llmUsage.billingAnchor.${state.pricingProvider}`) || ""; }
+  catch { return ""; }
+}
+
+function refreshPricingPeriodView() {
+  if (state.usage) renderPricing(activeDashboardUsage(), [], buildProviders(state.usage));
+}
+
+function handlePricingPeriodChange(event) {
+  const control = event.target.closest("[data-pricing-period-field]");
+  if (!control) return;
+  const field = control.dataset.pricingPeriodField;
+  if (field === "provider") {
+    state.pricingProvider = control.value;
+    state.pricingResetWindow = "weekly";
+    state.pricingResetAccount = "";
+  } else if (field === "kind") state.pricingPeriodKind = control.value;
+  else if (field === "window") state.pricingResetWindow = control.value;
+  else if (field === "account") state.pricingResetAccount = control.value;
+  else if (field === "anchor") {
+    try { localStorage.setItem(`llmUsage.billingAnchor.${state.pricingProvider}`, control.value); } catch {}
+  }
+  state.pricingPeriodOffset = 0;
+  state.pricingPeriodError = false;
+  refreshPricingPeriodView();
+}
+
+async function loadPricingPeriodCatalog() {
+  if (state.pricingCatalogPending || Date.now() - state.pricingCatalogAt < 60_000) return;
+  state.pricingCatalogPending = true;
+  try {
+    const [quota, codex] = await Promise.allSettled([
+      fetchJson("/api/quota-history?limit=5000"), fetchJson("/api/codex-reset-history?limit=0")
+    ]);
+    state.pricingPeriodCatalog = {
+      windows: quota.status === "fulfilled" ? quota.value.windows || [] : [],
+      codex: codex.status === "fulfilled" ? codex.value : null
+    };
+  } finally {
+    state.pricingCatalogPending = false;
+    state.pricingCatalogAt = Date.now();
+    refreshPricingPeriodView();
+  }
+}
+
+async function loadPricingPeriod(selection) {
+  state.pricingPeriodPending = selection.key;
+  state.pricingPeriodError = false;
+  const query = new URLSearchParams({ from: selection.from, to: selection.to,
+    provider: state.pricingProvider, device: state.syncDeviceFilter });
+  if (selection.accountId) query.set("accountId", selection.accountId);
+  try {
+    const value = await fetchJson(`/api/usage-period?${query}`);
+    if (state.pricingPeriodKey === selection.key) state.pricingPeriodReport = { key: selection.key, value };
+  } catch {
+    if (state.pricingPeriodKey === selection.key) state.pricingPeriodError = true;
+  } finally {
+    if (state.pricingPeriodPending === selection.key) state.pricingPeriodPending = "";
+    if (state.pricingPeriodKey === selection.key) refreshPricingPeriodView();
+  }
+}
+
+function renderPricingPeriodControls(local, providers) {
+  const providerIds = new Set(["codex", "codexSpark", "claudeCode", "openCode", "gemini", "glm", "kimi", "ollama"]);
+  const available = providers.filter((provider) => providerIds.has(provider.id));
+  if (state.pricingProvider !== "all" && !available.some((provider) => provider.id === state.pricingProvider)) {
+    state.pricingProvider = available[0]?.id || "all";
+  }
+  if (state.pricingPeriodKind === "reset") void loadPricingPeriodCatalog();
+  const catalog = state.pricingPeriodCatalog;
+  const remote = !["local", "all", state.syncStatus?.deviceId].includes(state.syncDeviceFilter);
+  const raw = state.pricingProvider === "codexSpark"
+    ? { ...state.usage?.codex?.spark, subscription: state.usage?.codex?.subscription } : state.usage?.[state.pricingProvider];
+  const liveRows = [ ...(raw?.limits?.rows || []), ...["fiveHour", "weekly"].map((key) =>
+    raw?.limits?.[key] ? { ...raw.limits[key], key, windowMinutes: raw.limits[key].windowMinutes || (key === "weekly" ? 10080 : 300) } : null).filter(Boolean) ];
+  const windows = remote ? [] : [ ...(catalog?.windows || []).filter((row) => row.provider === state.pricingProvider),
+    ...liveRows.filter((row) => Number.isFinite(Date.parse(row.resetsAt)) && Number(row.windowMinutes) > 0).map((row) => ({
+      windowKey: row.windowMinutes === 10080 ? "weekly" : row.key || String(row.windowMinutes),
+      label: row.label || row.key, windowMinutes: row.windowMinutes,
+      startsAt: new Date(Date.parse(row.resetsAt) - row.windowMinutes * 60_000).toISOString(), resetsAt: row.resetsAt
+    })) ];
+  const accounts = !remote && state.pricingProvider === "codex" ? catalog?.codex?.accounts || [] : [];
+  if (accounts.length && !accounts.some((account) => account.accountRef === state.pricingResetAccount)) {
+    state.pricingResetAccount = (accounts.find((account) => account.history.current?.scheduledResetAt === catalog.codex.current?.scheduledResetAt) || accounts[0]).accountRef || "";
+  }
+  const account = accounts.find((row) => row.accountRef === state.pricingResetAccount);
+  const history = !remote && state.pricingProvider === "codex" ? account?.history || catalog?.codex : null;
+  const windowOptions = new Map(windows.map((row) => [row.windowKey, row.label || row.windowKey]));
+  if (history?.current || history?.windows?.length) windowOptions.set("weekly", t("limits.weekly"));
+  if (!windowOptions.has(state.pricingResetWindow) && windowOptions.size) {
+    state.pricingResetWindow = (windows.find((row) => row.windowMinutes === 10080) ||
+      windows.slice().sort((a, b) => b.windowMinutes - a.windowMinutes)[0])?.windowKey || windowOptions.keys().next().value;
+  }
+  const resets = UsagePeriods.resetPeriods(history, windows, state.pricingResetWindow);
+  if (!resets.length || Date.parse(resets[0].to) <= Date.now()) resets.unshift(null);
+  let period = state.pricingPeriodKind === "reset" ? resets[-state.pricingPeriodOffset] || null
+    : UsagePeriods.calendarPeriod(state.pricingPeriodKind, state.pricingPeriodOffset, new Date(), pricingBillingAnchor(), raw?.subscription?.period === "year" ? 12 : 1);
+  const previousDisabled = !period && state.pricingPeriodKind !== "reset" || state.pricingPeriodKind === "all" || state.pricingPeriodKind === "reset" && -state.pricingPeriodOffset + 1 >= resets.length;
+  const nextDisabled = state.pricingPeriodKind === "all" || state.pricingPeriodOffset >= 0;
+  const options = (entries, selected) => entries.map(([value, label]) => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label)}</option>`).join("");
+  const select = (field, label, entries, selected) => `<label class="field"><span>${escapeHtml(label)}</span><select data-pricing-period-field="${field}">${options(entries, selected)}</select></label>`;
+  const providerOptions = [["all", t("widget.allProviders")], ...available.map((provider) => [provider.id, sourceLabel(provider.id)])];
+  state.pricingPeriodLabel = !period ? "" : state.pricingPeriodKind === "all" ? t("chart.filters.all")
+    : `${formatDateTime(period.from)} – ${formatDateTime(period.to)}`;
+  els.pricingPeriodControls.innerHTML = `
+    ${select("provider", t("providers.gridAria"), providerOptions, state.pricingProvider)}
+    ${select("kind", t("chart.filterBarAria"), [["reset", t("pricing.periods.reset")], ["week", t("pricing.periods.week")], ["billing", t("pricing.periods.billing")], ["all", t("chart.filters.all")]], state.pricingPeriodKind)}
+    ${state.pricingPeriodKind === "reset" && accounts.some((row) => row.accountRef) ? select("account", t("chart.breakdown.account"), accounts.filter((row) => row.accountRef).map((row) => [row.accountRef, row.label]), state.pricingResetAccount) : ""}
+    ${state.pricingPeriodKind === "reset" && windowOptions.size ? select("window", t("codexResets.period"), [...windowOptions], state.pricingResetWindow) : ""}
+    ${state.pricingPeriodKind === "billing" ? `<label class="field"><span>${escapeHtml(t("pricing.periods.anchor"))}</span><input type="date" data-pricing-period-field="anchor" value="${escapeHtml(pricingBillingAnchor())}"></label>` : ""}
+    <nav class="pricing-period-navigation" aria-label="${escapeHtml(t("chart.filterBarAria"))}">
+      <button type="button" class="text-button ghost" data-pricing-period-step="-1"${previousDisabled ? " disabled" : ""}>${escapeHtml(t("chatUsage.previous"))}</button>
+      <button type="button" class="text-button ghost" data-pricing-period-step="current"${nextDisabled ? " disabled" : ""}>${escapeHtml(t("pricing.periods.current"))}</button>
+      <button type="button" class="text-button ghost" data-pricing-period-step="1"${nextDisabled || !period ? " disabled" : ""}>${escapeHtml(t("chatUsage.next"))}</button>
+    </nav>`;
+  if (!period) { state.pricingPeriodKey = ""; return null; }
+  period = { ...period, ...(state.pricingPeriodKind === "reset" && account?.accountRef ? { accountId: account.accountRef } : {}) };
+  const key = JSON.stringify([state.syncDeviceFilter, state.pricingProvider, period.from, period.to, period.accountId, local?.updatedAt]);
+  if (state.pricingPeriodKey !== key) state.pricingPeriodError = false;
+  state.pricingPeriodKey = key;
+  if (state.pricingPeriodReport?.key !== key && state.pricingPeriodPending !== key && !state.pricingPeriodError) void loadPricingPeriod({ ...period, key });
+  return { ...period, key };
+}
+
 function renderPricing(local, rangeRows = [], providers = []) {
-  const modelUsageRows = usageRowsForSelectedRange(local, rangeRows);
+  const selection = els.pricingPeriodControls ? renderPricingPeriodControls(local, providers) : null;
+  const report = selection && state.pricingPeriodReport?.key === selection.key ? state.pricingPeriodReport.value : null;
+  const periodReady = !els.pricingPeriodControls || Boolean(report);
+  const modelUsageRows = els.pricingPeriodControls ? report?.daily || [] : usageRowsForSelectedRange(local, rangeRows);
+  const selectedProviders = providers.filter((provider) => state.pricingProvider === "all" || provider.id === state.pricingProvider);
+  const periodSubscriptions = { ...state.subscriptionHistory, entries: (state.subscriptionHistory?.entries || []).filter((entry) =>
+    state.pricingProvider === "all" || subscriptionFixedCostFamily(entry.provider) === subscriptionFixedCostFamily(state.pricingProvider)) };
+  if (els.pricingPeriodStatus) {
+    els.pricingPeriodStatus.textContent = !selection ? t(state.pricingPeriodKind === "billing" ? "pricing.periods.anchorHelp" : "pricing.periods.noReset")
+      : state.pricingPeriodError ? t("pricing.periods.error") : !report ? t("pricing.periods.loading")
+        : [state.pricingPeriodLabel, selection.estimated ? t("pricing.periods.estimated") : "",
+          report.unassignedTokens ? t("pricing.periods.unassigned", { tokens: formatTokens(report.unassignedTokens) }) : ""].filter(Boolean).join(" · ");
+  }
   if (els.pricingViewToggle) {
     els.pricingViewToggle.innerHTML = renderPricingViewToggle();
   }
-  if (els.pricingApiView) els.pricingApiView.hidden = state.pricingView !== "api";
+  if (els.pricingApiView) els.pricingApiView.hidden = state.pricingView !== "api" || !periodReady;
   if (els.pricingUsedModels) {
-    els.pricingUsedModels.hidden = state.pricingView !== "models";
+    els.pricingUsedModels.hidden = state.pricingView !== "models" || !periodReady;
     els.pricingUsedModels.innerHTML = state.pricingView === "models" ? renderUsedModelPricingView(modelUsageRows) : "";
   }
   if (els.pricingSubscriptionCosts) {
-    els.pricingSubscriptionCosts.hidden = state.pricingView !== "subscriptions";
+    els.pricingSubscriptionCosts.hidden = state.pricingView !== "subscriptions" || !periodReady;
     els.pricingSubscriptionCosts.innerHTML =
       state.pricingView === "subscriptions"
-        ? renderSubscriptionPricingView(rangeRows, state.subscriptionHistory, providers)
+        ? renderSubscriptionPricingView(modelUsageRows, periodSubscriptions, selectedProviders, selection)
         : "";
   }
 
-  const todayUsage = billingTotalsForDaily(dailyRowsForToday(local));
-  const totalUsage = billingTotalsForWindow(local, "allTime");
+  const today = new Date().toISOString().slice(0, 10);
+  const todayUsage = billingTotalsForDaily(els.pricingPeriodControls ? modelUsageRows.filter((row) => row.date === today) : dailyRowsForToday(local));
+  const totalUsage = els.pricingPeriodControls ? billingTotalsForDaily(modelUsageRows) : billingTotalsForWindow(local, "allTime");
   const query = state.pricingModelFilter.trim().toLowerCase();
   const rows = pricingModels.filter((price) =>
     [price.model, ...(price.aliases || [])].some((name) => name.toLowerCase().includes(query))
@@ -8068,7 +8233,7 @@ function renderUsedModelPricingView(filteredDaily) {
   const costSummary = summarizeUsedModelApiCost(rows);
   return `
     <div class="pricing-view-heading">
-      <h3>${escapeHtml(t("pricing.usedModels.heading", { range: chartRangeLabel(state.chartTimeFilter) }))}</h3>
+      <h3>${escapeHtml(t("pricing.usedModels.heading", { range: state.pricingPeriodLabel || chartRangeLabel(state.chartTimeFilter) }))}</h3>
       <p>${escapeHtml(t("pricing.usedModels.description"))}</p>
     </div>
     <div class="api-cost-summary" data-status="${escapeHtml(costSummary.status)}">
@@ -8186,8 +8351,8 @@ function summarizeUsedModelApiCost(rows) {
   };
 }
 
-function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, providers) {
-  const costSummary = summarizeCostWindow(filteredDaily, subscriptionHistory);
+function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, providers, period = null) {
+  const costSummary = summarizeCostWindow(filteredDaily, subscriptionHistory, period);
   const rows = dedupeSubscriptionPricingRows(providers
     .map((provider) => ({
       provider,
@@ -8200,7 +8365,7 @@ function renderSubscriptionPricingView(filteredDaily, subscriptionHistory, provi
     : `<div class="pricing-empty">${escapeHtml(t("pricing.subscriptions.empty"))}</div>`;
   return `
     <div class="pricing-view-heading">
-      <h3>${escapeHtml(t("pricing.subscriptions.heading", { range: chartRangeLabel(state.chartTimeFilter) }))}</h3>
+      <h3>${escapeHtml(t("pricing.subscriptions.heading", { range: state.pricingPeriodLabel || chartRangeLabel(state.chartTimeFilter) }))}</h3>
       <p>${escapeHtml(t("pricing.subscriptions.description"))}</p>
     </div>
     <div class="subscription-cost-summary">
@@ -9572,14 +9737,15 @@ function renderCostSummary(daily, subscriptionHistory) {
   `;
 }
 
-function summarizeCostWindow(daily, subscriptionHistory) {
+function summarizeCostWindow(daily, subscriptionHistory, period = null) {
   const costDaily = buildCostDaily(daily);
   const apiEquivalentEur = costDaily.reduce((sum, day) => sum + day.totalEur, 0);
   const allEstimated = new Set(costDaily.flatMap((day) => day.estimatedSources));
   const allUnsupported = new Set(costDaily.flatMap((day) => day.unsupportedSources));
-  const range = chartRangeForDaily(daily);
+  const range = period ? { start: formatDateOnlyForComparison(new Date(period.from)),
+    end: formatDateOnlyForComparison(new Date(Math.min(Date.parse(period.to), Date.now()) - 1)) } : chartRangeForDaily(daily);
   const paidResult = range
-    ? calculatePaidSubscriptionCost(subscriptionHistory, range.start, range.end)
+    ? calculatePaidSubscriptionCost(subscriptionHistory, range.start, range.end, period)
     : { known: false, totalEur: 0, unsupportedCurrencies: [] };
   const savedEur = paidResult.known ? apiEquivalentEur - paidResult.totalEur : null;
   const quote = paidResult.known && apiEquivalentEur > 0 ? (savedEur / apiEquivalentEur) * 100 : null;
@@ -9653,7 +9819,7 @@ function chartRangeForDaily(daily) {
   return { start: dates[0], end: dates[dates.length - 1] };
 }
 
-function calculatePaidSubscriptionCost(subscriptionHistory, startDate, endDate) {
+function calculatePaidSubscriptionCost(subscriptionHistory, startDate, endDate, period = null) {
   const entries = Array.isArray(subscriptionHistory?.entries) ? subscriptionHistory.entries : [];
   if (!entries.length) {
     return { known: false, totalEur: 0, unsupportedCurrencies: [] };
@@ -9683,7 +9849,10 @@ function calculatePaidSubscriptionCost(subscriptionHistory, startDate, endDate) 
       const family = subscriptionFixedCostFamily(entry.provider);
       dailyByFamily.set(family, Math.max(Number(dailyByFamily.get(family) || 0), amount));
     }
-    totalEur += Array.from(dailyByFamily.values()).reduce((sum, amount) => sum + amount, 0);
+    const nextDay = new Date(cursor); nextDay.setDate(nextDay.getDate() + 1);
+    const fraction = period ? Math.max(0, Math.min(nextDay.getTime(), Date.parse(period.to), Date.now()) -
+      Math.max(cursor.getTime(), Date.parse(period.from))) / (nextDay.getTime() - cursor.getTime()) : 1;
+    totalEur += Array.from(dailyByFamily.values()).reduce((sum, amount) => sum + amount, 0) * fraction;
   }
 
   if (!anyOverlap) {

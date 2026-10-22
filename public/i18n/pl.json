@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Okres resetu",
+      "week": "Tydzień kalendarzowy",
+      "billing": "Okres rozliczeniowy subskrypcji",
+      "anchor": "Początek okresu rozliczeniowego",
+      "selectedCost": "Wybrany okres",
+      "loading": "Ładowanie kosztów…",
+      "error": "Nie udało się wczytać okresu.",
+      "noReset": "Brak zapisanego okresu resetu. Wybierz inny okres.",
+      "estimated": "Granice resetu częściowo oszacowane",
+      "anchorHelp": "Podaj datę rozpoczęcia okresu rozliczeniowego.",
+      "unassigned": "Wykluczono {tokens} tokenów bez wiarygodnego przypisania do konta.",
+      "current": "Bieżący"
     }
   },
   "providers": {

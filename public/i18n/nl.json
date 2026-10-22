@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Resetperiode",
+      "week": "Kalenderweek",
+      "billing": "Factureringsperiode abonnement",
+      "anchor": "Begin van een factureringsperiode",
+      "selectedCost": "Geselecteerde periode",
+      "loading": "Kosten laden…",
+      "error": "Deze periode kon niet worden geladen.",
+      "noReset": "Geen vastgelegde resetperiode beschikbaar. Kies een andere periode.",
+      "estimated": "Resetgrenzen gedeeltelijk geschat",
+      "anchorHelp": "Voer de begindatum van een factureringsperiode in.",
+      "unassigned": "{tokens} tokens zonder betrouwbare accounttoewijzing uitgesloten.",
+      "current": "Huidig"
     }
   },
   "providers": {

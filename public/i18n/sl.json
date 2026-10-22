@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Obdobje ponastavitve",
+      "week": "Koledarski teden",
+      "billing": "Obračunsko obdobje naročnine",
+      "anchor": "Začetek obračunskega obdobja",
+      "selectedCost": "Izbrano obdobje",
+      "loading": "Nalaganje stroškov…",
+      "error": "Obdobja ni bilo mogoče naložiti.",
+      "noReset": "Ni zabeleženega obdobja ponastavitve. Izberite drugo obdobje.",
+      "estimated": "Meje ponastavitve so delno ocenjene",
+      "anchorHelp": "Vnesite začetni datum obračunskega obdobja.",
+      "unassigned": "Izključenih je {tokens} žetonov brez zanesljive dodelitve računu.",
+      "current": "Trenutno"
     }
   },
   "providers": {

@@ -30,6 +30,7 @@ const { DeviceSync } = require("./lib/device-sync");
 const { normalizeManualResets, claudeManualResets, codexManualResets, readClaudeDesktopResets } = require("./lib/manual-resets");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
+const { usagePeriodOptions } = require("./lib/usage-period");
 const { readUsageFileEvents } = require("./lib/usage-file-cache");
 const { conversationDescriptor, periodStart } = require("./lib/chat-usage");
 const { createChatMetadataReader } = require("./lib/chat-metadata");
@@ -1163,6 +1164,39 @@ app.get("/api/desktop-widget", authMiddleware, localControlMiddleware, async (_r
   } catch {
     res.status(503).json({ error: "widget_unavailable" });
   }
+});
+
+app.get("/api/usage-period", authMiddleware, async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    let options;
+    try { options = usagePeriodOptions(req.query); }
+    catch { return res.status(400).json({ error: "invalid_usage_period" }); }
+    let selected = typeof req.query.device === "string" ? req.query.device : "local";
+    let sync = await readDeviceSyncStatus();
+    if (selected === "all" && !sync.enabled) selected = "local";
+    if (selected !== "local") {
+      if (!sync.enabled) return res.status(400).json({ error: "device_sync_disabled" });
+      if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
+      if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
+    }
+    await readUsageDashboard({ staleWhileRefresh: false });
+    const snapshots = sync.enabled ? [...deviceSync.snapshots.values()] : [];
+    if (selected === "all" && !snapshots.some((snapshot) => snapshot.device.id === sync.deviceId)) {
+      return res.status(503).json({ error: "usage_period_initializing" });
+    }
+    let report = await usageAggregation.period(snapshots, selected, options);
+    if (!report && selected === "local") {
+      invalidateTimedCache(usageCache);
+      await readUsageDashboard({ staleWhileRefresh: false });
+      report = await usageAggregation.period(snapshots, selected, options);
+    }
+    if (selected !== "local" && (!deviceSync.status().enabled || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id)))) {
+      return res.status(409).json({ error: "device_scope_changed" });
+    }
+    if (!report) return res.status(503).json({ error: "usage_period_initializing" });
+    res.json(report);
+  } catch (error) { sendApiError(res, error, "usage_period_read_failed"); }
 });
 
 app.get("/api/chat-usage", authMiddleware, async (req, res) => {

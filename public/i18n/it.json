@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Periodo di reset",
+      "week": "Settimana di calendario",
+      "billing": "Periodo di fatturazione dell’abbonamento",
+      "anchor": "Inizio di un periodo di fatturazione",
+      "selectedCost": "Periodo selezionato",
+      "loading": "Caricamento dei costi…",
+      "error": "Impossibile caricare questo periodo.",
+      "noReset": "Nessun periodo di reset registrato. Scegli un altro periodo.",
+      "estimated": "Limiti del reset parzialmente stimati",
+      "anchorHelp": "Inserisci l’inizio di un periodo di fatturazione.",
+      "unassigned": "Esclusi {tokens} token senza attribuzione affidabile a un account.",
+      "current": "Attuale"
     }
   },
   "providers": {

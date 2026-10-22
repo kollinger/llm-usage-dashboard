@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "重置周期",
+      "week": "日历周",
+      "billing": "订阅计费周期",
+      "anchor": "计费周期开始日期",
+      "selectedCost": "所选时间段",
+      "loading": "正在加载费用…",
+      "error": "无法加载此时间段。",
+      "noReset": "没有已记录的重置周期，请选择其他时间段。",
+      "estimated": "重置边界部分为估算值",
+      "anchorHelp": "请输入一个计费周期的开始日期。",
+      "unassigned": "已排除无法可靠归属到账户的 {tokens} 个令牌。",
+      "current": "当前"
     }
   },
   "providers": {

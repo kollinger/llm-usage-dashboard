@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Perioadă de resetare",
+      "week": "Săptămână calendaristică",
+      "billing": "Perioadă de facturare a abonamentului",
+      "anchor": "Începutul unei perioade de facturare",
+      "selectedCost": "Perioada selectată",
+      "loading": "Se încarcă costurile…",
+      "error": "Perioada nu a putut fi încărcată.",
+      "noReset": "Nu există o perioadă de resetare înregistrată. Alege altă perioadă.",
+      "estimated": "Limitele resetării sunt parțial estimate",
+      "anchorHelp": "Introdu data de început a unei perioade de facturare.",
+      "unassigned": "Au fost excluse {tokens} tokenuri fără atribuire sigură unui cont.",
+      "current": "Curentă"
     }
   },
   "providers": {

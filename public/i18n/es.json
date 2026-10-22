@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Período de reinicio",
+      "week": "Semana natural",
+      "billing": "Período de facturación de la suscripción",
+      "anchor": "Inicio de un período de facturación",
+      "selectedCost": "Período seleccionado",
+      "loading": "Cargando costes…",
+      "error": "No se pudo cargar este período.",
+      "noReset": "No hay un período de reinicio registrado. Elige otro período.",
+      "estimated": "Límites de reinicio parcialmente estimados",
+      "anchorHelp": "Introduce el inicio de un período de facturación.",
+      "unassigned": "Se excluyeron {tokens} tokens sin atribución fiable a una cuenta.",
+      "current": "Actual"
     }
   },
   "providers": {

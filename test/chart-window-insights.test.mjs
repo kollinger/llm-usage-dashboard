@@ -83,6 +83,11 @@ const modelSummaryHtml = renderChartWindowInsights(breakdownDaily, "tokens", "mo
 const totalToolbarHtml = renderTokenBreakdownSummary(breakdownDaily, "total");
 const costSummaryHtml = renderChartWindowInsights(breakdownDaily, "costs", "model");
 JSON.stringify({
+  periodFee: calculatePaidSubscriptionCost({ entries: [{ provider: "codex", effectiveFrom: "2026-06-01", monthlyCost: 30, currency: "EUR" }] },
+    "2026-06-01", "2026-06-01", { from: new Date(2026, 5, 1, 12).toISOString(), to: new Date(2026, 5, 2).toISOString() }).totalEur,
+  inactiveDaysPaid: summarizeCostWindow([{ date: "2026-06-03", totalTokens: 0 }],
+    { entries: [{ provider: "codex", effectiveFrom: "2026-06-01", monthlyCost: 30, currency: "EUR" }] },
+    { from: new Date(2026, 5, 1).toISOString(), to: new Date(2026, 5, 8).toISOString() }).paid === formatEuro(7),
   total: summary.total,
   activeDays: summary.activeDays,
   calendarDays: summary.calendarDays,
@@ -107,6 +112,8 @@ JSON.stringify({
   { filename: appPath }
 ));
 
+assert.equal(result.periodFee, 0.5, "a reset at noon prorates only the selected half-day");
+assert.equal(result.inactiveDaysPaid, true, "subscription estimates cover inactive days inside the selected period");
 assert.equal(result.total, 1500);
 assert.equal(result.activeDays, 2);
 assert.equal(result.calendarDays, 5);

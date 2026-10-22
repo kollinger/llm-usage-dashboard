@@ -323,6 +323,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "فترة إعادة التعيين",
+      "week": "أسبوع تقويمي",
+      "billing": "فترة فوترة الاشتراك",
+      "anchor": "بداية فترة الفوترة",
+      "selectedCost": "الفترة المحددة",
+      "loading": "جارٍ تحميل التكاليف…",
+      "error": "تعذر تحميل هذه الفترة.",
+      "noReset": "لا تتوفر فترة إعادة تعيين مسجلة. اختر فترة أخرى.",
+      "estimated": "حدود إعادة التعيين تقديرية جزئياً",
+      "anchorHelp": "أدخل تاريخ بداية فترة الفوترة.",
+      "unassigned": "تم استبعاد {tokens} رمز دون إسناد موثوق إلى حساب.",
+      "current": "الحالية"
     }
   },
   "providers": {

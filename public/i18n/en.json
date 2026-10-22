@@ -364,6 +364,20 @@
       "empty": "No subscription or fixed-cost data is available yet.",
       "previous": "Previous cost",
       "delta": "Change"
+    },
+    "periods": {
+      "reset": "Reset period",
+      "week": "Calendar week",
+      "billing": "Subscription billing period",
+      "anchor": "Start of a billing period",
+      "selectedCost": "Selected period",
+      "loading": "Loading costs…",
+      "error": "Could not load this period.",
+      "noReset": "No recorded reset period available. Choose another period.",
+      "estimated": "Reset boundaries partly estimated",
+      "anchorHelp": "Enter the start date of a billing period.",
+      "unassigned": "Excluded {tokens} tokens without reliable account attribution.",
+      "current": "Current"
     }
   },
   "providers": {
