@@ -3492,6 +3492,7 @@ function createTimedCache() {
     value: null,
     expiresAt: 0,
     pending: null,
+    pendingGeneration: null,
     generation: 0
   };
 }
@@ -3504,7 +3505,15 @@ async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs 
   if (!force && maxAgeMs > 0 && cache.value && now - (cache.updatedAtMs || 0) < maxAgeMs) return cache.value;
   const refreshingValue = () => ({ ...cache.value, cache: { ...(cache.value.cache || {}), stale: true, refreshing: true,
     staleReason: "usage_refresh_in_progress", staleAt: new Date().toISOString() } });
-  if (cache.pending) return !force && staleWhileRefresh && cache.value ? refreshingValue() : cache.pending;
+  if (cache.pending) {
+    if (cache.pendingGeneration !== cache.generation) {
+      // Invalidations require fresh data, but must not duplicate a large scan
+      // while the previous generation still holds its raw events in memory.
+      await cache.pending.catch(() => {});
+      return readThroughCache(cache, ttlMs, loader, { force, maxAgeMs, staleWhileRefresh });
+    }
+    return !force && staleWhileRefresh && cache.value ? refreshingValue() : cache.pending;
+  }
 
   const generation = cache.generation || 0;
   const pending = Promise.resolve()
@@ -3535,10 +3544,14 @@ async function readThroughCache(cache, ttlMs, loader, { force = false, maxAgeMs 
       return staleValue;
     })
     .finally(() => {
-      if (cache.pending === pending) cache.pending = null;
+      if (cache.pending === pending) {
+        cache.pending = null;
+        cache.pendingGeneration = null;
+      }
     });
 
   cache.pending = pending;
+  cache.pendingGeneration = generation;
   if (!force && staleWhileRefresh && cache.value) {
     pending.catch(() => {});
     return refreshingValue();
@@ -3551,7 +3564,6 @@ function invalidateTimedCache(cache) {
   cache.value = null;
   cache.expiresAt = 0;
   cache.updatedAtMs = 0;
-  cache.pending = null;
   cache.generation = (cache.generation || 0) + 1;
 }
 
