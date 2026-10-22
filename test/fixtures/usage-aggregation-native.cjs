@@ -36,5 +36,6 @@ module.exports = async function verifyNativeUsageAggregation() {
   const rejected = assert.rejects(pending, /closed/);
   await closing.close();
   await rejected;
+  await require("./private-json-native.cjs")();
   console.log("Native aggregation: separate process, local and combined totals, chat coverage and shutdown passed.");
 };
