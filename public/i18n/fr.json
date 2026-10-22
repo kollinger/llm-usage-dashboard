@@ -1461,6 +1461,7 @@
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
   },
   "manualResets": {
+    "credit": "Crédit de réinitialisation",
     "title": "Réinitialisations manuelles",
     "unavailable": "Cette source ne signale pas les réinitialisations disponibles.",
     "none": "Aucune réinitialisation enregistrée disponible.",

@@ -1461,6 +1461,7 @@
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
   },
   "manualResets": {
+    "credit": "Kredit na reset",
     "title": "Ruční obnovení limitů",
     "unavailable": "Tento zdroj neuvádí dostupná obnovení.",
     "none": "Žádná uložená obnovení nejsou dostupná.",

@@ -1461,6 +1461,7 @@
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
   },
   "manualResets": {
+    "credit": "Lähtestuskrediit",
     "title": "Käsitsi lähtestamised",
     "unavailable": "See allikas ei teata saadaolevatest lähtestamistest.",
     "none": "Salvestatud lähtestamisi pole saadaval.",

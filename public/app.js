@@ -6460,15 +6460,13 @@ function renderManualResets(provider, now = Date.now()) {
   if (!resets && provider.id !== "claudeCode" && !providerHasCurrentUsage(provider)) return "";
   const text = (key, values = {}) => escapeHtml(t(`manualResets.${key}`, values));
   const offers = (Array.isArray(resets?.offers) ? resets.offers : []).filter((offer) => Number.isSafeInteger(offer.remaining) && offer.remaining > 0);
-  const formatExpiry = (value) => new Intl.DateTimeFormat(currentLocale(), {
-    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short"
-  }).format(new Date(value));
+  const formatExpiry = formatDateTime;
   const content = resets?.status !== "available" ? `<p>${text("unavailable")}</p>` : !offers.length ? `<p>${text("none")}</p>` : offers.map((offer) => {
     const expiry = Date.parse(offer.expiresAt || "");
     const start = Date.parse(offer.startsAt || "");
     const expired = Number.isFinite(expiry) && expiry <= now;
     const usable = offer.usable === true && !offer.paused && (!Number.isFinite(start) || start <= now);
-    const scope = ["full", "session", "weekly"].includes(offer.scope) ? offer.scope : "full";
+    const scope = ["full", "session", "weekly", "credit"].includes(offer.scope) ? offer.scope : "full";
     return `<div class="manual-reset-offer${expired ? " is-expired" : ""}">
       <strong>${escapeHtml(String(offer.remaining))} × ${text(scope)}</strong>
       <p>${Number.isFinite(expiry) ? `<time datetime="${escapeHtml(new Date(expiry).toISOString())}">${text("expires", { time: formatExpiry(expiry) })}</time>` : text("noExpiry")}</p>

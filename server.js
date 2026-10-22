@@ -26,7 +26,7 @@ const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
 const { mergeGptQuotaLimits } = require("./lib/gpt-account-quota");
 const { claudeAccountIdentity, quotaAccountId, mergeClaudeLocalAccounts } = require("./lib/claude-accounts");
 const { DeviceSync } = require("./lib/device-sync");
-const { normalizeManualResets, claudeManualResets, readClaudeDesktopResets } = require("./lib/manual-resets");
+const { normalizeManualResets, claudeManualResets, codexManualResets, readClaudeDesktopResets } = require("./lib/manual-resets");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
 const { readUsageFileEvents } = require("./lib/usage-file-cache");
@@ -1703,7 +1703,7 @@ function overlayCurrentCodexQuota(usage, live, updatedAtMs, now = Date.now()) {
   const overlay = (provider, snapshot, label) => snapshot ? { ...provider, status: "live",
     limits: codexRateLimitsFromLive(snapshot, label), limitsUpdatedAt: live.source.updatedAt,
     liveRateLimits: live.source, source: { ...provider.source, liveRateLimits: live.source },
-    ...(label === "Codex" ? { creditRows: codexCreditRowsFromLive(snapshot), creditScope: live.source.creditScope || null } : {}) } : provider;
+    ...(label === "Codex" ? { creditRows: codexCreditRowsFromLive(snapshot), creditScope: live.source.creditScope || null, manualResets: codexManualResets(live.historySnapshot) } : {}) } : provider;
   const codex = overlay(usage.codex, live.codex, "Codex");
   return { ...usage, codex: { ...codex, spark: overlay(codex.spark || {}, live.spark, "Codex 5.3 Spark") } };
 }
@@ -5090,6 +5090,7 @@ async function readCodexUsage(options = {}) {
     planType: codexPlan.planType,
     planSource: codexPlan.source,
     creditRows: liveCodexCreditRows,
+    manualResets: codexManualResets(liveRateLimits?.historySnapshot),
     creditScope: liveRateLimits?.source?.creditScope || null,
     creditSource: liveCodexCreditRows.length ? "codex app-server" : null,
     latest: latestEvent

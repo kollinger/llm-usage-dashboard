@@ -1461,6 +1461,7 @@
     "fallbackLocal": "Privater Sync ist nicht erreichbar; lokale Daten werden angezeigt. {message}"
   },
   "manualResets": {
+    "credit": "Reset-Credit",
     "title": "Manuelle Resets",
     "unavailable": "Diese Quelle meldet keine verfügbaren Reset-Angebote.",
     "none": "Keine gespeicherten Resets verfügbar.",

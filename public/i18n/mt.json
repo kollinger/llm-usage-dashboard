@@ -1461,6 +1461,7 @@
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
   },
   "manualResets": {
+    "credit": "Kreditu tar-risettjar",
     "title": "Resets manwali",
     "unavailable": "Dan is-sors ma jirrapportax resets disponibbli.",
     "none": "M’hemmx resets salvati disponibbli.",

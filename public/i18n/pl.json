@@ -1461,6 +1461,7 @@
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
   },
   "manualResets": {
+    "credit": "Kredyt resetowania",
     "title": "Ręczne resetowania",
     "unavailable": "To źródło nie podaje dostępnych resetowań.",
     "none": "Brak dostępnych zapisanych resetowań.",

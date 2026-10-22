@@ -9,7 +9,7 @@ import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 process.env.CODEX_LIVE_RATE_LIMITS = "false";
 process.env.TZ = "Europe/Vienna";
 const require = createRequire(import.meta.url);
-const { normalizeManualResets, claudeManualResets, readClaudeDesktopResets, decodeCacheEntry } = require("../lib/manual-resets");
+const { normalizeManualResets, claudeManualResets, codexManualResets, readClaudeDesktopResets, decodeCacheEntry } = require("../lib/manual-resets");
 const { _test } = require("../server");
 const now = Date.parse("2026-10-22T09:00:00Z"), at = new Date(now).toISOString();
 const org = "11111111-2222-4333-8444-555555555555";
@@ -27,6 +27,31 @@ assert.equal(claudeManualResets({}, at), null);
 assert.equal(claudeManualResets({ eligible: true, grants: [] }, at).offers.length, 0);
 assert.equal(normalizeManualResets({ status: "available", offers: [{ remaining: "1" }] }).offers.length, 0);
 assert.equal(claudeManualResets({ ...block, grants: [{ ...block.grants[0], clears: ["unknown"] }] }, at).offers.length, 0);
+
+const codexSnapshot = { at, accountKey: "private-account", credits: { availableCount: 3, complete: true,
+  items: ["2026-10-22T20:30:00Z", "2026-10-29T18:30:00Z", "2026-11-06T23:30:00Z"].map((expiresAt) =>
+    ({ key: "private-credit", status: "available", expiresAt })) } };
+const codexResets = codexManualResets(codexSnapshot);
+assert.equal(codexResets.offers.length, 3);
+assert.equal(codexResets.offers.reduce((sum, offer) => sum + offer.remaining, 0), 3);
+assert.equal(codexResets.offers[0].scope, "credit");
+assert.equal(codexResets.updatedAt, at);
+assert(!JSON.stringify(codexResets).includes("private-"));
+assert.equal(codexManualResets(null), null);
+assert.equal(codexManualResets({ credits: { availableCount: null, items: [] } }), null);
+assert.equal(codexManualResets({ ...codexSnapshot, credits: { availableCount: 0, items: [] } }).offers.length, 0);
+const countOnly = codexManualResets({ ...codexSnapshot, credits: { availableCount: 2 } });
+assert.equal(countOnly.offers[0].remaining, 2);
+assert.equal(countOnly.offers[0].expiresAt, null);
+const partial = codexManualResets({ ...codexSnapshot, credits: { availableCount: 3, items: [codexSnapshot.credits.items[0]] } });
+assert.equal(partial.offers.reduce((sum, offer) => sum + offer.remaining, 0), 3);
+assert.equal(partial.offers[1].expiresAt, null);
+const live = { codex: { secondary: { usedPercent: 25, windowDurationMins: 10080, resetsAt: Date.parse("2026-10-27T06:33:13Z") / 1000 } },
+  source: { updatedAt: at }, historySnapshot: codexSnapshot };
+const overlay = _test.overlayCurrentCodexQuota({ codex: {} }, live, now, now);
+assert.deepEqual(overlay.codex.manualResets, codexResets, "restored usage must receive the same current inventory");
+assert.equal(_test.overlayCurrentCodexQuota(overlay, { ...live, historySnapshot: null }, now, now).codex.manualResets, null,
+  "a new account response without credits must clear the previous account's offers");
 
 function cacheEntry(organization, compression = "plain") {
   const key = Buffer.from(`1/0/https://claude.ai/api/organizations/${organization}/usage?cedar_ember=1&skip_spend=1`);
@@ -94,6 +119,21 @@ assert.match(html, /22.10.2026/);
 assert.match(html, /claude.ai\/settings\/usage/);
 assert(!html.includes("private-grant"));
 assert.match(render({ id: "codex", manualResets: resets }), /18:00/, "the card supports other providers with reported reset offers");
+html = render({ id: "codex", manualResets: codexResets });
+assert.equal((html.match(/1 × Reset-Credit/g) || []).length, 3);
+assert.match(html, /22:30/);
+assert(!html.includes(de.manualResets.unavailable));
+assert(!html.includes("private-"));
+for (const language of ["de", "en"]) {
+  context.testLanguage = language; context.input = { id: "claudeCode", manualResets: resets };
+  context.testExpiry = resets.offers[0].expiresAt;
+  const comparison = vm.runInContext(`state.language = testLanguage; ({ html: renderManualResets(input, testNow), existingTime: formatDateTime(testExpiry) })`, context);
+  assert(comparison.html.includes(comparison.existingTime), `${language}: provider cards must use the existing local date/time format`);
+  assert(!/GMT[+-]/.test(comparison.html));
+}
+process.env.TZ = "UTC";
+assert.match(render({ id: "claudeCode", manualResets: resets }), /16:00/, "use the current system time zone");
+process.env.TZ = "Europe/Vienna";
 assert.match(render({ id: "claudeCode" }), /keine verfügbaren Reset-Angebote/);
 assert.match(render({ id: "claudeCode", manualResets: { ...resets, offers: [] } }), /Keine gespeicherten Resets/);
 html = render({ id: "claudeCode", manualResets: resets }, Date.parse("2026-10-22T16:00:00Z"));
