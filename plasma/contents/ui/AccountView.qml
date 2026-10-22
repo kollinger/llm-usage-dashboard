@@ -55,7 +55,9 @@ Item {
             var scope = scopeKey ? t("limits." + scopeKey) : window.label || t("limits.default");
             return t("widget.scopedPeriod", {scope: scope, period: period});
         }
-        return window.label || (window.windowMinutes ? t("widget.minutes", {minutes: number(window.windowMinutes)}) : t("widget.title"));
+        if (provider === "kimi" && window.key === "monthTotal") return t("limits.kimiMonthlyTotal");
+        if (provider === "kimi" && window.key === "monthCode") return t("limits.kimiMonthlyCode");
+        return window.label || (window.windowMinutes ? t("widget.minutes", {minutes: number(window.windowMinutes)}) : t("limits.default"));
     }
     function toggleFavorite(account) {
         preferencesChanged(Model.toggleFavorite(account, favorites), accountView, provider, textScale);

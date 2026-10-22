@@ -25,7 +25,7 @@ for (const file of (await fs.readdir(path.join(root, "public", "i18n"))).filter(
   const locale = file.slice(0, -5);
   const data = JSON.parse(await fs.readFile(path.join(root, "public", "i18n", file), "utf8"));
   catalog[locale] = { widget: data.widget, plasma: data.plasma, actions: { refresh: data.actions.refresh },
-    limits: Object.fromEntries(["fiveHour", "weekly", "allModels", "sonnetOnly", "claudeDesign", "default", "resetPrefix", "leftValue"].map((key) => [key, data.limits[key]])) };
+    limits: Object.fromEntries(["fiveHour", "weekly", "kimiMonthlyTotal", "kimiMonthlyCode", "allModels", "sonnetOnly", "claudeDesign", "default", "resetPrefix", "leftValue"].map((key) => [key, data.limits[key]])) };
   metadata.KPlugin[`Description[${locale}]`] = data.widget.title;
 }
 metadata.KPlugin.Description = catalog.en.widget.title;

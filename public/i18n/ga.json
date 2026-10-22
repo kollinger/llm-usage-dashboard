@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Seachtain",
+    "kimiMonthlyTotal": "Iomlán míosúil",
+    "kimiMonthlyCode": "Cód míosúil",
     "currentSession": "Seisiún reatha",
     "allModels": "Gach samhail",
     "claudeDesign": "Claude Design",

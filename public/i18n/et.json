@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Nädal",
+    "kimiMonthlyTotal": "Kuu kogumaht",
+    "kimiMonthlyCode": "Kood kuus",
     "currentSession": "Praegune seanss",
     "allModels": "Kõik mudelid",
     "claudeDesign": "Claude Design",

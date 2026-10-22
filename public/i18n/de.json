@@ -515,6 +515,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Woche",
+    "kimiMonthlyTotal": "Monat gesamt",
+    "kimiMonthlyCode": "Monat Code",
     "glmFiveHourTokens": "5h-Tokens",
     "glmWeekly": "Wochenquota",
     "glmMcpMonthly": "Monatliches MCP",

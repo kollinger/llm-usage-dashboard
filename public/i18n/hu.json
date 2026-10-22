@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Hét",
+    "kimiMonthlyTotal": "Havi összesen",
+    "kimiMonthlyCode": "Havi kód",
     "currentSession": "Aktuális munkamenet",
     "allModels": "Minden modell",
     "claudeDesign": "Claude Design",

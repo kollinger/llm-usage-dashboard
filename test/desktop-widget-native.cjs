@@ -10,7 +10,7 @@ const { app, BrowserWindow, ipcMain, screen, Tray, nativeImage } = require("elec
 const { createDesktopWidget } = require("../electron/desktop-widget");
 const { createMacMenuBar, popupBounds } = require("../electron/mac-menu-bar");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, kimiQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
 const { gptDuplicateUsageFixture } = require("./fixtures/gpt-duplicate.cjs");
 const providerColors = require("../public/provider-colors");
 const { contrastRatio } = require("./fixtures/color-contrast.cjs");
@@ -198,6 +198,40 @@ app.on("window-all-closed", () => {});
   await until(() => evaluate(widget, "document.documentElement.lang === 'en'"), "restore provider language");
   console.log("Provider colours native: all nine providers, identical labels/local sources, two light/dark cycles, Arabic RTL, current/stale/zero/missing, actual fill and text contrast passed.");
 
+  count = 1; fixture = kimiQuotaLabelsFixture();
+  await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);
+  const kimiRows = buildDesktopWidgetSnapshot(fixture).accounts[0].windows;
+  for (const code of ["de", "ar", "fi"]) {
+    language = code; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+    await until(() => evaluate(widget, `document.documentElement.lang === '${code}'`), `Kimi labels ${code}`);
+    const dictionary = JSON.parse(await fs.readFile(path.resolve(__dirname, `../public/i18n/${code}.json`), "utf8"));
+    const number = value => new Intl.NumberFormat(code, { maximumFractionDigits: 0 }).format(value);
+    const date = value => value ? new Intl.DateTimeFormat(code, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : dictionary.widget.unavailable;
+    const expected = [dictionary.limits.fiveHour, dictionary.limits.weekly, dictionary.limits.kimiMonthlyTotal,
+      dictionary.limits.kimiMonthlyCode, dictionary.limits.default, kimiRows[5].label, dictionary.widget.minutes.replace("{minutes}", number(90))];
+    assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-window-label')].map(node => node.textContent)"), expected);
+    assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-window')].map(node => node.dataset.status)"), kimiRows.map(row => row.status));
+    assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-track')].map(node => node.getAttribute('aria-valuenow'))"), ["0", "100", "75", "40", "0", "50"]);
+    assert.deepEqual(await evaluate(widget, "[...document.querySelectorAll('.widget-reset')].map(node => node.textContent)"),
+      kimiRows.map(row => dictionary.limits.resetPrefix.replace("{time}", date(row.resetsAt))));
+    for (let cycle = 0; cycle < 2; cycle++) {
+      for (const width of wayland ? [780] : [420, 600, 780]) {
+        if (!wayland) widget.setSize(width, 700);
+        await pause(70); await layout(widget);
+        assert.equal(await evaluate(widget, `([...document.querySelectorAll('.widget-window-heading')].every(node => {
+          const label = node.querySelector('.widget-window-label'), value = node.querySelector('.widget-window-value');
+          const a = label.getBoundingClientRect(), b = value.getBoundingClientRect();
+          return label.scrollWidth <= label.clientWidth + 1 && label.scrollHeight <= label.clientHeight + 1 &&
+            (a.right <= b.left + 1 || b.right <= a.left + 1);
+        }))`), true, `${code}/${width}: Kimi labels remain readable without overlap`);
+      }
+    }
+    if (code !== "fi") await capture(widget, `kimi-labels-${code}`);
+  }
+  language = "en"; controller.updateTheme({ preference: theme, color: "#f6f7f4" });
+  await until(() => evaluate(widget, "document.documentElement.lang === 'en'"), "restore Kimi label language");
+  console.log("Kimi labels native: monthly total/code, neutral unknown, zero/missing/stale, resets, German/Arabic/Finnish and two width cycles passed.");
+
   count = 1; fixture = claudeQuotaLabelsFixture();
   await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);
   const quotaRows = buildDesktopWidgetSnapshot(fixture).accounts[0].windows;
@@ -383,8 +417,11 @@ app.on("window-all-closed", () => {});
     await until(() => evaluate(main, "document.getElementById('desktopWidgetDialog').open && document.getElementById('plasmaWidgetStatus').textContent !== t('widget.loading')"), "native installer dialog");
     if (code === "de" && (await plasmaInstaller.status()).supported) {
       await evaluate(main, "document.getElementById('plasmaWidgetInstall').click()");
-      await until(async () => (await plasmaInstaller.status()).installed, "installation from real dashboard IPC");
-      await until(() => evaluate(main, "document.getElementById('plasmaWidgetInstall').disabled && document.getElementById('plasmaWidgetStatus').textContent.includes('" + require("../package.json").version + "')"), "truthful installed package version");
+      await until(async () => (await plasmaInstaller.status()).installedVersion === require("../package.json").version,
+        "matching installed package version from real dashboard IPC");
+      // KOL-659 deliberately keeps the internal version out of this dialog.
+      await until(() => evaluate(main, "document.getElementById('plasmaWidgetInstall').disabled && document.getElementById('plasmaWidgetInstall').textContent === t('plasma.current')"),
+        "localized current installation state");
     }
     if (code === "ar" && !wayland) main.setSize(480, 800);
     const dimensions = await evaluate(main, `(() => {

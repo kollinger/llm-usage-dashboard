@@ -252,6 +252,43 @@ TestCase {
         verify(findChild(accountView, "accountSource0").text.length > 0);
         capture("claude-local-arabic");
     }
+    function test_kimi_quota_labels() {
+        accountView.snapshot = Fixtures.cases.kimiLabels;
+        tryCompare(list(), "count", 1);
+        var rows = Fixtures.cases.kimiLabels.accounts[0].windows;
+        ["de", "ar", "fi"].forEach(function(language) {
+            accountView.language = language;
+            var labels = [accountView.t("limits.fiveHour"), accountView.t("limits.weekly"),
+                accountView.t("limits.kimiMonthlyTotal"), accountView.t("limits.kimiMonthlyCode"),
+                accountView.t("limits.default"), rows[5].label, accountView.t("widget.minutes", {minutes: accountView.number(90)})];
+            verify(labels[2] !== labels[3], "Monthly total and code stay distinct");
+            compare(accountView.rtl, language === "ar");
+            for (var cycle = 0; cycle < 2; cycle++) {
+                [320, 560, 780].forEach(function(width) {
+                    test.width = width; test.height = width === 780 ? 840 : 680;
+                    accountView.textScale = width === 560 ? 1.3 : 1;
+                    wait(40); waitForRendering(accountView);
+                    rows.forEach(function(row, index) {
+                        var label = findChild(accountView, "quotaLabel0_" + index);
+                        compare(label.text, labels[index]);
+                        verify(label.text !== accountView.t("widget.title"));
+                        verify(label.width > 0 && label.paintedWidth <= label.width + 1);
+                        verify(!label.truncated && label.height >= label.paintedHeight, "Full Kimi label fits: " + language + "/" + width);
+                        compare(findChild(accountView, "remaining0_" + index).text, row.remainingPercent === null ? "—" :
+                            accountView.t("limits.leftValue", {percent: accountView.number(row.remainingPercent, 1)}));
+                        compare(findChild(accountView, "quotaReset0_" + index).text,
+                            accountView.t("limits.resetPrefix", {time: accountView.date(row.resetsAt)}));
+                        compare(findChild(accountView, "quotaMeter0_" + index).visible, row.remainingPercent !== null);
+                        compare(findChild(accountView, "quality0_" + index).text,
+                            accountView.t(row.status === "unavailable" ? "widget.unavailable" : row.status === "stale" ? "widget.stale" : "widget.qualityMeasured",
+                                {time: accountView.date(row.measuredAt)}));
+                    });
+                    if (cycle === 1 && (language === "de" && width === 780 || language === "ar" && width === 560))
+                        capture("kimi-labels-" + language + "-" + width);
+                });
+            }
+        });
+    }
     function test_claude_quota_scopes() {
         accountView.snapshot = Fixtures.cases.claudeLabels;
         tryCompare(list(), "count", 1);

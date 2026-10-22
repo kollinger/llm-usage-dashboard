@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Nedēļa",
+    "kimiMonthlyTotal": "Kopā mēnesī",
+    "kimiMonthlyCode": "Kods mēnesī",
     "currentSession": "Pašreizējā sesija",
     "allModels": "Visi modeļi",
     "claudeDesign": "Claude Design",

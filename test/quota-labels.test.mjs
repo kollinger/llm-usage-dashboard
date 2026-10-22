@@ -4,7 +4,7 @@ import vm from "node:vm";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
-const { claudeQuotaLabelsFixture } = require("./fixtures/desktop-widget.cjs");
+const { claudeQuotaLabelsFixture, kimiQuotaLabelsFixture } = require("./fixtures/desktop-widget.cjs");
 const source = await fs.readFile(new URL("../public/widget.js", import.meta.url), "utf8");
 const qml = await fs.readFile(new URL("../plasma/contents/ui/AccountView.qml", import.meta.url), "utf8");
 const body = (text, name, indent) => {
@@ -31,6 +31,17 @@ for (let i = 0; i < rows.length; i++) {
   assert.equal(rows[i].measuredAt, input.updatedAt || usage.generatedAt);
 }
 const placeholders = (text) => [...text.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]).sort();
+const kimiUsage = kimiQuotaLabelsFixture(now), originalKimi = structuredClone(kimiUsage);
+const kimiSnapshot = buildDesktopWidgetSnapshot(kimiUsage, now), kimiRows = kimiSnapshot.accounts[0].windows;
+assert.deepEqual(kimiUsage, originalKimi, "Kimi projection preserves the normalized source");
+assert.deepEqual(kimiRows.map(row => row.key), ["limit5h", "limit7d", "monthTotal", "monthCode", "futureQuota", "futureNamed", "futureTimed"]);
+assert.deepEqual(kimiRows.map(row => row.remainingPercent), [0, 100, 75, 40, null, 0, 50]);
+assert.deepEqual(kimiRows.map(row => row.status), ["current", "current", "current", "stale", "unavailable", "stale", "current"]);
+for (let i = 0; i < kimiRows.length; i++) {
+  const input = originalKimi.connectedAccounts[0].limits.rows[i];
+  assert.equal(kimiRows[i].resetsAt, input.resetsAt);
+  assert.equal(kimiRows[i].measuredAt, input.updatedAt || kimiUsage.generatedAt);
+}
 const locales = new URL("../public/i18n/", import.meta.url);
 for (const file of (await fs.readdir(locales)).filter((file) => file.endsWith(".json"))) {
   const dictionary = JSON.parse(await fs.readFile(new URL(file, locales), "utf8"));
@@ -41,6 +52,35 @@ for (const file of (await fs.readdir(locales)).filter((file) => file.endsWith(".
   const context = vm.createContext({ t, number, escape, date: (value) => value || t("widget.unavailable"), snapshot, failed: false });
   vm.runInContext(body(source, "windowLabel", 2) + "\n" + body(source, "renderWindow", 2), context);
   const plasmaLabel = vm.runInNewContext(`(${body(qml, "quotaLabel", 4)})`, { t, number });
+  const kimiLabels = kimiRows.map(row => context.windowLabel(row, "kimi"));
+  assert.deepEqual(kimiLabels, kimiRows.map(row => plasmaLabel(row, "kimi")), `${file}: Kimi renderer consistency`);
+  assert.deepEqual(kimiLabels, [t("limits.fiveHour"), t("limits.weekly"), t("limits.kimiMonthlyTotal"),
+    t("limits.kimiMonthlyCode"), t("limits.default"), kimiRows[5].label, t("widget.minutes", { minutes: number(90) })]);
+  assert.notEqual(kimiLabels[2], kimiLabels[3], `${file}: monthly total and code are distinct`);
+  for (const key of ["kimiMonthlyTotal", "kimiMonthlyCode"]) {
+    assert(dictionary.limits[key]?.trim(), `${file}: translated ${key}`);
+    assert.deepEqual(placeholders(dictionary.limits[key]), [], `${file}: stable placeholders`);
+  }
+  context.snapshot = kimiSnapshot;
+  for (let i = 0; i < kimiRows.length; i++) {
+    const row = kimiRows[i], html = context.renderWindow(row, "kimi");
+    assert.notEqual(kimiLabels[i], t("widget.title"), `${file}: row is never the widget heading`);
+    assert(html.includes(`title="${escape(kimiLabels[i])}"`));
+    assert(html.includes(escape(t("limits.resetPrefix", { time: row.resetsAt || t("widget.unavailable") }))));
+    assert(html.includes(`data-status="${row.status}"`));
+    if (row.remainingPercent === null) {
+      assert(html.includes("—")); assert(!html.includes('role="meter"'));
+    } else {
+      assert(html.includes(`aria-valuenow="${row.remainingPercent}"`));
+      assert(html.includes(escape(t("limits.freeLabel", { label: kimiLabels[i] }))));
+    }
+  }
+  for (const label of [context.windowLabel, plasmaLabel]) {
+    assert.equal(label({ key: "monthTotal" }, "gpt"), t("limits.default"), "monthly mapping is provider scoped");
+    assert.equal(label({ key: "constructor" }, "kimi"), t("limits.default"), "unknown types use a neutral name");
+    assert.equal(label({ ...kimiRows[2], remainingPercent: null }, "kimi"), kimiLabels[2], "missing data retains its semantic name");
+  }
+  context.snapshot = snapshot;
   const labels = rows.map((row) => context.windowLabel(row, "claude"));
   assert.deepEqual(labels, rows.map((row) => plasmaLabel(row, "claude")), `${file}: renderer consistency`);
   assert.equal(labels[0], t("limits.fiveHour"));
@@ -71,4 +111,4 @@ for (const file of (await fs.readdir(locales)).filter((file) => file.endsWith(".
     assert.equal(plain(labels[7]), "Limit · Week");
   }
 }
-console.log("Quota labels: real Electron/QML functions agree across 27 locales; 45/100%, multiple scopes, unknown/zero/missing/stale values, identities and resets remain separate.");
+console.log("Quota labels: Electron/QML agree across 27 locales; normalized Kimi monthly total/code, Claude scopes, unknown/zero/missing/stale values, order and resets remain separate.");

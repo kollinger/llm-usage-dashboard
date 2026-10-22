@@ -474,6 +474,8 @@
     },
     "fiveHour": "5h",
     "weekly": "Týden",
+    "kimiMonthlyTotal": "Měsíc celkem",
+    "kimiMonthlyCode": "Kód za měsíc",
     "currentSession": "Aktuální relace",
     "allModels": "Všechny modely",
     "claudeDesign": "Claude Design",

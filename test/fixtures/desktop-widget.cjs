@@ -52,6 +52,25 @@ function claudeQuotaLabelsFixture(now = Date.now()) {
   return { generatedAt: time, connectedAccounts: [{ id: "synthetic-claude-quota-labels", provider: "claude",
     label: "Claude · Synthetic quota scopes", status: "connected", updatedAt: time, limits: { rows } }] };
 }
+function kimiQuotaLabelsFixture(now = Date.now()) {
+  const { normalizeKimiQuota } = require("../../lib/kimi-accounts");
+  const time = new Date(now).toISOString();
+  const reset = (offset) => new Date(now + offset).toISOString();
+  const limits = normalizeKimiQuota({ usages: {
+    limit5h: { usedRatio: 1, resetAt: reset(3_600_000) },
+    limit7d: { usedRatio: 0, resetAt: reset(172_800_000) },
+    monthTotal: { usedRatio: 0.25, resetAt: reset(1_728_000_000) },
+    monthCode: { usedRatio: 0.6, resetAt: reset(1_814_400_000) }
+  } });
+  limits.rows[3].updatedAt = new Date(now - 3_600_000).toISOString();
+  limits.rows.push(
+    { key: "futureQuota", remainingPercent: null, resetsAt: null },
+    { key: "futureNamed", label: "Future <scope> & quota", remainingPercent: 0, resetsAt: reset(-1) },
+    { key: "futureTimed", windowMinutes: 90, remainingPercent: 50, resetsAt: reset(5_400_000) }
+  );
+  return { generatedAt: time, connectedAccounts: [{ id: "synthetic-kimi-labels", provider: "kimi",
+    label: "Kimi · Synthetic quotas", status: "connected", updatedAt: time, limits }] };
+}
 function providerColorsUsageFixture(now = Date.now()) {
   return { generatedAt: new Date(now).toISOString(), connectedAccounts:
     ["gpt", "claude", "kimi", "glm", "openai", "anthropic", "moonshot", "copilot", "gemini"].map((provider, index) => ({
@@ -66,4 +85,4 @@ function providerColorsUsageFixture(now = Date.now()) {
       ] }
     })) };
 }
-module.exports = { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, providerColorsUsageFixture };
+module.exports = { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, kimiQuotaLabelsFixture, providerColorsUsageFixture };
