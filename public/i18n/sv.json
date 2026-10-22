@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} hittade av {count} kända konton · skannat {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Inloggning är inte tillgänglig. Installera Codex CLI eller försök igen."
     },
     "connectionHelp": "Befintliga Codex- och OpenCode-inloggningar upptäcks automatiskt. Lägg till GPT-konton utan att ersätta dem.",
-    "loginPrivacy": "Inloggningen kommunicerar med OpenAI. Inloggningsuppgifter stannar i en separat lokal profil och skickas inte till utvecklaren eller parkopplade enheter."
+    "loginPrivacy": "Inloggningen kommunicerar med OpenAI. Inloggningsuppgifter stannar i en separat lokal profil och skickas inte till utvecklaren eller parkopplade enheter.",
+    "profileNote": "OpenCode-profil hittad; aktuell användning är inte bekräftad.",
+    "quotaUnavailable": "Gränser kunde inte läsas. Skanna igen eller logga in igen i källappen.",
+    "savedLimits": "Sparade gränser · inaktuella",
+    "identityUnverified": "Identitet ej verifierad. Sparad historik är inte kopplad till en arbetsyta.",
+    "openCodeUsage": "OpenCode-användning; konto okänt. Kontogränser visas under Konton."
   },
   "codexResets": {
     "title": "Codex · Återställningshistorik",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} sessioner"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Lokal källa",
     "open": "Skrivbordswidget",
     "title": "Kvoter per konto",
@@ -1421,5 +1426,54 @@
     "bounded": "Begränsat till {count}; använd favoriter eller ett leverantörsfilter.",
     "current": "KDE-paketet är uppdaterat",
     "reloadHelp": "Versionen som Plasma har läst in kan inte kontrolleras här. Om den gamla vyn finns kvar efter uppdateringen, spara ditt arbete, logga ut från Plasma och in igen. Att ta bort och lägga till komponenten kan återanvända den gamla cachade vyn."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manuella återställningar",
+    "unavailable": "Den här källan rapporterar inte tillgängliga återställningar.",
+    "none": "Inga sparade återställningar är tillgängliga.",
+    "full": "Fullständig återställning",
+    "session": "5-timmarsåterställning",
+    "weekly": "Veckoåterställning",
+    "expires": "Upphör: {time}",
+    "noExpiry": "Ingen sluttid angiven",
+    "remaining": "Kan användas i {duration}",
+    "expired": "Utgången",
+    "paused": "Inte tillgänglig just nu",
+    "updated": "Kontrollerat: {time}",
+    "saved": "Sparade uppgifter: {time}",
+    "openClaude": "Visa återställningar i Claude"
   }
 }

@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Открити {active} от {count} познати акаунта · проверка {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Входът не е достъпен. Инсталирайте Codex CLI или опитайте отново."
     },
     "connectionHelp": "Съществуващите входове в Codex и OpenCode се откриват автоматично. Добавете GPT акаунти, без да ги заменяте.",
-    "loginPrivacy": "Входът комуникира с OpenAI. Данните за вход остават в отделен локален профил и не се изпращат на разработчика или сдвоените устройства."
+    "loginPrivacy": "Входът комуникира с OpenAI. Данните за вход остават в отделен локален профил и не се изпращат на разработчика или сдвоените устройства.",
+    "profileNote": "Открит е профил в OpenCode; текущата употреба не е потвърдена.",
+    "quotaUnavailable": "Лимитите не са прочетени. Сканирайте или влезте отново в изходното приложение.",
+    "savedLimits": "Запазени лимити · остарели",
+    "identityUnverified": "Самоличността не е потвърдена. Запазената история не е свързана с работно пространство.",
+    "openCodeUsage": "Употреба в OpenCode; акаунтът е неизвестен. Лимитите са в Акаунти."
   },
   "codexResets": {
     "title": "Codex · История на нулиранията",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} сесии"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Локален източник",
     "open": "Уиджет за работния плот",
     "title": "Квоти по акаунти",
@@ -1421,5 +1426,54 @@
     "bounded": "Ограничено до {count}; използвайте любими или филтър за доставчик.",
     "current": "Пакетът за KDE е актуален",
     "reloadHelp": "Заредената от Plasma версия не може да се провери тук. Ако старият изглед остане след обновяването, запазете работата си, излезте от Plasma и влезте отново. Премахването и повторното добавяне може да използва стария кеширан изглед."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ръчни нулирания",
+    "unavailable": "Този източник не съобщава налични нулирания.",
+    "none": "Няма налични запазени нулирания.",
+    "full": "Пълно нулиране",
+    "session": "5-часово нулиране",
+    "weekly": "Седмично нулиране",
+    "expires": "Изтича: {time}",
+    "noExpiry": "Не е посочено време на изтичане",
+    "remaining": "Достъпно още {duration}",
+    "expired": "Изтекло",
+    "paused": "В момента недостъпно",
+    "updated": "Проверено: {time}",
+    "saved": "Запазени данни: {time}",
+    "openClaude": "Виж нулиранията в Claude"
   }
 }

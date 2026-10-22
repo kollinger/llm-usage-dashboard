@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} gedetecteerd van {count} bekende accounts · gescand {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Aanmelden niet beschikbaar. Installeer Codex CLI of probeer opnieuw."
     },
     "connectionHelp": "Bestaande Codex- en OpenCode-aanmeldingen worden automatisch herkend. Voeg hier meer GPT-accounts toe zonder ze te vervangen.",
-    "loginPrivacy": "Aanmelden communiceert met OpenAI. Inloggegevens blijven in een apart lokaal profiel en worden niet naar de ontwikkelaar of gekoppelde apparaten gestuurd."
+    "loginPrivacy": "Aanmelden communiceert met OpenAI. Inloggegevens blijven in een apart lokaal profiel en worden niet naar de ontwikkelaar of gekoppelde apparaten gestuurd.",
+    "profileNote": "OpenCode-profiel gevonden; huidig gebruik niet bevestigd.",
+    "quotaUnavailable": "Limieten konden niet worden gelezen. Scan opnieuw of meld je opnieuw aan in de bronapp.",
+    "savedLimits": "Opgeslagen limieten · verouderd",
+    "identityUnverified": "Identiteit niet geverifieerd. Opgeslagen geschiedenis is niet aan een werkruimte gekoppeld.",
+    "openCodeUsage": "OpenCode-gebruik; account onbekend. Accountlimieten staan onder Accounts."
   },
   "codexResets": {
     "title": "Codex · Resetgeschiedenis",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} sessies"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Lokale bron",
     "open": "Desktopwidget",
     "title": "Quota per account",
@@ -1421,5 +1426,54 @@
     "bounded": "Beperkt tot {count}; gebruik favorieten of een providerfilter.",
     "current": "KDE-pakket is bijgewerkt",
     "reloadHelp": "De door Plasma geladen versie kan hier niet worden gecontroleerd. Blijft na de update de oude weergave staan, sla je werk dan op, meld je af bij Plasma en weer aan. Verwijderen en opnieuw toevoegen kan de oude weergave uit de cache hergebruiken."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Handmatige resets",
+    "unavailable": "Deze bron meldt geen beschikbare resets.",
+    "none": "Geen opgeslagen resets beschikbaar.",
+    "full": "Volledige reset",
+    "session": "Reset van 5 uur",
+    "weekly": "Weekreset",
+    "expires": "Verloopt: {time}",
+    "noExpiry": "Geen vervaltijd opgegeven",
+    "remaining": "Nog {duration} bruikbaar",
+    "expired": "Verlopen",
+    "paused": "Momenteel niet beschikbaar",
+    "updated": "Gecontroleerd: {time}",
+    "saved": "Opgeslagen gegevens: {time}",
+    "openClaude": "Resets bekijken in Claude"
   }
 }

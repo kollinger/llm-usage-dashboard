@@ -4,16 +4,17 @@ import vm from "node:vm";
 
 const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
 const load = source.slice(source.indexOf("async function loadUsage("), source.indexOf("\nfunction setUsageLoading("));
-async function checkSwitch(honorAbort) {
+async function checkSwitch(honorAbort, initialDevice = "all") {
 const requests = [], rendered = [];
 let resolveFirst;
 const firstResponse = new Promise((resolve) => { resolveFirst = resolve; });
 const state = { auth: null, loadingUsage: false, queuedUsageForce: false, queuedUsageIndicator: false,
   subscriptionHistory: {}, subscriptionHistoryFetchedAt: Date.now(), codexResetFetchedAt: Date.now() };
-const connectionState = { selectedDevice: "all" };
+const connectionState = { selectedDevice: initialDevice };
 const context = vm.createContext({ state, connectionState, URLSearchParams, Date, AbortController,
   DEFAULT_LANGUAGE: "en", SUBSCRIPTION_HISTORY_REFRESH_MS: 60_000,
   loadCodexResetHistory() {}, setRefreshIndicator() {},
+  async loadSyncUsageView() {},
   setUsageLoading(value) { state.loadingUsage = value; },
   renderUsageIfChanged() { rendered.push(state.usage.scope); },
   fetchJson(url, options) {
@@ -37,10 +38,12 @@ let deadline;
 try {
   await Promise.race([first, new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error("device switch waited for obsolete response")), 500); })]);
 } finally { clearTimeout(deadline); }
-assert.deepEqual(requests, [{ device: "all", force: false }, { device: "local", force: false }], "a device switch during a request must immediately load the latest scope without rescanning provider logs");
+assert.deepEqual(requests, [{ device: initialDevice === "collector" ? "local" : initialDevice, force: false }, { device: "local", force: false }], "source switches must load the latest scope; collector fallback must request local data rather than a direct-peer aggregate");
 assert.deepEqual(rendered, ["local"], "a late response must not render another device's tokens under the new selection");
 assert.equal(state.usage.scope, "local");
 }
 await checkSwitch(false);
 await checkSwitch(true);
+await checkSwitch(false, "collector");
+await checkSwitch(true, "collector");
 console.log("Usage device switch: latest scope loads immediately after an in-flight request; obsolete scope never renders.");

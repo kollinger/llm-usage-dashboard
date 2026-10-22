@@ -33,12 +33,11 @@ const state = {
   overviewChartRendered: false,
   overviewChartScrollToLatest: true,
   overviewChartRenderVersion: 0,
-  overviewChartExpectedOverflow: false,
-  overviewChartResizeObserver: null,
+  overviewChartScrollController: null,
   chartRendered: false,
   chartScrollToLatest: true,
   chartUserScrolledAwayFromLatest: false,
-  chartProgrammaticScroll: false,
+  chartScrollController: null,
   chartMode: "tokens",
   chartBreakdownMode: "total",
   chartTimeFilter: "all",
@@ -68,6 +67,15 @@ const state = {
   pendingSubscriptionReread: null,
   subscriptionRereadProvider: null,
   sourceOps: {},
+  syncStatus: null,
+  syncDevices: [],
+  syncUsage: null,
+  syncUsagePayload: null,
+  syncDeviceFilter: "all",
+  syncViewError: "",
+  syncViewLoading: false,
+  syncPairingCode: null,
+  syncActionPending: false,
   settingsAutosaveTimers: {},
   settingsToastTimer: null,
   activeRendererNotifications: new Set(),
@@ -93,11 +101,30 @@ const els = {
   gptAccountList: document.getElementById("gptAccountList"),
   gptAccountsNote: document.getElementById("gptAccountsNote"),
   gptAccountsRecheckBtn: document.getElementById("gptAccountsRecheckBtn"),
+  syncSettingsSection: document.getElementById("syncSettingsSection"),
+  syncEnabled: document.getElementById("syncEnabled"),
+  syncServerUrl: document.getElementById("syncServerUrl"),
+  syncDeviceName: document.getElementById("syncDeviceName"),
+  syncPairingCodeField: document.getElementById("syncPairingCodeField"),
+  syncPairingCode: document.getElementById("syncPairingCode"),
+  syncSaveBtn: document.getElementById("syncSaveBtn"),
+  syncCreateSpaceBtn: document.getElementById("syncCreateSpaceBtn"),
+  syncJoinBtn: document.getElementById("syncJoinBtn"),
+  syncNewPairingCodeBtn: document.getElementById("syncNewPairingCodeBtn"),
+  syncNowBtn: document.getElementById("syncNowBtn"),
+  syncDisconnectBtn: document.getElementById("syncDisconnectBtn"),
+  syncPairingOutput: document.getElementById("syncPairingOutput"),
+  syncConnectionStatus: document.getElementById("syncConnectionStatus"),
+  syncPendingStatus: document.getElementById("syncPendingStatus"),
+  syncLastSuccess: document.getElementById("syncLastSuccess"),
+  syncLastError: document.getElementById("syncLastError"),
   refreshBtn: document.getElementById("refreshBtn"),
   settingsBtn: document.getElementById("settingsBtn"),
   layoutResetBtn: document.getElementById("layoutResetBtn"),
   layoutLiveRegion: document.getElementById("layoutLiveRegion"),
   providerFilterBtn: document.getElementById("providerFilterBtn"),
+  syncDeviceFilterWrap: document.getElementById("syncDeviceFilterWrap"),
+  syncDeviceFilter: document.getElementById("syncDeviceFilter"),
   loginBtn: document.getElementById("loginBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
   loginDialog: document.getElementById("loginDialog"),
@@ -214,7 +241,7 @@ const els = {
 
 const providerMeta = {
   codex: { name: "Codex", kickerKey: "providers.codex.kicker", accent: window.llmUsageProviderColors.accent("codex") },
-  openCode: { name: "OpenCode GPT", kickerKey: "providers.openCode.kicker", accent: window.llmUsageProviderColors.accent("openCode") },
+  openCode: { name: "OpenCode", kickerKey: "providers.openCode.kicker", accent: window.llmUsageProviderColors.accent("openCode") },
   codexSpark: { name: "Codex 5.3 Spark", kickerKey: "providers.codexSpark.kicker", accent: window.llmUsageProviderColors.accent("codexSpark") },
   copilot: { name: "GitHub Copilot", kickerKey: "providers.copilot.kicker", accent: window.llmUsageProviderColors.accent("copilot") },
   claudeCode: { name: "Claude Code", kickerKey: "providers.claudeCode.kicker", accent: window.llmUsageProviderColors.accent("claudeCode") },
@@ -228,7 +255,7 @@ const providerMeta = {
 
 const providerBrandMeta = {
   codex: { label: "Codex", mark: "Cx", logo: "codex.svg", accent: providerMeta.codex.accent },
-  openCode: { label: "OpenCode GPT", mark: "OC", logo: "openai.svg", accent: providerMeta.openCode.accent },
+  openCode: { label: "OpenCode", mark: "OC", logo: "openai.svg", accent: providerMeta.openCode.accent },
   codexSpark: { label: "Codex Spark", mark: "Sp", logo: "codex.svg", accent: providerMeta.codexSpark.accent },
   copilot: { label: "GitHub Copilot", mark: "GH", logo: "github-copilot.svg", accent: providerMeta.copilot.accent },
   claudeCode: { label: "Claude Code", mark: "Cl", logo: "claude.svg", accent: providerMeta.claudeCode.accent },
@@ -352,6 +379,7 @@ const DEFAULT_LANGUAGE = "en";
 const FALLBACK_LANGUAGE = "de";
 const LANGUAGE_STORAGE_KEY = "llmUsage.language";
 const PROVIDER_FILTER_STORAGE_KEY = "llmUsage.showAllProviders";
+const SYNC_DEVICE_FILTER_STORAGE_KEY = "llmUsage.syncDeviceFilter";
 const USAGE_PROJECTION_MODE_STORAGE_KEY = "llmUsage.usageProjectionMode";
 const LEGACY_USAGE_PROJECTION_MODES_STORAGE_KEY = "llmUsage.usageProjectionModes";
 const USAGE_PROJECTION_MODES = ["tachometer", "bar"];
@@ -2393,6 +2421,7 @@ async function init() {
   loadThemePreference();
   await loadLanguage(detectInitialLanguage(), { persist: false, rerender: false });
   loadProviderFilterPreference();
+  loadSyncDeviceFilterPreference();
   loadDashboardSectionOrderPreference();
   applyDashboardSectionOrder();
   loadSummaryMetricOrderPreference();
@@ -2439,6 +2468,7 @@ function bindEvents() {
   els.settingsBtn.addEventListener("click", openSettings);
   els.layoutResetBtn?.addEventListener("click", resetLayoutOrder);
   els.providerFilterBtn.addEventListener("click", toggleProviderFilter);
+  els.syncDeviceFilter?.addEventListener("change", () => setSyncDeviceFilter(els.syncDeviceFilter.value));
   els.settingsCloseBtn.addEventListener("click", () => els.settingsDialog.close());
   els.mobileAccessOpen.addEventListener("click", () => changeMobileAccess(true));
   els.mobileAccessDisable.addEventListener("click", () => changeMobileAccess(false));
@@ -2471,6 +2501,12 @@ function bindEvents() {
   els.diagnosticsRecheckBtn?.addEventListener("click", () => recheckSources());
   els.settingsSourcesRecheckBtn?.addEventListener("click", () => recheckSources());
   els.gptAccountsRecheckBtn?.addEventListener("click", recheckGptAccounts);
+  els.syncSaveBtn?.addEventListener("click", saveSyncSettings);
+  els.syncCreateSpaceBtn?.addEventListener("click", createSyncSpace);
+  els.syncJoinBtn?.addEventListener("click", joinSyncSpace);
+  els.syncNewPairingCodeBtn?.addEventListener("click", createSyncPairingCode);
+  els.syncNowBtn?.addEventListener("click", runSyncNow);
+  els.syncDisconnectBtn?.addEventListener("click", disconnectSync);
   setupConnections();
   els.supportReportDownloadBtn?.addEventListener("click", downloadSupportReport);
   els.supportReportCopyBtn?.addEventListener("click", copySupportReportSummary);
@@ -2586,7 +2622,8 @@ function bindEvents() {
   els.pricingModelFilter?.addEventListener("input", () => {
     state.pricingModelFilter = els.pricingModelFilter.value;
     if (state.usage) {
-      renderPricing(state.usage.local, chartRowsForCurrentRange(state.usage.local), buildProviders(state.usage));
+      const local = activeDashboardUsage();
+      renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
     }
   });
   els.pricingViewToggle?.addEventListener("click", (event) => {
@@ -2596,7 +2633,8 @@ function bindEvents() {
       ? button.dataset.pricingView
       : "api";
     if (state.usage) {
-      renderPricing(state.usage.local, chartRowsForCurrentRange(state.usage.local), buildProviders(state.usage));
+      const local = activeDashboardUsage();
+      renderPricing(local, chartRowsForCurrentRange(local), buildProviders(state.usage));
     }
   });
   els.loginForm.addEventListener("submit", login);
@@ -2769,6 +2807,7 @@ function rerenderLanguageSensitiveViews() {
     renderLiveGauges(state.systemMetrics);
     renderSourceSettings();
   }
+  renderSyncSettings();
   refreshIcons();
 }
 
@@ -2791,9 +2830,10 @@ function sortPricing(key) {
       : pricingSortDefaults[key] || "asc";
   state.pricingSort = { key, direction };
   if (state.usage) {
+    const local = activeDashboardUsage();
     renderPricing(
-      state.usage.local,
-      chartRowsForCurrentRange(state.usage.local),
+      local,
+      chartRowsForCurrentRange(local),
       buildProviders(state.usage)
     );
   }
@@ -2805,6 +2845,116 @@ function loadProviderFilterPreference() {
   } catch {
     state.showAllProviders = false;
   }
+}
+
+function loadSyncDeviceFilterPreference() {
+  try {
+    const value = String(localStorage.getItem(SYNC_DEVICE_FILTER_STORAGE_KEY) || "all");
+    state.syncDeviceFilter = validSyncDeviceFilter(value) ? value : "all";
+  } catch {
+    state.syncDeviceFilter = "all";
+  }
+}
+
+function validSyncDeviceFilter(value) {
+  return ["all", "this", "unknown"].includes(value) || /^device_[a-zA-Z0-9]+$/u.test(value);
+}
+
+async function setSyncDeviceFilter(value) {
+  state.syncDeviceFilter = validSyncDeviceFilter(value) ? value : "all";
+  try {
+    localStorage.setItem(SYNC_DEVICE_FILTER_STORAGE_KEY, state.syncDeviceFilter);
+  } catch {
+    // The selection still works for this session when storage is unavailable.
+  }
+  requestChartLatestForViewChange();
+  requestOverviewHistoryLatestForViewChange();
+  await loadSyncUsageView({ renderAfter: true });
+}
+
+function activeDashboardUsage() {
+  if (connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected && state.syncUsage) return state.syncUsage;
+  return state.usage?.local || null;
+}
+
+async function loadSyncUsageView({ renderAfter = false } = {}) {
+  const requestId = state.syncViewRequestId = (state.syncViewRequestId || 0) + 1;
+  const isCurrent = () => requestId === state.syncViewRequestId && connectionState.selectedDevice === "collector";
+  const connected = Boolean(connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected);
+  if (!connected) {
+    state.syncDevices = [];
+    state.syncUsage = null;
+    state.syncUsagePayload = null;
+    state.syncViewError = "";
+    state.syncViewLoading = false;
+    if (renderAfter && state.usage) renderUsageIfChanged({ force: true });
+    return;
+  }
+  state.syncViewLoading = true;
+  try {
+    const deviceResult = await fetchJson(`/api/sync/local/devices?ts=${Date.now()}`);
+    if (!isCurrent()) return;
+    state.syncDevices = Array.isArray(deviceResult.devices) ? deviceResult.devices : [];
+    if (
+      state.syncDeviceFilter.startsWith("device_") &&
+      !state.syncDevices.some((device) => device.id === state.syncDeviceFilter)
+    ) {
+      state.syncDeviceFilter = "all";
+      try {
+        localStorage.setItem(SYNC_DEVICE_FILTER_STORAGE_KEY, "all");
+      } catch {
+        // Keep the in-memory fallback when storage is unavailable.
+      }
+    }
+    const params = new URLSearchParams({
+      device_id: state.syncDeviceFilter,
+      ts: String(Date.now())
+    });
+    const payload = await fetchJson(`/api/sync/local/usage?${params.toString()}`);
+    if (!isCurrent()) return;
+    state.syncUsagePayload = payload;
+    state.syncUsage = payload.usage || null;
+    state.syncViewError = "";
+  } catch (error) {
+    if (!isCurrent()) return;
+    state.syncUsage = null;
+    state.syncUsagePayload = null;
+    state.syncViewError = error.message || t("sync.actionFailed");
+  } finally {
+    if (requestId === state.syncViewRequestId) {
+      state.syncViewLoading = false;
+      if (renderAfter && state.usage && isCurrent()) renderUsageIfChanged({ force: true });
+    }
+  }
+}
+
+function renderSyncDeviceFilter() {
+  if (!els.syncDeviceFilterWrap || !els.syncDeviceFilter) return;
+  const connected = Boolean(connectionState.selectedDevice === "collector" && state.syncStatus?.enabled && state.syncStatus?.connected);
+  els.syncDeviceFilterWrap.hidden = !connected;
+  if (!connected) {
+    els.syncDeviceFilter.innerHTML = "";
+    return;
+  }
+  const currentDeviceId = state.syncStatus?.deviceId;
+  const options = [
+    { value: "all", label: t("sync.allDevices") },
+    { value: "this", label: t("sync.thisDevice") },
+    ...state.syncDevices
+      .filter((device) => device.id !== currentDeviceId)
+      .map((device) => ({ value: device.id, label: device.displayName || device.id })),
+    { value: "unknown", label: t("sync.unknownDevice") }
+  ];
+  if (!options.some((option) => option.value === state.syncDeviceFilter)) state.syncDeviceFilter = "all";
+  els.syncDeviceFilter.innerHTML = options.map((option) => {
+    return `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`;
+  }).join("");
+  els.syncDeviceFilter.value = state.syncDeviceFilter;
+  els.syncDeviceFilter.disabled = state.syncViewLoading;
+  els.syncDeviceFilterWrap.dataset.status = state.syncViewError ? "error" : "ready";
+  els.syncDeviceFilterWrap.title = state.syncViewError
+    ? t("sync.fallbackLocal", { message: state.syncViewError })
+    : "";
 }
 
 function loadDashboardSectionOrderPreference() {
@@ -4221,7 +4371,7 @@ function systemMetricsPollDelayMs() {
 }
 
 async function loadUsage({ showIndicator = false, force = false } = {}) {
-  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: !state.auth || state.auth.authenticated, force });
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: connectionState.selectedDevice !== "collector" && (!state.auth || state.auth.authenticated), force });
   if (state.loadingUsage) {
     if (connectionState.selectedDevice !== state.loadingUsageDevice) {
       state.queuedUsageScope = true;
@@ -4251,7 +4401,7 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
   try {
     const params = new URLSearchParams({ ts: String(Date.now()) });
     params.set("lang", state.language || DEFAULT_LANGUAGE);
-    params.set("device", requestedDevice);
+    params.set("device", requestedDevice === "collector" ? "local" : requestedDevice);
     if (force) params.set("force", "1");
     // Subscription history changes rarely; refresh it on force and on a slow
     // cadence instead of alongside every usage poll.
@@ -4275,6 +4425,17 @@ async function loadUsage({ showIndicator = false, force = false } = {}) {
     }
     if (refreshSubscriptionHistory && subscriptionHistory) state.subscriptionHistoryFetchedAt = Date.now();
     state.usage = usage;
+    state.syncStatus = usage.sync || null;
+    if (!connectionState.collectorScopeInitialized && state.syncStatus) {
+      connectionState.collectorScopeInitialized = true;
+      if (!usage.deviceSync?.enabled && state.syncStatus.enabled && state.syncStatus.connected) connectionState.selectedDevice = "collector";
+    }
+    const loadedSource = connectionState.selectedDevice;
+    await loadSyncUsageView({ renderAfter: false });
+    if (connectionState.selectedDevice !== loadedSource) {
+      state.queuedUsageScope = true;
+      return;
+    }
     state.subscriptionHistory = subscriptionHistory || state.subscriptionHistory || { version: 1, entries: [] };
     renderUsageIfChanged({ force });
   } catch (error) {
@@ -4414,9 +4575,9 @@ function renderLocked() {
   }
   els.priceRows.innerHTML = "";
   els.pricingMeta.textContent = "--";
-  clearOverviewHistoryResizeObserver();
+  clearHistoryChartScroll("overviewChartScrollController");
   state.overviewChartRendered = false;
-  state.overviewChartExpectedOverflow = false;
+  clearHistoryChartScroll("chartScrollController");
   state.chartRendered = false;
   state.layoutEditMode = true;
   state.keyboardDragSectionId = null;
@@ -4428,9 +4589,11 @@ function renderLocked() {
   updateSummaryMetricLayout();
   updateProviderViewNotice([], []);
   updateProviderFilterControl([], []);
+  renderSyncDeviceFilter();
   updateLayoutControls([], []);
   renderSourceDiagnostics();
   renderSourceSettings();
+  renderSyncSettings();
   renderGptAccounts(null);
 }
 
@@ -4439,7 +4602,7 @@ function renderLocked() {
 // few polls (so relative-time labels stay honest) still render normally.
 function renderUsageIfChanged({ force = false } = {}) {
   const volatileKeys = new Set(["generatedAt", "updatedAt"]);
-  const signature = `${state.language}|${JSON.stringify(state.usage, (key, value) =>
+  const signature = `${state.language}|${state.syncDeviceFilter}|${state.syncViewError}|${JSON.stringify(state.syncUsage)}|${JSON.stringify(state.usage, (key, value) =>
     volatileKeys.has(key) ? undefined : value
   )}|${JSON.stringify(state.subscriptionHistory)}`;
   const unchanged = signature === state.lastUsageRenderSignature;
@@ -4453,8 +4616,9 @@ function renderUsageIfChanged({ force = false } = {}) {
 }
 
 function render() {
-  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: !state.auth || state.auth.authenticated });
+  globalThis.ChatUsagePanel?.sync({ device: connectionState.selectedDevice, authenticated: connectionState.selectedDevice !== "collector" && (!state.auth || state.auth.authenticated) });
   const usage = state.usage;
+  const local = activeDashboardUsage();
   const historyNotice = document.getElementById("usageRefreshNotice");
   if (historyNotice) {
     historyNotice.hidden = !usage.cache?.refreshing;
@@ -4472,13 +4636,14 @@ function render() {
   applyDashboardSectionOrder();
   updateProviderViewNotice(providers);
   updateProviderFilterControl(providers, visibleProviders);
+  renderSyncDeviceFilter();
   updateLayoutControls(providers, visibleProviders);
-  const allDaily = usage.local?.daily || [];
+  const allDaily = local?.daily || [];
   syncChartTimeFilter(allDaily);
   const filteredDaily = filterDailyByRange(allDaily, state.chartTimeFilter);
-  const chartRows = buildHistoryRowsForFilter(usage.local, filteredDaily, state.chartTimeFilter);
-  const selectedRangeRows = usageRowsForSelectedRange(usage.local, chartRows);
-  renderSummary(visibleProviders, usage.local, filteredDaily);
+  const chartRows = buildHistoryRowsForFilter(local, filteredDaily, state.chartTimeFilter);
+  const selectedRangeRows = usageRowsForSelectedRange(local, chartRows);
+  renderSummary(visibleProviders, local, filteredDaily);
   renderGptAccounts(usage.gptAccounts);
   renderConnections(usage);
   renderCodexResetHistory();
@@ -4508,11 +4673,12 @@ function render() {
     els.sourceTotals.innerHTML = renderTokenBreakdownSummary(chartRows, state.chartBreakdownMode);
   }
   els.chartWindowInsights.innerHTML = renderChartWindowInsights(chartRows, state.chartMode, state.chartBreakdownMode);
-  renderTokenList(usage.local?.totals?.allTime);
+  renderTokenList(local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
-  renderPricing(usage.local, chartRows, providers);
+  renderPricing(local, chartRows, providers);
   renderSourceDiagnostics();
   renderSourceSettings();
+  renderSyncSettings();
   refreshIcons();
 }
 
@@ -4640,9 +4806,16 @@ function renderGptAccount(account) {
   const activeSources = sources.filter((source) => source.active);
   const codexSource = sources.find((source) => source.id === "codex");
   const limitSource = gptAccountLimitSource(sources);
-  const hasCurrentLimits = Boolean(limitSource?.active && limitSource?.quotaStatus === "ready");
+  const hasCurrentLimits = gptAccountLimitsCurrent(limitSource);
   const lifetimeTokens = codexSource?.usage?.summary?.lifetimeTokens;
-  const limits = (limitSource?.limits?.rows || []).slice(0, 2);
+  const limits = limitSource?.limits?.rows || [];
+  const quotaFailure = activeSources.find((source) => source.quotaStatus === "unavailable");
+  const quotaMessage = !hasCurrentLimits ? t(account.identityQuality === "email"
+    ? "gptAccounts.identityUnverified"
+    : ["auth_required", "credentials_missing"].includes(quotaFailure?.quotaReason)
+      ? "connections.status.auth_required"
+      : quotaFailure?.quotaReason === "identity_unverified" ? "gptAccounts.identityUnverified"
+        : limits.length ? "gptAccounts.savedLimits" : "gptAccounts.quotaUnavailable") : "";
   const sourceBadges = sources.map((source) => `
     <span class="gpt-account-source${source.active ? " is-active" : ""}">
       ${escapeHtml(t(`gptAccounts.sources.${source.id}`, {}, source.id))}
@@ -4653,7 +4826,9 @@ function renderGptAccount(account) {
     metrics.push(`<span><strong>${escapeHtml(formatTokens(lifetimeTokens))}</strong>${escapeHtml(t("gptAccounts.lifetimeTokens"))}</span>`);
   }
   for (const limit of limits) {
-    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(gptAccountLimitLabel(limit))}</span>`);
+    metrics.push(`<span><strong>${escapeHtml(formatLimitRemainingPercent(limit))}</strong>${escapeHtml(gptAccountLimitLabel(limit))}${limit.resetsAt
+      ? `<small>${escapeHtml(t("limits.resetPrefix", { time: formatDateTime(limit.resetsAt) }))}</small>` : ""}${!hasCurrentLimits || (limit.resetsAt && Date.parse(limit.resetsAt) <= Date.now())
+        ? `<small>${escapeHtml(t("gptAccounts.savedLimits"))}</small>` : ""}</span>`);
   }
   if (!limits.length) {
     metrics.push(`<span><strong>${escapeHtml(t("liveMetrics.unavailable"))}</strong>${escapeHtml(t("gptAccounts.limit"))}</span>`);
@@ -4671,17 +4846,16 @@ function renderGptAccount(account) {
           </div>
           <div class="gpt-account-sources">${sourceBadges}</div>
         </div>
-        <span class="gpt-account-state">${escapeHtml(t(account.active ? "gptAccounts.active" : "gptAccounts.historical"))}${account.active && limits.length && !hasCurrentLimits
-          ? ` · ${escapeHtml(t("gptAccounts.limit"))}: ${escapeHtml(t("gptAccounts.historical"))}`
+        <span class="gpt-account-state">${escapeHtml(t(account.active ? "connections.status.detected" : "gptAccounts.historical"))}${account.active && limits.length && !hasCurrentLimits
+          ? ` · ${escapeHtml(t("gptAccounts.savedLimits"))}`
           : ""}</span>
       </div>
       ${metrics.length ? `<div class="gpt-account-metrics">${metrics.join("")}</div>` : ""}
+      ${quotaMessage ? `<p class="gpt-account-seen">${escapeHtml(quotaMessage)}</p>` : ""}
+      ${activeSources.some((source) => source.id === "openCode") ? `<p class="gpt-account-seen">${escapeHtml(t("gptAccounts.profileNote"))}</p>` : ""}
       <div class="gpt-account-seen">
         ${escapeHtml(t("gptAccounts.lastSeen", { time: formatRelativeUpdatedAt(account.lastSeenAt) }))}
-        ${activeSources.length ? ` · ${escapeHtml(t(
-          activeSources.length === 1 ? "gptAccounts.activeSourceCountOne" : "gptAccounts.activeSourceCount",
-          { count: activeSources.length }
-        ))}` : ""}${limitFreshness}
+        ${limitFreshness}
       </div>
     </article>
   `;
@@ -4697,15 +4871,24 @@ function gptAccountLimitSource(sources, options = {}) {
   return (Array.isArray(sources) ? sources : [])
     .filter((source) => (
       (source?.limits?.rows || []).length > 0 &&
-      (!options.currentOnly || (source.active && source.quotaStatus === "ready"))
+      (!options.currentOnly || gptAccountLimitsCurrent(source))
     ))
     .sort((left, right) => {
+      const currentDelta = Number(gptAccountLimitsCurrent(right)) - Number(gptAccountLimitsCurrent(left));
+      if (currentDelta) return currentDelta;
       const activeDelta = Number(Boolean(right.active)) - Number(Boolean(left.active));
       if (activeDelta) return activeDelta;
       const timeDelta = Date.parse(right.limitsUpdatedAt || "") - Date.parse(left.limitsUpdatedAt || "");
       if (Number.isFinite(timeDelta) && timeDelta) return timeDelta;
       return String(left.id || "").localeCompare(String(right.id || ""));
     })[0] || null;
+}
+
+function gptAccountLimitsCurrent(source) {
+  const updatedAt = Date.parse(source?.limitsUpdatedAt || "");
+  const age = Date.now() - updatedAt;
+  return Boolean(source?.active && source.quotaStatus === "ready" && Number.isFinite(age) && age >= -60_000 && age <= 15 * 60_000 &&
+    source.limits?.rows?.some((row) => !row.resetsAt || Date.parse(row.resetsAt) > Date.now()));
 }
 
 async function recheckGptAccounts() {
@@ -4775,7 +4958,7 @@ function buildProviders(usage) {
     normalizeLocalProvider("kimi", usage.kimi),
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
-  ];
+  ].map((provider) => ({ ...provider, manualResets: usage[provider.id]?.manualResets || null }));
 }
 
 function renderChartModeToggle() {
@@ -5070,69 +5253,88 @@ function isOverviewHistoryScrolledToLatest(scroller = overviewHistoryScroller(),
   return overviewHistoryMaxScrollLeft(scroller) - Math.max(0, Number(currentScrollLeft) || 0) <= CHART_LATEST_SCROLL_TOLERANCE_PX;
 }
 
-function setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft) {
+function clearHistoryChartScroll(controllerKey) {
+  state[controllerKey]?.cleanup();
+  state[controllerKey] = null;
+}
+
+// Keep the existing latest-scroll intent alive through late layout changes.
+// Each render owns its observer, scroll listener and bounded frame retries.
+function settleHistoryChartScroll({ scroller, canvasSelector, previousScrollLeft, scrollToLatest, isCurrent, onUpdate }) {
+  let followingLatest = scrollToLatest;
+  let savedScrollLeft = previousScrollLeft;
+  let expectedScrollLeft = Math.max(0, Number(scroller.scrollLeft) || 0);
+  let clientWidth = scroller.clientWidth;
+  let scrollWidth = scroller.scrollWidth;
+  let stopped = false;
+  let observer = null;
+
+  function cleanup() {
+    stopped = true;
+    observer?.disconnect();
+    scroller.removeEventListener("scroll", handleScroll);
+  }
+
+  function handleScroll() {
+    if (stopped || !isCurrent() || !scroller.clientWidth) return;
+    // Browser scroll events are asynchronous, including our own assignments
+    // and clamping after resize. Neither is evidence of manual navigation.
+    if (scroller.clientWidth !== clientWidth || scroller.scrollWidth !== scrollWidth) return;
+    const currentScrollLeft = Math.max(0, Number(scroller.scrollLeft) || 0);
+    if (Math.abs(currentScrollLeft - expectedScrollLeft) <= CHART_LATEST_SCROLL_TOLERANCE_PX) return;
+    savedScrollLeft = currentScrollLeft;
+    expectedScrollLeft = currentScrollLeft;
+    const maxScrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    followingLatest = maxScrollLeft - currentScrollLeft <= CHART_LATEST_SCROLL_TOLERANCE_PX;
+    onUpdate({ pending: false, followingLatest });
+  }
+
+  function applyScroll() {
+    if (stopped) return;
+    if (!isCurrent()) {
+      cleanup();
+      return;
+    }
+    // Account for a user scroll even if its asynchronous event is still queued.
+    handleScroll();
+    const maxScrollLeft = Math.max(0, Number(scroller.scrollWidth || 0) - Number(scroller.clientWidth || 0));
+    scroller.scrollLeft = followingLatest ? maxScrollLeft : Math.min(maxScrollLeft, savedScrollLeft);
+    expectedScrollLeft = Math.max(0, Number(scroller.scrollLeft) || 0);
+    clientWidth = scroller.clientWidth;
+    scrollWidth = scroller.scrollWidth;
+    const reachedLatest = Number(clientWidth || 0) > 0 && maxScrollLeft - expectedScrollLeft <= CHART_LATEST_SCROLL_TOLERANCE_PX;
+    onUpdate({ pending: followingLatest && !reachedLatest, followingLatest });
+  }
+
+  scroller.addEventListener("scroll", handleScroll, { passive: true });
+  if (typeof ResizeObserver === "function") {
+    observer = new ResizeObserver(applyScroll);
+    observer.observe(scroller);
+    const canvas = scroller.querySelector?.(canvasSelector);
+    if (canvas) observer.observe(canvas);
+  }
+  function settleFrame(attempt = 0) {
+    window.requestAnimationFrame(() => {
+      applyScroll();
+      if (!stopped && followingLatest && attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS) settleFrame(attempt + 1);
+    });
+  }
+  settleFrame();
+  return { cleanup, handleScroll };
+}
+
+function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion) {
+  const scroller = overviewHistoryScroller();
   if (!scroller) return;
-  const maxScrollLeft = overviewHistoryMaxScrollLeft(scroller);
-  scroller.scrollLeft = scrollToLatest
-    ? maxScrollLeft
-    : Math.min(maxScrollLeft, Math.max(0, Number(previousScrollLeft) || 0));
-}
-
-function clearOverviewHistoryResizeObserver() {
-  state.overviewChartResizeObserver?.disconnect();
-  state.overviewChartResizeObserver = null;
-}
-
-function observeOverviewHistoryLayout(scroller, renderVersion) {
-  clearOverviewHistoryResizeObserver();
-  if (typeof ResizeObserver !== "function") return;
-  const observer = new ResizeObserver(() => {
-    if (
-      state.overviewChartResizeObserver !== observer ||
-      renderVersion !== state.overviewChartRenderVersion ||
-      scroller !== overviewHistoryScroller() ||
-      !state.overviewChartScrollToLatest
-    ) {
-      if (state.overviewChartResizeObserver === observer) clearOverviewHistoryResizeObserver();
-      return;
-    }
-    setOverviewHistoryScroll(scroller, true, 0);
-    const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
-    if (hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller)) {
-      state.overviewChartScrollToLatest = false;
-      clearOverviewHistoryResizeObserver();
-    }
-  });
-  state.overviewChartResizeObserver = observer;
-  observer.observe(scroller);
-  const canvas = scroller.querySelector?.(".overview-history-canvas");
-  if (canvas) observer.observe(canvas);
-}
-
-function finishOverviewHistoryRenderScroll(previousScrollLeft, scrollToLatest, renderVersion, attempt = 0) {
-  window.requestAnimationFrame(() => {
-    if (renderVersion !== state.overviewChartRenderVersion) return;
-    const scroller = overviewHistoryScroller();
-    if (!scroller) return;
-    setOverviewHistoryScroll(scroller, scrollToLatest, previousScrollLeft);
-    state.overviewChartRendered = true;
-    if (!scrollToLatest) {
-      state.overviewChartScrollToLatest = false;
-      clearOverviewHistoryResizeObserver();
-      return;
-    }
-    const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const hasExpectedRange = !state.overviewChartExpectedOverflow || overviewHistoryMaxScrollLeft(scroller) > 0;
-    const reachedLatest = hasLayout && hasExpectedRange && isOverviewHistoryScrolledToLatest(scroller);
-    const shouldRetry = !reachedLatest && attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
-    state.overviewChartScrollToLatest = !reachedLatest;
-    if (shouldRetry) {
-      finishOverviewHistoryRenderScroll(previousScrollLeft, true, renderVersion, attempt + 1);
-    } else if (!reachedLatest) {
-      observeOverviewHistoryLayout(scroller, renderVersion);
-    } else {
-      clearOverviewHistoryResizeObserver();
+  state.overviewChartScrollController = settleHistoryChartScroll({
+    scroller,
+    canvasSelector: ".overview-history-canvas",
+    previousScrollLeft,
+    scrollToLatest,
+    isCurrent: () => renderVersion === state.overviewChartRenderVersion && scroller === overviewHistoryScroller(),
+    onUpdate: ({ pending }) => {
+      state.overviewChartRendered = true;
+      state.overviewChartScrollToLatest = pending;
     }
   });
 }
@@ -5150,7 +5352,7 @@ function renderOverviewHistory(daily) {
     ? costRows.filter((row) => Number(row.totalEur || 0) > 0)
     : inputRows.filter((day) => Number(day.totalTokens || 0) > 0);
   if (!activeRows.length) {
-    clearOverviewHistoryResizeObserver();
+    clearHistoryChartScroll("overviewChartScrollController");
     els.overviewHistoryPanel.hidden = true;
     els.overviewHistoryFilterBar.innerHTML = "";
     els.overviewHistoryModeToggle.innerHTML = "";
@@ -5158,7 +5360,6 @@ function renderOverviewHistory(daily) {
     els.overviewHistoryChart.innerHTML = "";
     els.overviewHistoryLegend.innerHTML = "";
     state.overviewChartRendered = false;
-    state.overviewChartExpectedOverflow = false;
     return;
   }
 
@@ -5178,7 +5379,7 @@ function renderOverviewHistory(daily) {
     : chartTokenSegmentEntries(activeRows, state.chartBreakdownMode);
   const rawMax = Math.max(...rows.map((row) => mode === "costs" ? Number(row.totalEur || 0) : Number(row.totalTokens || 0)), mode === "costs" ? 0.01 : 1);
   const scale = mode === "costs" ? chartCostScale(rawMax) : chartTokenScale(rawMax);
-  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(state.usage?.local?.daily || []);
+  els.overviewHistoryFilterBar.innerHTML = renderChartFilterBar(activeDashboardUsage()?.daily || []);
   els.overviewHistoryModeToggle.innerHTML = renderChartModeToggle();
   if (els.overviewHistoryBreakdownToggle) {
     els.overviewHistoryBreakdownToggle.hidden = mode === "costs";
@@ -5194,7 +5395,6 @@ function renderOverviewHistory(daily) {
     ? Math.max(barWidth + barGap, plotViewportWidth / Math.max(visibleDays, 1))
     : barWidth + barGap;
   const width = Math.max(plotViewportWidth, rows.length * barStep);
-  state.overviewChartExpectedOverflow = width > plotViewportWidth;
   const barX = (index) => (isSlotSeries
     ? index * barStep + Math.max(0, (barStep - barWidth) / 2)
     : index * barStep);
@@ -5205,7 +5405,7 @@ function renderOverviewHistory(daily) {
     !state.overviewChartRendered ||
     !previousScroller ||
     isOverviewHistoryScrolledToLatest(previousScroller, previousScrollLeft);
-  clearOverviewHistoryResizeObserver();
+  clearHistoryChartScroll("overviewChartScrollController");
   const timeline = isSlotSeries
     ? renderHistorySlotTimeline({
       rows,
@@ -5703,7 +5903,7 @@ function normalizeLocalProvider(id, provider) {
     subscription,
     subscriptionConnectionAction: provider?.subscriptionConnectionAction || subscription?.connectionAction || null,
     subscriptionConflict: provider?.subscriptionConflict || subscription?.conflict || null,
-    message: localizeProviderMessage(
+    message: id === "openCode" && Number(provider?.totals?.allTime?.totalTokens) > 0 ? t("gptAccounts.openCodeUsage") : localizeProviderMessage(
       provider?.message,
       id === "copilot"
         ? "providers.messages.copilotLogTokens"
@@ -6240,6 +6440,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderProviderFreshness(provider)}
       ${renderProviderSubscription(provider)}
       ${renderProviderSubscriptionConnection(provider)}
+      ${renderManualResets(provider)}
       ${main}
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
@@ -6252,6 +6453,33 @@ function renderProvider(provider, index = 0, total = 1) {
       ` : ""}
     </article>
   `;
+}
+
+function renderManualResets(provider, now = Date.now()) {
+  const resets = provider.manualResets;
+  if (!resets && provider.id !== "claudeCode" && !providerHasCurrentUsage(provider)) return "";
+  const text = (key, values = {}) => escapeHtml(t(`manualResets.${key}`, values));
+  const offers = (Array.isArray(resets?.offers) ? resets.offers : []).filter((offer) => Number.isSafeInteger(offer.remaining) && offer.remaining > 0);
+  const formatExpiry = (value) => new Intl.DateTimeFormat(currentLocale(), {
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short"
+  }).format(new Date(value));
+  const content = resets?.status !== "available" ? `<p>${text("unavailable")}</p>` : !offers.length ? `<p>${text("none")}</p>` : offers.map((offer) => {
+    const expiry = Date.parse(offer.expiresAt || "");
+    const start = Date.parse(offer.startsAt || "");
+    const expired = Number.isFinite(expiry) && expiry <= now;
+    const usable = offer.usable === true && !offer.paused && (!Number.isFinite(start) || start <= now);
+    const scope = ["full", "session", "weekly"].includes(offer.scope) ? offer.scope : "full";
+    return `<div class="manual-reset-offer${expired ? " is-expired" : ""}">
+      <strong>${escapeHtml(String(offer.remaining))} × ${text(scope)}</strong>
+      <p>${Number.isFinite(expiry) ? `<time datetime="${escapeHtml(new Date(expiry).toISOString())}">${text("expires", { time: formatExpiry(expiry) })}</time>` : text("noExpiry")}</p>
+      <p>${expired ? text("expired") : !usable ? text("paused") : Number.isFinite(expiry) ? text("remaining", { duration: formatDurationCompact(expiry - now) }) : ""}</p>
+    </div>`;
+  }).join("");
+  const measuredAt = Date.parse(resets?.updatedAt || "");
+  const saved = resets?.source === "claude_desktop_cache" || (Number.isFinite(measuredAt) && now - measuredAt > 15 * 60_000);
+  const timestamp = Number.isFinite(measuredAt) ? `<p class="manual-reset-source">${text(saved ? "saved" : "updated", { time: formatExpiry(measuredAt) })}</p>` : "";
+  const link = provider.id === "claudeCode" ? `<a class="manual-reset-link" href="https://claude.ai/settings/usage" target="_blank" rel="noopener noreferrer">${text("openClaude")}</a>` : "";
+  return `<section class="manual-resets" aria-label="${text("title")}"><h3>${text("title")}</h3>${content}${timestamp}${link}</section>`;
 }
 
 function providerHasCurrentUsage(provider) {
@@ -8772,6 +9000,7 @@ function renderChart(daily, scrollState = captureChartScrollState()) {
   if (!daily.length) {
     els.chart.innerHTML = "";
     els.chartLegend.innerHTML = "";
+    clearHistoryChartScroll("chartScrollController");
     state.chartRendered = false;
     return;
   }
@@ -8803,6 +9032,7 @@ function renderCostChart(daily, scrollState = captureChartScrollState()) {
   if (!rowsWithCost.length) {
     els.chart.innerHTML = `<div class="chart-empty">${escapeHtml(t("chart.costs.noData"))}</div>`;
     els.chartLegend.innerHTML = "";
+    clearHistoryChartScroll("chartScrollController");
     state.chartRendered = false;
     return;
   }
@@ -9096,30 +9326,18 @@ function captureChartScrollState() {
   };
 }
 
-function finishChartRenderScroll(previousScrollLeft, scrollToLatest, renderedScroller = chartScroller(), attempt = 0) {
-  window.requestAnimationFrame(() => {
-    if (chartScroller() !== renderedScroller) return;
-    const scroller = renderedScroller;
-    if (attempt === 0 && scroller !== els.chart) scroller.addEventListener("scroll", handleChartScroll, { passive: true });
-    const maxScrollLeft = chartMaxScrollLeft();
-    state.chartProgrammaticScroll = true;
-    try {
-      scroller.scrollLeft = scrollToLatest ? maxScrollLeft : Math.min(previousScrollLeft, maxScrollLeft);
-    } finally {
-      state.chartProgrammaticScroll = false;
-    }
-    state.chartRendered = true;
-    updateChartManualScrollState();
-    if (!scrollToLatest) {
-      state.chartScrollToLatest = false;
-      return;
-    }
-    const shouldRetry = attempt + 1 < CHART_SCROLL_SETTLE_ATTEMPTS;
-    const hasLayout = Number(scroller.clientWidth || 0) > 0;
-    const reachedLatest = hasLayout && isChartScrolledToLatest(scroller.scrollLeft);
-    state.chartScrollToLatest = shouldRetry || !reachedLatest;
-    if (shouldRetry) {
-      finishChartRenderScroll(previousScrollLeft, true, renderedScroller, attempt + 1);
+function finishChartRenderScroll(previousScrollLeft, scrollToLatest, renderedScroller = chartScroller()) {
+  clearHistoryChartScroll("chartScrollController");
+  state.chartScrollController = settleHistoryChartScroll({
+    scroller: renderedScroller,
+    canvasSelector: ".chart-canvas",
+    previousScrollLeft,
+    scrollToLatest,
+    isCurrent: () => chartScroller() === renderedScroller,
+    onUpdate: ({ pending, followingLatest }) => {
+      state.chartRendered = true;
+      state.chartScrollToLatest = pending;
+      state.chartUserScrolledAwayFromLatest = !followingLatest;
     }
   });
 }
@@ -9140,7 +9358,8 @@ function requestOverviewHistoryLatestForViewChange() {
 }
 
 function handleChartScroll() {
-  if (!state.chartRendered || state.chartProgrammaticScroll) return;
+  if (!state.chartRendered) return;
+  state.chartScrollController?.handleScroll();
   updateChartManualScrollState();
 }
 
@@ -10020,6 +10239,7 @@ async function openSettings(tab = "accounts") {
   renderSourceSettings();
   renderSupportReport();
   await Promise.all([
+    loadSyncSettings(),
     loadSubscriptionSettings(),
     loadUpdateSettingsAndStatus(),
     loadNotificationSettings(),
@@ -10028,6 +10248,176 @@ async function openSettings(tab = "accounts") {
     loadConnectionSettings(),
     loadMobileAccess()
   ]);
+}
+
+async function loadSyncSettings() {
+  if (!els.syncSettingsSection) return null;
+  try {
+    const status = await fetchJson(`/api/sync/local/status?ts=${Date.now()}`);
+    state.syncStatus = status;
+    renderSyncSettings();
+    renderSyncDeviceFilter();
+    return status;
+  } catch (error) {
+    state.syncViewError = error.message || t("sync.actionFailed");
+    renderSyncSettings();
+    return null;
+  }
+}
+
+function renderSyncSettings() {
+  if (!els.syncSettingsSection) return;
+  const status = state.syncStatus || {};
+  const connected = Boolean(status.connected);
+  const busy = Boolean(state.syncActionPending);
+  if (els.syncEnabled && document.activeElement !== els.syncEnabled) els.syncEnabled.checked = Boolean(status.enabled);
+  if (els.syncServerUrl && document.activeElement !== els.syncServerUrl) els.syncServerUrl.value = status.serverUrl || "";
+  if (els.syncDeviceName && document.activeElement !== els.syncDeviceName) els.syncDeviceName.value = status.deviceName || "";
+  if (els.syncPairingCodeField) els.syncPairingCodeField.hidden = connected;
+  if (els.syncPairingCode) els.syncPairingCode.disabled = connected || busy;
+  if (els.syncServerUrl) els.syncServerUrl.disabled = connected || busy;
+  if (els.syncDeviceName) els.syncDeviceName.disabled = connected || busy;
+  if (els.syncEnabled) els.syncEnabled.disabled = busy;
+  if (els.syncSaveBtn) els.syncSaveBtn.disabled = busy;
+  if (els.syncCreateSpaceBtn) {
+    els.syncCreateSpaceBtn.hidden = connected || !status.collectorEnabled;
+    els.syncCreateSpaceBtn.disabled = busy;
+  }
+  if (els.syncJoinBtn) {
+    els.syncJoinBtn.hidden = connected;
+    els.syncJoinBtn.disabled = busy;
+  }
+  for (const button of [els.syncNewPairingCodeBtn, els.syncNowBtn, els.syncDisconnectBtn]) {
+    if (!button) continue;
+    button.hidden = !connected;
+    button.disabled = busy;
+  }
+  if (els.syncPairingOutput) {
+    const pairing = state.syncPairingCode;
+    els.syncPairingOutput.hidden = !pairing?.code;
+    els.syncPairingOutput.textContent = pairing?.code
+      ? `${pairing.code}${pairing.expiresAt ? ` · ${formatDateTime(pairing.expiresAt)}` : ""}`
+      : "";
+  }
+  if (els.syncConnectionStatus) {
+    els.syncConnectionStatus.textContent = connected
+      ? t("sync.connected", { device: status.deviceName || status.deviceId || "--" })
+      : t("sync.notConnected");
+  }
+  if (els.syncPendingStatus) {
+    els.syncPendingStatus.textContent = t("sync.queued", { count: formatNumber(status.pendingCount || 0) });
+  }
+  if (els.syncLastSuccess) els.syncLastSuccess.textContent = formatDateTime(status.lastSuccessAt);
+  if (els.syncLastError) els.syncLastError.textContent = state.syncViewError || status.lastError || "--";
+}
+
+async function saveSyncSettings() {
+  await runSyncAction(async () => {
+    const status = await fetchJson("/api/sync/local/settings", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        enabled: Boolean(els.syncEnabled?.checked),
+        serverUrl: String(els.syncServerUrl?.value || "").trim(),
+        deviceName: String(els.syncDeviceName?.value || "").trim()
+      })
+    });
+    state.syncStatus = { ...status, collectorEnabled: state.syncStatus?.collectorEnabled };
+    if (status.enabled && status.connected) connectionState.selectedDevice = "collector";
+    await loadSyncUsageView({ renderAfter: true });
+    showSettingsToast(t("sync.saved"), "ready");
+  });
+}
+
+async function createSyncSpace() {
+  await runSyncAction(async () => {
+    const serverUrl = String(els.syncServerUrl?.value || "").trim();
+    await fetchJson("/api/sync/local/create-space", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        serverUrl,
+        deviceName: String(els.syncDeviceName?.value || "").trim()
+      })
+    });
+    await loadSyncSettings();
+    connectionState.selectedDevice = "collector";
+    await loadUsage({ force: true });
+    showSettingsToast(t("sync.saved"), "ready");
+  });
+}
+
+async function joinSyncSpace() {
+  await runSyncAction(async () => {
+    await fetchJson("/api/sync/local/join", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        serverUrl: String(els.syncServerUrl?.value || "").trim(),
+        deviceName: String(els.syncDeviceName?.value || "").trim(),
+        pairingCode: String(els.syncPairingCode?.value || "").trim()
+      })
+    });
+    if (els.syncPairingCode) els.syncPairingCode.value = "";
+    await loadSyncSettings();
+    connectionState.selectedDevice = "collector";
+    await loadUsage({ force: true });
+    showSettingsToast(t("sync.saved"), "ready");
+  });
+}
+
+async function createSyncPairingCode() {
+  await runSyncAction(async () => {
+    state.syncPairingCode = await fetchJson("/api/sync/local/pairing-code", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}"
+    });
+    showSettingsToast(t("sync.pairingCreated"), "ready");
+  });
+}
+
+async function runSyncNow() {
+  await runSyncAction(async () => {
+    const response = await fetchJson("/api/sync/local/sync-now", { method: "POST" });
+    state.syncStatus = {
+      ...(response.status || state.syncStatus),
+      collectorEnabled: state.syncStatus?.collectorEnabled
+    };
+    await loadSyncUsageView({ renderAfter: true });
+    showSettingsToast(t("sync.synced"), "ready");
+  });
+}
+
+async function disconnectSync() {
+  if (typeof window.confirm === "function" && !window.confirm(t("sync.disconnectConfirm"))) return;
+  await runSyncAction(async () => {
+    await fetchJson("/api/sync/local/connection", { method: "DELETE" });
+    state.syncPairingCode = null;
+    state.syncUsage = null;
+    state.syncUsagePayload = null;
+    state.syncDevices = [];
+    await loadSyncSettings();
+    await loadUsage({ force: true });
+    showSettingsToast(t("sync.disconnected"), "ready");
+  });
+}
+
+async function runSyncAction(action) {
+  if (state.syncActionPending) return;
+  state.syncActionPending = true;
+  state.syncViewError = "";
+  renderSyncSettings();
+  try {
+    await action();
+  } catch (error) {
+    state.syncViewError = error.message || t("sync.actionFailed");
+    showSettingsToast(t("sync.actionFailed", { message: state.syncViewError }), "error", { persistMs: 5000 });
+  } finally {
+    state.syncActionPending = false;
+    renderSyncSettings();
+    renderSyncDeviceFilter();
+  }
 }
 
 function renderMobileAccess(value = {}, busy = false) {
@@ -11264,8 +11654,8 @@ function formatPercent(value) {
 
 function formatLimitRemainingPercent(limit) {
   if (!limit) return "--";
-  if (Number.isFinite(Number(limit.remainingPercent))) return formatPercent(limit.remainingPercent);
-  if (Number.isFinite(Number(limit.usedPercent))) return formatPercent(Math.max(0, 100 - Number(limit.usedPercent)));
+  if (limit.remainingPercent != null && limit.remainingPercent !== "" && Number.isFinite(Number(limit.remainingPercent))) return formatPercent(limit.remainingPercent);
+  if (limit.usedPercent != null && limit.usedPercent !== "" && Number.isFinite(Number(limit.usedPercent))) return formatPercent(Math.max(0, 100 - Number(limit.usedPercent)));
   return "--";
 }
 

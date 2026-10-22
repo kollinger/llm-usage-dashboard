@@ -23,8 +23,10 @@ const { readAdminAccountUsage } = require("./lib/admin-account-usage");
 const { createKimiRuntime } = require("./lib/kimi-runtime");
 const { installConnectionsApi } = require("./lib/connections-api");
 const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
+const { mergeGptQuotaLimits } = require("./lib/gpt-account-quota");
 const { claudeAccountIdentity, quotaAccountId, mergeClaudeLocalAccounts } = require("./lib/claude-accounts");
 const { DeviceSync } = require("./lib/device-sync");
+const { normalizeManualResets, claudeManualResets, readClaudeDesktopResets } = require("./lib/manual-resets");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
 const { readUsageFileEvents } = require("./lib/usage-file-cache");
@@ -38,12 +40,15 @@ const {
   normalizeConnectedSource,
   readSourceSettings
 } = require("./lib/source-settings");
-const { aggregateUsageEvents, hashEvidencePath, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
+const { aggregateUsageEvents, hashEvidencePath, normalizeUsageEvent, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
 const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildAccountHistories } = require("./lib/codex-reset-history");
 const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
+const { SyncLedger } = require("./lib/sync-ledger");
+const { LocalSyncClient, safeDelayUntil } = require("./lib/sync-client");
 const { normalizePlanKey, detectClaudePlanType } = require("./lib/subscription-plan-detection");
 const {
+  chatGptOauthAccountId,
   codexAccountObservationsFromAuth,
   createGptAccountObservation,
   mergeGptAccountRegistry,
@@ -57,6 +62,12 @@ const {
 const PORT = Number(process.env.PORT || 4177);
 const ROOT = __dirname;
 const DATA_DIR = expandHome(process.env.LLM_USAGE_DATA_DIR || process.env.DATA_DIR || path.join(ROOT, "data"));
+const SYNC_DATA_DIR = path.join(DATA_DIR, "cloud-sync");
+const SYNC_CLIENT_DATA_DIR = path.join(DATA_DIR, "cloud-sync-client");
+const SYNC_COLLECTOR_ENABLED = parseBoolean(process.env.LLM_USAGE_SYNC_COLLECTOR_ENABLED || "false");
+const SYNC_COLLECTOR_ADMIN_TOKEN = String(process.env.LLM_USAGE_SYNC_COLLECTOR_ADMIN_TOKEN || "").trim();
+const SYNC_SERVER_URL = String(process.env.LLM_USAGE_SYNC_SERVER_URL || "").trim();
+const SYNC_BACKGROUND_INTERVAL_MS = Math.max(5_000, envMs("LLM_USAGE_SYNC_INTERVAL_SECONDS", 60));
 const chatMetadataReader = createChatMetadataReader();
 const OLLAMA_USAGE_FILE = path.join(DATA_DIR, "ollama-usage.jsonl");
 const NOTIFICATION_SETTINGS_FILE = path.join(DATA_DIR, "notification-settings.json");
@@ -472,6 +483,16 @@ const LIVE_METRICS_PROCESS_GROUPS = [
 ];
 
 const app = express();
+const syncLedger = new SyncLedger({
+  dataDir: SYNC_DATA_DIR,
+  collectorVersion: packageInfo.version
+});
+const localSyncClient = new LocalSyncClient({
+  dataDir: SYNC_CLIENT_DATA_DIR,
+  appVersion: packageInfo.version,
+  collectorVersion: packageInfo.version,
+  serverUrl: SYNC_SERVER_URL
+});
 let currentDashboardUrl = null;
 const anthropicCache = createTimedCache();
 const openaiUsageCache = createTimedCache();
@@ -517,6 +538,9 @@ let gptAccountAuthWatchTimer = null;
 let gptAccountAuthWatchInitialTimer = null;
 let gptAccountAuthWatchSignature = null;
 let gptAccountAuthWatchPending = null;
+let localSyncCollectorTimer = null;
+let localSyncCollectorRunning = false;
+let localSyncCollectorStopped = true;
 
 function markInteractiveUsageRequest() {
   const wasIdle = !isInteractiveUsageRecent();
@@ -655,13 +679,19 @@ async function readBrowserConnections({ force = false, usage = usageCache.value 
   ]);
   const accounts = (registry.accounts || []).map((account) => {
     const profile = profiles.find((item) => item.accountId === account.id);
-    const source = account.sources?.filter((item) => item.limits?.rows?.length).sort((a, b) => Date.parse(b.limitsUpdatedAt || 0) - Date.parse(a.limitsUpdatedAt || 0))[0];
+    const current = (item) => item?.active && item.quotaStatus === "ready" && Date.now() - Date.parse(item.limitsUpdatedAt) >= -60_000 &&
+      Date.now() - Date.parse(item.limitsUpdatedAt) <= 15 * 60_000 && item.limits?.rows?.some((row) => !row.resetsAt || Date.parse(row.resetsAt) > Date.now());
+    const source = account.sources?.filter((item) => item.limits?.rows?.length).sort((a, b) =>
+      Number(Boolean(current(b))) - Number(Boolean(current(a))) || (Date.parse(b.limitsUpdatedAt) || 0) - (Date.parse(a.limitsUpdatedAt) || 0))[0];
+    const authRequired = !current(source) && account.sources?.some((item) => item.active && ["auth_required", "credentials_missing"].includes(item.quotaReason));
     return { id: profile ? `gpt:${profile.id}` : `detected:${account.id}`, accountId: account.id, provider: "gpt", label: profile?.label || account.label,
-      kind: "subscription", managed: Boolean(profile), status: account.active ? "connected" : "saved", updatedAt: source?.limitsUpdatedAt || account.lastSeenAt,
+      kind: "subscription", managed: Boolean(profile), status: !account.active ? "saved" : authRequired ? "auth_required" : profile && current(source) ? "connected" : "detected",
+      quotaStatus: current(source) ? "current" : source ? "stale" : "unavailable", identityQuality: account.identityQuality,
+      applications: (account.sources || []).filter((item) => item.active && ["codex", "openCode"].includes(item.id)).map((item) => item.id),
       ...safeMeasurement({ limits: source?.limits, updatedAt: source?.limitsUpdatedAt || account.lastSeenAt, planType: account.planType }) };
   });
   for (const profile of profiles) {
-    if (!accounts.some((account) => account.id === `gpt:${profile.id}`)) accounts.push({ id: `gpt:${profile.id}`, accountId: profile.accountId, provider: "gpt", label: profile.label, kind: "subscription", managed: true, status: "connected", updatedAt: null });
+    if (!accounts.some((account) => account.provider === "gpt" && account.accountId === profile.accountId)) accounts.push({ id: `gpt:${profile.id}`, accountId: profile.accountId, provider: "gpt", label: profile.label, kind: "subscription", managed: true, status: "connected", updatedAt: null });
   }
   for (const profile of claudeProfiles) {
     const configDir = path.join(DATA_DIR, "claude-profiles", profile.id);
@@ -939,6 +969,54 @@ function electronSyncMiddleware(req, res, next) {
   return next();
 }
 
+function syncCollectorMiddleware(_req, res, next) {
+  if (!SYNC_COLLECTOR_ENABLED) {
+    return res.status(404).json({ error: "sync_collector_disabled", message: "Private sync collector is disabled." });
+  }
+  return next();
+}
+
+function syncCollectorAdminMiddleware(req, res, next) {
+  if (!SYNC_COLLECTOR_ENABLED) {
+    return res.status(404).json({ error: "sync_collector_disabled", message: "Private sync collector is disabled." });
+  }
+  if (!SYNC_COLLECTOR_ADMIN_TOKEN) return authMiddleware(req, res, next);
+  const token = bearerToken(req);
+  if (!safeTokenEqual(token, SYNC_COLLECTOR_ADMIN_TOKEN)) {
+    return res.status(401).json({ error: "sync_admin_forbidden", message: "Sync collector admin token is invalid." });
+  }
+  return next();
+}
+
+function bearerToken(req) {
+  const value = String(req.get("authorization") || "").trim();
+  const match = value.match(/^Bearer\s+(.+)$/iu);
+  return match ? match[1].trim() : "";
+}
+
+function requiredDeviceToken(req) {
+  const token = bearerToken(req);
+  if (!token) {
+    const error = new Error("A device bearer token is required.");
+    error.statusCode = 401;
+    error.code = "sync_device_forbidden";
+    throw error;
+  }
+  return token;
+}
+
+function safeTokenEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function requestOrigin(req) {
+  if (currentDashboardUrl) return currentDashboardUrl;
+  const host = String(req.get("host") || `127.0.0.1:${PORT}`).replace(/[\r\n]/gu, "");
+  return `${req.protocol === "https" ? "https" : "http"}://${host}`;
+}
+
 function hasOidcConfig() {
   return Boolean(
     process.env.OIDC_ISSUER_URL &&
@@ -1036,6 +1114,11 @@ app.get("/auth/oidc/callback", async (req, res) => {
 app.get("/api/usage", authMiddleware, async (req, res) => {
   try {
     markInteractiveUsageRequest();
+    const collectorSync = {
+      ...(await localSyncClient.readPublicStatus()),
+      collectorEnabled: SYNC_COLLECTOR_ENABLED
+    };
+    const sendUsage = (value) => res.json({ ...value, sync: collectorSync });
     const force = parseBoolean(req.query.force);
     const usage = await readUsageDashboard({ force, staleWhileRefresh: !force });
     const selected = typeof req.query.device === "string" ? req.query.device : "local";
@@ -1046,26 +1129,26 @@ app.get("/api/usage", authMiddleware, async (req, res) => {
           !cached.devices?.some((device) => deviceSync.config.revoked.includes(device.id)) &&
           (selected === "all" || cached.devices?.some((device) => device.id === selected))) {
         const combined = refreshCombinedUsageMetadata(usage, cached.value, [], selected);
-        return res.json({ ...combined, cache: cached.value.cache, deviceSync: sync });
+        return sendUsage({ ...combined, cache: cached.value.cache, deviceSync: sync });
       }
     }
     if (sync.enabled && selected !== "local") {
       if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
       if (selected === "all" && !deviceSync.snapshots.has(sync.deviceId)) {
-        return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
+        return sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync, syncCoverage: { unavailable: true } });
       }
       const snapshots = [...deviceSync.snapshots.values()];
       const combined = await usageAggregation.get(usage, snapshots, selected, { force });
       const currentSync = deviceSync.status();
-      if (!currentSync.enabled) return res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: currentSync });
+      if (!currentSync.enabled) return sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: currentSync });
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
       if (snapshots.length !== deviceSync.snapshots.size || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id))) {
         return res.status(409).json({ error: "device_scope_changed" });
       }
-      return res.json({ ...combined, deviceSync: currentSync });
+      return sendUsage({ ...combined, deviceSync: currentSync });
     }
-    res.json({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
+    sendUsage({ ...localizeUsageSubscriptionPrices(usage, pricingLocaleFromRequest(req)), deviceSync: sync });
   } catch (error) {
     sendApiError(res, error, "usage_read_failed");
   }
@@ -1227,6 +1310,201 @@ app.post("/api/sources/:id/disable", authMiddleware, async (req, res) => {
   }
 });
 
+app.use("/api/sync/local", authMiddleware, localControlMiddleware);
+
+app.post("/api/sync/spaces", syncCollectorAdminMiddleware, async (req, res) => {
+  try {
+    const connection = await syncLedger.createSpace({
+      displayName: req.body?.displayName,
+      deviceName: req.body?.deviceName,
+      platform: req.body?.platform,
+      appVersion: req.body?.appVersion
+    });
+    res.status(201).json(connection);
+  } catch (error) {
+    sendApiError(res, error, "sync_space_create_failed");
+  }
+});
+
+app.post("/api/sync/pairing-codes", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.status(201).json(await syncLedger.createPairingCode(requiredDeviceToken(req), {
+      ttlMs: req.body?.ttlMs
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_pairing_create_failed");
+  }
+});
+
+app.post("/api/sync/devices", syncCollectorMiddleware, async (req, res) => {
+  try {
+    const connection = await syncLedger.joinWithPairingCode({
+      code: req.body?.code,
+      deviceName: req.body?.deviceName,
+      platform: req.body?.platform,
+      appVersion: req.body?.appVersion
+    });
+    res.status(201).json(connection);
+  } catch (error) {
+    sendApiError(res, error, "sync_device_join_failed");
+  }
+});
+
+app.get("/api/sync/devices", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.json({ devices: await syncLedger.listDevices(requiredDeviceToken(req)) });
+  } catch (error) {
+    sendApiError(res, error, "sync_devices_read_failed");
+  }
+});
+
+app.delete("/api/sync/devices/:id", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.json(await syncLedger.revokeDevice(requiredDeviceToken(req), req.params.id));
+  } catch (error) {
+    sendApiError(res, error, "sync_device_revoke_failed");
+  }
+});
+
+app.post("/api/sync/usage", syncCollectorMiddleware, async (req, res) => {
+  try {
+    const result = await syncLedger.upload(requiredDeviceToken(req), req.body);
+    res.status(result.conflicts.length ? 409 : 200).json(result);
+  } catch (error) {
+    sendApiError(res, error, "sync_usage_upload_failed");
+  }
+});
+
+app.get("/api/sync/usage", syncCollectorMiddleware, async (req, res) => {
+  try {
+    res.json(await syncLedger.queryUsage(requiredDeviceToken(req), {
+      deviceId: req.query.device_id,
+      providerId: req.query.provider,
+      dailyHistoryDays: DAILY_HISTORY_DAYS
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_usage_read_failed");
+  }
+});
+
+app.get("/api/sync/integrity", syncCollectorMiddleware, async (req, res) => {
+  try {
+    await syncLedger.authenticateDevice(requiredDeviceToken(req));
+    res.json(await syncLedger.verify());
+  } catch (error) {
+    sendApiError(res, error, "sync_integrity_read_failed");
+  }
+});
+
+app.post("/api/sync/reconcile", syncCollectorAdminMiddleware, async (_req, res) => {
+  try {
+    res.json(await syncLedger.reconcile());
+  } catch (error) {
+    sendApiError(res, error, "sync_reconcile_failed");
+  }
+});
+
+app.get("/api/sync/local/status", authMiddleware, async (_req, res) => {
+  try {
+    res.json({
+      ...(await localSyncClient.readPublicStatus()),
+      collectorEnabled: SYNC_COLLECTOR_ENABLED
+    });
+  } catch (error) {
+    sendApiError(res, error, "sync_status_read_failed");
+  }
+});
+
+app.post("/api/sync/local/settings", authMiddleware, async (req, res) => {
+  try {
+    res.json(await localSyncClient.updateSettings(req.body || {}));
+  } catch (error) {
+    sendApiError(res, error, "sync_settings_save_failed");
+  }
+});
+
+app.post("/api/sync/local/create-space", authMiddleware, async (req, res) => {
+  try {
+    if (!SYNC_COLLECTOR_ENABLED) {
+      const error = new Error("Private sync collector is disabled on this dashboard.");
+      error.statusCode = 409;
+      error.code = "sync_collector_disabled";
+      throw error;
+    }
+    const serverUrl = req.body?.serverUrl || SYNC_SERVER_URL || requestOrigin(req);
+    const connection = await syncLedger.createSpace({
+      displayName: req.body?.displayName,
+      deviceName: req.body?.deviceName,
+      platform: process.platform,
+      appVersion: packageInfo.version
+    });
+    const status = await localSyncClient.attachConnection(connection, {
+      serverUrl,
+      deviceName: req.body?.deviceName
+    });
+    res.status(201).json({ status, space: connection.space, device: connection.device });
+  } catch (error) {
+    sendApiError(res, error, "sync_local_space_create_failed");
+  }
+});
+
+app.post("/api/sync/local/join", authMiddleware, async (req, res) => {
+  try {
+    res.status(201).json(await localSyncClient.join({
+      serverUrl: req.body?.serverUrl,
+      deviceName: req.body?.deviceName,
+      pairingCode: req.body?.pairingCode
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_join_failed");
+  }
+});
+
+app.post("/api/sync/local/pairing-code", authMiddleware, async (req, res) => {
+  try {
+    res.status(201).json(await localSyncClient.createPairingCode({ ttlMs: req.body?.ttlMs }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_pairing_failed");
+  }
+});
+
+app.post("/api/sync/local/sync-now", authMiddleware, async (_req, res) => {
+  try {
+    await readUsageDashboard({ force: true });
+    const result = await localSyncClient.flush({ force: true });
+    res.json({ result, status: await localSyncClient.readPublicStatus() });
+  } catch (error) {
+    sendApiError(res, error, "sync_local_run_failed");
+  }
+});
+
+app.get("/api/sync/local/devices", authMiddleware, async (_req, res) => {
+  try {
+    res.json({ devices: await localSyncClient.listDevices() });
+  } catch (error) {
+    sendApiError(res, error, "sync_local_devices_failed");
+  }
+});
+
+app.get("/api/sync/local/usage", authMiddleware, async (req, res) => {
+  try {
+    res.json(await localSyncClient.queryUsage({
+      deviceId: req.query.device_id,
+      providerId: req.query.provider
+    }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_usage_failed");
+  }
+});
+
+app.delete("/api/sync/local/connection", authMiddleware, async (req, res) => {
+  try {
+    res.json(await localSyncClient.disconnect({ clearQueue: req.query.keep_queue !== "1" }));
+  } catch (error) {
+    sendApiError(res, error, "sync_local_disconnect_failed");
+  }
+});
+
 async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   if (force) prepareForcedGptAccountRefresh();
   if (!force && !usageCache.value) {
@@ -1365,6 +1643,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
         if (deviceSync.error === "capture_failed") deviceSync.error = null;
       } catch { deviceSync.error = "capture_failed"; }
     }
+    const syncUsageEvents = providers
+      .flatMap((provider) => provider?._usageEvents || []);
+    await localSyncClient.captureUsageEvents(syncUsageEvents).catch(async (error) => {
+      await localSyncClient.recordError(error).catch(() => {});
+    });
 
     const now = new Date().toISOString();
     const value = {
@@ -1390,7 +1673,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
   const [claudeProbe, claudeStatusline] = usage.cache?.restored && !usage.claudeCode?.limits
     ? await Promise.all([claudeApiUsageCache.value || readClaudeUsageSnapshot(), readClaudeStatusline().catch(() => null)])
     : [null, null];
-  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(usage, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+  // Consumption restored from disk intentionally contains no account quotas.
+  // A completed account re-scan must still reach dashboard/widget consumers
+  // immediately while the heavier consumption refresh is in progress.
+  const withAccounts = gptAccountsCache.value ? { ...usage, gptAccounts: gptAccountsCache.value } : usage;
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(withAccounts, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
 async function currentCodexCreditScope() {
@@ -4671,8 +4958,10 @@ async function readCodexUsage(options = {}) {
   let latestEvent = null;
   let eventCount = 0;
   let sessionsWithEvents = 0;
+  let duplicateEventsSkipped = 0;
   const rateLimitEvents = [];
   const usageEvents = [];
+  const seenUsageEventKeys = new Set();
 
   pruneUsageFileScanCache(usageFileScanCaches.codex, files);
   for (const fileRecord of files) {
@@ -4694,7 +4983,7 @@ async function readCodexUsage(options = {}) {
           rateLimitEvents.push(rateLimitEvent);
         }
       }
-      usageEvents.push({
+      const usageEvent = {
         providerId: "codex",
         conversation: conversationDescriptor("codex", entry.chat?.sessionId || fileRecord.sessionId, entry.chat || {}),
         chatContext: { cwd: entry.chat?.cwd, originator: entry.chat?.originator },
@@ -4708,6 +4997,7 @@ async function readCodexUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
+          sourceEventSha256: entry.sourceEventSha256,
           sessionId: entry.chat?.sessionId || fileRecord.sessionId,
           rolloutSessionId: entry.chat?.sessionId || fileRecord.sessionId
         },
@@ -4715,7 +5005,15 @@ async function readCodexUsage(options = {}) {
           sourceGroupId: entry.isSparkUsage ? "codexSpark" : "codex",
           reasoningEffort
         }
-      });
+      };
+      const normalizedUsageEvent = normalizeUsageEvent(usageEvent);
+      if (!normalizedUsageEvent) continue;
+      if (seenUsageEventKeys.has(normalizedUsageEvent.dedupeKey)) {
+        duplicateEventsSkipped += 1;
+        continue;
+      }
+      seenUsageEventKeys.add(normalizedUsageEvent.dedupeKey);
+      usageEvents.push(usageEvent);
       addUsage(aggregates, usage);
       if (now - timestampMs <= 5 * 60 * 60 * 1000) addUsage(last5h, usage);
       if (now - timestampMs <= 24 * 60 * 60 * 1000) addUsage(last24h, usage);
@@ -4781,7 +5079,9 @@ async function readCodexUsage(options = {}) {
       codexHomes: CODEX_HOMES,
       rootsScanned: roots,
       filesScanned: files.length,
-      duplicatesSkipped,
+      duplicatesSkipped: duplicatesSkipped + duplicateEventsSkipped,
+      duplicateFilesSkipped: duplicatesSkipped,
+      duplicateEventsSkipped,
       sessionsWithEvents,
       eventCount,
       liveRateLimits: liveRateLimits?.source || null
@@ -4872,6 +5172,7 @@ async function parseCodexSessionFileEvents(fileRecord) {
       rateLimits,
       eventId: event.id || event.payload?.id || null,
       line: meta?.line,
+      sourceEventSha256: meta?.rawLineSha256,
       isSparkRateLimit: isCodexSparkRateLimit(rateLimits),
       isSparkUsage: isCodexSparkUsageEvent(currentModel, rateLimits)
     });
@@ -4971,6 +5272,7 @@ async function readCopilotUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash: hashEvidencePath(fileRecord.realPath),
           line: meta?.line,
+          sourceEventSha256: meta?.rawLineSha256,
           sessionStart: data.sessionStartTime || timestampMs
         },
         metadata: {
@@ -5484,6 +5786,7 @@ async function saveClaudeUsageSnapshot(probe, file = CLAUDE_USAGE_SNAPSHOT_FILE)
     source: snapshot.source,
     updatedAt: snapshot.updatedAt,
     accountId: quotaAccountId(snapshot.accountId),
+    manualResets: snapshot.manualResets,
     usage: snapshot.usage
   };
   await fsp.mkdir(path.dirname(file), { recursive: true });
@@ -5511,6 +5814,7 @@ async function fetchClaudeUsageProbe(options = {}) {
     if (oauthProbe.status === "available") {
       return {
         ...oauthProbe,
+        manualResets: oauthProbe.usage?.manualResets || (options.readDesktopResets || readClaudeDesktopResets)({ orgId: oauthSession.orgId }),
         accountId: quotaAccountId(oauthSession.accountId),
         notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
         planType: oauthSession.planType || null,
@@ -5536,13 +5840,15 @@ async function fetchClaudeUsageWithAppCookies() {
   if (!cookies) return claudeApiProbe("missing", "claude_app_cookie_missing", "claude_app_cookie");
   const probe = await fetchClaudeUsageWithAuth({
     orgId: cookies.lastActiveOrg,
+    path: `/api/organizations/${encodeURIComponent(cookies.lastActiveOrg)}/usage?cedar_ember=1&skip_spend=1`,
     source: "claude_app_cookie",
     hostname: "claude.ai",
     headers: {
       Cookie: `sessionKey=${cookies.sessionKey}`
     }
   });
-  return { ...probe, notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
+  return { ...probe, manualResets: probe.usage?.manualResets || readClaudeDesktopResets({ orgId: cookies.lastActiveOrg }),
+    notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
 }
 
 async function recordClaudeNotificationSample(probe, accountKey) {
@@ -5739,6 +6045,7 @@ function normalizeClaudeApiUsagePayload(payload, source = "claude_api") {
     seven_day_fable: root.seven_day_fable || root.sevenDayFable || root.fable || null,
     limits: sanitizeClaudeScopedUsageLimits(root.limits),
     extra_usage: root.extra_usage || root.extraUsage || null,
+    manualResets: normalizeManualResets(root.manualResets) || claudeManualResets(root.cedar_ember, new Date().toISOString()),
     source,
     updatedAt: new Date().toISOString()
   };
@@ -5747,7 +6054,7 @@ function normalizeClaudeApiUsagePayload(payload, source = "claude_api") {
       usage.seven_day ||
       usage.seven_day_sonnet ||
       usage.seven_day_fable ||
-      usage.limits.length
+      usage.limits.length || usage.manualResets
   );
   return hasUsageWindows ? usage : null;
 }
@@ -5836,6 +6143,7 @@ function normalizeClaudeApiUsageProbe(probe) {
     source: String(probe?.source || usage?.source || "claude_api").trim() || "claude_api",
     updatedAt: normalizeOptionalDate(probe?.updatedAt) || new Date().toISOString(),
     accountId: quotaAccountId(probe?.accountId),
+    manualResets: normalizeManualResets(probe?.manualResets || usage?.manualResets),
     usage,
     auth: probe?.auth || null,
     fallback: probe?.fallback || null
@@ -5846,6 +6154,7 @@ function retainLastKnownClaudeUsageProbe(previous, incoming, nowMs = Date.now())
   if (incoming?.usage || !previous?.usage || !hasCurrentClaudeUsageSnapshot(previous.usage, nowMs)) return incoming;
   return {
     ...previous,
+    manualResets: incoming.manualResets || previous.manualResets || null,
     status: "available",
     reason: null,
     fallback: {
@@ -5866,7 +6175,8 @@ function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
     hasCurrentWindow(usage?.five_hour, "5h", 300) ||
       hasCurrentWindow(usage?.seven_day, "Woche", 10080) ||
       hasCurrentWindow(usage?.seven_day_sonnet, "Nur Sonnet", 10080) ||
-      claudeApiFableLimitRows(usage).length
+      claudeApiFableLimitRows(usage).length ||
+      usage?.manualResets?.offers?.some((offer) => offer.remaining > 0 && (!offer.expiresAt || Date.parse(offer.expiresAt) > nowMs))
   );
 }
 
@@ -5876,9 +6186,10 @@ function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now(), statusline
   const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
     statusline, apiUsage: usableProbe?.usage, apiUsageSource: usableProbe?.source, apiUsageUpdatedAt: usableProbe?.usage?.updatedAt
   });
-  if (!resolvedLimits) return usage;
+  const manualResets = normalizeManualResets(probe?.manualResets || usableProbe?.usage?.manualResets);
+  if (!resolvedLimits) return manualResets ? { ...usage, claudeCode: { ...usage.claudeCode, manualResets } } : usage;
   return { ...usage, claudeCode: { ...usage.claudeCode, status: "live", limits: resolvedLimits,
-    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource, quotaAccountId: !statusline?.limits ? quotaAccountId(usableProbe?.accountId) : null,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, manualResets, limitSource, quotaAccountId: !statusline?.limits ? quotaAccountId(usableProbe?.accountId) : null,
     setup: { ...usage.claudeCode.setup, staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(usableProbe?.fallback) } } };
 }
 
@@ -6081,6 +6392,7 @@ async function readClaudeCodeUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
+          sourceEventSha256: entry.sourceEventSha256,
           requestId: entry.requestId,
           messageId: entry.messageId,
           uuid: entry.uuid,
@@ -6190,6 +6502,7 @@ async function readClaudeCodeUsage(options = {}) {
     totals: finalizeUsageAccumulator(usage),
     limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt,
+    manualResets: normalizeManualResets(directApiProbe?.manualResets || apiUsage?.manualResets),
     // Mixed statusline/API rows do not prove one account identity. Keep those
     // allowances as a visible local source rather than filling another profile.
     quotaAccountId: !statusline?.limits && directApiUsage && limitSource === directApiProbe?.source ? quotaAccountId(directApiProbe.accountId) : null,
@@ -6233,7 +6546,8 @@ async function parseClaudeTranscriptFileEvents(fileRecord) {
       requestId: event.requestId || null,
       messageId: event.message?.id || null,
       uuid: event.uuid || null,
-      line: meta?.line
+      line: meta?.line,
+      sourceEventSha256: meta?.rawLineSha256
     });
   });
   return events;
@@ -6381,7 +6695,8 @@ async function readGeminiUsage(options = {}) {
           realpath: fileRecord.realPath,
           realpathHash,
           line: entry.line,
-          index: entry.index
+          index: entry.index,
+          sourceEventSha256: entry.sourceEventSha256
         },
         metadata: {
           sourceGroupId: "gemini"
@@ -6475,7 +6790,8 @@ async function parseGeminiUsageFileEvents(fileRecord) {
       eventId: findFirstValue(event, ["id", "requestId", "request_id"]) || null,
       sessionId: findFirstValue(event, ["sessionId", "session_id", "conversationId", "conversation_id"]) || null,
       line: meta?.line,
-      index: meta?.index
+      index: meta?.index,
+      sourceEventSha256: meta?.rawLineSha256 || meta?.rawObjectSha256
     });
   });
   return events;
@@ -7681,7 +7997,8 @@ function normalizeGlmUsageImportEvent(event, fileRecord, meta) {
       realpath: fileRecord.realPath,
       realpathHash: hashEvidencePath(fileRecord.realPath),
       line: meta?.line,
-      index: meta?.index
+      index: meta?.index,
+      sourceEventSha256: meta?.rawLineSha256 || meta?.rawObjectSha256
     },
     metadata: {
       sourceGroupId: "glm",
@@ -7870,7 +8187,8 @@ async function readOllamaUsage(options = {}) {
         evidence: {
           realpath: fileRecord.realPath,
           realpathHash: hashEvidencePath(fileRecord.realPath),
-          line: meta?.line
+          line: meta?.line,
+          sourceEventSha256: meta?.rawLineSha256
         },
         metadata: {
           sourceGroupId: "ollama"
@@ -8225,7 +8543,11 @@ async function readJsonl(file, onObject, acceptedRootTypes = null) {
     }
     if (!line.trim()) continue;
     try {
-      onObject(JSON.parse(line), { file, line: lineNumber });
+      onObject(JSON.parse(line), {
+        file,
+        line: lineNumber,
+        rawLineSha256: crypto.createHash("sha256").update(line).digest("hex")
+      });
     } catch {
       // Corrupt or partial JSONL lines can happen during active writes.
     }
@@ -8241,7 +8563,11 @@ async function readUsageObjects(file, onObject) {
     const parsed = JSON.parse(await fsp.readFile(file, "utf8"));
     let index = 0;
     visitJson(parsed, (object) => {
-      onObject(object, { file, index });
+      onObject(object, {
+        file,
+        index,
+        rawObjectSha256: crypto.createHash("sha256").update(JSON.stringify(object)).digest("hex")
+      });
       index += 1;
     });
   } catch {
@@ -9147,6 +9473,7 @@ async function readCodexGptAccountObservation(options = {}) {
 
   for (const codexHome of codexHomes) {
     const authFile = path.join(codexHome, "auth.json");
+    const authSignature = await gptAccountAuthFileSignature([authFile]);
     let authObservations = [];
     try {
       const stat = await fsp.stat(authFile);
@@ -9170,7 +9497,9 @@ async function readCodexGptAccountObservation(options = {}) {
     try {
       const liveObservation = await readCodexProfileGptAccountObservation(codexHome, {
         refreshToken,
-        clientFactory: options.clientFactory
+        clientFactory: options.clientFactory,
+        profileIdentity: authObservations[0],
+        authSignature
       });
       if (!liveObservation) {
         if (authObservations.length) {
@@ -9202,7 +9531,14 @@ async function readCodexGptAccountObservation(options = {}) {
 }
 
 async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
-  const lease = await acquireCodexAccountClient(codexHome, options.clientFactory);
+  const authFile = path.join(codexHome, "auth.json");
+  const authSignature = options.authSignature || await gptAccountAuthFileSignature([authFile]);
+  let profileIdentity = options.profileIdentity;
+  if (!profileIdentity) {
+    try { profileIdentity = codexAccountObservationsFromAuth(JSON.parse(await fsp.readFile(authFile, "utf8")))[0]; }
+    catch { /* A live account ID can still establish identity without a local auth file. */ }
+  }
+  const lease = await acquireCodexAccountClient(codexHome, options.clientFactory, Boolean(profileIdentity));
   try {
     const response = await lease.client.request("account/read", {
       refreshToken: Boolean(options.refreshToken)
@@ -9222,7 +9558,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
       sourceId: "codex",
       sourceRef: codexHome,
       email: account.email,
-      accountId: rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null,
+      accountId: response?.accountId || account.accountId || (rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null),
       planType: liveLimits?.codex?.planType || account.planType,
       seenAt: new Date().toISOString(),
       usage: usageResult.status === "fulfilled" ? usageResult.value : null,
@@ -9237,7 +9573,24 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
           ? "identity_and_limits"
           : "identity_only"
     });
-    if (observation && (liveLimits?.historySnapshot || liveLimits?.notificationSnapshot)) {
+    if (profileIdentity?.identityQuality === "account_id") {
+      // The lease belongs to this exact profile. Bind an email-only CLI
+      // response only while that profile's auth file is unchanged and its
+      // returned identity/plan agree. Never match other profiles by email.
+      const unchanged = authSignature === await gptAccountAuthFileSignature([authFile]);
+      const identityMatches = observation && (observation.identityQuality === "account_id"
+        ? observation.id === profileIdentity.id
+        : observation.label === profileIdentity.label && (!observation.planType || !profileIdentity.planType || observation.planType === profileIdentity.planType));
+      if (!unchanged || !identityMatches) return null;
+      observation.id = profileIdentity.id;
+      observation.identityQuality = "account_id";
+    } else if (observation?.identityQuality === "email") {
+      observation.limits = null;
+      observation.usage = null;
+      observation.quotaStatus = "unavailable";
+      observation.quotaReason = "identity_unverified";
+    }
+    if (observation?.identityQuality === "account_id" && observation.quotaStatus === "ready" && (liveLimits?.historySnapshot || liveLimits?.notificationSnapshot)) {
       if (liveLimits.historySnapshot) {
         codexResetProfileAccounts.set(codexHome, liveLimits.historySnapshot.accountKey);
         liveLimits.historySnapshot.accountRef = observation.id;
@@ -9252,13 +9605,13 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
   }
 }
 
-async function acquireCodexAccountClient(codexHome, clientFactory) {
+async function acquireCodexAccountClient(codexHome, clientFactory, dedicated = false) {
   if (typeof clientFactory === "function") {
     const lease = await clientFactory(codexHome);
     if (lease?.client) return { client: lease.client, closeWhenDone: Boolean(lease.closeWhenDone) };
     return { client: lease, closeWhenDone: false };
   }
-  if (sameResolvedPath(codexHome, CODEX_HOME)) {
+  if (!dedicated && sameResolvedPath(codexHome, CODEX_HOME)) {
     return { client: await getCodexAppServer(), closeWhenDone: false };
   }
   return {
@@ -9361,7 +9714,8 @@ async function openCodeAccountObservationsWithQuota(auth, options = {}) {
   };
 }
 
-function openCodeGptAccountAuthFiles(sources, extraFiles = []) {
+function openCodeGptAccountAuthFiles(sources, extraFiles) {
+  if (Array.isArray(extraFiles)) return uniquePaths(extraFiles);
   const files = [...defaultOpenCodeMultiAuthFiles(), ...OPENCODE_MULTI_AUTH_FILES, ...(extraFiles || [])];
   const profileDirs = new Set();
   for (const entry of sourcePathEntries(sources || defaultOpenCodeSources(), OPENCODE_DB_ROLES)) {
@@ -9388,12 +9742,14 @@ function dedupeOpenCodeAccountObservations(observations) {
     const current = byAccount.get(observation.id);
     const currentHasLimits = Boolean(current?.limits?.rows?.length);
     const candidateHasLimits = Boolean(observation?.limits?.rows?.length);
-    if (!current || (candidateHasLimits && !currentHasLimits) || (
+    const preferred = !current || (candidateHasLimits && !currentHasLimits) || (
       candidateHasLimits === currentHasLimits &&
       Date.parse(observation.quotaCheckedAt || observation.seenAt || "") > Date.parse(current.quotaCheckedAt || current.seenAt || "")
-    )) {
-      byAccount.set(observation.id, observation);
-    }
+    ) ? observation : current;
+    const limits = mergeGptQuotaLimits([current || {}, observation]);
+    const limitsUpdatedAt = (limits?.rows || []).reduce((latest, row) =>
+      Date.parse(row.updatedAt) > (Date.parse(latest) || 0) ? row.updatedAt : latest, null);
+    byAccount.set(observation.id, { ...preferred, limits, limitsUpdatedAt });
   }
   return [...byAccount.values()];
 }
@@ -9402,16 +9758,13 @@ async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
   const accessToken = String(entry?.access || "").trim();
   const claims = parseJwtClaims(accessToken) || {};
   const nestedAuth = claims["https://api.openai.com/auth"] || {};
-  const accountId = String(
-    claims.chatgpt_account_id ||
-      nestedAuth.chatgpt_account_id ||
-      entry?.chatgptAccountId ||
-      entry?.accountId ||
-      claims.organizations?.[0]?.id ||
-      ""
-  ).trim();
-  if (!accessToken || !accountId || /[\r\n]/u.test(accessToken) || /[\r\n]/u.test(accountId)) {
+  const accountId = chatGptOauthAccountId(entry);
+  if (!accessToken || !accountId || accountId.length > 320 || /[\x00-\x1f\x7f]/u.test(accessToken + accountId)) {
     return { status: "unavailable", reason: "credentials_missing", limits: null };
+  }
+  const expiresAt = Number(entry?.expires) || Number(claims.exp) * 1000;
+  if (expiresAt > 0 && (expiresAt < 1e12 ? expiresAt * 1000 : expiresAt) <= Date.now()) {
+    return { status: "unavailable", reason: "auth_required", limits: null };
   }
 
   const controller = new AbortController();
@@ -9435,6 +9788,10 @@ async function readChatGptQuotaFromOauthEntry(entry, options = {}) {
       };
     }
     const payload = await response.json();
+    const returnedAccountId = payload?.account_id || payload?.accountId || payload?.chatgpt_account_id;
+    if (returnedAccountId && returnedAccountId !== accountId) {
+      return { status: "unavailable", reason: "identity_unverified", limits: null };
+    }
     const limits = codexRateLimitsFromUsagePayload(payload, "Codex");
     if (!limits?.rows?.length) return { status: "unavailable", reason: "limits_missing", limits: null };
     const root = codexUsagePayloadRoot(payload);
@@ -11421,6 +11778,43 @@ async function appendOllamaUsageLog(event) {
   await fsp.appendFile(OLLAMA_USAGE_FILE, `${JSON.stringify(event)}\n`);
 }
 
+function startLocalSyncCollector() {
+  if (localSyncCollectorTimer || localSyncCollectorRunning) return;
+  localSyncCollectorStopped = false;
+  const schedule = (delayMs) => {
+    if (localSyncCollectorStopped) return;
+    const safeDelayMs = Math.max(0, Number(delayMs) || 0);
+    localSyncCollectorTimer = setTimeout(run, safeDelayMs);
+    if (typeof localSyncCollectorTimer.unref === "function") localSyncCollectorTimer.unref();
+  };
+  const run = async () => {
+    localSyncCollectorTimer = null;
+    if (localSyncCollectorRunning) return schedule(SYNC_BACKGROUND_INTERVAL_MS);
+    localSyncCollectorRunning = true;
+    try {
+      const status = await localSyncClient.readPublicStatus();
+      if (status.enabled && status.connected) {
+        await readUsageDashboard();
+        await localSyncClient.flush();
+      }
+    } catch (error) {
+      await localSyncClient.recordError(error).catch(() => {});
+    } finally {
+      localSyncCollectorRunning = false;
+      const status = await localSyncClient.readPublicStatus().catch(() => null);
+      const retryDelayMs = safeDelayUntil(status?.nextRetryAt, Date.now());
+      schedule(retryDelayMs > 0 ? Math.min(retryDelayMs, SYNC_BACKGROUND_INTERVAL_MS) : SYNC_BACKGROUND_INTERVAL_MS);
+    }
+  };
+  schedule(Math.min(1500, SYNC_BACKGROUND_INTERVAL_MS));
+}
+
+function stopLocalSyncCollector() {
+  localSyncCollectorStopped = true;
+  if (localSyncCollectorTimer) clearTimeout(localSyncCollectorTimer);
+  localSyncCollectorTimer = null;
+}
+
 function startDashboard(options = {}) {
   const port = Number(options.port ?? PORT);
   const dashboardServer = app.listen(port, options.host, () => {
@@ -11431,6 +11825,8 @@ function startDashboard(options = {}) {
   });
   const ollamaProxyServer = options.ollamaProxy === false ? null : startOllamaProxy(options.host);
   startGptAccountAuthWatch();
+  startLocalSyncCollector();
+  dashboardServer.once("close", stopLocalSyncCollector);
   const stopCodexResetCollector = startCodexResetCollector();
   deviceSync.initialize().catch(() => { deviceSync.error = "storage_unavailable"; });
   let syncReading = false;

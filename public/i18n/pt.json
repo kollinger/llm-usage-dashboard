@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} detetadas de {count} contas conhecidas · análise {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Início de sessão indisponível. Instale Codex CLI ou tente novamente."
     },
     "connectionHelp": "As sessões existentes de Codex e OpenCode são detetadas automaticamente. Adicione mais contas GPT aqui sem as substituir.",
-    "loginPrivacy": "O início de sessão comunica com a OpenAI. As credenciais ficam num perfil local separado e não são enviadas ao programador nem aos dispositivos emparelhados."
+    "loginPrivacy": "O início de sessão comunica com a OpenAI. As credenciais ficam num perfil local separado e não são enviadas ao programador nem aos dispositivos emparelhados.",
+    "profileNote": "Perfil OpenCode detetado; utilização atual não confirmada.",
+    "quotaUnavailable": "Não foi possível ler os limites. Volte a pesquisar ou inicie sessão na aplicação de origem.",
+    "savedLimits": "Limites guardados · desatualizados",
+    "identityUnverified": "Identidade não verificada. O histórico guardado não está associado a um espaço de trabalho.",
+    "openCodeUsage": "Utilização OpenCode; conta desconhecida. Os limites estão em Contas."
   },
   "codexResets": {
     "title": "Codex · Histórico de reposições",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} sessões"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Fonte local",
     "open": "Widget do ambiente de trabalho",
     "title": "Quotas por conta",
@@ -1421,5 +1426,54 @@
     "bounded": "Limitado a {count}; usa favoritos ou um filtro de fornecedor.",
     "current": "Pacote KDE atualizado",
     "reloadHelp": "Não é possível verificar aqui a versão carregada pelo Plasma. Se a vista antiga continuar após a atualização, guarde o seu trabalho, termine a sessão do Plasma e volte a entrar. Remover e voltar a adicionar o widget pode reutilizar a vista antiga em cache."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Reposições manuais",
+    "unavailable": "Esta fonte não informa sobre reposições disponíveis.",
+    "none": "Nenhuma reposição guardada disponível.",
+    "full": "Reposição completa",
+    "session": "Reposição de 5 horas",
+    "weekly": "Reposição semanal",
+    "expires": "Expira: {time}",
+    "noExpiry": "Prazo de validade não indicado",
+    "remaining": "Disponível durante {duration}",
+    "expired": "Expirado",
+    "paused": "Indisponível de momento",
+    "updated": "Verificado: {time}",
+    "saved": "Dados guardados: {time}",
+    "openClaude": "Ver reposições no Claude"
   }
 }

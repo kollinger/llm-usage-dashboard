@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.11.0-preview.5 - 2026-10-21
+
+### Improved
+
+- Merge pull request #59 from kollinger/kol-664-dashboard-whatsapp
+- Record GPT identity upgrade regression evidence (KOL-664)
+
+### Fixed
+
+- Retain GPT upgrade history without duplicate quota accounts (KOL-664)
+
+## 1.11.0-preview.4 - 2026-10-21
+
+### Improved
+
+- Merge pull request #58 from kollinger/kol-663-dashboard-whatsapp
+
+### Fixed
+
+- Deduplicate verified ChatGPT widget accounts (KOL-663)
+
+## 1.11.0-preview.3 - 2026-10-20
+
+### Added
+
+- Add private cloud sync ledger
+
+### Improved
+
+- Merge pull request #57 from kollinger/kol-649-dashboard-whatsapp
+- Merge main into KOL-649 and preserve shared account test fixtures
+- Merge pull request #19 from kollinger/codex/kol-409-cloud-sync-ledger
+- Merge remote-tracking branch 'origin/main' into kol-649-dashboard-whatsapp
+- Cover collector source selection alongside direct sync
+- Cover sync pricing target merge
+- Reconcile cloud sync with latest main
+
+### Fixed
+
+- Separate Codex account limits across OpenCode (KOL-649)
+- Reconcile private collector with current device sync (KOL-409)
+- Serialize sync ledger index refreshes
+
+## 1.11.0-preview.2 - 2026-10-20
+
+### Improved
+
+- Merge pull request #56 from kollinger/kol-648-dashboard-whatsapp
+
+### Fixed
+
+- Start usage histories at latest after delayed layout (KOL-648)
+
 ## 1.11.0-preview.1 - 2026-10-20
 
 ### Added

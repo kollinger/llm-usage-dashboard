@@ -63,6 +63,62 @@ TestCase {
         accountView.provider = "all";
         tryCompare(list(), "count", 5);
     }
+    function test_gpt_duplicate_identity() {
+        var snapshot = Fixtures.cases.gptDuplicate;
+        var shared = snapshot.accounts[0];
+        accountView.snapshot = snapshot;
+        tryCompare(list(), "count", 2);
+        compare(findChild(accountView, "remaining0_0").text, "0.0% left");
+        compare(findChild(accountView, "remaining0_1").text, "40.0% left");
+        compare(findChild(accountView, "remaining0_2").text, "—");
+        compare(findChild(accountView, "quality0_0").text, "Measured");
+        compare(findChild(accountView, "quality0_2").text, "Not available");
+        for (var cycle = 0; cycle < 2; cycle++) {
+            accountView.favorites = [shared.aliases[0]];
+            accountView.accountView = "favorites";
+            tryCompare(list(), "count", 1);
+            compare(findChild(accountView, "favorite0").text, "★");
+            compare(accountView.favorites[0], shared.id, "known aliases migrate to the durable canonical favorite");
+            accountView.snapshot = null;
+            tryCompare(list(), "count", 0);
+            accountView.snapshot = snapshot;
+            tryCompare(list(), "count", 1);
+            waitForRendering(accountView);
+            mouseClick(findChild(accountView, "favorite0"));
+            tryCompare(list(), "count", 0);
+            compare(accountView.favorites.length, 0);
+            mouseClick(findChild(accountView, "allButton"));
+            tryCompare(list(), "count", 2);
+        }
+        waitForRendering(accountView);
+        capture("gpt-deduplicated-workspaces");
+    }
+    function test_gpt_raw_auth_lifecycle() {
+        var favorite = "";
+        Fixtures.cases.gptLifecycle.forEach(function(snapshot) {
+            accountView.accountView = "all";
+            accountView.snapshot = snapshot;
+            tryCompare(list(), "count", 2, 5000);
+            waitForRendering(accountView);
+            compare(findChild(accountView, "accountCount").text, "2 of 2 accounts");
+            var shared = snapshot.accounts.find(function(account) { return account.windows[0].remainingPercent === 0; });
+            verify(shared !== undefined);
+            if (favorite) compare(shared.id, favorite, "favorite identity survives re-login and registry restart");
+            favorite = shared.id;
+            accountView.favorites = [favorite];
+            mouseClick(findChild(accountView, "favoritesButton"));
+            tryCompare(list(), "count", 1);
+            compare(findChild(accountView, "remaining0_0").text, "0.0% left");
+            compare(findChild(accountView, "remaining0_1").text, "40.0% left");
+            mouseClick(findChild(accountView, "allButton"));
+            tryCompare(list(), "count", 2);
+        });
+        waitForRendering(accountView);
+        capture("gpt-raw-auth-lifecycle");
+        accountView.snapshot = Fixtures.cases.gptLifecycleUnknown;
+        tryCompare(list(), "count", 3);
+        verify(accountView.shown.some(function(account) { return account.windows.length === 0; }), "newly verified account with failed quota stays unknown");
+    }
     function test_provider_colors() {
         accountView.snapshot = Fixtures.cases.providerColors;
         tryCompare(list(), "count", 9);

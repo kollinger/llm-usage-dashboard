@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Zjištěno {active} z {count} známých účtů · kontrola {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Přihlášení není dostupné. Nainstalujte Codex CLI nebo to zkuste znovu."
     },
     "connectionHelp": "Existující přihlášení Codex a OpenCode se rozpoznají automaticky. Přidejte zde další účty GPT bez jejich nahrazení.",
-    "loginPrivacy": "Přihlášení komunikuje s OpenAI. Přihlašovací údaje zůstávají v odděleném místním profilu a neposílají se vývojáři ani spárovaným zařízením."
+    "loginPrivacy": "Přihlášení komunikuje s OpenAI. Přihlašovací údaje zůstávají v odděleném místním profilu a neposílají se vývojáři ani spárovaným zařízením.",
+    "profileNote": "Zjištěn profil OpenCode; aktuální používání není potvrzeno.",
+    "quotaUnavailable": "Limity nelze načíst. Zopakujte kontrolu nebo přihlášení ve zdrojové aplikaci.",
+    "savedLimits": "Uložené limity · zastaralé",
+    "identityUnverified": "Identita není ověřena. Uložená historie není přiřazena k pracovnímu prostoru.",
+    "openCodeUsage": "Využití OpenCode; účet není znám. Limity účtů jsou v Účtech."
   },
   "codexResets": {
     "title": "Codex · Historie resetů",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} relací"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Místní zdroj",
     "open": "Widget na plochu",
     "title": "Kvóty účtů",
@@ -1421,5 +1426,54 @@
     "bounded": "Omezeno na {count}; použijte oblíbené nebo filtr poskytovatele.",
     "current": "Balíček KDE je aktuální",
     "reloadHelp": "Verzi načtenou v Plasma zde nelze ověřit. Pokud po aktualizaci zůstane staré zobrazení, uložte práci, odhlaste se z Plasma a znovu se přihlaste. Odebrání a opětovné přidání widgetu může použít staré zobrazení z mezipaměti."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ruční obnovení limitů",
+    "unavailable": "Tento zdroj neuvádí dostupná obnovení.",
+    "none": "Žádná uložená obnovení nejsou dostupná.",
+    "full": "Úplné obnovení",
+    "session": "Obnovení 5 hodin",
+    "weekly": "Týdenní obnovení",
+    "expires": "Vyprší: {time}",
+    "noExpiry": "Čas vypršení není uveden",
+    "remaining": "K dispozici ještě {duration}",
+    "expired": "Platnost vypršela",
+    "paused": "Momentálně nedostupné",
+    "updated": "Ověřeno: {time}",
+    "saved": "Uložené údaje: {time}",
+    "openClaude": "Zobrazit obnovení v Claude"
   }
 }

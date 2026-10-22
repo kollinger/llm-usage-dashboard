@@ -3,9 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import { createGptAccountLifecycle } from "./fixtures/gpt-account-lifecycle.mjs";
 const require = createRequire(import.meta.url);
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
 const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, kimiQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { gptDuplicateUsageFixture } = require("./fixtures/gpt-duplicate.cjs");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const fixtures = {};
 for (const count of [0, 1, 5, 12, 80]) {
@@ -17,6 +19,24 @@ fixtures.claude = buildDesktopWidgetSnapshot(claudeUsageFixture());
 fixtures.claudeLabels = buildDesktopWidgetSnapshot(claudeQuotaLabelsFixture());
 fixtures.kimiLabels = buildDesktopWidgetSnapshot(kimiQuotaLabelsFixture());
 fixtures.providerColors = buildDesktopWidgetSnapshot(providerColorsUsageFixture());
+fixtures.gptDuplicate = buildDesktopWidgetSnapshot(gptDuplicateUsageFixture());
+// Feed the actual packaged QML with the helper's production HTTP/Unix-bridge
+// output after raw auth collection and disk persistence, not a hand-built row.
+const lifecycle = await createGptAccountLifecycle();
+let lifecycleBridge;
+try {
+  await lifecycle.scan();
+  lifecycleBridge = await lifecycle.serve();
+  fixtures.gptLifecycle = [(await lifecycleBridge.read()).snapshot];
+  for (let cycle = 0; cycle < 2; cycle++) {
+    await lifecycle.login(); await lifecycle.scan(); await lifecycle.reload();
+    fixtures.gptLifecycle.push((await lifecycleBridge.read()).snapshot);
+  }
+  lifecycle.setFailed(true); await lifecycle.scan();
+  fixtures.gptLifecycle.push((await lifecycleBridge.read()).snapshot);
+  await lifecycle.login("synthetic-unavailable-workspace");
+  fixtures.gptLifecycleUnknown = (await lifecycleBridge.read()).snapshot;
+} finally { await lifecycleBridge?.close(); await lifecycle.close(); }
 await fs.mkdir(path.join(root, "dist/plasma"), { recursive: true });
 if (process.env.PLASMA_SCREENSHOTS_DIR) await fs.mkdir(process.env.PLASMA_SCREENSHOTS_DIR, { recursive: true });
 await fs.writeFile(path.join(root, "dist/plasma/Fixtures.js"), ".pragma library\nvar cases = " + JSON.stringify(fixtures) +

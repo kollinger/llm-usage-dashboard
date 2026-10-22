@@ -67,7 +67,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "{active} detected of {count} known accounts · scanned {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -92,7 +92,12 @@
       "failed": "Sign-in unavailable. Install Codex CLI or try again."
     },
     "connectionHelp": "Existing Codex and OpenCode logins are detected automatically. Add another GPT account here without replacing them.",
-    "loginPrivacy": "Sign-in communicates with OpenAI. Credentials stay in a separate local profile and are never sent to the developer or to paired devices."
+    "loginPrivacy": "Sign-in communicates with OpenAI. Credentials stay in a separate local profile and are never sent to the developer or to paired devices.",
+    "profileNote": "OpenCode profile detected; current use is not confirmed.",
+    "quotaUnavailable": "Limits could not be read. Re-scan or sign in again in the source app.",
+    "savedLimits": "Saved limits · stale",
+    "identityUnverified": "Identity unverified. Saved history is not assigned to a workspace.",
+    "openCodeUsage": "OpenCode usage; account attribution unavailable. Account limits are shown in Accounts."
   },
   "chart": {
     "eyebrow": "Local capture",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} sessions"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Local source",
     "open": "Desktop widget",
     "title": "Account quotas",
@@ -1421,5 +1426,54 @@
     "bounded": "Limited to {count}; use favorites or a provider filter.",
     "current": "KDE package up to date",
     "reloadHelp": "Plasma's loaded version cannot be checked here. If the old view remains after updating, save your work, sign out of Plasma and sign back in. Removing and re-adding the widget can reuse the cached old view."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manual resets",
+    "unavailable": "Reset availability is not reported by this source.",
+    "none": "No saved resets available.",
+    "full": "Full reset",
+    "session": "5-hour reset",
+    "weekly": "Weekly reset",
+    "expires": "Expires {time}",
+    "noExpiry": "Expiry not provided",
+    "remaining": "Usable for {duration}",
+    "expired": "Expired",
+    "paused": "Currently unavailable",
+    "updated": "Checked {time}",
+    "saved": "Saved reading: {time}",
+    "openClaude": "View resets in Claude"
   }
 }

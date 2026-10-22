@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Обнаружено {active} из {count} известных аккаунтов · проверка {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Вход недоступен. Установите Codex CLI или попробуйте снова."
     },
     "connectionHelp": "Существующие входы Codex и OpenCode определяются автоматически. Добавляйте аккаунты GPT, не заменяя их.",
-    "loginPrivacy": "Вход связывается с OpenAI. Учётные данные остаются в отдельном локальном профиле и не отправляются разработчику или сопряжённым устройствам."
+    "loginPrivacy": "Вход связывается с OpenAI. Учётные данные остаются в отдельном локальном профиле и не отправляются разработчику или сопряжённым устройствам.",
+    "profileNote": "Найден профиль OpenCode; текущее использование не подтверждено.",
+    "quotaUnavailable": "Не удалось прочитать лимиты. Повторите проверку или вход в исходном приложении.",
+    "savedLimits": "Сохранённые лимиты · устарели",
+    "identityUnverified": "Личность не подтверждена. Сохранённая история не привязана к рабочему пространству.",
+    "openCodeUsage": "Использование OpenCode; аккаунт неизвестен. Лимиты показаны в разделе Аккаунты."
   },
   "codexResets": {
     "title": "Codex · История сбросов",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} сеансов"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Локальный источник",
     "open": "Виджет рабочего стола",
     "title": "Квоты аккаунтов",
@@ -1421,5 +1426,54 @@
     "bounded": "Ограничено до {count}; используйте избранное или фильтр провайдера.",
     "current": "Пакет KDE обновлён",
     "reloadHelp": "Здесь нельзя проверить версию, загруженную Plasma. Если после обновления остался старый вид, сохраните работу, выйдите из сеанса Plasma и войдите снова. Удаление и повторное добавление виджета может использовать старый вид из кэша."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ручные сбросы",
+    "unavailable": "Этот источник не сообщает о доступных сбросах.",
+    "none": "Нет доступных сохранённых сбросов.",
+    "full": "Полный сброс",
+    "session": "Сброс 5 часов",
+    "weekly": "Недельный сброс",
+    "expires": "Истекает: {time}",
+    "noExpiry": "Время истечения не указано",
+    "remaining": "Доступен ещё {duration}",
+    "expired": "Срок истёк",
+    "paused": "Сейчас недоступен",
+    "updated": "Проверено: {time}",
+    "saved": "Сохранённые данные: {time}",
+    "openClaude": "Посмотреть сбросы в Claude"
   }
 }

@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Aptikta {active} iš {count} žinomų paskyrų · patikra {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Prisijungimas nepasiekiamas. Įdiekite Codex CLI arba bandykite dar kartą."
     },
     "connectionHelp": "Esami Codex ir OpenCode prisijungimai aptinkami automatiškai. Pridėkite GPT paskyras jų nekeisdami.",
-    "loginPrivacy": "Prisijungimas palaiko ryšį su OpenAI. Prisijungimo duomenys lieka atskirame vietiniame profilyje ir nesiunčiami kūrėjui ar susietiems įrenginiams."
+    "loginPrivacy": "Prisijungimas palaiko ryšį su OpenAI. Prisijungimo duomenys lieka atskirame vietiniame profilyje ir nesiunčiami kūrėjui ar susietiems įrenginiams.",
+    "profileNote": "Aptiktas OpenCode profilis; dabartinis naudojimas nepatvirtintas.",
+    "quotaUnavailable": "Limitų nepavyko perskaityti. Tikrinkite arba prisijunkite šaltinio programoje iš naujo.",
+    "savedLimits": "Išsaugoti limitai · pasenę",
+    "identityUnverified": "Tapatybė nepatvirtinta. Išsaugota istorija nepriskirta darbo sričiai.",
+    "openCodeUsage": "OpenCode naudojimas; paskyra nežinoma. Limitai rodomi skiltyje Paskyros."
   },
   "codexResets": {
     "title": "Codex · Atstatymų istorija",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} seansų"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Vietinis šaltinis",
     "open": "Darbalaukio valdiklis",
     "title": "Paskyrų kvotos",
@@ -1421,5 +1426,54 @@
     "bounded": "Ribojama iki {count}; naudokite parankinius arba teikėjo filtrą.",
     "current": "KDE paketas atnaujintas",
     "reloadHelp": "Čia negalima patikrinti Plasma įkeltos versijos. Jei po atnaujinimo lieka senas vaizdas, išsaugokite darbą, atsijunkite nuo Plasma ir prisijunkite iš naujo. Pašalinus ir vėl pridėjus valdiklį gali būti naudojamas senas podėlyje išsaugotas vaizdas."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Rankiniai atkūrimai",
+    "unavailable": "Šis šaltinis nepraneša apie galimus atkūrimus.",
+    "none": "Išsaugotų atkūrimų nėra.",
+    "full": "Visiškas atkūrimas",
+    "session": "5 valandų atkūrimas",
+    "weekly": "Savaitinis atkūrimas",
+    "expires": "Galioja iki {time}",
+    "noExpiry": "Galiojimo laikas nenurodytas",
+    "remaining": "Galima naudoti dar {duration}",
+    "expired": "Nebegalioja",
+    "paused": "Šiuo metu nepasiekiama",
+    "updated": "Patikrinta: {time}",
+    "saved": "Išsaugoti duomenys: {time}",
+    "openClaude": "Peržiūrėti atkūrimus Claude"
   }
 }

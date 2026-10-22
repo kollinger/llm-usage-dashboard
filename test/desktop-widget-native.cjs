@@ -11,6 +11,7 @@ const { createDesktopWidget } = require("../electron/desktop-widget");
 const { createMacMenuBar, popupBounds } = require("../electron/mac-menu-bar");
 const { buildDesktopWidgetSnapshot } = require("../lib/desktop-widget");
 const { widgetUsageFixture, claudeUsageFixture, claudeQuotaLabelsFixture, kimiQuotaLabelsFixture, providerColorsUsageFixture } = require("./fixtures/desktop-widget.cjs");
+const { gptDuplicateUsageFixture } = require("./fixtures/gpt-duplicate.cjs");
 const providerColors = require("../public/provider-colors");
 const { contrastRatio } = require("./fixtures/color-contrast.cjs");
 const { readPlasmaSnapshot } = require("../lib/plasma-bridge");
@@ -158,6 +159,26 @@ app.on("window-all-closed", () => {});
   await layout(widget, true);
   assert.equal(await evaluate(widget, "document.querySelector('.widget-track').getAttribute('aria-valuenow')"), "0");
   assert.equal(await evaluate(widget, "document.querySelectorAll('.widget-window[data-status=unavailable] .widget-track').length"), 0);
+
+  count = 2; fixture = gptDuplicateUsageFixture();
+  await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);
+  assert.equal(await evaluate(widget, "[...document.querySelector('.widget-account').querySelectorAll('.widget-window-value')].map(node => node.textContent).join('|')"), "0% left|40% left|—");
+  const gptSnapshot = buildDesktopWidgetSnapshot(fixture);
+  for (let cycle = 0; cycle < 2; cycle++) {
+    // Use the real trusted preference IPC, then reload to reproduce a saved
+    // pre-canonicalization favorite without touching any installed app state.
+    await evaluate(widget, `window.llmUsageWidget.savePreferences({ favorites: [${JSON.stringify(gptSnapshot.accounts[0].aliases[0])}], view: 'favorites', provider: 'all', scale: 1 })`);
+    await widget.reload();
+    await until(() => evaluate(widget, "document.querySelectorAll('.widget-account').length === 1 && document.querySelector('[data-favorite]').getAttribute('aria-pressed') === 'true'").catch(() => false), "GPT alias favorite survives reload");
+    await until(() => Promise.resolve(controller.state().preferences.favorites[0] === gptSnapshot.accounts[0].id), "GPT favorite migrates to the durable canonical handle");
+    await evaluate(widget, "document.querySelector('[data-favorite]').click()");
+    await until(() => evaluate(widget, "document.querySelectorAll('.widget-account').length === 0"), "GPT alias can be unfavorited");
+    assert.deepEqual(controller.state().preferences.favorites, []);
+    await evaluate(widget, "document.getElementById('widgetAll').click()"); await ready(widget);
+  }
+  await layout(widget, true); await capture(widget, "gpt-deduplicated-workspaces");
+  console.log("GPT widget native: verified workspace dedupe, independent window freshness, zero/unknown, canonical favorite migration and two reload/unfavorite cycles passed.");
+  if (process.env.WIDGET_NATIVE_GPT_ONLY === "1") return;
 
   count = 9; fixture = providerColorsUsageFixture();
   await evaluate(widget, "document.getElementById('widgetRefresh').click()"); await ready(widget);

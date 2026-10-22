@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "已检测到 {count} 个已知账户中的 {active} 个 · 扫描于 {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "暂时无法登录。请安装 Codex CLI 或重试。"
     },
     "connectionHelp": "自动识别现有 Codex 和 OpenCode 登录。可在此添加其他 GPT 账户，而不替换现有登录。",
-    "loginPrivacy": "登录时会与 OpenAI 通信。凭据保存在独立的本地配置中，不会发送给开发者或配对设备。"
+    "loginPrivacy": "登录时会与 OpenAI 通信。凭据保存在独立的本地配置中，不会发送给开发者或配对设备。",
+    "profileNote": "已检测到 OpenCode 配置；当前使用情况尚未确认。",
+    "quotaUnavailable": "无法读取限额。请重新扫描或在来源应用中重新登录。",
+    "savedLimits": "已保存的限额 · 已过期",
+    "identityUnverified": "身份尚未验证。已保存的历史记录未归属于任何工作区。",
+    "openCodeUsage": "OpenCode 用量；无法确定账户归属。账户限额显示在“账户”中。"
   },
   "codexResets": {
     "title": "Codex · 重置历史",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} 个会话"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "本地来源",
     "open": "桌面小组件",
     "title": "各账户配额",
@@ -1421,5 +1426,54 @@
     "bounded": "最多显示 {count} 个；请使用收藏或提供商筛选。",
     "current": "KDE 软件包已是最新",
     "reloadHelp": "此处无法检查 Plasma 已加载的版本。如果更新后仍显示旧视图，请保存工作，注销 Plasma 后重新登录。移除并重新添加部件也可能继续使用缓存的旧视图。"
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "手动重置",
+    "unavailable": "此来源未提供可用重置信息。",
+    "none": "没有可用的已保存重置。",
+    "full": "完整重置",
+    "session": "5 小时重置",
+    "weekly": "每周重置",
+    "expires": "到期时间：{time}",
+    "noExpiry": "未提供到期时间",
+    "remaining": "还可使用 {duration}",
+    "expired": "已过期",
+    "paused": "当前不可用",
+    "updated": "检查时间：{time}",
+    "saved": "已保存数据：{time}",
+    "openClaude": "在 Claude 中查看重置"
   }
 }

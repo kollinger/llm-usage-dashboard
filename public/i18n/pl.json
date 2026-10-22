@@ -1063,7 +1063,7 @@
     "rechecked": "Account scan complete.",
     "recheckError": "Account scan failed: {message}",
     "recheckErrorFallback": "Unknown error",
-    "summary": "{active} active of {count} known accounts · scanned {time}",
+    "summary": "Wykryto {active} z {count} znanych kont · skanowanie {time}",
     "notScanned": "Accounts have not been scanned yet.",
     "empty": "No ChatGPT account found yet",
     "guidance": "Sign in with Codex or OpenCode, then re-scan. Accounts seen previously remain in this list as history.",
@@ -1088,7 +1088,12 @@
       "failed": "Logowanie niedostępne. Zainstaluj Codex CLI lub spróbuj ponownie."
     },
     "connectionHelp": "Istniejące logowania Codex i OpenCode są wykrywane automatycznie. Dodaj kolejne konta GPT bez ich zastępowania.",
-    "loginPrivacy": "Logowanie komunikuje się z OpenAI. Dane uwierzytelniające pozostają w oddzielnym profilu lokalnym i nie trafiają do twórcy ani do sparowanych urządzeń."
+    "loginPrivacy": "Logowanie komunikuje się z OpenAI. Dane uwierzytelniające pozostają w oddzielnym profilu lokalnym i nie trafiają do twórcy ani do sparowanych urządzeń.",
+    "profileNote": "Wykryto profil OpenCode; bieżące użycie nie jest potwierdzone.",
+    "quotaUnavailable": "Nie odczytano limitów. Ponów skanowanie lub logowanie w aplikacji źródłowej.",
+    "savedLimits": "Zapisane limity · nieaktualne",
+    "identityUnverified": "Tożsamość niezweryfikowana. Zapisana historia nie jest przypisana do obszaru roboczego.",
+    "openCodeUsage": "Użycie OpenCode; konto nieznane. Limity kont są w sekcji Konta."
   },
   "codexResets": {
     "title": "Codex · Historia resetów",
@@ -1374,7 +1379,7 @@
     "sessions": "{count} sesji"
   },
   "widget": {
-    "scopedPeriod": "\u2068{scope}\u2069 · {period}",
+    "scopedPeriod": "⁨{scope}⁩ · {period}",
     "localSource": "Źródło lokalne",
     "open": "Widżet pulpitu",
     "title": "Limity kont",
@@ -1421,5 +1426,54 @@
     "bounded": "Limit {count}; użyj ulubionych lub filtra dostawcy.",
     "current": "Pakiet KDE jest aktualny",
     "reloadHelp": "Nie można tutaj sprawdzić wersji załadowanej przez Plasmę. Jeśli po aktualizacji pozostaje stary widok, zapisz pracę, wyloguj się z Plasmy i zaloguj ponownie. Usunięcie i ponowne dodanie widżetu może użyć starego widoku z pamięci podręcznej."
+  },
+  "sync": {
+    "title": "Private device sync",
+    "description": "Automatically and idempotently sync normalized usage with a private collector.",
+    "privacy": "Only normalized token, model, time, and assignment data is transferred—never prompts, transcripts, raw logs, credentials, or local paths.",
+    "enabled": "Enable background sync",
+    "serverUrl": "Private collector URL",
+    "deviceName": "Device name",
+    "pairingCode": "Pairing code",
+    "save": "Save sync settings",
+    "createSpace": "Create sync space",
+    "join": "Connect with code",
+    "newPairingCode": "Create new pairing code",
+    "syncNow": "Sync now",
+    "disconnect": "Disconnect",
+    "connection": "Connection",
+    "pending": "Offline buffer",
+    "lastSuccess": "Last successful sync",
+    "lastError": "Last error",
+    "deviceFilter": "Devices",
+    "allDevices": "All devices",
+    "thisDevice": "This device",
+    "unknownDevice": "Unknown device",
+    "connected": "Connected as {device}",
+    "notConnected": "Not connected",
+    "queued": "{count} events queued",
+    "saved": "Sync settings saved.",
+    "pairingCreated": "Pairing code created.",
+    "synced": "Sync completed.",
+    "disconnected": "Sync connection and local credentials cleared.",
+    "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
+    "actionFailed": "Sync action failed: {message}",
+    "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ręczne resetowania",
+    "unavailable": "To źródło nie podaje dostępnych resetowań.",
+    "none": "Brak dostępnych zapisanych resetowań.",
+    "full": "Pełne resetowanie",
+    "session": "Resetowanie 5 godzin",
+    "weekly": "Resetowanie tygodniowe",
+    "expires": "Wygasa: {time}",
+    "noExpiry": "Nie podano terminu wygaśnięcia",
+    "remaining": "Dostępne jeszcze przez {duration}",
+    "expired": "Wygasło",
+    "paused": "Obecnie niedostępne",
+    "updated": "Sprawdzono: {time}",
+    "saved": "Zapisane dane: {time}",
+    "openClaude": "Zobacz resetowania w Claude"
   }
 }
