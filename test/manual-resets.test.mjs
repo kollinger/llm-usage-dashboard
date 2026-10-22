@@ -99,6 +99,40 @@ try {
   assert.equal(oauth.manualResets.offers[0].remaining, 1);
 } finally { await rm(directory, { recursive: true, force: true }); }
 
+// A working OAuth quota response does not include the web reset inventory.
+// Supplement only with a proven same-organization response; keep OAuth quota.
+const { createHash } = require("node:crypto");
+const organizationScope = (value) => createHash("sha256").update(value).digest("hex");
+for (const scenario of [
+  { name: "same organization", expected: resets },
+  { name: "different organization", scope: organizationScope("other-organization"), expected: null },
+  { name: "unproven organization", scope: null, expected: null },
+  { name: "cookie source unavailable", unavailable: true, expected: null },
+  { name: "cookie source throws", throws: true, expected: null },
+  { name: "reported zero", reported: claudeManualResets({ eligible: true, grants: [] }, at), expected: claudeManualResets({ eligible: true, grants: [] }, at), calls: 0 },
+  { name: "desktop cache available", cached: resets, expected: resets, calls: 0 },
+  { name: "OAuth organization unknown", orgId: null, expected: null, calls: 0 }
+]) {
+  let cookieCalls = 0;
+  const oauthUsage = { five_hour: { utilization: 20 }, manualResets: scenario.reported || null };
+  const probe = await _test.fetchClaudeUsageProbe({
+    oauthSession: { status: "available", accessToken: "fixture-token", orgId: Object.hasOwn(scenario, "orgId") ? scenario.orgId : org },
+    fetchWithAuth: async () => ({ status: "available", source: "claude_oauth", usage: oauthUsage }),
+    readDesktopResets: () => scenario.cached || null,
+    fetchWithCookies: async () => {
+      cookieCalls++;
+      if (scenario.throws) throw new Error("fixture unavailable");
+      return { status: scenario.unavailable ? "unavailable" : "available", source: "claude_app_cookie",
+        notificationScope: Object.hasOwn(scenario, "scope") ? scenario.scope : organizationScope(org),
+        usage: { five_hour: { utilization: 99 } }, manualResets: resets };
+    }
+  });
+  assert.deepEqual(probe.manualResets, scenario.expected, scenario.name);
+  assert.equal(probe.source, "claude_oauth", scenario.name);
+  assert.equal(probe.usage.five_hour.utilization, 20, "web supplementation must not replace OAuth quota");
+  assert.equal(cookieCalls, scenario.calls ?? 1, scenario.name);
+}
+
 // Exercise the real renderer and all locale placeholders without starting a server.
 const source = (await readDashboardSource()).replace("\ninit();", "\n// bootstrap disabled");
 const fixture = await readFile(new URL("./provider-recency.test.mjs", import.meta.url), "utf8");

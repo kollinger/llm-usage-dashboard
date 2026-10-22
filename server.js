@@ -5814,11 +5814,23 @@ async function fetchClaudeUsageProbe(options = {}) {
       }
     });
     if (oauthProbe.status === "available") {
+      const notificationScope = oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null;
+      let manualResets = oauthProbe.usage?.manualResets || (options.readDesktopResets || readClaudeDesktopResets)({ orgId: oauthSession.orgId });
+      if (!manualResets && notificationScope) {
+        // OAuth quota can succeed without reporting manual resets. Read the web
+        // inventory too, but never borrow an offer from another signed-in account.
+        try {
+          const resetProbe = await fetchWithCookies();
+          if (resetProbe?.status === "available" && resetProbe.notificationScope === notificationScope) {
+            manualResets = normalizeManualResets(resetProbe.manualResets || resetProbe.usage?.manualResets);
+          }
+        } catch { /* An optional reset source must not discard working OAuth quota. */ }
+      }
       return {
         ...oauthProbe,
-        manualResets: oauthProbe.usage?.manualResets || (options.readDesktopResets || readClaudeDesktopResets)({ orgId: oauthSession.orgId }),
+        manualResets,
         accountId: quotaAccountId(oauthSession.accountId),
-        notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
+        notificationScope,
         planType: oauthSession.planType || null,
         auth: summarizeClaudeOauthSession(oauthSession)
       };
