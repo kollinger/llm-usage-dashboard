@@ -565,7 +565,9 @@ app.on("window-all-closed", () => {});
 })().then(async () => {
   menuBar?.dispose(); controller?.dispose(); main?.close(); server.closeAllConnections();
   await plasmaInstaller?.dispose();
-  await new Promise((resolve) => server.close(resolve)); app.exit(0);
+  await new Promise((resolve) => server.close(resolve));
+  await require("./fixtures/usage-aggregation-native.cjs")();
+  app.exit(0);
 }).catch(async (error) => {
   console.error(error);
   if (controller?.getWindow() && !controller.getWindow().isDestroyed()) await capture(controller.getWindow(), "failure").catch(() => {});
