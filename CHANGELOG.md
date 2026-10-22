@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.12.0-preview.2 - 2026-10-22
+
+### Added
+
+- Show saved reset offers with expiry in provider cards
+
+### Improved
+
+- Merge pull request #55 from kollinger/kol-655-dashboard-whatsapp
+- Merge main into KOL-655 and preserve native quota fixtures
+- Record reset offers CI build verification
+- Prepare 1.12.0-preview.1 reset offers review build
+- Verify installer version through IPC (KOL-655)
+
+### Fixed
+
+- Distinguish Kimi monthly quota labels (KOL-655)
+
 ## 1.11.0-preview.5 - 2026-10-21
 
 ### Improved
