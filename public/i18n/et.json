@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Käsitsi lähtestamised",
+    "unavailable": "See allikas ei teata saadaolevatest lähtestamistest.",
+    "none": "Salvestatud lähtestamisi pole saadaval.",
+    "full": "Täielik lähtestamine",
+    "session": "5 tunni lähtestamine",
+    "weekly": "Nädala lähtestamine",
+    "expires": "Aegub: {time}",
+    "noExpiry": "Aegumisaega pole antud",
+    "remaining": "Kasutatav veel {duration}",
+    "expired": "Aegunud",
+    "paused": "Praegu pole saadaval",
+    "updated": "Kontrollitud: {time}",
+    "saved": "Salvestatud andmed: {time}",
+    "openClaude": "Vaata lähtestamisi Claude’is"
   }
 }

@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Athshocruithe láimhe",
+    "unavailable": "Ní thuairiscíonn an fhoinse seo athshocruithe atá ar fáil.",
+    "none": "Níl aon athshocrú sábháilte ar fáil.",
+    "full": "Athshocrú iomlán",
+    "session": "Athshocrú 5 huaire",
+    "weekly": "Athshocrú seachtainiúil",
+    "expires": "Éagann: {time}",
+    "noExpiry": "Níor tugadh am éaga",
+    "remaining": "Ar fáil ar feadh {duration}",
+    "expired": "Imithe in éag",
+    "paused": "Níl sé ar fáil anois",
+    "updated": "Seiceáilte: {time}",
+    "saved": "Sonraí sábháilte: {time}",
+    "openClaude": "Féach athshocruithe in Claude"
   }
 }

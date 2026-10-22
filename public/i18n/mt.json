@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Resets manwali",
+    "unavailable": "Dan is-sors ma jirrapportax resets disponibbli.",
+    "none": "M’hemmx resets salvati disponibbli.",
+    "full": "Reset sħiħ",
+    "session": "Reset ta’ 5 sigħat",
+    "weekly": "Reset ta’ kull ġimgħa",
+    "expires": "Jiskadi: {time}",
+    "noExpiry": "Il-ħin tal-iskadenza mhux mogħti",
+    "remaining": "Disponibbli għal {duration}",
+    "expired": "Skadut",
+    "paused": "Bħalissa mhux disponibbli",
+    "updated": "Iċċekkjat: {time}",
+    "saved": "Dejta salvata: {time}",
+    "openClaude": "Ara r-resets f’Claude"
   }
 }

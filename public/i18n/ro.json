@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Resetări manuale",
+    "unavailable": "Această sursă nu raportează resetările disponibile.",
+    "none": "Nu există resetări salvate disponibile.",
+    "full": "Resetare completă",
+    "session": "Resetare de 5 ore",
+    "weekly": "Resetare săptămânală",
+    "expires": "Expiră: {time}",
+    "noExpiry": "Ora expirării nu este indicată",
+    "remaining": "Disponibilă încă {duration}",
+    "expired": "Expirată",
+    "paused": "Momentan indisponibilă",
+    "updated": "Verificat: {time}",
+    "saved": "Date salvate: {time}",
+    "openClaude": "Vezi resetările în Claude"
   }
 }

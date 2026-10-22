@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Dieses Gerät trennen und seine lokalen Sync-Zugangsdaten sowie den Puffer löschen?",
     "actionFailed": "Sync-Aktion fehlgeschlagen: {message}",
     "fallbackLocal": "Privater Sync ist nicht erreichbar; lokale Daten werden angezeigt. {message}"
+  },
+  "manualResets": {
+    "title": "Manuelle Resets",
+    "unavailable": "Diese Quelle meldet keine verfügbaren Reset-Angebote.",
+    "none": "Keine gespeicherten Resets verfügbar.",
+    "full": "Vollständiger Reset",
+    "session": "5-Stunden-Reset",
+    "weekly": "Wochen-Reset",
+    "expires": "Läuft ab: {time}",
+    "noExpiry": "Keine Ablaufzeit angegeben",
+    "remaining": "Noch {duration} nutzbar",
+    "expired": "Abgelaufen",
+    "paused": "Derzeit nicht nutzbar",
+    "updated": "Geprüft: {time}",
+    "saved": "Gespeicherter Stand: {time}",
+    "openClaude": "Resets in Claude ansehen"
   }
 }

@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Rankiniai atkūrimai",
+    "unavailable": "Šis šaltinis nepraneša apie galimus atkūrimus.",
+    "none": "Išsaugotų atkūrimų nėra.",
+    "full": "Visiškas atkūrimas",
+    "session": "5 valandų atkūrimas",
+    "weekly": "Savaitinis atkūrimas",
+    "expires": "Galioja iki {time}",
+    "noExpiry": "Galiojimo laikas nenurodytas",
+    "remaining": "Galima naudoti dar {duration}",
+    "expired": "Nebegalioja",
+    "paused": "Šiuo metu nepasiekiama",
+    "updated": "Patikrinta: {time}",
+    "saved": "Išsaugoti duomenys: {time}",
+    "openClaude": "Peržiūrėti atkūrimus Claude"
   }
 }

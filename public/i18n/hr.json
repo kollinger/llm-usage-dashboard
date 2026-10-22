@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ručna poništavanja",
+    "unavailable": "Ovaj izvor ne prijavljuje dostupna poništavanja.",
+    "none": "Nema dostupnih spremljenih poništavanja.",
+    "full": "Potpuno poništavanje",
+    "session": "Poništavanje 5 sati",
+    "weekly": "Tjedno poništavanje",
+    "expires": "Istječe: {time}",
+    "noExpiry": "Vrijeme isteka nije navedeno",
+    "remaining": "Dostupno još {duration}",
+    "expired": "Isteklo",
+    "paused": "Trenutačno nedostupno",
+    "updated": "Provjereno: {time}",
+    "saved": "Spremljeni podaci: {time}",
+    "openClaude": "Pogledaj poništavanja u Claudeu"
   }
 }

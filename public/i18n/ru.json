@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ручные сбросы",
+    "unavailable": "Этот источник не сообщает о доступных сбросах.",
+    "none": "Нет доступных сохранённых сбросов.",
+    "full": "Полный сброс",
+    "session": "Сброс 5 часов",
+    "weekly": "Недельный сброс",
+    "expires": "Истекает: {time}",
+    "noExpiry": "Время истечения не указано",
+    "remaining": "Доступен ещё {duration}",
+    "expired": "Срок истёк",
+    "paused": "Сейчас недоступен",
+    "updated": "Проверено: {time}",
+    "saved": "Сохранённые данные: {time}",
+    "openClaude": "Посмотреть сбросы в Claude"
   }
 }

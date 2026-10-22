@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ručné obnovenia limitov",
+    "unavailable": "Tento zdroj neuvádza dostupné obnovenia.",
+    "none": "Nie sú dostupné žiadne uložené obnovenia.",
+    "full": "Úplné obnovenie",
+    "session": "Obnovenie 5 hodín",
+    "weekly": "Týždenné obnovenie",
+    "expires": "Vyprší: {time}",
+    "noExpiry": "Čas vypršania nie je uvedený",
+    "remaining": "Dostupné ešte {duration}",
+    "expired": "Platnosť vypršala",
+    "paused": "Momentálne nedostupné",
+    "updated": "Overené: {time}",
+    "saved": "Uložené údaje: {time}",
+    "openClaude": "Zobraziť obnovenia v Claude"
   }
 }

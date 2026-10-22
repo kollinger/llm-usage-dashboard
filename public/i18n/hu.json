@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Kézi visszaállítások",
+    "unavailable": "Ez a forrás nem közöl elérhető visszaállításokat.",
+    "none": "Nincs elérhető mentett visszaállítás.",
+    "full": "Teljes visszaállítás",
+    "session": "5 órás visszaállítás",
+    "weekly": "Heti visszaállítás",
+    "expires": "Lejár: {time}",
+    "noExpiry": "Nincs megadott lejárati idő",
+    "remaining": "Még {duration} ideig használható",
+    "expired": "Lejárt",
+    "paused": "Jelenleg nem érhető el",
+    "updated": "Ellenőrizve: {time}",
+    "saved": "Mentett adatok: {time}",
+    "openClaude": "Visszaállítások megtekintése a Claude-ban"
   }
 }

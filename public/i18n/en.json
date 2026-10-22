@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manual resets",
+    "unavailable": "Reset availability is not reported by this source.",
+    "none": "No saved resets available.",
+    "full": "Full reset",
+    "session": "5-hour reset",
+    "weekly": "Weekly reset",
+    "expires": "Expires {time}",
+    "noExpiry": "Expiry not provided",
+    "remaining": "Usable for {duration}",
+    "expired": "Expired",
+    "paused": "Currently unavailable",
+    "updated": "Checked {time}",
+    "saved": "Saved reading: {time}",
+    "openClaude": "View resets in Claude"
   }
 }

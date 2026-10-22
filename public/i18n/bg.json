@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Ръчни нулирания",
+    "unavailable": "Този източник не съобщава налични нулирания.",
+    "none": "Няма налични запазени нулирания.",
+    "full": "Пълно нулиране",
+    "session": "5-часово нулиране",
+    "weekly": "Седмично нулиране",
+    "expires": "Изтича: {time}",
+    "noExpiry": "Не е посочено време на изтичане",
+    "remaining": "Достъпно още {duration}",
+    "expired": "Изтекло",
+    "paused": "В момента недостъпно",
+    "updated": "Проверено: {time}",
+    "saved": "Запазени данни: {time}",
+    "openClaude": "Виж нулиранията в Claude"
   }
 }

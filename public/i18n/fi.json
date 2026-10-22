@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manuaaliset nollaukset",
+    "unavailable": "Tämä lähde ei ilmoita saatavilla olevista nollauksista.",
+    "none": "Tallennettuja nollauksia ei ole saatavilla.",
+    "full": "Täysi nollaus",
+    "session": "5 tunnin nollaus",
+    "weekly": "Viikkonollaus",
+    "expires": "Vanhenee: {time}",
+    "noExpiry": "Vanhenemisaikaa ei ilmoitettu",
+    "remaining": "Käytettävissä vielä {duration}",
+    "expired": "Vanhentunut",
+    "paused": "Ei käytettävissä nyt",
+    "updated": "Tarkistettu: {time}",
+    "saved": "Tallennettu tieto: {time}",
+    "openClaude": "Näytä nollaukset Claudessa"
   }
 }

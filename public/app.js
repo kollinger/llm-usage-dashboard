@@ -4958,7 +4958,7 @@ function buildProviders(usage) {
     normalizeLocalProvider("kimi", usage.kimi),
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
-  ];
+  ].map((provider) => ({ ...provider, manualResets: usage[provider.id]?.manualResets || null }));
 }
 
 function renderChartModeToggle() {
@@ -6440,6 +6440,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderProviderFreshness(provider)}
       ${renderProviderSubscription(provider)}
       ${renderProviderSubscriptionConnection(provider)}
+      ${renderManualResets(provider)}
       ${main}
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
@@ -6452,6 +6453,33 @@ function renderProvider(provider, index = 0, total = 1) {
       ` : ""}
     </article>
   `;
+}
+
+function renderManualResets(provider, now = Date.now()) {
+  const resets = provider.manualResets;
+  if (!resets && provider.id !== "claudeCode" && !providerHasCurrentUsage(provider)) return "";
+  const text = (key, values = {}) => escapeHtml(t(`manualResets.${key}`, values));
+  const offers = (Array.isArray(resets?.offers) ? resets.offers : []).filter((offer) => Number.isSafeInteger(offer.remaining) && offer.remaining > 0);
+  const formatExpiry = (value) => new Intl.DateTimeFormat(currentLocale(), {
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZoneName: "short"
+  }).format(new Date(value));
+  const content = resets?.status !== "available" ? `<p>${text("unavailable")}</p>` : !offers.length ? `<p>${text("none")}</p>` : offers.map((offer) => {
+    const expiry = Date.parse(offer.expiresAt || "");
+    const start = Date.parse(offer.startsAt || "");
+    const expired = Number.isFinite(expiry) && expiry <= now;
+    const usable = offer.usable === true && !offer.paused && (!Number.isFinite(start) || start <= now);
+    const scope = ["full", "session", "weekly"].includes(offer.scope) ? offer.scope : "full";
+    return `<div class="manual-reset-offer${expired ? " is-expired" : ""}">
+      <strong>${escapeHtml(String(offer.remaining))} × ${text(scope)}</strong>
+      <p>${Number.isFinite(expiry) ? `<time datetime="${escapeHtml(new Date(expiry).toISOString())}">${text("expires", { time: formatExpiry(expiry) })}</time>` : text("noExpiry")}</p>
+      <p>${expired ? text("expired") : !usable ? text("paused") : Number.isFinite(expiry) ? text("remaining", { duration: formatDurationCompact(expiry - now) }) : ""}</p>
+    </div>`;
+  }).join("");
+  const measuredAt = Date.parse(resets?.updatedAt || "");
+  const saved = resets?.source === "claude_desktop_cache" || (Number.isFinite(measuredAt) && now - measuredAt > 15 * 60_000);
+  const timestamp = Number.isFinite(measuredAt) ? `<p class="manual-reset-source">${text(saved ? "saved" : "updated", { time: formatExpiry(measuredAt) })}</p>` : "";
+  const link = provider.id === "claudeCode" ? `<a class="manual-reset-link" href="https://claude.ai/settings/usage" target="_blank" rel="noopener noreferrer">${text("openClaude")}</a>` : "";
+  return `<section class="manual-resets" aria-label="${text("title")}"><h3>${text("title")}</h3>${content}${timestamp}${link}</section>`;
 }
 
 function providerHasCurrentUsage(provider) {

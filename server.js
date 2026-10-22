@@ -26,6 +26,7 @@ const { buildDesktopWidgetSnapshot } = require("./lib/desktop-widget");
 const { mergeGptQuotaLimits } = require("./lib/gpt-account-quota");
 const { claudeAccountIdentity, quotaAccountId, mergeClaudeLocalAccounts } = require("./lib/claude-accounts");
 const { DeviceSync } = require("./lib/device-sync");
+const { normalizeManualResets, claudeManualResets, readClaudeDesktopResets } = require("./lib/manual-resets");
 const { exportUsageEvents, attributeLocalUsageEvents, refreshCombinedUsageMetadata } = require("./lib/device-sync-data");
 const { createUsageAggregation } = require("./lib/usage-aggregation");
 const { readUsageFileEvents } = require("./lib/usage-file-cache");
@@ -5785,6 +5786,7 @@ async function saveClaudeUsageSnapshot(probe, file = CLAUDE_USAGE_SNAPSHOT_FILE)
     source: snapshot.source,
     updatedAt: snapshot.updatedAt,
     accountId: quotaAccountId(snapshot.accountId),
+    manualResets: snapshot.manualResets,
     usage: snapshot.usage
   };
   await fsp.mkdir(path.dirname(file), { recursive: true });
@@ -5812,6 +5814,7 @@ async function fetchClaudeUsageProbe(options = {}) {
     if (oauthProbe.status === "available") {
       return {
         ...oauthProbe,
+        manualResets: oauthProbe.usage?.manualResets || (options.readDesktopResets || readClaudeDesktopResets)({ orgId: oauthSession.orgId }),
         accountId: quotaAccountId(oauthSession.accountId),
         notificationScope: oauthSession.orgId ? crypto.createHash("sha256").update(oauthSession.orgId).digest("hex") : null,
         planType: oauthSession.planType || null,
@@ -5837,13 +5840,15 @@ async function fetchClaudeUsageWithAppCookies() {
   if (!cookies) return claudeApiProbe("missing", "claude_app_cookie_missing", "claude_app_cookie");
   const probe = await fetchClaudeUsageWithAuth({
     orgId: cookies.lastActiveOrg,
+    path: `/api/organizations/${encodeURIComponent(cookies.lastActiveOrg)}/usage?cedar_ember=1&skip_spend=1`,
     source: "claude_app_cookie",
     hostname: "claude.ai",
     headers: {
       Cookie: `sessionKey=${cookies.sessionKey}`
     }
   });
-  return { ...probe, notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
+  return { ...probe, manualResets: probe.usage?.manualResets || readClaudeDesktopResets({ orgId: cookies.lastActiveOrg }),
+    notificationScope: crypto.createHash("sha256").update(cookies.lastActiveOrg).digest("hex") };
 }
 
 async function recordClaudeNotificationSample(probe, accountKey) {
@@ -6040,6 +6045,7 @@ function normalizeClaudeApiUsagePayload(payload, source = "claude_api") {
     seven_day_fable: root.seven_day_fable || root.sevenDayFable || root.fable || null,
     limits: sanitizeClaudeScopedUsageLimits(root.limits),
     extra_usage: root.extra_usage || root.extraUsage || null,
+    manualResets: normalizeManualResets(root.manualResets) || claudeManualResets(root.cedar_ember, new Date().toISOString()),
     source,
     updatedAt: new Date().toISOString()
   };
@@ -6048,7 +6054,7 @@ function normalizeClaudeApiUsagePayload(payload, source = "claude_api") {
       usage.seven_day ||
       usage.seven_day_sonnet ||
       usage.seven_day_fable ||
-      usage.limits.length
+      usage.limits.length || usage.manualResets
   );
   return hasUsageWindows ? usage : null;
 }
@@ -6137,6 +6143,7 @@ function normalizeClaudeApiUsageProbe(probe) {
     source: String(probe?.source || usage?.source || "claude_api").trim() || "claude_api",
     updatedAt: normalizeOptionalDate(probe?.updatedAt) || new Date().toISOString(),
     accountId: quotaAccountId(probe?.accountId),
+    manualResets: normalizeManualResets(probe?.manualResets || usage?.manualResets),
     usage,
     auth: probe?.auth || null,
     fallback: probe?.fallback || null
@@ -6147,6 +6154,7 @@ function retainLastKnownClaudeUsageProbe(previous, incoming, nowMs = Date.now())
   if (incoming?.usage || !previous?.usage || !hasCurrentClaudeUsageSnapshot(previous.usage, nowMs)) return incoming;
   return {
     ...previous,
+    manualResets: incoming.manualResets || previous.manualResets || null,
     status: "available",
     reason: null,
     fallback: {
@@ -6167,7 +6175,8 @@ function hasCurrentClaudeUsageSnapshot(usage, nowMs = Date.now()) {
     hasCurrentWindow(usage?.five_hour, "5h", 300) ||
       hasCurrentWindow(usage?.seven_day, "Woche", 10080) ||
       hasCurrentWindow(usage?.seven_day_sonnet, "Nur Sonnet", 10080) ||
-      claudeApiFableLimitRows(usage).length
+      claudeApiFableLimitRows(usage).length ||
+      usage?.manualResets?.offers?.some((offer) => offer.remaining > 0 && (!offer.expiresAt || Date.parse(offer.expiresAt) > nowMs))
   );
 }
 
@@ -6177,9 +6186,10 @@ function overlayRestoredClaudeQuota(usage, probe, nowMs = Date.now(), statusline
   const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
     statusline, apiUsage: usableProbe?.usage, apiUsageSource: usableProbe?.source, apiUsageUpdatedAt: usableProbe?.usage?.updatedAt
   });
-  if (!resolvedLimits) return usage;
+  const manualResets = normalizeManualResets(probe?.manualResets || usableProbe?.usage?.manualResets);
+  if (!resolvedLimits) return manualResets ? { ...usage, claudeCode: { ...usage.claudeCode, manualResets } } : usage;
   return { ...usage, claudeCode: { ...usage.claudeCode, status: "live", limits: resolvedLimits,
-    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource, quotaAccountId: !statusline?.limits ? quotaAccountId(usableProbe?.accountId) : null,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, manualResets, limitSource, quotaAccountId: !statusline?.limits ? quotaAccountId(usableProbe?.accountId) : null,
     setup: { ...usage.claudeCode.setup, staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(usableProbe?.fallback) } } };
 }
 
@@ -6492,6 +6502,7 @@ async function readClaudeCodeUsage(options = {}) {
     totals: finalizeUsageAccumulator(usage),
     limits: resolvedLimits,
     limitsUpdatedAt: resolvedLimitsUpdatedAt,
+    manualResets: normalizeManualResets(directApiProbe?.manualResets || apiUsage?.manualResets),
     // Mixed statusline/API rows do not prove one account identity. Keep those
     // allowances as a visible local source rather than filling another profile.
     quotaAccountId: !statusline?.limits && directApiUsage && limitSource === directApiProbe?.source ? quotaAccountId(directApiProbe.accountId) : null,

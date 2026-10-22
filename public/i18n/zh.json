@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "手动重置",
+    "unavailable": "此来源未提供可用重置信息。",
+    "none": "没有可用的已保存重置。",
+    "full": "完整重置",
+    "session": "5 小时重置",
+    "weekly": "每周重置",
+    "expires": "到期时间：{time}",
+    "noExpiry": "未提供到期时间",
+    "remaining": "还可使用 {duration}",
+    "expired": "已过期",
+    "paused": "当前不可用",
+    "updated": "检查时间：{time}",
+    "saved": "已保存数据：{time}",
+    "openClaude": "在 Claude 中查看重置"
   }
 }

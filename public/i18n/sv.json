@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manuella återställningar",
+    "unavailable": "Den här källan rapporterar inte tillgängliga återställningar.",
+    "none": "Inga sparade återställningar är tillgängliga.",
+    "full": "Fullständig återställning",
+    "session": "5-timmarsåterställning",
+    "weekly": "Veckoåterställning",
+    "expires": "Upphör: {time}",
+    "noExpiry": "Ingen sluttid angiven",
+    "remaining": "Kan användas i {duration}",
+    "expired": "Utgången",
+    "paused": "Inte tillgänglig just nu",
+    "updated": "Kontrollerat: {time}",
+    "saved": "Sparade uppgifter: {time}",
+    "openClaude": "Visa återställningar i Claude"
   }
 }

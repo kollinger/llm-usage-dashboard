@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Χειροκίνητες επαναφορές",
+    "unavailable": "Αυτή η πηγή δεν αναφέρει διαθέσιμες επαναφορές.",
+    "none": "Δεν υπάρχουν διαθέσιμες αποθηκευμένες επαναφορές.",
+    "full": "Πλήρης επαναφορά",
+    "session": "Επαναφορά 5 ωρών",
+    "weekly": "Εβδομαδιαία επαναφορά",
+    "expires": "Λήγει: {time}",
+    "noExpiry": "Δεν παρέχεται ώρα λήξης",
+    "remaining": "Διαθέσιμη για {duration}",
+    "expired": "Έληξε",
+    "paused": "Προς το παρόν μη διαθέσιμη",
+    "updated": "Έλεγχος: {time}",
+    "saved": "Αποθηκευμένα δεδομένα: {time}",
+    "openClaude": "Προβολή επαναφορών στο Claude"
   }
 }

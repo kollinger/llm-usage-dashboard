@@ -1705,6 +1705,41 @@ textarea {
   line-height: 1.35;
 }
 
+.manual-resets {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+.manual-resets h3,
+.manual-resets p {
+  margin: 0;
+}
+
+.manual-resets h3,
+.manual-reset-offer strong {
+  font-size: 0.85rem;
+}
+
+.manual-resets p,
+.manual-reset-link {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.manual-reset-offer time,
+.manual-reset-link {
+  color: var(--ink);
+}
+
+.manual-reset-offer.is-expired {
+  opacity: 0.7;
+}
+
 .subscription-summary {
   display: inline-flex;
   max-width: 100%;

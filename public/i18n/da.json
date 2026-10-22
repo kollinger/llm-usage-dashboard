@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manuelle nulstillinger",
+    "unavailable": "Denne kilde oplyser ikke om tilgængelige nulstillinger.",
+    "none": "Ingen gemte nulstillinger er tilgængelige.",
+    "full": "Fuld nulstilling",
+    "session": "5-timers nulstilling",
+    "weekly": "Ugentlig nulstilling",
+    "expires": "Udløber: {time}",
+    "noExpiry": "Udløbstid ikke oplyst",
+    "remaining": "Kan bruges i {duration}",
+    "expired": "Udløbet",
+    "paused": "Ikke tilgængelig nu",
+    "updated": "Kontrolleret: {time}",
+    "saved": "Gemte data: {time}",
+    "openClaude": "Se nulstillinger i Claude"
   }
 }

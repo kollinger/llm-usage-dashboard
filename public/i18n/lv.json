@@ -1457,5 +1457,21 @@
     "disconnectConfirm": "Disconnect this device and clear its local sync credentials and queue?",
     "actionFailed": "Sync action failed: {message}",
     "fallbackLocal": "Private sync is unavailable; showing local data. {message}"
+  },
+  "manualResets": {
+    "title": "Manuālās atiestates",
+    "unavailable": "Šis avots neziņo par pieejamām atiestatēm.",
+    "none": "Nav pieejamu saglabātu atiestašu.",
+    "full": "Pilna atiestate",
+    "session": "5 stundu atiestate",
+    "weekly": "Nedēļas atiestate",
+    "expires": "Derīgs līdz {time}",
+    "noExpiry": "Derīguma laiks nav norādīts",
+    "remaining": "Izmantojams vēl {duration}",
+    "expired": "Derīgums beidzies",
+    "paused": "Pašlaik nav pieejams",
+    "updated": "Pārbaudīts: {time}",
+    "saved": "Saglabātie dati: {time}",
+    "openClaude": "Skatīt atiestates Claude"
   }
 }
