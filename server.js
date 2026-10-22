@@ -1180,22 +1180,25 @@ app.get("/api/usage-period", authMiddleware, async (req, res) => {
       if (sync.restoring) { await deviceSync.initialize(); sync = deviceSync.status(); }
       if (selected !== "all" && !deviceSync.snapshots.has(selected)) return res.status(400).json({ error: "unknown_device" });
     }
-    await readUsageDashboard({ staleWhileRefresh: false });
+    // Existing indexes and signed device snapshots are independent of a new
+    // provider scan. A cold scan must not hold the cost request open.
+    if (selected === "local") void readUsageDashboard({ staleWhileRefresh: true }).catch(() => {});
     const snapshots = sync.enabled ? [...deviceSync.snapshots.values()] : [];
     if (selected === "all" && !snapshots.some((snapshot) => snapshot.device.id === sync.deviceId)) {
       return res.status(503).json({ error: "usage_period_initializing" });
     }
     let report = await usageAggregation.period(snapshots, selected, options);
     if (!report && selected === "local") {
-      invalidateTimedCache(usageCache);
-      await readUsageDashboard({ staleWhileRefresh: false });
-      report = await usageAggregation.period(snapshots, selected, options);
+      usageCache.expiresAt = 0;
+      void readUsageDashboard({ staleWhileRefresh: true }).catch(() => {});
     }
     if (selected !== "local" && (!deviceSync.status().enabled || snapshots.some((snapshot) => !deviceSync.snapshots.has(snapshot.device.id)))) {
       return res.status(409).json({ error: "device_scope_changed" });
     }
     if (!report) return res.status(503).json({ error: "usage_period_initializing" });
-    res.json(report);
+    const timestamps = snapshots.filter((snapshot) => selected === "all" || snapshot.device.id === selected)
+      .map((snapshot) => snapshot.capturedAt).filter((value) => Number.isFinite(Date.parse(value))).sort();
+    res.json({ ...report, dataUpdatedAt: selected === "local" ? usageCache.value?.local?.updatedAt || report.generatedAt : timestamps[0] || report.generatedAt });
   } catch (error) { sendApiError(res, error, "usage_period_read_failed"); }
 });
 

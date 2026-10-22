@@ -53,6 +53,8 @@ const state = {
   pricingPeriodKey: "",
   pricingPeriodPending: "",
   pricingPeriodError: false,
+  pricingPeriodRequestId: 0,
+  pricingPeriodRetryTimer: null,
   pricingPeriodCatalog: null,
   pricingCatalogPending: false,
   pricingCatalogAt: 0,
@@ -2647,6 +2649,7 @@ function bindEvents() {
     if (!button || button.disabled) return;
     state.pricingPeriodOffset = button.dataset.pricingPeriodStep === "current" ? 0
       : Math.min(0, state.pricingPeriodOffset + Number(button.dataset.pricingPeriodStep));
+    state.pricingPeriodError = false;
     refreshPricingPeriodView();
   });
   els.pricingViewToggle?.addEventListener("click", (event) => {
@@ -8039,13 +8042,17 @@ async function loadPricingPeriodCatalog() {
   if (state.pricingCatalogPending || Date.now() - state.pricingCatalogAt < 60_000) return;
   state.pricingCatalogPending = true;
   try {
-    const [quota, codex] = await Promise.allSettled([
-      fetchJson("/api/quota-history?limit=5000"), fetchJson("/api/codex-reset-history?limit=0")
+    state.pricingPeriodCatalog ||= { windows: [], codex: null };
+    await Promise.allSettled([
+      fetchJson("/api/quota-history?limit=5000", { signal: AbortSignal.timeout(20_000) }).then((value) => {
+        state.pricingPeriodCatalog.windows = value.windows || [];
+        refreshPricingPeriodView();
+      }),
+      fetchJson("/api/codex-reset-history?limit=0", { signal: AbortSignal.timeout(20_000) }).then((value) => {
+        state.pricingPeriodCatalog.codex = value;
+        refreshPricingPeriodView();
+      })
     ]);
-    state.pricingPeriodCatalog = {
-      windows: quota.status === "fulfilled" ? quota.value.windows || [] : [],
-      codex: codex.status === "fulfilled" ? codex.value : null
-    };
   } finally {
     state.pricingCatalogPending = false;
     state.pricingCatalogAt = Date.now();
@@ -8054,19 +8061,32 @@ async function loadPricingPeriodCatalog() {
 }
 
 async function loadPricingPeriod(selection) {
+  clearTimeout(state.pricingPeriodRetryTimer);
+  const requestId = ++state.pricingPeriodRequestId;
   state.pricingPeriodPending = selection.key;
   state.pricingPeriodError = false;
   const query = new URLSearchParams({ from: selection.from, to: selection.to,
     provider: state.pricingProvider, device: state.syncDeviceFilter });
   if (selection.accountId) query.set("accountId", selection.accountId);
   try {
-    const value = await fetchJson(`/api/usage-period?${query}`);
-    if (state.pricingPeriodKey === selection.key) state.pricingPeriodReport = { key: selection.key, value };
+    const value = await fetchJson(`/api/usage-period?${query}`, { signal: AbortSignal.timeout(20_000) });
+    if (state.pricingPeriodKey === selection.key && requestId === state.pricingPeriodRequestId) {
+      state.pricingPeriodReport = { key: selection.key, revision: selection.revision, value };
+    }
   } catch {
-    if (state.pricingPeriodKey === selection.key) state.pricingPeriodError = true;
+    if (state.pricingPeriodKey === selection.key && requestId === state.pricingPeriodRequestId) {
+      state.pricingPeriodError = true;
+      state.pricingPeriodRetryTimer = setTimeout(() => {
+        if (state.pricingPeriodKey !== selection.key || requestId !== state.pricingPeriodRequestId) return;
+        state.pricingPeriodError = false;
+        refreshPricingPeriodView();
+      }, 15_000);
+    }
   } finally {
-    if (state.pricingPeriodPending === selection.key) state.pricingPeriodPending = "";
-    if (state.pricingPeriodKey === selection.key) refreshPricingPeriodView();
+    if (requestId === state.pricingPeriodRequestId) {
+      state.pricingPeriodPending = "";
+      if (state.pricingPeriodKey === selection.key) refreshPricingPeriodView();
+    }
   }
 }
 
@@ -8120,15 +8140,16 @@ function renderPricingPeriodControls(local, providers) {
     ${state.pricingPeriodKind === "billing" ? `<label class="field"><span>${escapeHtml(t("pricing.periods.anchor"))}</span><input type="date" data-pricing-period-field="anchor" value="${escapeHtml(pricingBillingAnchor())}"></label>` : ""}
     <nav class="pricing-period-navigation" aria-label="${escapeHtml(t("chart.filterBarAria"))}">
       <button type="button" class="text-button ghost" data-pricing-period-step="-1"${previousDisabled ? " disabled" : ""}>${escapeHtml(t("chatUsage.previous"))}</button>
-      <button type="button" class="text-button ghost" data-pricing-period-step="current"${nextDisabled ? " disabled" : ""}>${escapeHtml(t("pricing.periods.current"))}</button>
+      <button type="button" class="text-button ghost" data-pricing-period-step="current"${nextDisabled && !state.pricingPeriodError ? " disabled" : ""}>${escapeHtml(t("pricing.periods.current"))}</button>
       <button type="button" class="text-button ghost" data-pricing-period-step="1"${nextDisabled || !period ? " disabled" : ""}>${escapeHtml(t("chatUsage.next"))}</button>
     </nav>`;
   if (!period) { state.pricingPeriodKey = ""; return null; }
   period = { ...period, ...(state.pricingPeriodKind === "reset" && account?.accountRef ? { accountId: account.accountRef } : {}) };
-  const key = JSON.stringify([state.syncDeviceFilter, state.pricingProvider, period.from, period.to, period.accountId, local?.updatedAt]);
+  const key = JSON.stringify([state.syncDeviceFilter, state.pricingProvider, period.from, period.to, period.accountId]);
   if (state.pricingPeriodKey !== key) state.pricingPeriodError = false;
   state.pricingPeriodKey = key;
-  if (state.pricingPeriodReport?.key !== key && state.pricingPeriodPending !== key && !state.pricingPeriodError) void loadPricingPeriod({ ...period, key });
+  if ((state.pricingPeriodReport?.key !== key || state.pricingPeriodReport.revision !== local?.updatedAt) &&
+      state.pricingPeriodPending !== key && !state.pricingPeriodError) void loadPricingPeriod({ ...period, key, revision: local?.updatedAt });
   return { ...period, key };
 }
 
@@ -8144,6 +8165,7 @@ function renderPricing(local, rangeRows = [], providers = []) {
     els.pricingPeriodStatus.textContent = !selection ? t(state.pricingPeriodKind === "billing" ? "pricing.periods.anchorHelp" : "pricing.periods.noReset")
       : state.pricingPeriodError ? t("pricing.periods.error") : !report ? t("pricing.periods.loading")
         : [state.pricingPeriodLabel, selection.estimated ? t("pricing.periods.estimated") : "",
+          report.dataUpdatedAt ? t("providers.freshness.usage", { time: formatDateTime(report.dataUpdatedAt) }) : "",
           report.unassignedTokens ? t("pricing.periods.unassigned", { tokens: formatTokens(report.unassignedTokens) }) : ""].filter(Boolean).join(" · ");
   }
   if (els.pricingViewToggle) {

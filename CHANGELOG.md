@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0-preview.2
+
+- Fix cost periods waiting for a complete provider scan when saved usage is already available. Show the usage timestamp for saved period results.
+- Keep loaded cost results visible during refreshes; bound slow requests and retry automatically. Codex reset history can load independently of the general quota archive.
+- Preview fix within the 1.13.0 cost-period feature; no new feature or compatibility change.
+
 ## 1.13.0-preview.1 - 2026-10-22
 
 ### Added

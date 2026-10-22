@@ -82,6 +82,7 @@ try {
   const get = (query = "") => fetch(`${base}/api/chat-usage${query}`, { headers });
   const periodQuery = new URLSearchParams({ from: new Date(Date.parse(timestamp) - 1).toISOString(),
     to: new Date(Date.parse(timestamp) + 1).toISOString(), provider: "codex", device: "all" });
+  await fetch(`${base}/api/usage?force=true`, { headers });
   const periodResponse = await fetch(`${base}/api/usage-period?${periodQuery}`, { headers });
   assert.equal(periodResponse.status, 200);
   const periodReport = await periodResponse.json();
