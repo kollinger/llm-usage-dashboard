@@ -5,6 +5,7 @@ const fsp = require("node:fs/promises");
 const path = require("node:path");
 const os = require("node:os");
 const readline = require("node:readline");
+const { createZstdDecompress } = require("node:zlib");
 const crypto = require("node:crypto");
 const https = require("node:https");
 const { spawn, spawnSync, execFile } = require("node:child_process");
@@ -8386,7 +8387,7 @@ async function listCodexUsageFiles(sources = defaultCodexSources()) {
   let duplicatesSkipped = 0;
 
   for (const root of roots) {
-    for (const file of await listJsonlFiles(root.path)) {
+    for (const file of (await listJsonlFiles(root.path)).sort((a, b) => Number(a.endsWith(".zst")) - Number(b.endsWith(".zst")))) {
       const realPath = await safeRealpath(file);
       const sessionId = codexSessionId(file);
       if (seenRealPaths.has(realPath) || (sessionId && seenSessionIds.has(sessionId))) {
@@ -8421,8 +8422,9 @@ async function safeRealpath(file) {
 }
 
 function codexSessionId(file) {
-  const match = path.basename(file).match(/^rollout-[^.]+(?:\.jsonl)?$/);
-  return match ? path.basename(file, ".jsonl") : "";
+  const basename = path.basename(file).replace(/\.zst$/, "");
+  const match = basename.match(/^rollout-[^.]+(?:\.jsonl)?$/);
+  return match ? path.basename(basename, ".jsonl") : "";
 }
 
 async function listJsonlFiles(root) {
@@ -8439,7 +8441,7 @@ async function listJsonlFiles(root) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           await walk(fullPath);
-        } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+        } else if (entry.isFile() && /\.jsonl(?:\.zst)?$/.test(entry.name)) {
           result.push(fullPath);
         }
       })
@@ -8531,27 +8533,40 @@ function pruneUsageFileScanCache(cacheMap, fileRecords) {
 }
 
 async function readJsonl(file, onObject, acceptedRootTypes = null) {
-  const stream = fs.createReadStream(file, { encoding: "utf8" });
+  const compressed = file.endsWith(".jsonl.zst");
+  if (compressed && typeof createZstdDecompress !== "function") {
+    throw new Error("Compressed Codex logs require Node.js 22.15 or newer");
+  }
+  const source = fs.createReadStream(file);
+  const stream = compressed ? source.pipe(createZstdDecompress()) : source;
+  if (compressed) source.on("error", (error) => stream.destroy(error));
+  stream.setEncoding("utf8");
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
   let lineNumber = 0;
-  for await (const line of rl) {
-    lineNumber += 1;
-    if (acceptedRootTypes) {
-      // Only recognize the standard top-level header. Other key orders and
-      // escaped values use the complete JSON parser as before.
-      const type = line.slice(0, 256).match(/^[ ]*[{][ ]*(?:"timestamp"[ ]*:[ ]*"[-0-9T:.+Z]*"[ ]*,[ ]*)?"type"[ ]*:[ ]*"([a-z_]+)"[ ]*[,}]/)?.[1];
-      if (type && !acceptedRootTypes.has(type)) continue;
+  try {
+    for await (const line of rl) {
+      lineNumber += 1;
+      if (acceptedRootTypes) {
+        // Only recognize the standard top-level header. Other key orders and
+        // escaped values use the complete JSON parser as before.
+        const type = line.slice(0, 256).match(/^[ ]*[{][ ]*(?:"timestamp"[ ]*:[ ]*"[-0-9T:.+Z]*"[ ]*,[ ]*)?"type"[ ]*:[ ]*"([a-z_]+)"[ ]*[,}]/)?.[1];
+        if (type && !acceptedRootTypes.has(type)) continue;
+      }
+      if (!line.trim()) continue;
+      try {
+        onObject(JSON.parse(line), {
+          file,
+          line: lineNumber,
+          rawLineSha256: crypto.createHash("sha256").update(line).digest("hex")
+        });
+      } catch {
+        // Corrupt or partial JSONL lines can happen during active writes.
+      }
     }
-    if (!line.trim()) continue;
-    try {
-      onObject(JSON.parse(line), {
-        file,
-        line: lineNumber,
-        rawLineSha256: crypto.createHash("sha256").update(line).digest("hex")
-      });
-    } catch {
-      // Corrupt or partial JSONL lines can happen during active writes.
-    }
+  } finally {
+    rl.close();
+    stream.destroy();
+    source.destroy();
   }
 }
 
