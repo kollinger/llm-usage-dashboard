@@ -32,12 +32,15 @@
     "test:desktop-widget": "node test/provider-colors.test.mjs && node test/desktop-widget.test.mjs && node test/gpt-account-dedupe.test.mjs && node test/gpt-account-lifecycle.test.mjs && node test/desktop-widget-claude.test.mjs && node test/desktop-widget-api.test.mjs && node test/mac-menu-bar.test.mjs",
     "test:desktop-widget:native": "node test/run-desktop-widget-native.mjs",
     "test:desktop-widget:ci": "node test/run-desktop-widget-ci.mjs",
+    "test:desktop-startup": "node test/run-desktop-startup.mjs",
     "plasma:build": "node scripts/build-plasmoid.mjs",
     "test:plasma": "node test/plasma-widget.test.mjs && node test/plasma-package.test.mjs",
     "test:plasma:native": "npm run plasma:build && node test/run-plasma-native.mjs",
     "test:updates": "node test/published-updates.test.mjs",
     "test:updates:native": "node test/run-published-updates-native.mjs",
-    "postdist:mac": "node test/verify-mac-menu-bar-package.mjs",
+    "postdist:mac": "node test/verify-mac-menu-bar-package.mjs && node test/run-desktop-startup.mjs --ci",
+    "postdist:linux": "node test/run-desktop-startup.mjs --ci",
+    "postdist:win": "node test/run-desktop-startup.mjs --ci",
     "test:sync-smoke": "node test/sync-api.test.mjs"
   },
   "dependencies": {
