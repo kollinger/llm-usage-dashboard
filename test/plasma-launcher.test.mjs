@@ -11,17 +11,48 @@ import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const { registerPlasmaLauncher, PLASMA_DESKTOP_ID } = require("../electron/plasma-launcher");
+const { createPlasmaWidget } = require("../electron/plasma-widget");
 const activate = require("./fixtures/dashboard-activation.cjs");
 const run = promisify(execFile);
 const helper = fileURLToPath(new URL("../scripts/open-plasma-dashboard.py", import.meta.url));
 const qml = await fs.readFile(new URL("../plasma/contents/ui/main.qml", import.meta.url), "utf8");
+const index = await fs.readFile(new URL("../public/index.html", import.meta.url), "utf8");
+const pageTitles = [index.match(/<title\b[^>]*>([^<]*)<\/title>/)[1]];
+for (const language of ["en", "de", "ar"]) pageTitles.push(JSON.parse(await fs.readFile(new URL(`../public/i18n/${language}.json`, import.meta.url), "utf8")).app.title);
+let productionWindowTitle;
+for (const platform of ["linux", "darwin", "win32"]) {
+  class Window extends EventEmitter {
+    constructor(options) { super(); this.caption = options.title; this.webContents = new EventEmitter(); this.webContents.setWindowOpenHandler = () => {}; }
+    loadURL(url) { assert.equal(url, "http://localhost:45678"); }
+    getTitle() { return this.caption; }
+    updatePageTitle(title) {
+      let prevented = false;
+      this.emit("page-title-updated", { preventDefault() { prevented = true; } }, title);
+      if (!prevented) this.caption = title;
+      return prevented;
+    }
+  }
+  const app = new EventEmitter();
+  app.requestSingleInstanceLock = () => true; app.setDesktopName = () => {};
+  const state = activate(app, null, { BrowserWindow: Window, process: { platform }, path,
+    __dirname: fileURLToPath(new URL("../electron", import.meta.url)), resolvedNativeTheme: () => "light",
+    THEME_BACKGROUND_COLORS: { light: "#fff" }, themePreference: "light", languagePreference: "de", shell: { openExternal() {} } });
+  state.createWindow(45678);
+  const original = state.mainWindow.getTitle();
+  for (const title of pageTitles) {
+    assert.notEqual(title, original, "production HTML/localized document titles deliberately differ from the native caption");
+    assert.equal(state.mainWindow.updatePageTitle(title), platform === "linux");
+    assert.equal(state.mainWindow.getTitle(), platform === "linux" ? original : title, "production createWindow pins only the Linux caption");
+  }
+  if (platform === "linux") productionWindowTitle = original;
+}
 for (const suffix of ["", ".desktop"]) {
   const rows = [
-    { title: "LLM Usage Dashboard", appId: "electron", window: true },
-    { title: "LLM Usage Dashboard", appId: PLASMA_DESKTOP_ID + suffix, window: true, skip: true },
+    { title: productionWindowTitle, appId: "electron", window: true },
+    { title: productionWindowTitle, appId: PLASMA_DESKTOP_ID + suffix, window: true, skip: true },
     { title: "Other app", appId: PLASMA_DESKTOP_ID + suffix, window: true },
-    { title: "LLM Usage Dashboard", appId: PLASMA_DESKTOP_ID + suffix, window: false },
-    { title: "LLM Usage Dashboard", appId: PLASMA_DESKTOP_ID + suffix, window: true }
+    { title: productionWindowTitle, appId: PLASMA_DESKTOP_ID + suffix, window: false },
+    { title: productionWindowTitle, appId: PLASMA_DESKTOP_ID + suffix, window: true }
   ];
   const activated = [];
   const context = vm.createContext({ Qt: { DisplayRole: "title" }, TaskManager: { AbstractTasksModel: { AppId: "appId", SkipTaskbar: "skip", IsWindow: "window" } },
@@ -118,6 +149,28 @@ if (process.platform === "linux") {
       assert.deepEqual(JSON.parse(await fs.readFile(output)), [executable], "desktop Exec escaping also preserves literal arguments");
     }
     assert((await fs.readFile(desktopFile, "utf8")).includes("NoDisplay=true"));
+    assert((await fs.readFile(desktopFile, "utf8")).includes(`Icon=${path.join(path.dirname(descriptor), "icon.png")}`));
+    assert.deepEqual(await fs.readFile(path.join(path.dirname(descriptor), "icon.png")), await fs.readFile(new URL("../build/icon.png", import.meta.url)));
+    const resources = path.join(temporary, "packaged-resources");
+    await fs.mkdir(path.join(resources, "plasma"), { recursive: true });
+    const packagedIcon = Buffer.from("synthetic packaged icon sentinel");
+    await fs.writeFile(path.join(resources, "plasma/dashboard-icon.png"), packagedIcon);
+    const resourceProperty = Object.getOwnPropertyDescriptor(process, "resourcesPath");
+    let widget;
+    try {
+      Object.defineProperty(process, "resourcesPath", { value: resources, configurable: true });
+      widget = createPlasmaWidget({ app: { isPackaged: true, getVersion: () => require("../package.json").version },
+        environment: { ...environment, XDG_RUNTIME_DIR: temporary, APPIMAGE: executable },
+        getMainWindow: () => null, getLanguage: () => "de", origin: "http://localhost:45678",
+        session: { fetch: async () => { throw Error("unused_synthetic_fetch"); } },
+        ipcMain: { handle() {}, removeHandler() {} }, run: async () => ({ stdout: "unavailable" }) });
+      await widget.start();
+      assert.deepEqual(await fs.readFile(path.join(path.dirname(descriptor), "icon.png")), packagedIcon, "packaged startup consumes the bundled resource instead of the development build path");
+    } finally {
+      await widget?.dispose();
+      if (resourceProperty) Object.defineProperty(process, "resourcesPath", resourceProperty);
+      else delete process.resourcesPath;
+    }
     await fs.writeFile(executable, "#!/usr/bin/python3\nraise SystemExit(9)\n");
     assert.equal(await read(), "failed", "immediate child startup failure");
     await fs.chmod(executable, 0o600);

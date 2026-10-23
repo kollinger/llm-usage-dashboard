@@ -10,6 +10,10 @@ function desktopExec(value) {
   return '"' + value.replace(/([\\"`$])/g, "\\$1").replace(/\\/g, "\\\\").replace(/%/g, "%%") + '"';
 }
 
+function desktopString(value) {
+  return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+}
+
 async function atomicWrite(directory, name, content) {
   const temporary = path.join(directory, `launcher-${randomUUID()}.tmp`);
   try {
@@ -20,7 +24,8 @@ async function atomicWrite(directory, name, content) {
 
 // Keep a durable reference to the installed app, never the temporary AppImage
 // mount or a development Electron binary. Only the owning desktop user reads it.
-async function registerPlasmaLauncher({ app, dataHome, environment = process.env, executable = process.execPath }) {
+async function registerPlasmaLauncher({ app, dataHome, environment = process.env, executable = process.execPath,
+  iconPath = path.join(__dirname, "../build/icon.png") }) {
   if (!app.isPackaged) return;
   const target = environment.APPIMAGE || executable;
   if (typeof target !== "string" || !path.isAbsolute(target) || /[\x00-\x1f\x7f]/.test(target)) throw new Error("invalid_launcher");
@@ -37,9 +42,11 @@ async function registerPlasmaLauncher({ app, dataHome, environment = process.env
   // Hidden identity metadata avoids another app-menu entry while allowing KDE
   // to associate the exact Wayland surface with this installed app.
   await atomicWrite(directory, "open_dashboard.py", await fs.readFile(path.join(__dirname, "../scripts/open-plasma-dashboard.py")));
+  await atomicWrite(directory, "icon.png", await fs.readFile(iconPath));
   await atomicWrite(applications, `${PLASMA_DESKTOP_ID}.desktop`,
     ["[Desktop Entry]", "Type=Application", "Name=LLM Usage Dashboard",
       `Exec=/usr/bin/python3 -I ${desktopExec(path.join(directory, "open_dashboard.py"))}`,
+      `Icon=${desktopString(path.join(directory, "icon.png"))}`,
       "Terminal=false", "NoDisplay=true", "StartupNotify=true", ""].join("\n"));
   await atomicWrite(directory, "launcher.json", JSON.stringify({ schema: 1, executable: target }));
 }

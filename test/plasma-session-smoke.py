@@ -177,8 +177,22 @@ def exercise_dashboard(fixture):
             run(["xdotool", "mousemove", str(round(x)), str(round(y))])
 
     results = []
-    for variant in ["desktop", "bottom", "right"]:
+    variants = os.environ.get("PLASMA_DASHBOARD_VARIANTS", "desktop,bottom,right").split(",")
+    assert variants[0] == "desktop" and all(v in ["desktop", "bottom", "right"] for v in variants)
+
+    def caption_contract():
+        value = state()
+        return value if value.get("pageTitle") == json.loads((ROOT / "public/i18n/de.json").read_text())["app"]["title"] else None
+
+    def verify_caption():
+        value = wait_for(caption_contract, "real production HTML and localized title chain")
+        assert value["nativeTitle"] == "LLM Usage Dashboard", "native title must survive production page-title changes"
+        assert len(value["titleStages"]) == 3 and all(title != value["nativeTitle"] for title in value["titleStages"])
+        return value
+
+    for variant in variants:
         if variant == "desktop":
+            icon_panel = int(evaluate("var p=new Panel;p.location='bottom';p.height=48;p.floating=false;p.hiding='none';p.addWidget('org.kde.plasma.icontasks');print(p.id);"))
             widget = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
             target = "desktops()[0].widgetById(" + str(widget) + ")"
         else:
@@ -222,6 +236,18 @@ def exercise_dashboard(fixture):
         activate_menu(variant != "desktop")
         opened = wait_for(lambda: state() if state().get("visible") and state().get("focused") else None, "native context action opens/focuses dashboard")
         assert opened["pid"] == previous["pid"], "running app instance must be reused"
+        verify_caption()
+        if variant == "desktop":
+            desktop_entry = profile / "data/applications/local.llm-usage-dashboard.plasma-launcher.desktop"
+            icon = profile / "data/llm-usage-dashboard/icon.png"
+            assert ("Icon=" + str(icon)) in desktop_entry.read_text()
+            assert icon.read_bytes() == (ROOT / "build/icon.png").read_bytes()
+            time.sleep(.5)
+            capture("dashboard-task-icon")
+            run(["xdotool", "keydown", "Alt", "key", "Tab"])
+            time.sleep(.8)
+            capture("dashboard-alt-tab-icon")
+            run(["xdotool", "keyup", "Alt"])
         for cycle in range(2):
             old = state()
             control("minimize")
@@ -229,25 +255,32 @@ def exercise_dashboard(fixture):
             activate_menu()
             restored = wait_for(lambda: state() if state().get("visible") and state().get("focused") and not state().get("minimized") else None, "restore minimized main window")
             assert (restored["pid"], restored["id"]) == (old["pid"], old["id"])
+            assert restored["activationCount"] == old["activationCount"], "caption-matched native activation must not launch another process"
+            verify_caption()
             control("close")
             wait_for(lambda: state().get("id") is None, "closed main window with live app")
             activate_menu()
             reopened = wait_for(lambda: state() if state().get("visible") and state().get("focused") else None, "recreate closed main window")
             assert reopened["pid"] == old["pid"] and reopened["id"] != old["id"]
+            verify_caption()
         old_pid = state()["pid"]
         control("quit")
         wait_for(lambda: not running(old_pid), "terminated installed app")
         activate_menu()
         launched = wait_for(lambda: state() if state().get("pid") != old_pid and state().get("visible") and state().get("focused") else None, "launch installed app after exit")
-        results.append({"variant": variant, "backgroundReused": True, "minimizeCloseCycles": 2, "coldStart": launched["pid"] != old_pid})
+        verify_caption()
+        results.append({"variant": variant, "backgroundReused": True, "minimizeCloseCycles": 2, "coldStart": launched["pid"] != old_pid,
+                        "productionCreateWindow": True, "localizedPageTitlePinned": True, "nativeFocusWithoutSecondaryLaunch": True})
         evaluate(target + ".remove();")
-        if variant != "desktop":
+        if variant == "desktop":
+            evaluate("panelById(" + str(icon_panel) + ").remove();")
+        else:
             evaluate("panelById(" + str(info["panel"]) + ").remove();")
     pid = state()["pid"]
     control("quit")
     wait_for(lambda: not running(pid), "QA app cleanup")
     (EVIDENCE / "dashboard-activation-results.json").write_text(json.dumps({"mode": MODE, "synthetic": True, "productionActivationHandlers": True, "variants": results}, indent=2))
-    print("Plasma dashboard activation: Desktop/horizontal/vertical native menus, background reuse, two minimize/close cycles and cold start passed.", flush=True)
+    print("Plasma dashboard activation: " + ",".join(variants) + " native menus, production/localized caption, background reuse, two minimize/close cycles and cold start passed.", flush=True)
 
 
 def exercise_gpt(shell, fixture):

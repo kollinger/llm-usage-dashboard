@@ -352,6 +352,9 @@ function createWindow(port) {
     }
   });
 
+  // Plasma identifies the main window by this caption. Keep localized document
+  // titles from replacing it; other desktop platforms retain their title flow.
+  if (process.platform === "linux") mainWindow.on("page-title-updated", event => event.preventDefault());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };

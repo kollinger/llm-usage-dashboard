@@ -70,7 +70,8 @@ function createPlasmaWidget({ app, ipcMain, session, origin, getMainWindow, getL
     status,
     async start() {
       if (platform !== "linux") return;
-      try { await registerPlasmaLauncher({ app, dataHome, environment }); }
+      try { await registerPlasmaLauncher({ app, dataHome, environment,
+        ...(app.isPackaged ? { iconPath: path.join(process.resourcesPath, "plasma", "dashboard-icon.png") } : {}) }); }
       catch { /* The native action reports a missing/failed local launcher. */ }
       try {
         bridge = await startPlasmaBridge({ runtimeDirectory: environment.XDG_RUNTIME_DIR,

@@ -123,6 +123,10 @@
         {
           "from": "dist/plasma/llm-usage-dashboard.plasmoid",
           "to": "plasma/llm-usage-dashboard.plasmoid"
+        },
+        {
+          "from": "build/icon.png",
+          "to": "plasma/dashboard-icon.png"
         }
       ]
     },
