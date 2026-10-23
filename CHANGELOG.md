@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.13.0-preview.4 - 2026-10-23
+
+### Added
+
+- Browse API costs by reset and billing period
+
+### Improved
+
+- Merge pull request #70 from kollinger/kol-665-dashboard-whatsapp
+
+### Fixed
+
+- Show canonical Codex accounts in provider overview
+- Include unattributed provider usage in reset costs
+- Keep cost periods responsive during history refresh
+
 ## 1.13.0-preview.3
 
 - Include all logged provider usage in the current and previous reset periods by default. An account filter applies only after choosing a specific account.
