@@ -3059,7 +3059,7 @@ function toggleProviderFilter() {
 }
 
 function resetLayoutOrder() {
-  const providers = state.usage ? buildProviders(state.usage) : [];
+  const providers = state.usage ? buildProviderCards(state.usage) : [];
   state.keyboardDragSectionId = null;
   state.keyboardOriginalDashboardSectionOrder = null;
   state.keyboardDragSummaryMetricId = null;
@@ -3410,7 +3410,11 @@ function updateSummaryMetricLayout() {
 function normalizeProviderOrder(order, providerIds) {
   const validIds = new Set(providerIds);
   const normalized = [];
-  for (const id of Array.isArray(order) ? order : []) {
+  const accountIds = providerIds.filter((id) => /^gpt-[a-f0-9]{16}$/u.test(id));
+  // Replace the old source slot once. Subsequent moves and scans use account IDs.
+  const migrated = (Array.isArray(order) ? order : []).flatMap((id) =>
+    id === "codex" && !validIds.has(id) ? accountIds : [id]);
+  for (const id of migrated) {
     if (validIds.has(id) && !normalized.includes(id)) normalized.push(id);
   }
   for (const id of providerIds) {
@@ -3428,7 +3432,7 @@ function saveProviderOrder() {
 }
 
 function applyProviderOrder(nextOrder) {
-  const providerIds = state.usage ? buildProviders(state.usage).map((provider) => provider.id) : [];
+  const providerIds = state.usage ? buildProviderCards(state.usage).map((provider) => provider.id) : [];
   state.providerOrder = normalizeProviderOrder(nextOrder, providerIds);
   saveProviderOrder();
 }
@@ -3443,13 +3447,13 @@ function orderProviders(providers) {
 
 function currentVisibleProviderIds() {
   if (!state.usage) return [];
-  const providers = orderProviders(buildProviders(state.usage));
+  const providers = orderProviders(buildProviderCards(state.usage));
   return (state.showAllProviders ? providers : providers.filter(providerHasUsage)).map((provider) => provider.id);
 }
 
 function moveProviderRelativeToTarget(draggedId, targetId, afterTarget = false) {
   if (!state.usage || draggedId === targetId) return false;
-  const providerIds = buildProviders(state.usage).map((provider) => provider.id);
+  const providerIds = buildProviderCards(state.usage).map((provider) => provider.id);
   const nextOrder = normalizeProviderOrder(state.providerOrder, providerIds);
   const fromIndex = nextOrder.indexOf(draggedId);
   const targetIndex = nextOrder.indexOf(targetId);
@@ -3476,11 +3480,6 @@ function providerCardFromEvent(event) {
 
 function providerHandleFromEvent(event) {
   return event.target?.closest?.("[data-provider-drag-handle]");
-}
-
-function providerName(providerId) {
-  if (!state.usage) return providerId;
-  return buildProviders(state.usage).find((provider) => provider.id === providerId)?.name || providerId;
 }
 
 function providerPosition(providerId) {
@@ -4654,7 +4653,8 @@ function render() {
     historyNotice.hidden = !usage.cache?.refreshing;
     historyNotice.textContent = historyNotice.hidden ? "" : t("history.refreshing", { time: formatUpdatedAt(usage.local?.updatedAt) });
   }
-  const providers = orderProviders(buildProviders(usage));
+  const sourceProviders = buildProviders(usage);
+  const providers = orderProviders(buildProviderCards(usage, sourceProviders));
   const visibleProviders = state.showAllProviders ? providers : providers.filter(providerHasUsage);
   const chartScrollState = captureChartScrollState();
 
@@ -4705,7 +4705,7 @@ function render() {
   els.chartWindowInsights.innerHTML = renderChartWindowInsights(chartRows, state.chartMode, state.chartBreakdownMode);
   renderTokenList(local?.totals?.allTime);
   renderLiveGauges(state.systemMetrics);
-  renderPricing(local, chartRows, providers);
+  renderPricing(local, chartRows, sourceProviders);
   renderSourceDiagnostics();
   renderSourceSettings();
   renderSyncSettings();
@@ -4937,6 +4937,7 @@ async function recheckGptAccounts() {
   } finally {
     state.gptAccountScanPending = false;
     renderGptAccounts(state.usage?.gptAccounts);
+    if (state.usage) renderUsageIfChanged({ force: true });
   }
 }
 
@@ -4989,6 +4990,75 @@ function buildProviders(usage) {
     normalizeApiProvider("openai", usage.openai),
     normalizeLocalProvider("gemini", usage.gemini)
   ].map((provider) => ({ ...provider, manualResets: usage[provider.id]?.manualResets || null }));
+}
+
+function buildProviderCards(usage, sourceProviders = buildProviders(usage)) {
+  const accounts = new Map();
+  const historicalIds = new Set((usage.gptAccounts?.historicalAccounts || []).map((account) => account.id));
+  for (const account of usage.gptAccounts?.accounts || []) {
+    if (!/^gpt-[a-f0-9]{16}$/u.test(account.id) || historicalIds.has(account.id)) continue;
+    const sources = Array.isArray(account.sources) ? account.sources : [];
+    if (!sources.some((source) => ["codex", "openCode"].includes(source.id))) continue;
+    const existing = accounts.get(account.id);
+    accounts.set(account.id, existing ? { ...existing, active: existing.active || account.active,
+      sources: [...existing.sources, ...sources] } : { ...account, sources });
+  }
+  if (!accounts.size) return sourceProviders;
+  const labels = new Map();
+  for (const account of accounts.values()) labels.set(account.label, (labels.get(account.label) || 0) + 1);
+  const cards = [...accounts.values()].sort((a, b) => a.id.localeCompare(b.id)).map((account) => {
+    const card = normalizeGptAccountProvider(account);
+    if (labels.get(account.label) > 1) card.name += ` · ${account.id.slice(-6)}`;
+    return card;
+  });
+  // Consumption remains source-scoped in buildProviders, pricing and charts.
+  return sourceProviders.flatMap((provider) => provider.id === "codex" ? cards : provider.id === "openCode" ? [] : [provider]);
+}
+
+function normalizeGptAccountProvider(account) {
+  const now = Date.now();
+  const verified = account.identityQuality !== "email";
+  const candidates = verified ? account.sources.map((source) => ({ ...source,
+    current: Boolean(account.active && source.active && source.quotaStatus === "ready") })) : [];
+  const selected = GptAccountQuota.selectGptQuotaRows(candidates, now, true);
+  const percent = (value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+  const limitRows = selected.map(({ row, updatedAt, current }) => {
+    const used = percent(row.usedPercent);
+    const remaining = percent(row.remainingPercent) ?? (used === null ? null : 100 - used);
+    const age = now - Date.parse(updatedAt);
+    const reset = row.resetsAt == null ? null : Date.parse(row.resetsAt);
+    const status = remaining === null ? "unavailable" : !current || !Number.isFinite(age) || age < -60_000 || age > 15 * 60_000 ||
+      (reset !== null && (!Number.isFinite(reset) || reset <= now)) ? "stale" : "current";
+    return normalizeLimitRow({ ...row, usedPercent: remaining === null ? null : 100 - remaining, remainingPercent: remaining,
+      observedAt: updatedAt, status, resetLabel: status === "stale" ? t("gptAccounts.savedLimits") : null });
+  }).filter(Boolean);
+  const currentRows = limitRows.filter((row) => row.status === "current");
+  const failed = account.sources.find((source) => source.active && source.quotaStatus === "unavailable");
+  const quotaMessage = !verified ? t("gptAccounts.identityUnverified")
+    : currentRows.length === limitRows.length && currentRows.length ? ""
+      : ["auth_required", "credentials_missing"].includes(failed?.quotaReason) ? t("connections.status.auth_required")
+        : limitRows.some((row) => row.status === "stale") ? t("gptAccounts.savedLimits") : t("gptAccounts.quotaUnavailable");
+  const limitsUpdatedAt = selected.map((candidate) => candidate.updatedAt).filter((value) => Number.isFinite(Date.parse(value)))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null;
+  return {
+    id: account.id,
+    accountId: account.id,
+    providerId: "codex",
+    active: Boolean(account.active),
+    name: `${providerMeta.codex.name} · ${account.label || account.id}`,
+    kicker: providerKicker("codex"),
+    accent: providerMeta.codex.accent,
+    planType: account.planType || null,
+    status: currentRows.length ? "live" : account.active ? "unavailable" : "empty",
+    fiveHour: currentRows.find((row) => row.key === "fiveHour") || null,
+    weekly: currentRows.find((row) => row.key === "weekly") || null,
+    limitRows,
+    limitAlert: buildLimitFullAlert({ limitRows: currentRows }),
+    creditRows: [],
+    limitsUpdatedAt,
+    quotaMessage,
+    foot: []
+  };
 }
 
 function renderChartModeToggle() {
@@ -6305,6 +6375,7 @@ function normalizeApiProvider(id, provider) {
 }
 
 function providerHasUsage(provider) {
+  if (provider.accountId) return Boolean(provider.active);
   const hasActiveUsage = [
     provider.todayTokens,
     provider.weekTokens,
@@ -6406,7 +6477,7 @@ function hasCustomProviderOrder(providers = []) {
 }
 
 function updateLayoutControls(providers = null, visibleProviders = null) {
-  const allProviders = providers || (state.usage ? buildProviders(state.usage) : []);
+  const allProviders = providers || (state.usage ? buildProviderCards(state.usage) : []);
   const shownProviders = visibleProviders || (state.usage ? currentVisibleProviderIds().map((id) => ({ id })) : []);
   const visibleSections = currentVisibleDashboardSectionIds();
   const visibleMetrics = currentVisibleSummaryMetricIds();
@@ -6444,6 +6515,7 @@ function renderProvider(provider, index = 0, total = 1) {
   const footRows = providerFootRows(provider);
   const main = hasCurrentUsage
     ? renderLimitBars(provider)
+    : provider.accountId ? `<p class="empty-message">${escapeHtml(t("liveMetrics.unavailable"))}</p>`
     : `<div class="api-total">
         <div class="ring" style="--percent: ${Math.min(100, Number(provider.apiTokens || 0) ? 72 : 0)}; --accent: ${provider.accent}">
           <strong>${formatTokens(provider.apiTokens)}</strong>
@@ -6452,11 +6524,11 @@ function renderProvider(provider, index = 0, total = 1) {
       </div>`;
 
   return `
-    <article class="provider-card" data-provider-id="${escapeHtml(provider.id)}" role="listitem" draggable="true" style="--provider-accent: ${escapeHtml(provider.accent)}">
+    <article class="provider-card${provider.accountId ? " provider-account" : ""}" data-provider-id="${escapeHtml(provider.id)}" role="listitem" draggable="true" style="--provider-accent: ${escapeHtml(provider.accent)}">
       ${renderProviderDragHandle(provider, index, total)}
       <div class="provider-head">
         <div class="provider-identity">
-          ${renderProviderMark(provider.id, { label: provider.name, accent: provider.accent, size: "lg" })}
+          ${renderProviderMark(provider.providerId || provider.id, { label: provider.name, accent: provider.accent, size: "lg" })}
           <div>
             <p class="eyebrow">${escapeHtml(provider.kicker || provider.id)}</p>
             <h2 class="provider-name">
@@ -6472,6 +6544,7 @@ function renderProvider(provider, index = 0, total = 1) {
       ${renderProviderSubscriptionConnection(provider)}
       ${renderManualResets(provider)}
       ${main}
+      ${provider.quotaMessage ? `<p class="provider-note">${escapeHtml(provider.quotaMessage)}</p>` : ""}
       ${renderLimitAlert(provider)}
       ${provider.creditRows?.length ? renderCreditRows(provider) : ""}
       ${renderClaudeCreditHint(provider)}
@@ -6486,6 +6559,7 @@ function renderProvider(provider, index = 0, total = 1) {
 }
 
 function renderManualResets(provider, now = Date.now()) {
+  if (provider.accountId) return "";
   const resets = provider.manualResets;
   if (!resets && provider.id !== "claudeCode" && !providerHasCurrentUsage(provider)) return "";
   const text = (key, values = {}) => escapeHtml(t(`manualResets.${key}`, values));
@@ -6532,7 +6606,7 @@ function renderProviderFreshness(provider) {
 
 function providerFreshnessRows(provider) {
   const rows = [];
-  const usageTime = provider?.usageUpdatedAt || provider?.limitsUpdatedAt || null;
+  const usageTime = provider?.usageUpdatedAt || (!provider?.accountId ? provider?.limitsUpdatedAt : null) || null;
   const limitsTime = provider?.limitsUpdatedAt || null;
   if (usageTime) {
     rows.push({
@@ -6980,6 +7054,7 @@ function renderUsageProjectionModeToggle(activeMode, providerId) {
 }
 
 function renderLimitBar(row, accent, mode = "bar") {
+  const stale = row.status === "stale";
   const hasUsedPercent = row.usedPercent !== null && row.usedPercent !== undefined;
   const used = Math.round(row.usedPercent || 0);
   const remaining = Math.round(row.remainingPercent ?? Math.max(0, 100 - used));
@@ -6990,8 +7065,8 @@ function renderLimitBar(row, accent, mode = "bar") {
   const resetDetail = renderLimitDetail(row);
   const detail = [leftDetail, resetDetail].filter(Boolean).join(" · ");
   const value = row.valueLabel || (hasUsedPercent ? t("limits.usedValue", { percent: used }) : t("liveMetrics.unavailable"));
-  const pace = limitPaceAssessment(row);
-  const gauge = renderLimitProjectionVisualization(row, accent, mode);
+  const pace = stale ? { message: "" } : limitPaceAssessment(row);
+  const gauge = stale ? "" : renderLimitProjectionVisualization(row, accent, mode);
   const paceNote = pace.message
     ? `<p class="limit-pace-note limit-pace-${escapeHtml(pace.status)}">${escapeHtml(pace.message)}</p>`
     : "";
@@ -7208,7 +7283,7 @@ function isWeeklyLimit(limit) {
 }
 
 function limitDisplayStatus(limit) {
-  if (!limit || limit.status === "unavailable") return "unknown";
+  if (!limit || ["unavailable", "stale"].includes(limit.status)) return "unknown";
   const used = finiteUiNumberOrNull(limit.usedPercent);
   if (used === null) return "unknown";
   if (used >= 99.5) return "full";
@@ -7348,7 +7423,7 @@ function limitStatusAccent(status, fallback) {
 function renderSummary(providers, local, filteredDaily = []) {
   const withFiveHour = providers.filter(providerHasUsage)
     .map((provider) => provider.limitRows?.find(isFiveHourLimit) || provider.fiveHour)
-    .filter((limit) => limit && limit.status !== "unavailable");
+    .filter((limit) => limit && !["unavailable", "stale"].includes(limit.status));
   const withWeekly = providers.filter((p) => p.weekly);
   const fiveHourTile = summaryMetricTileById("five-hour");
   if (fiveHourTile) fiveHourTile.hidden = withFiveHour.length === 0;
@@ -11743,7 +11818,8 @@ function cloneJson(value) {
 }
 
 function providerName(providerId) {
-  return providerMeta[providerId]?.name || providerId;
+  return providerMeta[providerId]?.name || (state.usage
+    ? buildProviderCards(state.usage).find((provider) => provider.id === providerId)?.name : null) || providerId;
 }
 
 function pathRoleLabel(role) {
@@ -12138,7 +12214,8 @@ function statusText(status) {
       live: t("status.live"),
       empty: t("status.empty"),
       not_configured: t("status.not_configured"),
-      error: t("status.error")
+      error: t("status.error"),
+      unavailable: t("liveMetrics.unavailable")
     }[status] || status
   );
 }
