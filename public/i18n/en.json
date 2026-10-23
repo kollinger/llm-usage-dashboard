@@ -377,7 +377,9 @@
       "estimated": "Reset boundaries partly estimated",
       "anchorHelp": "Enter the start date of a billing period.",
       "unassigned": "Excluded {tokens} tokens without reliable account attribution.",
-      "current": "Current"
+      "current": "Current",
+      "allAccounts": "All accounts",
+      "unassignedIncluded": "Included {tokens} tokens without reliable account attribution."
     }
   },
   "providers": {

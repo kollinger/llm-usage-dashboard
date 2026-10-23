@@ -336,7 +336,9 @@
       "estimated": "Granice resetu częściowo oszacowane",
       "anchorHelp": "Podaj datę rozpoczęcia okresu rozliczeniowego.",
       "unassigned": "Wykluczono {tokens} tokenów bez wiarygodnego przypisania do konta.",
-      "current": "Bieżący"
+      "current": "Bieżący",
+      "allAccounts": "Wszystkie konta",
+      "unassignedIncluded": "Uwzględniono {tokens} tokenów bez wiarygodnego przypisania do konta."
     }
   },
   "providers": {

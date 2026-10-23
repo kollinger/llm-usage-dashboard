@@ -336,7 +336,9 @@
       "estimated": "Nulstillingsgrænser er delvist anslået",
       "anchorHelp": "Angiv startdatoen for en faktureringsperiode.",
       "unassigned": "{tokens} tokens uden sikker kontotilknytning er udeladt.",
-      "current": "Aktuel"
+      "current": "Aktuel",
+      "allAccounts": "Alle konti",
+      "unassignedIncluded": "{tokens} tokens uden sikker kontotilknytning er inkluderet."
     }
   },
   "providers": {

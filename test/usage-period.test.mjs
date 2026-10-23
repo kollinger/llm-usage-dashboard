@@ -28,7 +28,15 @@ assert.equal(result.totals.cachedInputTokens, 80);
 assert.equal(result.totals.outputTokens, 40, "reasoning is not added a second time");
 assert.equal(result.unassignedTokens, 120, "unknown account coverage is explicit");
 assert.equal(result.daily[0].sources[0].models[0].totalTokens, 240);
-assert.equal(queryUsagePeriod(index, { ...options, accountId: null }).totals.totalTokens, 480);
+const allAccounts = queryUsagePeriod(index, { ...options, accountId: null });
+assert.equal(allAccounts.totals.totalTokens, 480);
+assert.equal(allAccounts.unassignedTokens, 0, "the provider-wide view does not exclude unattributed usage");
+assert.equal(allAccounts.includedUnassignedTokens, 120, "included unattributed usage has separate coverage from excluded usage");
+assert.equal(result.includedUnassignedTokens, 0);
+const conflictIndex = createChatUsageIndex([{ ...event("conflict", from), attribution: { accountId, accountQuality: "conflict" } }]);
+assert.equal(queryUsagePeriod(conflictIndex, options).totals.totalTokens, 0, "conflicting identities are not assigned to the selected account");
+assert.equal(queryUsagePeriod(conflictIndex, { ...options, accountId: null }).includedUnassignedTokens, 120,
+  "conflicting attribution remains usable as provider usage with explicit coverage");
 assert.equal(queryUsagePeriod(index, { ...options, from: to + 1, to: to + 2 }).totals.totalTokens, 0);
 assert.ok(!JSON.stringify(result).includes(accountId), "no account identity, event, chat or source paths leave the query");
 for (const query of [{ from: "bad", to: new Date(to).toISOString() }, { from: "2026-01-02", to: "2026-01-01" },

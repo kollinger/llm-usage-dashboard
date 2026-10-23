@@ -336,7 +336,9 @@
       "estimated": "Teorainneacha athshocraithe measta go páirteach",
       "anchorHelp": "Cuir isteach dáta tosaithe tréimhse billeála.",
       "unassigned": "Fágadh {tokens} comharthaí gan leithdháileadh cuntais iontaofa ar lár.",
-      "current": "Reatha"
+      "current": "Reatha",
+      "allAccounts": "Gach cuntas",
+      "unassignedIncluded": "Tá {tokens} comhartha san áireamh gan sannadh iontaofa do chuntas."
     }
   },
   "providers": {

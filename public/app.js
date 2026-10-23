@@ -8110,10 +8110,8 @@ function renderPricingPeriodControls(local, providers) {
       startsAt: new Date(Date.parse(row.resetsAt) - row.windowMinutes * 60_000).toISOString(), resetsAt: row.resetsAt
     })) ];
   const accounts = !remote && state.pricingProvider === "codex" ? catalog?.codex?.accounts || [] : [];
-  if (accounts.length && !accounts.some((account) => account.accountRef === state.pricingResetAccount)) {
-    state.pricingResetAccount = (accounts.find((account) => account.history.current?.scheduledResetAt === catalog.codex.current?.scheduledResetAt) || accounts[0]).accountRef || "";
-  }
-  const account = accounts.find((row) => row.accountRef === state.pricingResetAccount);
+  if (!accounts.some((account) => account.accountRef === state.pricingResetAccount)) state.pricingResetAccount = "";
+  const account = state.pricingResetAccount ? accounts.find((row) => row.accountRef === state.pricingResetAccount) : null;
   const history = !remote && state.pricingProvider === "codex" ? account?.history || catalog?.codex : null;
   const windowOptions = new Map(windows.map((row) => [row.windowKey, row.label || row.windowKey]));
   if (history?.current || history?.windows?.length) windowOptions.set("weekly", t("limits.weekly"));
@@ -8135,7 +8133,7 @@ function renderPricingPeriodControls(local, providers) {
   els.pricingPeriodControls.innerHTML = `
     ${select("provider", t("providers.gridAria"), providerOptions, state.pricingProvider)}
     ${select("kind", t("chart.filterBarAria"), [["reset", t("pricing.periods.reset")], ["week", t("pricing.periods.week")], ["billing", t("pricing.periods.billing")], ["all", t("chart.filters.all")]], state.pricingPeriodKind)}
-    ${state.pricingPeriodKind === "reset" && accounts.some((row) => row.accountRef) ? select("account", t("chart.breakdown.account"), accounts.filter((row) => row.accountRef).map((row) => [row.accountRef, row.label]), state.pricingResetAccount) : ""}
+    ${state.pricingPeriodKind === "reset" && accounts.some((row) => row.accountRef) ? select("account", t("chart.breakdown.account"), [["", t("pricing.periods.allAccounts")], ...accounts.filter((row) => row.accountRef).map((row) => [row.accountRef, row.label])], state.pricingResetAccount) : ""}
     ${state.pricingPeriodKind === "reset" && windowOptions.size ? select("window", t("codexResets.period"), [...windowOptions], state.pricingResetWindow) : ""}
     ${state.pricingPeriodKind === "billing" ? `<label class="field"><span>${escapeHtml(t("pricing.periods.anchor"))}</span><input type="date" data-pricing-period-field="anchor" value="${escapeHtml(pricingBillingAnchor())}"></label>` : ""}
     <nav class="pricing-period-navigation" aria-label="${escapeHtml(t("chart.filterBarAria"))}">
@@ -8166,7 +8164,8 @@ function renderPricing(local, rangeRows = [], providers = []) {
       : state.pricingPeriodError ? t("pricing.periods.error") : !report ? t("pricing.periods.loading")
         : [state.pricingPeriodLabel, selection.estimated ? t("pricing.periods.estimated") : "",
           report.dataUpdatedAt ? t("providers.freshness.usage", { time: formatDateTime(report.dataUpdatedAt) }) : "",
-          report.unassignedTokens ? t("pricing.periods.unassigned", { tokens: formatTokens(report.unassignedTokens) }) : ""].filter(Boolean).join(" · ");
+          report.unassignedTokens ? t("pricing.periods.unassigned", { tokens: formatTokens(report.unassignedTokens) }) : "",
+          report.includedUnassignedTokens ? t("pricing.periods.unassignedIncluded", { tokens: formatTokens(report.includedUnassignedTokens) }) : ""].filter(Boolean).join(" · ");
   }
   if (els.pricingViewToggle) {
     els.pricingViewToggle.innerHTML = renderPricingViewToggle();

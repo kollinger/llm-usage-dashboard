@@ -336,7 +336,9 @@
       "estimated": "Atiestatīšanas robežas daļēji aplēstas",
       "anchorHelp": "Ievadiet norēķinu perioda sākuma datumu.",
       "unassigned": "Izslēgti {tokens} tokeni bez drošas piesaistes kontam.",
-      "current": "Pašreizējais"
+      "current": "Pašreizējais",
+      "allAccounts": "Visi konti",
+      "unassignedIncluded": "Iekļauti {tokens} tokeni bez uzticamas piesaistes kontam."
     }
   },
   "providers": {

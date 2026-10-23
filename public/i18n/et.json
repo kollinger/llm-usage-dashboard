@@ -336,7 +336,9 @@
       "estimated": "Lähtestuspiirid on osaliselt hinnangulised",
       "anchorHelp": "Sisesta arveldusperioodi alguskuupäev.",
       "unassigned": "Välja jäeti {tokens} tokenit, mille konto pole kindel.",
-      "current": "Praegune"
+      "current": "Praegune",
+      "allAccounts": "Kõik kontod",
+      "unassignedIncluded": "Kaasatud on {tokens} tokenit, mida ei saa kindlalt kontoga seostada."
     }
   },
   "providers": {

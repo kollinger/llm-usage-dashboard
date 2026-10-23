@@ -336,7 +336,9 @@
       "estimated": "Il-limiti tar-reset huma parzjalment stmati",
       "anchorHelp": "Daħħal id-data tal-bidu ta’ perjodu tal-kont.",
       "unassigned": "Ġew esklużi {tokens} tokens mingħajr attribuzzjoni affidabbli tal-kont.",
-      "current": "Attwali"
+      "current": "Attwali",
+      "allAccounts": "Il-kontijiet kollha",
+      "unassignedIncluded": "Inklużi {tokens} tokens mingħajr attribuzzjoni affidabbli lil kont."
     }
   },
   "providers": {

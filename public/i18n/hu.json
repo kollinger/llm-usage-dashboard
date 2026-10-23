@@ -336,7 +336,9 @@
       "estimated": "A visszaállítási határok részben becsültek",
       "anchorHelp": "Adja meg egy számlázási időszak kezdőnapját.",
       "unassigned": "{tokens} token kizárva, mert nem rendelhető megbízhatóan fiókhoz.",
-      "current": "Jelenlegi"
+      "current": "Jelenlegi",
+      "allAccounts": "Minden fiók",
+      "unassignedIncluded": "{tokens} token megbízható fiókhozzárendelés nélkül is szerepel az összesítésben."
     }
   },
   "providers": {

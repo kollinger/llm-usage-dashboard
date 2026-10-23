@@ -336,7 +336,9 @@
       "estimated": "Limitele resetării sunt parțial estimate",
       "anchorHelp": "Introdu data de început a unei perioade de facturare.",
       "unassigned": "Au fost excluse {tokens} tokenuri fără atribuire sigură unui cont.",
-      "current": "Curentă"
+      "current": "Curentă",
+      "allAccounts": "Toate conturile",
+      "unassignedIncluded": "Sunt incluse {tokens} tokenuri fără atribuire sigură unui cont."
     }
   },
   "providers": {

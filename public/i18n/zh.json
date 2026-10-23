@@ -336,7 +336,9 @@
       "estimated": "重置边界部分为估算值",
       "anchorHelp": "请输入一个计费周期的开始日期。",
       "unassigned": "已排除无法可靠归属到账户的 {tokens} 个令牌。",
-      "current": "当前"
+      "current": "当前",
+      "allAccounts": "所有账户",
+      "unassignedIncluded": "已包含 {tokens} 个无法可靠归属到账户的 token。"
     }
   },
   "providers": {

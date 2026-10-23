@@ -336,7 +336,9 @@
       "estimated": "Limites de réinitialisation partiellement estimées",
       "anchorHelp": "Saisissez le début d’une période de facturation.",
       "unassigned": "{tokens} tokens exclus faute d’attribution fiable à un compte.",
-      "current": "Actuelle"
+      "current": "Actuelle",
+      "allAccounts": "Tous les comptes",
+      "unassignedIncluded": "{tokens} tokens sans attribution fiable à un compte sont inclus."
     }
   },
   "providers": {

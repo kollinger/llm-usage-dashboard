@@ -336,7 +336,9 @@
       "estimated": "Hranice resetu jsou částečně odhadnuté",
       "anchorHelp": "Zadejte začátek fakturačního období.",
       "unassigned": "Vyloučeno {tokens} tokenů bez spolehlivého přiřazení k účtu.",
-      "current": "Aktuální"
+      "current": "Aktuální",
+      "allAccounts": "Všechny účty",
+      "unassignedIncluded": "Zahrnuto {tokens} tokenů bez spolehlivého přiřazení k účtu."
     }
   },
   "providers": {

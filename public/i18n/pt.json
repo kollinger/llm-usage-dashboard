@@ -336,7 +336,9 @@
       "estimated": "Limites de reposição parcialmente estimados",
       "anchorHelp": "Introduza o início de um período de faturação.",
       "unassigned": "Excluídos {tokens} tokens sem atribuição fiável a uma conta.",
-      "current": "Atual"
+      "current": "Atual",
+      "allAccounts": "Todas as contas",
+      "unassignedIncluded": "Incluídos {tokens} tokens sem atribuição fiável a uma conta."
     }
   },
   "providers": {

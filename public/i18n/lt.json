@@ -336,7 +336,9 @@
       "estimated": "Atkūrimo ribos iš dalies apskaičiuotos",
       "anchorHelp": "Įveskite atsiskaitymo laikotarpio pradžios datą.",
       "unassigned": "Neįtraukta {tokens} žetonų be patikimo susiejimo su paskyra.",
-      "current": "Dabartinis"
+      "current": "Dabartinis",
+      "allAccounts": "Visos paskyros",
+      "unassignedIncluded": "Įtraukta {tokens} žetonų be patikimo priskyrimo paskyrai."
     }
   },
   "providers": {

@@ -31,7 +31,8 @@ const result = JSON.parse(await vm.runInContext(`(async () => {
   const providers = [{ id: "codex" }, { id: "codexSpark" }], local = { updatedAt: "fixture" };
   const first = renderPricingPeriodControls(local, providers);
   const stableRefresh = first.key === renderPricingPeriodControls({ updatedAt: "new scan" }, providers).key && pending.length === 1;
-  const defaults = { kind: state.pricingPeriodKind, from: first.from, accountId: first.accountId };
+  const defaults = { kind: state.pricingPeriodKind, from: first.from, accountId: first.accountId,
+    allAccountsSelected: els.pricingPeriodControls.innerHTML.includes('<option value="" selected>') };
   state.pricingPeriodOffset = -1;
   const second = renderPricingPeriodControls(local, providers);
   pending[0].resolve({ totals: { totalTokens: 999 } });
@@ -41,6 +42,12 @@ const result = JSON.parse(await vm.runInContext(`(async () => {
   await Promise.resolve(); await Promise.resolve();
   const selectedTokens = state.pricingPeriodReport.value.totals.totalTokens;
   const request = new URLSearchParams(pending[1].url.split("?")[1]);
+  state.pricingPeriodOffset = 0;
+  handlePricingPeriodChange({ target: { closest: () => ({ dataset: { pricingPeriodField: "account" }, value: "gpt-aaaaaaaaaaaaaaaa" }) } });
+  const account = renderPricingPeriodControls(local, providers);
+  const accountRequest = new URLSearchParams(pending.at(-1).url.split("?")[1]);
+  state.pricingResetAccount = "removed-account";
+  const removedAccount = renderPricingPeriodControls(local, providers);
   state.pricingPeriodKind = "all";
   const all = renderPricingPeriodControls(local, providers);
   const stableAllKey = all.key === renderPricingPeriodControls(local, providers).key;
@@ -55,21 +62,51 @@ const result = JSON.parse(await vm.runInContext(`(async () => {
   return JSON.stringify({ defaults, currentFrom: current.startsAt, previousFrom: second.from,
     expectedPreviousFrom: previous.startsAt, staleIgnored, selectedTokens,
     requestProvider: request.get("provider"), requestAccount: request.get("accountId"),
+    explicitAccount: account.accountId, explicitRequestAccount: accountRequest.get("accountId"),
+    removedAccountCleared: !removedAccount.accountId && state.pricingResetAccount === "",
     stableRefresh, stableAllKey, missingAnchor, remoteUnavailable, sparkReset: spark.to });
 })()`, context));
 assert.equal(result.defaults.kind, "reset");
 assert.equal(result.defaults.from, result.currentFrom);
-assert.equal(result.defaults.accountId, "gpt-aaaaaaaaaaaaaaaa");
+assert.equal(result.defaults.accountId, undefined, "the provider reset period includes logs without account attribution by default");
+assert.equal(result.defaults.allAccountsSelected, true);
 assert.equal(result.previousFrom, result.expectedPreviousFrom);
 assert.equal(result.staleIgnored, true, "a slow previous request cannot overwrite the currently selected period");
 assert.equal(result.stableRefresh, true, "a dashboard refresh cannot discard or duplicate an in-flight period result");
 assert.equal(result.selectedTokens, 123);
 assert.equal(result.requestProvider, "codex");
-assert.equal(result.requestAccount, "gpt-aaaaaaaaaaaaaaaa");
+assert.equal(result.requestAccount, null, "browsing previous reset periods preserves the complete provider scope");
+assert.equal(result.explicitAccount, "gpt-aaaaaaaaaaaaaaaa");
+assert.equal(result.explicitRequestAccount, "gpt-aaaaaaaaaaaaaaaa", "an explicitly chosen account still filters usage strictly");
+assert.equal(result.removedAccountCleared, true, "a removed account cannot silently select another account");
 assert.equal(result.stableAllKey, true, "all-time rendering cannot trigger an endless request loop");
 assert.equal(result.missingAnchor, true);
 assert.equal(result.remoteUnavailable, true, "remote installations cannot borrow local reset metadata");
 assert.ok(result.sparkReset, "Spark uses its own nested quota windows");
+const coverage = JSON.parse(vm.runInContext(`(() => {
+  state.syncDeviceFilter = "all"; state.pricingProvider = "codex"; state.pricingResetAccount = "";
+  state.pricingPeriodKind = "reset"; state.pricingPeriodOffset = 0; state.pricingView = "models";
+  const local = { updatedAt: "fixture" }, providers = [{ id: "codex" }];
+  const selection = renderPricingPeriodControls(local, providers);
+  const usage = { inputTokens: 100, cachedInputTokens: 40, outputTokens: 20, totalTokens: 120 };
+  state.pricingPeriodReport = { key: selection.key, revision: local.updatedAt, value: {
+    includedUnassignedTokens: 120, unassignedTokens: 0, totals: usage,
+    daily: [{ date: selection.from.slice(0, 10), ...usage, sources: [{ id: "codex", ...usage,
+      models: [{ model: "gpt-5.3-codex", ...usage }] }] }]
+  } };
+  renderPricing(local, [], providers);
+  const included = els.pricingPeriodStatus.textContent.includes("pricing.periods.unassignedIncluded");
+  const modelsVisible = !els.pricingUsedModels.hidden && els.pricingUsedModels.innerHTML.includes("gpt-5.3-codex") &&
+    els.pricingUsedModels.innerHTML.includes('data-status="complete"');
+  state.pricingPeriodReport.value.includedUnassignedTokens = 0;
+  state.pricingPeriodReport.value.unassignedTokens = 120;
+  renderPricing(local, [], providers);
+  return JSON.stringify({ included, modelsVisible, excluded: els.pricingPeriodStatus.textContent.includes("pricing.periods.unassigned") &&
+    !els.pricingPeriodStatus.textContent.includes("pricing.periods.unassignedIncluded") });
+})()`, context));
+assert(coverage.included, "provider costs disclose included usage without claiming an account identity");
+assert(coverage.modelsVisible, "unattributed provider usage renders model rows and an API-equivalent amount");
+assert(coverage.excluded, "excluded account usage has a distinct coverage label");
 const recovery = JSON.parse(await vm.runInContext(`(async () => {
   state.pricingPeriodKey = "timeout-fixture";
   fetchJson = (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("timeout"))));

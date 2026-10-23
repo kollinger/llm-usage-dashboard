@@ -336,7 +336,9 @@
       "estimated": "Meje ponastavitve so delno ocenjene",
       "anchorHelp": "Vnesite začetni datum obračunskega obdobja.",
       "unassigned": "Izključenih je {tokens} žetonov brez zanesljive dodelitve računu.",
-      "current": "Trenutno"
+      "current": "Trenutno",
+      "allAccounts": "Vsi računi",
+      "unassignedIncluded": "Vključenih je {tokens} žetonov brez zanesljive dodelitve računu."
     }
   },
   "providers": {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0-preview.3
+
+- Include all logged provider usage in the current and previous reset periods by default. An account filter applies only after choosing a specific account.
+- Distinguish included tokens without reliable account attribution from tokens excluded by an explicit account filter. Reset boundaries still follow the provider's recorded active account; unknown usage is never assigned to that account.
+- Preview fix within the 1.13.0 cost-period feature; no new feature or compatibility change.
+
 ## 1.13.0-preview.2
 
 - Fix cost periods waiting for a complete provider scan when saved usage is already available. Show the usage timestamp for saved period results.

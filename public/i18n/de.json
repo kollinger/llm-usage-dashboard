@@ -377,7 +377,9 @@
       "estimated": "Reset-Grenzen teilweise geschätzt",
       "anchorHelp": "Trage den Beginn einer Abrechnungsperiode ein.",
       "unassigned": "{tokens} Tokens ohne sichere Kontozuordnung ausgeschlossen.",
-      "current": "Aktuell"
+      "current": "Aktuell",
+      "allAccounts": "Alle Konten",
+      "unassignedIncluded": "{tokens} Tokens ohne sichere Kontozuordnung enthalten."
     }
   },
   "providers": {

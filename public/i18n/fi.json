@@ -336,7 +336,9 @@
       "estimated": "Nollausrajat ovat osittain arvioituja",
       "anchorHelp": "Anna laskutusjakson alkamispäivä.",
       "unassigned": "{tokens} tokenia jätettiin pois epävarman tilikohdistuksen vuoksi.",
-      "current": "Nykyinen"
+      "current": "Nykyinen",
+      "allAccounts": "Kaikki tilit",
+      "unassignedIncluded": "Mukana on {tokens} tokenia, joita ei voi luotettavasti yhdistää tiliin."
     }
   },
   "providers": {

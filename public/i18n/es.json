@@ -336,7 +336,9 @@
       "estimated": "Límites de reinicio parcialmente estimados",
       "anchorHelp": "Introduce el inicio de un período de facturación.",
       "unassigned": "Se excluyeron {tokens} tokens sin atribución fiable a una cuenta.",
-      "current": "Actual"
+      "current": "Actual",
+      "allAccounts": "Todas las cuentas",
+      "unassignedIncluded": "Se incluyen {tokens} tokens sin atribución fiable a una cuenta."
     }
   },
   "providers": {

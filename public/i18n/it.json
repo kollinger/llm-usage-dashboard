@@ -336,7 +336,9 @@
       "estimated": "Limiti del reset parzialmente stimati",
       "anchorHelp": "Inserisci l’inizio di un periodo di fatturazione.",
       "unassigned": "Esclusi {tokens} token senza attribuzione affidabile a un account.",
-      "current": "Attuale"
+      "current": "Attuale",
+      "allAccounts": "Tutti gli account",
+      "unassignedIncluded": "Inclusi {tokens} token senza attribuzione affidabile a un account."
     }
   },
   "providers": {

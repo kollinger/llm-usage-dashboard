@@ -336,7 +336,9 @@
       "estimated": "Resetgrenzen gedeeltelijk geschat",
       "anchorHelp": "Voer de begindatum van een factureringsperiode in.",
       "unassigned": "{tokens} tokens zonder betrouwbare accounttoewijzing uitgesloten.",
-      "current": "Huidig"
+      "current": "Huidig",
+      "allAccounts": "Alle accounts",
+      "unassignedIncluded": "{tokens} tokens zonder betrouwbare accounttoewijzing zijn inbegrepen."
     }
   },
   "providers": {

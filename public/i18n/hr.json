@@ -336,7 +336,9 @@
       "estimated": "Granice resetiranja djelomično su procijenjene",
       "anchorHelp": "Unesite datum početka obračunskog razdoblja.",
       "unassigned": "Isključeno je {tokens} tokena bez pouzdanog pridruživanja računu.",
-      "current": "Trenutačno"
+      "current": "Trenutačno",
+      "allAccounts": "Svi računi",
+      "unassignedIncluded": "Uključeno je {tokens} tokena bez pouzdanog pridruživanja računu."
     }
   },
   "providers": {

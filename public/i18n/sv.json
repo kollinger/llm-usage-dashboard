@@ -336,7 +336,9 @@
       "estimated": "Återställningsgränser är delvis uppskattade",
       "anchorHelp": "Ange startdatum för en faktureringsperiod.",
       "unassigned": "{tokens} token utan tillförlitlig kontotilldelning har uteslutits.",
-      "current": "Aktuell"
+      "current": "Aktuell",
+      "allAccounts": "Alla konton",
+      "unassignedIncluded": "{tokens} token utan tillförlitlig kontotilldelning ingår."
     }
   },
   "providers": {
