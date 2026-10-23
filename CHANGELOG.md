@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.13.0-preview.5 - 2026-10-23
+
+### Added
+
+- Open dashboard from Plasma context menu
+
+### Improved
+
+- Merge pull request #71 from kollinger/kol-666-dashboard-whatsapp
+
+### Fixed
+
+- Preserve Plasma window caption and app icon
+
 ## 1.13.0-preview.4 - 2026-10-23
 
 ### Added
