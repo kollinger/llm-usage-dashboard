@@ -166,6 +166,8 @@ try {
           await quotaReady("getPopupWindow");
           assert.equal(await evaluate(`${state}.getWidget().getPopupWindow().webContents.getURL()`), `http://localhost:${await evaluate(`${state}.getPort()`)}/widget.html`);
           if (process.env.GITHUB_ACTIONS === "true" && cycle === 1 && toggle === 0) {
+            await evaluate(`${state}.getWidget().getPopupWindow().webContents.executeJavaScript("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")`);
+            await pause(300);
             const panel = await evaluate(`${state}.getWidget().getPopupWindow().getBounds()`);
             const x = Math.min(bounds.x, panel.x), y = Math.min(bounds.y, panel.y);
             const width = Math.max(bounds.x + bounds.width, panel.x + panel.width) - x;
@@ -176,6 +178,16 @@ try {
             // It can be decoded for review without changing workflow permissions
             // or adding diagnostic files to the release's downloadable assets.
             console.log(`DESKTOP_STARTUP_SCREENSHOT:${(await fs.readFile(screenshot)).toString("base64")}`);
+            const colors = await evaluate(`(() => {
+              const image = ${state}.require('electron').nativeImage.createFromPath(${JSON.stringify(screenshot)});
+              const scale = image.getSize().width / ${width};
+              const pixels = image.crop({ x: Math.round(${panel.x - x + 12} * scale), y: Math.round(${panel.y - y + 12} * scale),
+                width: Math.round(300 * scale), height: Math.round(180 * scale) }).toBitmap();
+              const colors = new Set();
+              for (let i = 0; i < pixels.length; i += 4) colors.add(pixels[i] + ',' + pixels[i + 1] + ',' + pixels[i + 2]);
+              return colors.size;
+            })()`);
+            assert(colors > 16, "OS screenshot contains painted popup content, not only a blank background");
           }
           click(); await until(() => evaluate(`!${state}.getWidget().getPopupWindow()`), "second OS click closes popup");
         }
