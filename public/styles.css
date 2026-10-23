@@ -1115,6 +1115,10 @@ textarea {
   font-size: 1.05rem;
 }
 
+.provider-account .provider-name {
+  overflow-wrap: anywhere;
+}
+
 .plan-badge {
   display: inline-flex;
   align-items: center;

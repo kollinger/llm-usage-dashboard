@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import vm from "node:vm";
+import { createRequire } from "node:module";
+import { createGptAccountLifecycle } from "./fixtures/gpt-account-lifecycle.mjs";
 import { readDashboardSource } from "./fixtures/dashboard-source.mjs";
 
 const source = (await readDashboardSource()).replace("\ninit();", "\n// Account rendering tested without collectors or provider requests.");
@@ -118,3 +120,142 @@ for (const text of ["plus", "team", "OpenCode", "78%", "15%", "2099", english.gp
   assert(connectionHtml.includes(text), text);
 }
 console.log("GPT account manager: verified source preference, separate plan/application hints, auth failure, stale snapshots and resets passed.");
+
+// Overview uses canonical accounts; consumption/pricing keep their source view.
+const require = createRequire(import.meta.url);
+const { gptDuplicateUsageFixture } = require("./fixtures/gpt-duplicate.cjs");
+context.overviewFixture = gptDuplicateUsageFixture();
+const overview = JSON.parse(vm.runInContext(`
+const overviewUsage = overviewFixture;
+overviewUsage.gptAccounts.accounts[0].label = "Personal <fixture>";
+overviewUsage.gptAccounts.accounts[1].label = "Work fixture";
+overviewUsage.codex = { limits: { fiveHour: { usedPercent: 91 } },
+  totals: { allTime: { totalTokens: 900 }, last24h: { totalTokens: 90 } } };
+overviewUsage.openCode = { status: "live", totals: { allTime: { totalTokens: 155 }, last24h: { totalTokens: 15 } } };
+overviewUsage.local = { totals: { allTime: { totalTokens: 1055 } }, daily: [{ date: "2026-10-20", totalTokens: 1055 }] };
+const beforeOverview = JSON.stringify(overviewUsage);
+const sourceCards = buildProviders(overviewUsage);
+const cards = buildProviderCards(overviewUsage);
+const accountCards = cards.filter(card => card.accountId);
+state.usage = overviewUsage;
+state.providerOrder = ["ollama", "codex", "copilot", "openCode", "codexSpark", "claudeCode"];
+const ordered = orderProviders(cards).map(card => card.id);
+const accountIds = accountCards.map(card => card.id);
+const moved = moveProviderRelativeToTarget(accountIds[1], "ollama");
+const customOrder = state.providerOrder.slice();
+overviewUsage.gptAccounts.accounts.reverse();
+const afterReorder = orderProviders(buildProviderCards(overviewUsage)).map(card => card.id);
+overviewUsage.gptAccounts.accounts.reverse();
+JSON.stringify({ accountCards, ordered, accountIds, moved, customOrder, afterReorder,
+  names: accountIds.map(providerName), html: accountCards.map(card => renderProvider(card)).join(""),
+  active: cards.filter(providerHasUsage).filter(card => card.accountId).length,
+  sourceTokens: sourceCards.filter(card => ["codex", "openCode"].includes(card.id)).map(card => card.allTimeTokens),
+  unchanged: beforeOverview === JSON.stringify(overviewUsage), sourceIds: sourceCards.map(card => card.id),
+  ids: cards.map(card => card.id) });
+`, context));
+assert.equal(overview.accountCards.length, 2);
+assert(!overview.ids.includes("codex") && !overview.ids.includes("openCode"), "source cards must not duplicate account cards");
+assert(overview.sourceIds.includes("codex") && overview.sourceIds.includes("openCode"), "pricing retains both historical source choices");
+assert.deepEqual(overview.sourceTokens, [900, 155]);
+assert.equal(overview.unchanged, true, "overview cannot mutate historical totals, attribution or charts");
+const personal = overview.accountCards.find(card => card.name.includes("Personal"));
+const work = overview.accountCards.find(card => card.name.includes("Work"));
+assert.deepEqual(personal.limitRows.map(row => row.remainingPercent), [0, 40, null], "select each window by its own freshness; never sum source percentages");
+assert.deepEqual(work.limitRows.map(row => row.remainingPercent), [65]);
+assert.equal(work.todayTokens, undefined, "provider-wide consumption cannot be assigned to an account");
+assert.equal(overview.active, 2);
+assert(overview.html.includes("Personal &lt;fixture&gt;") && overview.html.includes("Work fixture"));
+assert(overview.html.includes("provider-mark-codex"), "canonical IDs keep the Codex brand");
+assert(!overview.html.includes("quota-pace-card"), "provider-wide pace cannot be assigned to an account");
+assert(overview.html.includes(english.liveMetrics.unavailable), "missing window value stays unavailable");
+assert(overview.ordered.indexOf(overview.accountIds[0]) > overview.ordered.indexOf("ollama"));
+assert(overview.ordered.indexOf(overview.accountIds[1]) < overview.ordered.indexOf("copilot"));
+assert.equal(overview.moved, true, "account cards can still be reordered");
+assert.deepEqual(overview.afterReorder, overview.customOrder, "quota identity and custom order survive registry reordering");
+assert(overview.names.every(name => name.startsWith("Codex · ")));
+
+const states = JSON.parse(vm.runInContext(`
+const directUsage = JSON.parse(JSON.stringify(overviewUsage));
+directUsage.gptAccounts.accounts.forEach(account => { account.sources = account.sources.filter(source => source.id === "codex"); });
+const directCards = buildProviderCards(directUsage).filter(card => card.accountId);
+const directResets = directCards.map(card => card.limitRows.map(row => row.resetsAt));
+directUsage.gptAccounts.accounts[1].sources[0].limits.rows[0].resetsAt = "2099-02-03T04:05:00.000Z";
+const distinctResets = buildProviderCards(directUsage).filter(card => card.accountId).map(card => card.limitRows.map(row => row.resetsAt));
+const newAccount = directUsage.gptAccounts.accounts[1];
+newAccount.sources[0].limits = null;
+newAccount.sources[0].quotaStatus = "unavailable";
+const missing = buildProviderCards(directUsage).find(card => card.id === newAccount.id);
+newAccount.sources[0].limits = { rows: [{ key: "fiveHour", usedPercent: 0, updatedAt: new Date().toISOString() }] };
+newAccount.sources[0].quotaStatus = "ready";
+const zero = buildProviderCards(directUsage).find(card => card.id === newAccount.id);
+newAccount.sources[0].limits.rows[0].updatedAt = "2020-01-01T00:00:00.000Z";
+newAccount.sources[0].limits.rows[0].resetsAt = "2099-02-03T04:05:00.000Z";
+const stale = buildProviderCards(directUsage).find(card => card.id === newAccount.id);
+newAccount.sources[0].limits.rows[0].updatedAt = new Date().toISOString();
+newAccount.sources[0].quotaStatus = "unavailable";
+newAccount.sources[0].quotaReason = "auth_required";
+const failedOverview = buildProviderCards(directUsage).find(card => card.id === newAccount.id);
+directUsage.gptAccounts.accounts.push(JSON.parse(JSON.stringify(newAccount)));
+const duplicateCount = buildProviderCards(directUsage).filter(card => card.accountId).length;
+directUsage.gptAccounts.accounts.forEach(account => { account.active = false; });
+const historicalCards = buildProviderCards(directUsage).filter(card => card.accountId);
+directUsage.gptAccounts.accounts.forEach(account => { account.label = "Same masked label"; });
+const sameLabels = buildProviderCards(directUsage).filter(card => card.accountId).map(card => card.name);
+JSON.stringify({ directCount: directCards.length, distinctResets, duplicateCount,
+  sameLabels, historicalActive: historicalCards.filter(providerHasUsage).length, historicalAll: historicalCards.length,
+  missing: { card: missing, shown: providerHasUsage(missing), html: renderProvider(missing) },
+  zero: { card: zero, shown: providerHasUsage(zero), html: renderProvider(zero) },
+  stale: { card: stale, html: renderProvider(stale) }, failed: { card: failedOverview, html: renderProvider(failedOverview) },
+  fallback: buildProviderCards({}).map(card => card.id) });
+`, context));
+assert.equal(states.directCount, 2, "both direct accounts appear without OpenCode login or token history");
+assert.notDeepEqual(states.distinctResets[0], states.distinctResets[1], "each account keeps its own reset times");
+assert.equal(states.duplicateCount, 2, "the same canonical ID only appears once");
+assert.equal(new Set(states.sameLabels).size, 2, "equal masked labels remain distinguishable using stable opaque suffixes");
+assert.equal(states.historicalActive, 0, "inactive account snapshots stay out of the active filter");
+assert.equal(states.historicalAll, 2, "Show all retains both historical accounts");
+assert.equal(states.missing.shown, true);
+assert.deepEqual(states.missing.card.limitRows, []);
+assert.equal(states.missing.card.fiveHour, null, "missing quota cannot inherit the first account/provider limit");
+assert(states.missing.html.includes(english.gptAccounts.quotaUnavailable));
+assert(!states.missing.html.includes("0%"));
+assert.equal(states.zero.shown, true);
+assert.equal(states.zero.card.fiveHour.usedPercent, 0);
+assert.equal(states.zero.card.fiveHour.remainingPercent, 100);
+assert.equal(states.zero.card.limitRows[0].status, "current");
+for (const sample of [states.stale, states.failed]) {
+  assert.equal(sample.card.fiveHour, null, "saved values cannot enter current quota summary");
+  assert.equal(sample.card.limitRows[0].status, "stale");
+  assert(sample.html.includes(english.gptAccounts.savedLimits));
+  assert(!sample.html.includes('role="meter"'), "stale quota cannot drive a current pace projection");
+}
+assert(states.failed.html.includes(english.connections.status.auth_required));
+assert(states.fallback.includes("codex") && states.fallback.includes("openCode"), "keep legacy sources before any account is detected");
+
+// Feed the overview with the production collector/registry lifecycle across scans,
+// duplicate login, persistence and process-style reload; no real provider requests.
+const lifecycle = await createGptAccountLifecycle();
+try {
+  await lifecycle.scan();
+  let stableIds;
+  for (let cycle = 0; cycle < 3; cycle++) {
+    context.lifecycleUsage = await lifecycle.usage();
+    const cards = JSON.parse(vm.runInContext("JSON.stringify(buildProviderCards(lifecycleUsage).filter(card => card.accountId))", context));
+    assert.equal(cards.length, 2);
+    const ids = cards.map(card => card.id).sort();
+    stableIds ??= ids;
+    assert.deepEqual(ids, stableIds);
+    await lifecycle.login(); await lifecycle.scan(); await lifecycle.reload();
+  }
+} finally { await lifecycle.close(); }
+
+context.recheckRegistry = { accounts: [] };
+await vm.runInContext(`
+fetchJson = async () => ({ gptAccounts: recheckRegistry });
+renderGptAccounts = () => {};
+globalThis.overviewRefreshCount = 0;
+renderUsageIfChanged = () => { overviewRefreshCount++; };
+recheckGptAccounts();`, context);
+assert.equal(vm.runInContext("overviewRefreshCount", context), 1, "re-scan immediately refreshes the overview");
+assert.equal(vm.runInContext("state.usage.gptAccounts === recheckRegistry", context), true);
+console.log("GPT overview: distinct direct accounts/limits/resets, shared-source dedupe, unknown/zero/stale/failed values, order/filter, scan/login/restart and consumption preservation passed.");
