@@ -1441,7 +1441,10 @@
     "offline": "Aplicação indisponível. Inicia a aplicação de computador; as leituras anteriores estão desatualizadas.",
     "bounded": "Limitado a {count}; usa favoritos ou um filtro de fornecedor.",
     "current": "Pacote KDE atualizado",
-    "reloadHelp": "Não é possível verificar aqui a versão carregada pelo Plasma. Se a vista antiga continuar após a atualização, guarde o seu trabalho, termine a sessão do Plasma e volte a entrar. Remover e voltar a adicionar o widget pode reutilizar a vista antiga em cache."
+    "reloadHelp": "Não é possível verificar aqui a versão carregada pelo Plasma. Se a vista antiga continuar após a atualização, guarde o seu trabalho, termine a sessão do Plasma e volte a entrar. Remover e voltar a adicionar o widget pode reutilizar a vista antiga em cache.",
+    "openDashboard": "Abrir LLM Usage Dashboard",
+    "dashboardMissing": "Instale e abra o LLM Usage Dashboard uma vez e tente novamente.",
+    "dashboardLaunchError": "Não foi possível abrir o LLM Usage Dashboard. Abra a aplicação diretamente e tente novamente."
   },
   "sync": {
     "title": "Private device sync",

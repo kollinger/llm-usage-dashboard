@@ -1441,7 +1441,10 @@
     "offline": "Aplicația nu este disponibilă. Pornește aplicația desktop; citirile anterioare sunt învechite.",
     "bounded": "Limitat la {count}; folosește favoritele sau un filtru de furnizor.",
     "current": "Pachetul KDE este actualizat",
-    "reloadHelp": "Versiunea încărcată de Plasma nu poate fi verificată aici. Dacă după actualizare rămâne vizualizarea veche, salvează lucrul, deconectează-te din Plasma și conectează-te din nou. Eliminarea și adăugarea widgetului poate reutiliza vizualizarea veche din cache."
+    "reloadHelp": "Versiunea încărcată de Plasma nu poate fi verificată aici. Dacă după actualizare rămâne vizualizarea veche, salvează lucrul, deconectează-te din Plasma și conectează-te din nou. Eliminarea și adăugarea widgetului poate reutiliza vizualizarea veche din cache.",
+    "openDashboard": "Deschide LLM Usage Dashboard",
+    "dashboardMissing": "Instalează și deschide LLM Usage Dashboard o dată, apoi încearcă din nou.",
+    "dashboardLaunchError": "LLM Usage Dashboard nu a putut fi deschis. Deschide aplicația direct și încearcă din nou."
   },
   "sync": {
     "title": "Private device sync",

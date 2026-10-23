@@ -1441,7 +1441,10 @@
     "offline": "App nicht erreichbar. Starte die Desktop-App; bisherige Werte sind veraltet.",
     "bounded": "Auf {count} begrenzt; nutze Favoriten oder den Anbieterfilter.",
     "current": "KDE-Paket ist aktuell",
-    "reloadHelp": "Die von Plasma geladene Version lässt sich hier nicht prüfen. Bleibt nach dem Update die alte Ansicht, speichere deine Arbeit, melde dich von Plasma ab und wieder an. Auch Entfernen und erneutes Hinzufügen kann die alte Ansicht aus dem Zwischenspeicher laden."
+    "reloadHelp": "Die von Plasma geladene Version lässt sich hier nicht prüfen. Bleibt nach dem Update die alte Ansicht, speichere deine Arbeit, melde dich von Plasma ab und wieder an. Auch Entfernen und erneutes Hinzufügen kann die alte Ansicht aus dem Zwischenspeicher laden.",
+    "openDashboard": "LLM Usage Dashboard öffnen",
+    "dashboardMissing": "LLM Usage Dashboard installieren und einmal öffnen, dann erneut versuchen.",
+    "dashboardLaunchError": "LLM Usage Dashboard konnte nicht geöffnet werden. Die App direkt öffnen und erneut versuchen."
   },
   "sync": {
     "title": "Privater Geräte-Sync",

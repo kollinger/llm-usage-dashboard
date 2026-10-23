@@ -1441,7 +1441,10 @@
     "offline": "Aplikacija ni dosegljiva. Zaženite namizno aplikacijo; prejšnji odčitki so zastareli.",
     "bounded": "Omejeno na {count}; uporabite priljubljene ali filter ponudnika.",
     "current": "Paket KDE je posodobljen",
-    "reloadHelp": "Različice, ki jo je naložila Plasma, tukaj ni mogoče preveriti. Če po posodobitvi ostane stari pogled, shranite delo, se odjavite iz Plasme in znova prijavite. Odstranitev in ponovno dodajanje gradnika lahko uporabi stari pogled iz predpomnilnika."
+    "reloadHelp": "Različice, ki jo je naložila Plasma, tukaj ni mogoče preveriti. Če po posodobitvi ostane stari pogled, shranite delo, se odjavite iz Plasme in znova prijavite. Odstranitev in ponovno dodajanje gradnika lahko uporabi stari pogled iz predpomnilnika.",
+    "openDashboard": "Odpri LLM Usage Dashboard",
+    "dashboardMissing": "Namestite in enkrat odprite LLM Usage Dashboard, nato poskusite znova.",
+    "dashboardLaunchError": "LLM Usage Dashboard ni bilo mogoče odpreti. Aplikacijo odprite neposredno in poskusite znova."
   },
   "sync": {
     "title": "Private device sync",

@@ -1441,7 +1441,10 @@
     "offline": "Lietotne nav pieejama. Palaidiet darbvirsmas lietotni; iepriekšējie rādījumi ir novecojuši.",
     "bounded": "Ierobežots līdz {count}; izmantojiet izlasi vai pakalpojumu sniedzēja filtru.",
     "current": "KDE pakotne ir atjaunināta",
-    "reloadHelp": "Šeit nevar pārbaudīt Plasma ielādēto versiju. Ja pēc atjaunināšanas paliek vecais skats, saglabājiet darbu, izrakstieties no Plasma un pierakstieties vēlreiz. Logrīka noņemšana un atkārtota pievienošana var izmantot veco kešatmiņā saglabāto skatu."
+    "reloadHelp": "Šeit nevar pārbaudīt Plasma ielādēto versiju. Ja pēc atjaunināšanas paliek vecais skats, saglabājiet darbu, izrakstieties no Plasma un pierakstieties vēlreiz. Logrīka noņemšana un atkārtota pievienošana var izmantot veco kešatmiņā saglabāto skatu.",
+    "openDashboard": "Atvērt LLM Usage Dashboard",
+    "dashboardMissing": "Instalējiet un vienreiz atveriet LLM Usage Dashboard, pēc tam mēģiniet vēlreiz.",
+    "dashboardLaunchError": "Neizdevās atvērt LLM Usage Dashboard. Atveriet lietotni tieši un mēģiniet vēlreiz."
   },
   "sync": {
     "title": "Private device sync",

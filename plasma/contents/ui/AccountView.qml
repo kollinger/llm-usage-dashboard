@@ -11,6 +11,7 @@ Item {
     id: view
     property var snapshot: null
     property string connectionStatus: "loading"
+    property string launchError: ""
     property string language: "en"
     property var favorites: []
     property string accountView: "all"
@@ -69,6 +70,15 @@ Item {
         anchors.margins: 10
         spacing: 6
         Controls.Label { text: view.t("widget.title"); font.bold: true; font.pixelSize: view.textSize + 3; Layout.fillWidth: true; elide: Text.ElideRight }
+        Controls.Label {
+            objectName: "dashboardLaunchError"
+            visible: view.launchError.length > 0
+            text: view.launchError
+            textFormat: Text.PlainText
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+            font.pixelSize: view.textSize
+        }
         RowLayout {
             Layout.fillWidth: true
             Controls.Button {

@@ -1441,7 +1441,10 @@
     "offline": "Programa nepasiekiama. Paleiskite darbalaukio programą; ankstesni rodmenys pasenę.",
     "bounded": "Ribojama iki {count}; naudokite parankinius arba teikėjo filtrą.",
     "current": "KDE paketas atnaujintas",
-    "reloadHelp": "Čia negalima patikrinti Plasma įkeltos versijos. Jei po atnaujinimo lieka senas vaizdas, išsaugokite darbą, atsijunkite nuo Plasma ir prisijunkite iš naujo. Pašalinus ir vėl pridėjus valdiklį gali būti naudojamas senas podėlyje išsaugotas vaizdas."
+    "reloadHelp": "Čia negalima patikrinti Plasma įkeltos versijos. Jei po atnaujinimo lieka senas vaizdas, išsaugokite darbą, atsijunkite nuo Plasma ir prisijunkite iš naujo. Pašalinus ir vėl pridėjus valdiklį gali būti naudojamas senas podėlyje išsaugotas vaizdas.",
+    "openDashboard": "Atverti LLM Usage Dashboard",
+    "dashboardMissing": "Įdiekite ir vieną kartą atverkite LLM Usage Dashboard, tada bandykite dar kartą.",
+    "dashboardLaunchError": "Nepavyko atverti LLM Usage Dashboard. Atverkite programą tiesiogiai ir bandykite dar kartą."
   },
   "sync": {
     "title": "Private device sync",

@@ -1441,7 +1441,10 @@
     "offline": "Appen er utilgængelig. Start skrivebordsappen; tidligere målinger er forældede.",
     "bounded": "Begrænset til {count}; brug favoritter eller et udbyderfilter.",
     "current": "KDE-pakken er opdateret",
-    "reloadHelp": "Den version, Plasma har indlæst, kan ikke kontrolleres her. Hvis den gamle visning bliver efter opdateringen, så gem dit arbejde, log ud af Plasma og ind igen. Fjernelse og tilføjelse af widgetten kan genbruge den gamle visning fra cachen."
+    "reloadHelp": "Den version, Plasma har indlæst, kan ikke kontrolleres her. Hvis den gamle visning bliver efter opdateringen, så gem dit arbejde, log ud af Plasma og ind igen. Fjernelse og tilføjelse af widgetten kan genbruge den gamle visning fra cachen.",
+    "openDashboard": "Åbn LLM Usage Dashboard",
+    "dashboardMissing": "Installér og åbn LLM Usage Dashboard én gang, og prøv igen.",
+    "dashboardLaunchError": "LLM Usage Dashboard kunne ikke åbnes. Åbn appen direkte, og prøv igen."
   },
   "sync": {
     "title": "Private device sync",

@@ -1441,7 +1441,10 @@
     "offline": "Application indisponible. Lancez l’application de bureau ; les mesures précédentes sont périmées.",
     "bounded": "Limité à {count} ; utilisez les favoris ou un filtre de fournisseur.",
     "current": "Paquet KDE à jour",
-    "reloadHelp": "La version chargée par Plasma ne peut pas être vérifiée ici. Si l’ancienne vue reste après la mise à jour, enregistrez votre travail, déconnectez-vous de Plasma puis reconnectez-vous. Retirer puis rajouter le composant peut réutiliser l’ancienne vue en cache."
+    "reloadHelp": "La version chargée par Plasma ne peut pas être vérifiée ici. Si l’ancienne vue reste après la mise à jour, enregistrez votre travail, déconnectez-vous de Plasma puis reconnectez-vous. Retirer puis rajouter le composant peut réutiliser l’ancienne vue en cache.",
+    "openDashboard": "Ouvrir LLM Usage Dashboard",
+    "dashboardMissing": "Installez et ouvrez LLM Usage Dashboard une fois, puis réessayez.",
+    "dashboardLaunchError": "Impossible d’ouvrir LLM Usage Dashboard. Ouvrez directement l’application et réessayez."
   },
   "sync": {
     "title": "Private device sync",

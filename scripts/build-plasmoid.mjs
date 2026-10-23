@@ -16,6 +16,7 @@ for (const file of files) {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(path.join(root, "plasma", file), destination);
 }
+await fs.copyFile(path.join(root, "scripts", "open-plasma-dashboard.py"), path.join(directory, "contents/code/open_dashboard.py"));
 await fs.writeFile(path.join(directory, "contents", "code", "ProviderColors.js"),
   ".pragma library\n" + await fs.readFile(path.join(root, "public", "provider-colors.js"), "utf8"));
 const catalog = {};

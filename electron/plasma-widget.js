@@ -9,6 +9,7 @@ const { promisify } = require("node:util");
 const { trustedFrame } = require("./desktop-widget");
 const { startPlasmaBridge, readPlasmaSnapshot } = require("../lib/plasma-bridge");
 const { activatePackage, repairPanels, PLUGIN_ID } = require("./plasma-package");
+const { registerPlasmaLauncher } = require("./plasma-launcher");
 const runFile = promisify(execFile);
 const ARCHIVE_NAME = "llm-usage-dashboard.plasmoid";
 
@@ -69,6 +70,9 @@ function createPlasmaWidget({ app, ipcMain, session, origin, getMainWindow, getL
     status,
     async start() {
       if (platform !== "linux") return;
+      try { await registerPlasmaLauncher({ app, dataHome, environment,
+        ...(app.isPackaged ? { iconPath: path.join(process.resourcesPath, "plasma", "dashboard-icon.png") } : {}) }); }
+      catch { /* The native action reports a missing/failed local launcher. */ }
       try {
         bridge = await startPlasmaBridge({ runtimeDirectory: environment.XDG_RUNTIME_DIR,
           readSnapshot: () => readPlasmaSnapshot(session, origin), getLanguage });

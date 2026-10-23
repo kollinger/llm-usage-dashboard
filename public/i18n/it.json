@@ -1441,7 +1441,10 @@
     "offline": "App non disponibile. Avvia l’app desktop; le letture precedenti sono obsolete.",
     "bounded": "Limite di {count}; usa i preferiti o un filtro per fornitore.",
     "current": "Pacchetto KDE aggiornato",
-    "reloadHelp": "Qui non è possibile verificare la versione caricata da Plasma. Se dopo l’aggiornamento resta la vista precedente, salva il lavoro, esci dalla sessione Plasma e accedi di nuovo. Rimuovere e aggiungere nuovamente il widget può riutilizzare la vecchia vista nella cache."
+    "reloadHelp": "Qui non è possibile verificare la versione caricata da Plasma. Se dopo l’aggiornamento resta la vista precedente, salva il lavoro, esci dalla sessione Plasma e accedi di nuovo. Rimuovere e aggiungere nuovamente il widget può riutilizzare la vecchia vista nella cache.",
+    "openDashboard": "Apri LLM Usage Dashboard",
+    "dashboardMissing": "Installa e apri LLM Usage Dashboard una volta, poi riprova.",
+    "dashboardLaunchError": "Impossibile aprire LLM Usage Dashboard. Apri direttamente l’app e riprova."
   },
   "sync": {
     "title": "Private device sync",

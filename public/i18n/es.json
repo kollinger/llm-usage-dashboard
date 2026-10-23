@@ -1441,7 +1441,10 @@
     "offline": "Aplicación no disponible. Inicia la aplicación de escritorio; los datos anteriores están desactualizados.",
     "bounded": "Limitado a {count}; usa favoritos o un filtro de proveedor.",
     "current": "Paquete de KDE actualizado",
-    "reloadHelp": "Aquí no se puede comprobar la versión que ha cargado Plasma. Si sigue la vista anterior tras actualizar, guarda tu trabajo, cierra la sesión de Plasma y vuelve a entrar. Quitar y volver a añadir el widget puede reutilizar la vista anterior en caché."
+    "reloadHelp": "Aquí no se puede comprobar la versión que ha cargado Plasma. Si sigue la vista anterior tras actualizar, guarda tu trabajo, cierra la sesión de Plasma y vuelve a entrar. Quitar y volver a añadir el widget puede reutilizar la vista anterior en caché.",
+    "openDashboard": "Abrir LLM Usage Dashboard",
+    "dashboardMissing": "Instala y abre LLM Usage Dashboard una vez y vuelve a intentarlo.",
+    "dashboardLaunchError": "No se pudo abrir LLM Usage Dashboard. Abre la aplicación directamente y vuelve a intentarlo."
   },
   "sync": {
     "title": "Private device sync",
