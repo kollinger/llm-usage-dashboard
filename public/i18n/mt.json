@@ -1441,7 +1441,10 @@
     "offline": "L-app mhix disponibbli. Ibda l-app tad-desktop; il-qari preċedenti huwa skadut.",
     "bounded": "Limitat għal {count}; uża l-favoriti jew filtru tal-fornitur.",
     "current": "Il-pakkett KDE huwa aġġornat",
-    "reloadHelp": "Il-verżjoni mgħobbija minn Plasma ma tistax tiġi vverifikata hawn. Jekk tibqa’ l-vista l-qadima wara l-aġġornament, issejvja xogħlok, oħroġ minn Plasma u erġa’ idħol. It-tneħħija u ż-żieda mill-ġdid tal-widget jistgħu jerġgħu jużaw il-vista l-qadima fil-cache."
+    "reloadHelp": "Il-verżjoni mgħobbija minn Plasma ma tistax tiġi vverifikata hawn. Jekk tibqa’ l-vista l-qadima wara l-aġġornament, issejvja xogħlok, oħroġ minn Plasma u erġa’ idħol. It-tneħħija u ż-żieda mill-ġdid tal-widget jistgħu jerġgħu jużaw il-vista l-qadima fil-cache.",
+    "openDashboard": "Iftaħ LLM Usage Dashboard",
+    "dashboardMissing": "Installa u iftaħ LLM Usage Dashboard darba, imbagħad erġa’ pprova.",
+    "dashboardLaunchError": "Ma setax jinfetaħ LLM Usage Dashboard. Iftaħ l-app direttament u erġa’ pprova."
   },
   "sync": {
     "title": "Private device sync",

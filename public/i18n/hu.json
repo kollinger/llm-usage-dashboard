@@ -1441,7 +1441,10 @@
     "offline": "Az alkalmazás nem érhető el. Indítsa el az asztali alkalmazást; a korábbi adatok elavultak.",
     "bounded": "Legfeljebb {count}; használja a kedvenceket vagy a szolgáltatószűrőt.",
     "current": "A KDE-csomag naprakész",
-    "reloadHelp": "A Plasma által betöltött verzió itt nem ellenőrizhető. Ha frissítés után megmarad a régi nézet, mentsd a munkádat, jelentkezz ki a Plasmából, majd vissza. A widget eltávolítása és újbóli hozzáadása is a gyorsítótárazott régi nézetet használhatja."
+    "reloadHelp": "A Plasma által betöltött verzió itt nem ellenőrizhető. Ha frissítés után megmarad a régi nézet, mentsd a munkádat, jelentkezz ki a Plasmából, majd vissza. A widget eltávolítása és újbóli hozzáadása is a gyorsítótárazott régi nézetet használhatja.",
+    "openDashboard": "LLM Usage Dashboard megnyitása",
+    "dashboardMissing": "Telepítse és nyissa meg egyszer az LLM Usage Dashboard alkalmazást, majd próbálja újra.",
+    "dashboardLaunchError": "Az LLM Usage Dashboard nem nyitható meg. Nyissa meg közvetlenül az alkalmazást, majd próbálja újra."
   },
   "sync": {
     "title": "Private device sync",

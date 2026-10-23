@@ -22,11 +22,29 @@ TestCase {
     function init() {
         test.width = 780; test.height = 840;
         accountView.language = "en"; accountView.connectionStatus = "ready";
+        accountView.launchError = "";
         accountView.favorites = []; accountView.accountView = "all"; accountView.provider = "all"; accountView.textScale = 1;
         accountView.snapshot = Fixtures.cases[5];
         waitForRendering(accountView);
     }
     function list() { return findChild(accountView, "accountList"); }
+    function test_dashboard_launch_errors() {
+        test.width = 320; test.height = 400;
+        ["de", "ar"].forEach(function(language) {
+            accountView.language = language;
+            accountView.launchError = accountView.t("plasma.dashboardLaunchError");
+            var label = findChild(accountView, "dashboardLaunchError");
+            tryCompare(label, "visible", true);
+            waitForRendering(accountView);
+            compare(label.text, accountView.t("plasma.dashboardLaunchError"));
+            verify(label.implicitHeight > 0 && label.width <= 300);
+            verify(label.height >= label.implicitHeight, "long launch error must wrap without clipping");
+            compare(accountView.LayoutMirroring.enabled, language === "ar");
+            capture("dashboard-launch-error-" + language);
+        });
+        accountView.launchError = "";
+        tryCompare(findChild(accountView, "dashboardLaunchError"), "visible", false);
+    }
     function capture(name) {
         if (Fixtures.screenshots) grabImage(accountView).save(Fixtures.screenshots + "/" + name + ".png");
     }

@@ -1441,7 +1441,10 @@
     "offline": "Appen är inte tillgänglig. Starta skrivbordsappen; tidigare avläsningar är inaktuella.",
     "bounded": "Begränsat till {count}; använd favoriter eller ett leverantörsfilter.",
     "current": "KDE-paketet är uppdaterat",
-    "reloadHelp": "Versionen som Plasma har läst in kan inte kontrolleras här. Om den gamla vyn finns kvar efter uppdateringen, spara ditt arbete, logga ut från Plasma och in igen. Att ta bort och lägga till komponenten kan återanvända den gamla cachade vyn."
+    "reloadHelp": "Versionen som Plasma har läst in kan inte kontrolleras här. Om den gamla vyn finns kvar efter uppdateringen, spara ditt arbete, logga ut från Plasma och in igen. Att ta bort och lägga till komponenten kan återanvända den gamla cachade vyn.",
+    "openDashboard": "Öppna LLM Usage Dashboard",
+    "dashboardMissing": "Installera och öppna LLM Usage Dashboard en gång och försök sedan igen.",
+    "dashboardLaunchError": "Det gick inte att öppna LLM Usage Dashboard. Öppna appen direkt och försök igen."
   },
   "sync": {
     "title": "Private device sync",

@@ -1441,7 +1441,10 @@
     "offline": "Rakendus pole saadaval. Käivita töölauarakendus; varasemad näidud on aegunud.",
     "bounded": "Piiratud {count} kontoga; kasuta lemmikuid või teenusepakkuja filtrit.",
     "current": "KDE pakett on ajakohane",
-    "reloadHelp": "Plasma laaditud versiooni ei saa siin kontrollida. Kui pärast uuendamist jääb vana vaade, salvesta töö, logi Plasmast välja ja uuesti sisse. Vidina eemaldamine ja uuesti lisamine võib kasutada vana vahemällu salvestatud vaadet."
+    "reloadHelp": "Plasma laaditud versiooni ei saa siin kontrollida. Kui pärast uuendamist jääb vana vaade, salvesta töö, logi Plasmast välja ja uuesti sisse. Vidina eemaldamine ja uuesti lisamine võib kasutada vana vahemällu salvestatud vaadet.",
+    "openDashboard": "Ava LLM Usage Dashboard",
+    "dashboardMissing": "Paigalda ja ava LLM Usage Dashboard üks kord ning proovi uuesti.",
+    "dashboardLaunchError": "LLM Usage Dashboardi ei saanud avada. Ava rakendus otse ja proovi uuesti."
   },
   "sync": {
     "title": "Private device sync",

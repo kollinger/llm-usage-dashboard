@@ -1441,7 +1441,10 @@
     "offline": "Sovellus ei ole käytettävissä. Käynnistä työpöytäsovellus; aiemmat lukemat ovat vanhentuneita.",
     "bounded": "Rajoitettu {count} tiliin; käytä suosikkeja tai palveluntarjoajan suodatinta.",
     "current": "KDE-paketti on ajan tasalla",
-    "reloadHelp": "Plasman lataamaa versiota ei voi tarkistaa tässä. Jos vanha näkymä jää päivityksen jälkeen, tallenna työsi, kirjaudu ulos Plasmasta ja takaisin sisään. Pienoissovelluksen poistaminen ja lisääminen uudelleen voi käyttää välimuistissa olevaa vanhaa näkymää."
+    "reloadHelp": "Plasman lataamaa versiota ei voi tarkistaa tässä. Jos vanha näkymä jää päivityksen jälkeen, tallenna työsi, kirjaudu ulos Plasmasta ja takaisin sisään. Pienoissovelluksen poistaminen ja lisääminen uudelleen voi käyttää välimuistissa olevaa vanhaa näkymää.",
+    "openDashboard": "Avaa LLM Usage Dashboard",
+    "dashboardMissing": "Asenna ja avaa LLM Usage Dashboard kerran ja yritä uudelleen.",
+    "dashboardLaunchError": "LLM Usage Dashboardia ei voitu avata. Avaa sovellus suoraan ja yritä uudelleen."
   },
   "sync": {
     "title": "Private device sync",

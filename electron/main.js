@@ -16,6 +16,7 @@ const { createDesktopMobileAccess } = require("../lib/desktop-mobile-access");
 const { createDesktopWidget } = require("./desktop-widget");
 const { createMacMenuBar } = require("./mac-menu-bar");
 const { createPlasmaWidget } = require("./plasma-widget");
+const { PLASMA_DESKTOP_ID } = require("./plasma-launcher");
 const { configurePublishedUpdates, safeUpdateError } = require("./published-update-provider");
 
 let dashboardServer = null;
@@ -109,6 +110,8 @@ const CLAUDE_APP_CACHE_DIR = path.join(
 );
 const ZSTD_FRAME_MAGIC = Buffer.from([0x28, 0xb5, 0x2f, 0xfd]);
 const execFileAsync = promisify(execFile);
+// Stable identity lets Plasma activate this app's existing Wayland main window.
+if (process.platform === "linux") app.setDesktopName(`${PLASMA_DESKTOP_ID}.desktop`);
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!hasSingleInstanceLock) {
@@ -367,6 +370,7 @@ function createWindow(port) {
 
 function showDashboardWindow(port) {
   if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
   } else {

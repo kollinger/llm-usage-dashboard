@@ -1441,7 +1441,10 @@
     "offline": "Aplikace není dostupná. Spusťte desktopovou aplikaci; předchozí hodnoty jsou zastaralé.",
     "bounded": "Omezeno na {count}; použijte oblíbené nebo filtr poskytovatele.",
     "current": "Balíček KDE je aktuální",
-    "reloadHelp": "Verzi načtenou v Plasma zde nelze ověřit. Pokud po aktualizaci zůstane staré zobrazení, uložte práci, odhlaste se z Plasma a znovu se přihlaste. Odebrání a opětovné přidání widgetu může použít staré zobrazení z mezipaměti."
+    "reloadHelp": "Verzi načtenou v Plasma zde nelze ověřit. Pokud po aktualizaci zůstane staré zobrazení, uložte práci, odhlaste se z Plasma a znovu se přihlaste. Odebrání a opětovné přidání widgetu může použít staré zobrazení z mezipaměti.",
+    "openDashboard": "Otevřít LLM Usage Dashboard",
+    "dashboardMissing": "Nainstalujte a jednou otevřete LLM Usage Dashboard a zkuste to znovu.",
+    "dashboardLaunchError": "LLM Usage Dashboard se nepodařilo otevřít. Otevřete aplikaci přímo a zkuste to znovu."
   },
   "sync": {
     "title": "Private device sync",

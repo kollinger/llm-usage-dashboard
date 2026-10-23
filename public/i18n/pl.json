@@ -1441,7 +1441,10 @@
     "offline": "Aplikacja niedostępna. Uruchom aplikację komputerową; poprzednie odczyty są nieaktualne.",
     "bounded": "Limit {count}; użyj ulubionych lub filtra dostawcy.",
     "current": "Pakiet KDE jest aktualny",
-    "reloadHelp": "Nie można tutaj sprawdzić wersji załadowanej przez Plasmę. Jeśli po aktualizacji pozostaje stary widok, zapisz pracę, wyloguj się z Plasmy i zaloguj ponownie. Usunięcie i ponowne dodanie widżetu może użyć starego widoku z pamięci podręcznej."
+    "reloadHelp": "Nie można tutaj sprawdzić wersji załadowanej przez Plasmę. Jeśli po aktualizacji pozostaje stary widok, zapisz pracę, wyloguj się z Plasmy i zaloguj ponownie. Usunięcie i ponowne dodanie widżetu może użyć starego widoku z pamięci podręcznej.",
+    "openDashboard": "Otwórz LLM Usage Dashboard",
+    "dashboardMissing": "Zainstaluj i otwórz LLM Usage Dashboard jeden raz, a następnie spróbuj ponownie.",
+    "dashboardLaunchError": "Nie można otworzyć LLM Usage Dashboard. Otwórz aplikację bezpośrednio i spróbuj ponownie."
   },
   "sync": {
     "title": "Private device sync",

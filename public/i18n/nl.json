@@ -1441,7 +1441,10 @@
     "offline": "App niet beschikbaar. Start de desktopapp; eerdere metingen zijn verouderd.",
     "bounded": "Beperkt tot {count}; gebruik favorieten of een providerfilter.",
     "current": "KDE-pakket is bijgewerkt",
-    "reloadHelp": "De door Plasma geladen versie kan hier niet worden gecontroleerd. Blijft na de update de oude weergave staan, sla je werk dan op, meld je af bij Plasma en weer aan. Verwijderen en opnieuw toevoegen kan de oude weergave uit de cache hergebruiken."
+    "reloadHelp": "De door Plasma geladen versie kan hier niet worden gecontroleerd. Blijft na de update de oude weergave staan, sla je werk dan op, meld je af bij Plasma en weer aan. Verwijderen en opnieuw toevoegen kan de oude weergave uit de cache hergebruiken.",
+    "openDashboard": "LLM Usage Dashboard openen",
+    "dashboardMissing": "Installeer en open LLM Usage Dashboard eenmaal en probeer het opnieuw.",
+    "dashboardLaunchError": "LLM Usage Dashboard kon niet worden geopend. Open de app rechtstreeks en probeer het opnieuw."
   },
   "sync": {
     "title": "Private device sync",

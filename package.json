@@ -33,7 +33,7 @@
     "test:desktop-widget:native": "node test/run-desktop-widget-native.mjs",
     "test:desktop-widget:ci": "node test/run-desktop-widget-ci.mjs",
     "plasma:build": "node scripts/build-plasmoid.mjs",
-    "test:plasma": "node test/plasma-widget.test.mjs && node test/plasma-package.test.mjs",
+    "test:plasma": "node test/plasma-widget.test.mjs && node test/plasma-package.test.mjs && node test/plasma-launcher.test.mjs",
     "test:plasma:native": "npm run plasma:build && node test/run-plasma-native.mjs",
     "test:updates": "node test/published-updates.test.mjs",
     "test:updates:native": "node test/run-published-updates-native.mjs",

@@ -21,11 +21,12 @@ MODE = sys.argv[1] if len(sys.argv) > 1 else "x11"
 PANEL = "--panel" in sys.argv
 QUOTA_LABELS = "--quota-labels" in sys.argv
 GPT_LIFECYCLE = "--gpt-lifecycle" in sys.argv
+DASHBOARD_LAUNCH = "--dashboard-launch" in sys.argv
 UPGRADE = os.environ.get("PLASMA_UPGRADE_ARCHIVE")
 LIVE_UPGRADE = "--live-upgrade" in sys.argv
 assert not UPGRADE or PANEL, "Use --panel with PLASMA_UPGRADE_ARCHIVE"
 assert not LIVE_UPGRADE or UPGRADE, "Use PLASMA_UPGRADE_ARCHIVE with --live-upgrade"
-EVIDENCE = Path(os.environ.get("PLASMA_QA_EVIDENCE", ROOT / ".cache" / ("kol-664" if GPT_LIFECYCLE else "quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)))
+EVIDENCE = Path(os.environ.get("PLASMA_QA_EVIDENCE", ROOT / ".cache" / ("kol-666" if DASHBOARD_LAUNCH else "kol-664" if GPT_LIFECYCLE else "quota-labels" if QUOTA_LABELS else "kol-654" if PANEL else "kol-652") / ("plasma-" + MODE)))
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 profile = Path(tempfile.mkdtemp(prefix="llm-plasma-qa-"))
 env = os.environ.copy()
@@ -36,6 +37,7 @@ env.update({"XDG_RUNTIME_DIR": str(profile), "XDG_CONFIG_HOME": str(profile / "c
             "XDG_SESSION_TYPE": MODE, "QT_QPA_PLATFORM": "xcb"})
 children = []
 logs = []
+dashboard_pids = set()
 env.pop("QT_QUICK_BACKEND", None)
 
 
@@ -65,6 +67,9 @@ def wait_for(fn, label, timeout=25):
         except (subprocess.SubprocessError, OSError):
             pass
         time.sleep(0.25)
+    if DASHBOARD_LAUNCH and (profile / "state.json").exists():
+        shutil.copyfile(profile / "state.json", EVIDENCE / "dashboard-failed-state.json")
+        capture("dashboard-failed")
     raise RuntimeError("Timed out: " + label)
 
 
@@ -127,6 +132,122 @@ def update(fixture, **values):
     fixture.stdin.write(json.dumps(values) + "\n")
     fixture.stdin.flush()
     assert fixture.stdout.readline().strip() == "fixture-updated"
+
+
+def exercise_dashboard(fixture):
+    # Native Plasma menus + real Electron lock/windows, but no real accounts,
+    # collectors, startup settings, network access or changes to the user session.
+    update(fixture, language="de", count=5)
+    time.sleep(3)
+    evaluate("panels().forEach(p=>p.remove());")
+    executable = profile / "Installed Dashboard ' $literal.AppImage"
+    electron = run(["node", "-p", "require('electron')"]).splitlines()[-1]
+    args = [electron, str(ROOT / "test/fixtures/plasma-dashboard.cjs"), "--ozone-platform=" + ("wayland" if MODE == "wayland" else "x11")]
+    if os.getuid() == 0:
+        args.append("--no-sandbox")
+    executable.write_text("#!/usr/bin/python3\nimport os,sys\nos.environ.update(" + repr({
+        "PLASMA_DASHBOARD_PROFILE": str(profile), "PLASMA_DASHBOARD_EXECUTABLE": str(executable)}) +
+        ")\nos.environ.pop('ELECTRON_RUN_AS_NODE',None)\nos.execv(" + repr(electron) + "," + repr(args) + "+sys.argv[1:])\n")
+    executable.chmod(0o700)
+
+    def state():
+        try:
+            value = json.loads((profile / "state.json").read_text())
+            dashboard_pids.add(value["pid"])
+            return value
+        except (OSError, ValueError):
+            return {}
+
+    def running(pid):
+        try:
+            return Path("/proc", str(pid), "stat").read_text().split(")", 1)[1].strip().split()[0] != "Z"
+        except OSError:
+            return False
+
+    def control(action):
+        (profile / "command.tmp").write_text(action)
+        (profile / "command.tmp").replace(profile / "command")
+
+    def pointer(x, y):
+        if MODE == "wayland":
+            host = run(["xdotool", "search", "--onlyvisible", "--pid", str(compositor.pid)]).splitlines()[-1]
+            run(["xdotool", "windowfocus", host])
+            run(["xdotool", "mousemove", "--window", host, str(round(x)), str(round(y))])
+        else:
+            run(["xdotool", "mousemove", str(round(x)), str(round(y))])
+
+    results = []
+    for variant in ["desktop", "bottom", "right"]:
+        if variant == "desktop":
+            widget = int(evaluate("print(desktops()[0].addWidget('" + PLUGIN + "').id);"))
+            target = "desktops()[0].widgetById(" + str(widget) + ")"
+        else:
+            info = json.loads(evaluate("var p=new Panel; p.location='" + variant + "'; p.height=48; p.floating=false;p.hiding='none';p.alignment='left';p.offset=0;p.length=" +
+                ("1600" if variant == "bottom" else "1100") + ";var w=p.addWidget('" + PLUGIN + "');print(JSON.stringify({panel:p.id,widget:w.id}));"))
+            target = "panelById(" + str(info["panel"]) + ").widgetById(" + str(info["widget"]) + ")"
+        time.sleep(3)
+        rect = json.loads(evaluate("print(JSON.stringify(" + target + ".geometry));"))
+        if variant == "desktop":
+            point = (rect["x"] + 30, rect["y"] + 20)
+        elif variant == "bottom":
+            point = (rect["x"] + rect["width"] / 2, 1100 - 24)
+        else:
+            point = (1600 - 24, rect["y"] + rect["height"] / 2)
+        print("Dashboard menu variant:", variant, rect, point, flush=True)
+
+        def activate_menu(capture_menu=False):
+            # The launcher deliberately suppresses duplicate clicks while it
+            # observes immediate child startup failures (up to 750 ms).
+            time.sleep(1)
+            pointer(*point)
+            run(["xdotool", "click", "3"])
+            time.sleep(.35)
+            if capture_menu:
+                capture("dashboard-menu-" + variant)
+            # The contextual action precedes Plasma's standard widget entries.
+            run(["xdotool", "key", "Home", "Return"])
+
+        if variant == "desktop":
+            activate_menu(True)
+            time.sleep(1.5)
+            capture("dashboard-missing-installation")
+            start([str(executable), "--background"], "dashboard-activation")
+            initial = wait_for(lambda: state() if state().get("pid") else None, "background app lock")
+            assert initial["id"] is None and not initial["visible"]
+        else:
+            control("hide")
+            wait_for(lambda: not state().get("visible"), "hidden background app")
+
+        previous = state()
+        activate_menu(variant != "desktop")
+        opened = wait_for(lambda: state() if state().get("visible") and state().get("focused") else None, "native context action opens/focuses dashboard")
+        assert opened["pid"] == previous["pid"], "running app instance must be reused"
+        for cycle in range(2):
+            old = state()
+            control("minimize")
+            wait_for(lambda: state().get("minimized"), "native minimized window")
+            activate_menu()
+            restored = wait_for(lambda: state() if state().get("visible") and state().get("focused") and not state().get("minimized") else None, "restore minimized main window")
+            assert (restored["pid"], restored["id"]) == (old["pid"], old["id"])
+            control("close")
+            wait_for(lambda: state().get("id") is None, "closed main window with live app")
+            activate_menu()
+            reopened = wait_for(lambda: state() if state().get("visible") and state().get("focused") else None, "recreate closed main window")
+            assert reopened["pid"] == old["pid"] and reopened["id"] != old["id"]
+        old_pid = state()["pid"]
+        control("quit")
+        wait_for(lambda: not running(old_pid), "terminated installed app")
+        activate_menu()
+        launched = wait_for(lambda: state() if state().get("pid") != old_pid and state().get("visible") and state().get("focused") else None, "launch installed app after exit")
+        results.append({"variant": variant, "backgroundReused": True, "minimizeCloseCycles": 2, "coldStart": launched["pid"] != old_pid})
+        evaluate(target + ".remove();")
+        if variant != "desktop":
+            evaluate("panelById(" + str(info["panel"]) + ").remove();")
+    pid = state()["pid"]
+    control("quit")
+    wait_for(lambda: not running(pid), "QA app cleanup")
+    (EVIDENCE / "dashboard-activation-results.json").write_text(json.dumps({"mode": MODE, "synthetic": True, "productionActivationHandlers": True, "variants": results}, indent=2))
+    print("Plasma dashboard activation: Desktop/horizontal/vertical native menus, background reuse, two minimize/close cycles and cold start passed.", flush=True)
 
 
 def exercise_gpt(shell, fixture):
@@ -507,6 +628,8 @@ try:
     wait_for(lambda: evaluate("print(desktops().length)") != "0", "private Plasma desktop")
     assert evaluate("print(knownWidgetTypes.indexOf('" + PLUGIN + "') >= 0)") == "true", "Add Widgets registry must discover the installed applet"
     (EVIDENCE / "dbus-api.txt").write_text(run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell"]))
+    if DASHBOARD_LAUNCH:
+        exercise_dashboard(fixture)
     if GPT_LIFECYCLE:
         exercise_gpt(shell, fixture)
     if PANEL:
@@ -516,7 +639,7 @@ try:
             capture("claude-scopes-desktop-german")
             evaluate("desktops()[0].widgetById(" + str(widget_id) + ").remove();")
         exercise_panels(shell, fixture)
-    for cycle in range(0 if PANEL or GPT_LIFECYCLE else 2):
+    for cycle in range(0 if PANEL or GPT_LIFECYCLE or DASHBOARD_LAUNCH else 2):
         result = evaluate("var d=desktops()[0]; var w=d.addWidget('" + PLUGIN + "'); print(w.id);")
         widget_id = int(result)
         time.sleep(3)
@@ -528,7 +651,7 @@ try:
         capture("desktop-resized-" + str(cycle))
         evaluate("var w=desktops()[0].widgetById(" + str(widget_id) + "); w.remove();")
         assert evaluate("print(desktops()[0].widgets().filter(w=>w.type==='" + PLUGIN + "').length)") == "0"
-    if not PANEL and not GPT_LIFECYCLE:
+    if not PANEL and not GPT_LIFECYCLE and not DASHBOARD_LAUNCH:
         # Leave one normal widget for a final screenshot and verify load logs.
         evaluate("desktops()[0].addWidget('" + PLUGIN + "');")
         time.sleep(3)
@@ -539,9 +662,16 @@ try:
     log = (EVIDENCE / "plasmashell.log").read_text()
     for marker in ["Type AccountView unavailable", "Cannot assign", "ReferenceError", "SyntaxError"]:
         assert marker not in log, "Native QML load error: " + marker
-    if not PANEL and not GPT_LIFECYCLE:
+    if not PANEL and not GPT_LIFECYCLE and not DASHBOARD_LAUNCH:
         print("Plasma " + MODE + ": per-user install/update/discovery; two add/resize/remove cycles; re-add passed. Synthetic evidence: " + str(EVIDENCE.relative_to(ROOT)))
 finally:
+    for pid in dashboard_pids:
+        try:
+            context = Path("/proc", str(pid), "environ").read_bytes().split(b"\0")
+            if ("PLASMA_DASHBOARD_PROFILE=" + str(profile)).encode() in context:
+                os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass
     for child in reversed(children):
         if child.poll() is None:
             child.terminate()

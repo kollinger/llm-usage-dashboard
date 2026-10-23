@@ -1441,7 +1441,10 @@
     "offline": "App unavailable. Start the desktop app; previous readings are stale.",
     "bounded": "Limited to {count}; use favorites or a provider filter.",
     "current": "KDE package up to date",
-    "reloadHelp": "Plasma's loaded version cannot be checked here. If the old view remains after updating, save your work, sign out of Plasma and sign back in. Removing and re-adding the widget can reuse the cached old view."
+    "reloadHelp": "Plasma's loaded version cannot be checked here. If the old view remains after updating, save your work, sign out of Plasma and sign back in. Removing and re-adding the widget can reuse the cached old view.",
+    "openDashboard": "Open LLM Usage Dashboard",
+    "dashboardMissing": "Install and open LLM Usage Dashboard once, then try again.",
+    "dashboardLaunchError": "Could not open LLM Usage Dashboard. Open the app directly and try again."
   },
   "sync": {
     "title": "Private device sync",
