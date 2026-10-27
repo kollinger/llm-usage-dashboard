@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const require = createRequire(import.meta.url);
-const { assessQuotaPace, mergeQuotaPaceSamples } = require("../lib/quota-pace.js");
+const { assessQuotaPace, gptAccountQuotaPaceEvents, mergeQuotaPaceSamples } = require("../lib/quota-pace.js");
 const now = Date.parse("2026-10-01T12:00:00.000Z");
 const reset = new Date(now + 10 * 60 * 60_000).toISOString();
 
@@ -128,4 +128,73 @@ for (const unavailableStatus of ["flat", "stale", "changed", "collecting"]) {
 }
 
 assert.equal(mergeQuotaPaceSamples([], [event(20, 0, reset, 300)], now).length, 0);
+
+// Canonical account cards must retain the pace controls without borrowing
+// the old provider-wide history, even when that history has a projection.
+const accountCard = { id: "gpt-0123456789abcdef", accountId: "gpt-0123456789abcdef", providerId: "codex" };
+ui.accountCard = accountCard;
+const accountCollecting = vm.runInContext('renderQuotaPaceCard(accountCard, { key: "weekly", label: "Woche", usedPercent: 23 })', ui);
+assert.match(accountCollecting, /Letztes Tempo/);
+assert.match(accountCollecting, /Für diesen Zeitraum fehlen noch Messpunkte/);
+assert.doesNotMatch(accountCollecting, /Geschätzte Zeit bis zum Limit:/);
+assert.match(accountCollecting, /data-quota-pace-card="gpt-0123456789abcdef:weekly"/);
+
+const otherAccount = "gpt-fedcba9876543210";
+function accountSnapshot(id, usedPercent, at = now) {
+  return { id, identityQuality: "account_id", active: true, sources: [{ id: "codex", active: true, quotaStatus: "ready",
+    limitsUpdatedAt: new Date(at).toISOString(), limits: { rows: [{ key: "weekly", usedPercent, resetsAt: reset }] } }] };
+}
+const beforeAt = now - 120 * 60_000;
+const accountEvents = [
+  ...gptAccountQuotaPaceEvents({ accounts: [accountSnapshot(accountCard.id, 30, beforeAt), accountSnapshot(otherAccount, 9, beforeAt)] }, beforeAt),
+  ...gptAccountQuotaPaceEvents({ accounts: [accountSnapshot(accountCard.id, 50), accountSnapshot(otherAccount, 10)] }, now)
+];
+const accountSamples = mergeQuotaPaceSamples([], [...accountEvents, event(80, 120), event(81, 0)], now);
+const accountPace = assessQuotaPace(accountSamples, now);
+assert.equal(accountPace[accountCard.id].weekly[120].status, "risk");
+assert.equal(accountPace[accountCard.id].weekly[120].deltaPercent, 20);
+assert.equal(accountPace[otherAccount].weekly[120].status, "safe");
+assert.equal(accountPace[otherAccount].weekly[120].deltaPercent, 1);
+assert.equal(accountPace.codex.weekly[120].deltaPercent, 1, "legacy source history remains separate");
+assert.equal(mergeQuotaPaceSamples(accountSamples, accountEvents, now).length, accountSamples.length, "repeated scans cannot duplicate measurements");
+assert.deepEqual(assessQuotaPace(JSON.parse(JSON.stringify(accountSamples)), now), accountPace, "persisted samples retain account separation");
+
+ui.state.usage.quotaPace = accountPace;
+const accountMeasured = vm.runInContext('renderQuotaPaceCard(accountCard, { key: "weekly", label: "Woche", usedPercent: 50 })', ui);
+assert.match(accountMeasured, /\+20 Prozentpunkte in 2 Std\./);
+assert.match(accountMeasured, /Geschätzte Zeit bis zum Limit:/);
+const accountStale = vm.runInContext('renderQuotaPaceCard(accountCard, { key: "weekly", label: "Woche", usedPercent: 50, status: "stale" })', ui);
+assert.match(accountStale, /Der letzte Quotenwert ist zu alt/);
+assert.doesNotMatch(accountStale, /Geschätzte Zeit bis zum Limit:/);
+const accountUnavailable = vm.runInContext('renderQuotaPaceCard(accountCard, { key: "weekly", label: "Woche", status: "unavailable" })', ui);
+assert.match(accountUnavailable, /Für diesen Zeitraum fehlen noch Messpunkte/);
+assert.doesNotMatch(accountUnavailable, /Geschätzte Zeit bis zum Limit:/);
+ui.state.quotaPaceWindowMinutesByCard[`${accountCard.id}:weekly`] = 30;
+const shortAccountWindow = vm.runInContext('renderQuotaPaceCard(accountCard, { key: "weekly", label: "Woche", usedPercent: 50 })', ui);
+assert.match(shortAccountWindow, /aria-pressed="true">30 min<\/button>/);
+assert.match(shortAccountWindow, /Für diesen Zeitraum fehlen noch Messpunkte/);
+
+for (const invalid of [
+  { ...accountSnapshot(accountCard.id, 50), active: false },
+  { ...accountSnapshot(accountCard.id, 50), identityQuality: "email" },
+  accountSnapshot("invalid-id", 50),
+  accountSnapshot(accountCard.id, 50, now - 16 * 60_000),
+  accountSnapshot(accountCard.id, 50, now + 2 * 60_000)
+]) assert.deepEqual(gptAccountQuotaPaceEvents({ accounts: [invalid] }, now), []);
+for (const sourcePatch of [{ active: false }, { quotaStatus: "unavailable" }, { limitsUpdatedAt: null }]) {
+  const invalid = accountSnapshot(accountCard.id, 50);
+  Object.assign(invalid.sources[0], sourcePatch);
+  assert.deepEqual(gptAccountQuotaPaceEvents({ accounts: [invalid] }, now), []);
+}
+for (const rowPatch of [{ usedPercent: null }, { updatedAt: null }, { resetsAt: null }, { resetsAt: new Date(now - 1).toISOString() }]) {
+  const invalid = accountSnapshot(accountCard.id, 50);
+  Object.assign(invalid.sources[0].limits.rows[0], rowPatch);
+  assert.deepEqual(gptAccountQuotaPaceEvents({ accounts: [invalid] }, now), []);
+}
+const remainingOnly = accountSnapshot(accountCard.id, null);
+remainingOnly.sources[0].limits.rows[0].remainingPercent = 100;
+assert.equal(gptAccountQuotaPaceEvents({ accounts: [remainingOnly] }, now)[0].usedPercent, 0, "measured zero stays available");
+const mixedSources = accountSnapshot(accountCard.id, 50);
+mixedSources.sources.unshift({ ...accountSnapshot(accountCard.id, 70, now - 60_000).sources[0], id: "openCode" });
+assert.equal(gptAccountQuotaPaceEvents({ accounts: [mixedSources] }, now)[0].usedPercent, 50, "use the same freshest account row as the overview");
 console.log("quota pace scenarios passed");

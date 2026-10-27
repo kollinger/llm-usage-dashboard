@@ -6972,13 +6972,14 @@ function renderLimitBars(provider) {
 }
 
 function renderQuotaPaceCard(provider, row) {
-  if (!isWeeklyLimit(row) || !["codex", "claudeCode"].includes(provider.id)) return "";
+  if (!isWeeklyLimit(row) || !["codex", "claudeCode"].includes(provider.providerId || provider.id)) return "";
   const rawKey = String(row.key || "").replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase();
   const key = rawKey.startsWith("fable") ? rawKey : "weekly";
   const card = `${provider.id}:${key}`;
   const minutes = state.quotaPaceWindowMinutesByCard[card] || 120;
   const windows = [[30, "30 min"], [60, "1 h"], [120, "2 h"], [300, "5 h"]];
-  const pace = state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
+  const pace = row.status === "stale" ? { status: "stale" } : row.status === "unavailable" ? null
+    : state.usage?.quotaPace?.[provider.id]?.[key]?.[minutes];
   const label = row.label;
   let result = t("limits.recentPace.collecting");
   let timeToLimit = "";

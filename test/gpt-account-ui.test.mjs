@@ -166,7 +166,8 @@ assert.equal(work.todayTokens, undefined, "provider-wide consumption cannot be a
 assert.equal(overview.active, 2);
 assert(overview.html.includes("Personal &lt;fixture&gt;") && overview.html.includes("Work fixture"));
 assert(overview.html.includes("provider-mark-codex"), "canonical IDs keep the Codex brand");
-assert(!overview.html.includes("quota-pace-card"), "provider-wide pace cannot be assigned to an account");
+assert(overview.html.includes("quota-pace-card"), "canonical account cards retain recent-pace controls");
+assert(overview.html.includes(english.limits.recentPace.collecting), "missing account history stays explicitly unavailable");
 assert(overview.html.includes(english.liveMetrics.unavailable), "missing window value stays unavailable");
 assert(overview.ordered.indexOf(overview.accountIds[0]) > overview.ordered.indexOf("ollama"));
 assert(overview.ordered.indexOf(overview.accountIds[1]) < overview.ordered.indexOf("copilot"));

@@ -43,7 +43,7 @@ const {
   readSourceSettings
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath, normalizeUsageEvent, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
-const { assessQuotaPace, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
+const { assessQuotaPace, gptAccountQuotaPaceEvents, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildAccountHistories } = require("./lib/codex-reset-history");
 const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
 const { SyncLedger } = require("./lib/sync-ledger");
@@ -1638,7 +1638,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
       accountBilling
     );
     const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
-    const quotaPace = await updateQuotaPace(quotaEvents).catch(() => ({}));
+    const quotaPace = await updateQuotaPace(quotaEvents, gptAccounts).catch(() => ({}));
     const providers = [codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama];
     const chatCatalog = await chatMetadataReader.read({ codexHomes: uniquePaths([
       ...CODEX_HOMES, ...sourcePathEntries(localSources.codex, ["sessions", "archived_sessions"])
@@ -11218,7 +11218,7 @@ async function recordProviderQuotaSnapshots(providers) {
   return events;
 }
 
-async function updateQuotaPace(events) {
+async function updateQuotaPace(events, gptAccounts) {
   const nowMs = Date.now();
   let previous;
   try {
@@ -11228,7 +11228,7 @@ async function updateQuotaPace(events) {
     if (error.code !== "ENOENT") throw error;
     previous = await readQuotaPaceTail(QUOTA_EVENTS_FILE, nowMs);
   }
-  const samples = mergeQuotaPaceSamples(previous, events, nowMs);
+  const samples = mergeQuotaPaceSamples(previous, [...events, ...gptAccountQuotaPaceEvents(gptAccounts, nowMs)], nowMs);
   if (JSON.stringify(samples) !== JSON.stringify(previous)) {
     await fsp.mkdir(DATA_DIR, { recursive: true });
     const tempFile = `${QUOTA_PACE_SAMPLES_FILE}.${process.pid}.tmp`;
