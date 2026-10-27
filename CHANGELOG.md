@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.13.1-preview.2 - 2026-10-27
+
+- Read recent quota history and record verified account measurements before the heavier token-history refresh completes. Keep the tempo card available with restored consumption data, and age out stale measurements while that refresh is pending.
+- Follow-up preview for the same account-pace regression fix; no new feature or incompatible data change.
+
+## 1.13.1-preview.1 - 2026-10-27
+
+- Restore “Recent pace” on Codex account cards, including the independent 30-minute, one-hour, two-hour and five-hour selectors.
+- Keep each verified account’s measured quota history separate. Existing provider-wide samples are preserved but are not assigned to an account; the first estimate needs at least five minutes of fresh account measurements.
+- Suppress estimates from saved, unavailable or unverified account quotas.
+- Patch increment for a regression introduced by the account-card overview; no new feature or incompatible data change.
+
 ## 1.13.0-preview.5 - 2026-10-23
 
 ### Added

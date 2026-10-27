@@ -88,6 +88,18 @@ assert.equal(restored.local, consumption.local, "account metadata cannot change 
 assert.equal(consumption.gptAccounts.accounts.length, 0, "the consumption cache remains free of account data");
 readerContext.gptAccountsCache.value = null;
 assert.equal(await readerContext.readUsageDashboard({ staleWhileRefresh: true }), consumption, "no current registry cannot invent account metadata");
+const paceNow = Date.now();
+readerContext.usageCache.quotaPaceSamples = [30, 50].map((usedPercent, index) => ({
+  provider: "gpt-0123456789abcdef", windowKey: "weekly", usedPercent,
+  capturedAt: new Date(paceNow - (1 - index) * 120 * 60_000).toISOString(),
+  resetsAt: new Date(paceNow + 10 * 60 * 60_000).toISOString()
+}));
+readerContext.assessQuotaPace = createRequire(import.meta.url)("../lib/quota-pace").assessQuotaPace;
+const withEarlyPace = await readerContext.readUsageDashboard({ staleWhileRefresh: true });
+assert.equal(withEarlyPace.quotaPace["gpt-0123456789abcdef"].weekly[120].status, "risk", "early pace reaches the UI while consumption is still restored");
+assert.equal(consumption.quotaPace, undefined, "live pace does not contaminate the consumption-only cache");
+readerContext.usageCache.quotaPaceSamples.forEach(sample => { sample.capturedAt = new Date(Date.parse(sample.capturedAt) - 16 * 60_000).toISOString(); });
+assert.equal((await readerContext.readUsageDashboard({ staleWhileRefresh: true })).quotaPace["gpt-0123456789abcdef"].weekly[120].status, "stale", "cached pace ages out even while the consumption refresh is pending");
 console.log("GPT account cache: completed re-scan overlays restored consumption without copying limits or changing history.");
 
 const now = new Date().toISOString();
@@ -166,7 +178,8 @@ assert.equal(work.todayTokens, undefined, "provider-wide consumption cannot be a
 assert.equal(overview.active, 2);
 assert(overview.html.includes("Personal &lt;fixture&gt;") && overview.html.includes("Work fixture"));
 assert(overview.html.includes("provider-mark-codex"), "canonical IDs keep the Codex brand");
-assert(!overview.html.includes("quota-pace-card"), "provider-wide pace cannot be assigned to an account");
+assert(overview.html.includes("quota-pace-card"), "canonical account cards retain recent-pace controls");
+assert(overview.html.includes(english.limits.recentPace.collecting), "missing account history stays explicitly unavailable");
 assert(overview.html.includes(english.liveMetrics.unavailable), "missing window value stays unavailable");
 assert(overview.ordered.indexOf(overview.accountIds[0]) > overview.ordered.indexOf("ollama"));
 assert(overview.ordered.indexOf(overview.accountIds[1]) < overview.ordered.indexOf("copilot"));

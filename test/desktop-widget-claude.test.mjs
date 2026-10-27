@@ -113,6 +113,7 @@ assert.equal(received, localOnly);
 context.readBrowserConnections = serverFunction("readBrowserConnections", context);
 context.connectedAccountStore.refresh = async () => [];
 let collected = false;
+const paceCalls = [];
 const scan = {
   gptAccountsCache: { value: null },
   usageCache: { value: null }, USAGE_CACHE_MS: 1, usageViewCache: { context: async () => "synthetic", read: async () => null, write: async () => {} },
@@ -127,7 +128,7 @@ const scan = {
     return readSnapshots(inputs);
   },
   mergeProviderSubscription: (value) => value, applyConnectedAccountQuota: (value) => value,
-  recordProviderQuotaSnapshots: async () => [], updateQuotaPace: async () => ({}),
+  recordProviderQuotaSnapshots: async () => [], updateQuotaPace: async () => { paceCalls.push({ collected }); return {}; },
   chatMetadataReader: { read: async () => ({ sessions: {} }) }, uniquePaths: (values) => values, CODEX_HOMES: [],
   sourcePathEntries: () => [], deviceSync: { config: {}, snapshots: new Map() }, DAILY_HISTORY_DAYS: 180,
   usageAggregation: { aggregateLocal: async () => ({ local: {} }) }, buildLocalAggregate: () => ({}), stripProviderUsageEvents: (value) => value,
@@ -137,6 +138,8 @@ const scan = {
 for (const name of ["readCodexUsage", "readOpenCodeGptUsage", "readCopilotUsage", "readGeminiUsage", "readGlmUsage", "readOllamaUsage", "readOpenAiUsage", "readAnthropicUsage"])
   scan[name] = async () => ({});
 const dashboard = await serverFunction("readUsageDashboard", scan)();
+assert.equal(paceCalls[0].collected, false, "quota pace is ready before the heavier consumption collectors finish");
+assert.equal(paceCalls.at(-1).collected, true, "completed provider snapshots still refresh pace");
 assert.equal(dashboard.connectedAccounts.length, 1);
 assert.equal(project(dashboard).accounts[0].windows[0].remainingPercent, 0, "the production first scan includes local Claude in both data paths");
 collected = false;
