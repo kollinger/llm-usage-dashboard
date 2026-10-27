@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const require = createRequire(import.meta.url);
-const { assessQuotaPace, gptAccountQuotaPaceEvents, mergeQuotaPaceSamples } = require("../lib/quota-pace.js");
+const { assessQuotaPace, gptAccountQuotaPaceEvents, mergeQuotaPaceSamples, readCodexAccountQuotaPaceTail } = require("../lib/quota-pace.js");
 const now = Date.parse("2026-10-01T12:00:00.000Z");
 const reset = new Date(now + 10 * 60 * 60_000).toISOString();
 
@@ -197,4 +200,46 @@ assert.equal(gptAccountQuotaPaceEvents({ accounts: [remainingOnly] }, now)[0].us
 const mixedSources = accountSnapshot(accountCard.id, 50);
 mixedSources.sources.unshift({ ...accountSnapshot(accountCard.id, 70, now - 60_000).sources[0], id: "openCode" });
 assert.equal(gptAccountQuotaPaceEvents({ accounts: [mixedSources] }, now)[0].usedPercent, 50, "use the same freshest account row as the overview");
+// A new account-scoped cache must recover older exactly attributed live
+// measurements from the existing reset ledger, without relabelling legacy data.
+const historyDirectory = await mkdtemp(join(tmpdir(), "quota-pace-history-"));
+try {
+  const historyFile = join(historyDirectory, "reset-samples.jsonl");
+  const registry = { accounts: [
+    { id: accountCard.id, active: true, identityQuality: "account_id" },
+    { id: otherAccount, active: true, identityQuality: "account_id" },
+    { id: "gpt-1111111111111111", active: true, identityQuality: "email" },
+    { id: "gpt-2222222222222222", active: false, identityQuality: "account_id" }
+  ] };
+  const snapshot = (id, usedPercent, minutesAgo) => ({ kind: "sample", source: "live", accountRef: id,
+    accountKey: "synthetic-private-key", accountLabel: "Synthetic account", credits: { availableCount: 1 },
+    at: new Date(now - minutesAgo * 60_000).toISOString(),
+    window: { usedPercent, resetsAt: reset, windowMinutes: 10080 } });
+  const history = [
+    ...[[300, 10], [120, 20], [60, 25], [30, 28], [0, 30]].map(([minutes, used]) => snapshot(accountCard.id, used, minutes)),
+    snapshot(otherAccount, 50, 120), snapshot(otherAccount, 55, 0),
+    snapshot("gpt-1111111111111111", 99, 0), snapshot("gpt-2222222222222222", 99, 0),
+    { ...snapshot(accountCard.id, 99, 0), source: "quota_history" },
+    { ...snapshot(accountCard.id, 99, 0), accountRef: null },
+    { ...snapshot(accountCard.id, 99, 0), kind: "gap" },
+    snapshot(accountCard.id, null, 0), snapshot(accountCard.id, 1, 420), snapshot(accountCard.id, 99, -2),
+    { ...snapshot(accountCard.id, 99, 0), window: { usedPercent: 99, resetsAt: reset, windowMinutes: 300 } }
+  ];
+  const originalHistory = history.map(record => JSON.stringify(record)).join("\n") + "\n{partial";
+  await writeFile(historyFile, originalHistory);
+  const imported = await readCodexAccountQuotaPaceTail(historyFile, registry, now);
+  assert.equal(imported.length, 7, "only recent live samples with verified active account references are reusable");
+  const recovered = assessQuotaPace(mergeQuotaPaceSamples(imported, [event(80, 300), event(90, 0)], now), now);
+  for (const [minutes, delta] of [[30, 2], [60, 5], [120, 10], [300, 20]]) {
+    assert.equal(recovered[accountCard.id].weekly[minutes].observedMinutes, minutes);
+    assert.equal(recovered[accountCard.id].weekly[minutes].deltaPercent, delta);
+  }
+  assert.equal(recovered[otherAccount].weekly[120].deltaPercent, 5, "accounts retain separate historical measurements");
+  assert.equal(recovered.codex.weekly[300].deltaPercent, 10, "unscoped provider samples are never assigned to an account");
+  assert.equal(await readFile(historyFile, "utf8"), originalHistory, "recovery does not alter the source ledger");
+  assert.doesNotMatch(JSON.stringify(imported), /accountKey|accountLabel|credits/, "only quota measurement fields leave the reader");
+  assert.deepEqual(await readCodexAccountQuotaPaceTail(join(historyDirectory, "missing.jsonl"), registry, now), []);
+  assert.deepEqual(await readCodexAccountQuotaPaceTail(historyFile, { accounts: [] }, now), []);
+} finally { await rm(historyDirectory, { recursive: true, force: true }); }
+
 console.log("quota pace scenarios passed");
