@@ -1574,6 +1574,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
         scan: { status: "error", checkedAt: new Date().toISOString(), sources: previous.scan?.sources || {} }
       });
     });
+    await updateQuotaPace([], gptAccounts).catch(() => {});
     const [
       subscriptions,
       accountBilling,
@@ -1714,7 +1715,9 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
   // Consumption restored from disk intentionally contains no account quotas.
   // A completed account re-scan must still reach dashboard/widget consumers
   // immediately while the heavier consumption refresh is in progress.
-  const withAccounts = gptAccountsCache.value ? { ...usage, gptAccounts: gptAccountsCache.value } : usage;
+  const withPace = usageCache.quotaPaceSamples
+    ? { ...usage, quotaPace: assessQuotaPace(usageCache.quotaPaceSamples, Date.now()) } : usage;
+  const withAccounts = gptAccountsCache.value ? { ...withPace, gptAccounts: gptAccountsCache.value } : withPace;
   return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(withAccounts, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
@@ -11235,6 +11238,7 @@ async function updateQuotaPace(events, gptAccounts) {
     await fsp.writeFile(tempFile, JSON.stringify(samples), { mode: 0o600 });
     await fsp.rename(tempFile, QUOTA_PACE_SAMPLES_FILE);
   }
+  usageCache.quotaPaceSamples = samples;
   return assessQuotaPace(samples, nowMs);
 }
 
