@@ -43,7 +43,7 @@ const {
   readSourceSettings
 } = require("./lib/source-settings");
 const { aggregateUsageEvents, hashEvidencePath, normalizeUsageEvent, normalizeAttribution, recordedAccountAttribution } = require("./lib/usage-events");
-const { assessQuotaPace, gptAccountQuotaPaceEvents, mergeQuotaPaceSamples, readQuotaPaceTail } = require("./lib/quota-pace");
+const { assessQuotaPace, gptAccountQuotaPaceEvents, mergeQuotaPaceSamples, readCodexAccountQuotaPaceTail, readQuotaPaceTail } = require("./lib/quota-pace");
 const { normalizeSnapshot: normalizeResetSnapshot, historicalSamples: codexHistoricalSamples, buildAccountHistories } = require("./lib/codex-reset-history");
 const { notificationSettings, codexNotificationSample, createQuotaNotifications } = require("./lib/quota-notifications");
 const { SyncLedger } = require("./lib/sync-ledger");
@@ -11231,7 +11231,11 @@ async function updateQuotaPace(events, gptAccounts) {
     if (error.code !== "ENOENT") throw error;
     previous = await readQuotaPaceTail(QUOTA_EVENTS_FILE, nowMs);
   }
-  const samples = mergeQuotaPaceSamples(previous, [...events, ...gptAccountQuotaPaceEvents(gptAccounts, nowMs)], nowMs);
+  const historyScope = (gptAccounts?.accounts || []).filter((account) => account.active && account.identityQuality === "account_id")
+    .map((account) => account.id).sort().join(",");
+  const historical = usageCache.quotaPaceHistoryScope === historyScope ? []
+    : await readCodexAccountQuotaPaceTail(CODEX_RESET_SNAPSHOTS_FILE, gptAccounts, nowMs);
+  const samples = mergeQuotaPaceSamples([...previous, ...historical], [...events, ...gptAccountQuotaPaceEvents(gptAccounts, nowMs)], nowMs);
   if (JSON.stringify(samples) !== JSON.stringify(previous)) {
     await fsp.mkdir(DATA_DIR, { recursive: true });
     const tempFile = `${QUOTA_PACE_SAMPLES_FILE}.${process.pid}.tmp`;
@@ -11239,6 +11243,7 @@ async function updateQuotaPace(events, gptAccounts) {
     await fsp.rename(tempFile, QUOTA_PACE_SAMPLES_FILE);
   }
   usageCache.quotaPaceSamples = samples;
+  usageCache.quotaPaceHistoryScope = historyScope;
   return assessQuotaPace(samples, nowMs);
 }
 
