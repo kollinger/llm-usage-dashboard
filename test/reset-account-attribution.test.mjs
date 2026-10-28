@@ -82,9 +82,10 @@ try {
   assert.match(html, /Zuletzt gemessen/);
   const home = path.join(dir, 'additional-profile'); await fs.mkdir(home);
   await fs.writeFile(path.join(home, 'auth.json'), JSON.stringify({ tokens: { account_id: 'profile-only' } }));
+  const profileReset = new Date(Date.now() + 7 * 86400000).toISOString();
   const scanned = await _test.readCodexGptAccountObservation({ codexHomes: [home], clientFactory: async () => ({
     client: { request: async method => method === 'account/read' ? { account: { type: 'chatgpt', planType: 'pro' } }
-      : method === 'account/usage/read' ? null : raw('profile-only', 12, nextReset) }
+      : method === 'account/usage/read' ? null : raw('profile-only', 12, profileReset) }
   }) });
   assert.equal(scanned.quotaAvailable, 1, 'a signed-in profile without email still has an account identity');
   const profileHistory = await _test.readCodexResetHistory();

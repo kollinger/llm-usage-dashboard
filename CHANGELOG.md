@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.13.1-preview.3 - 2026-10-28
+
+### Fixed
+
+- Restore “Recent pace” on verified Codex account cards with independent 30-minute, one-hour, two-hour and five-hour views.
+- Reuse existing recorded quota measurements when they are directly attributed to the same verified account. Keep provider-wide and unassigned history separate.
+- Keep recent pace available while token history refreshes, and expire stale measurements using their actual observation time.
+
+### Versioning
+
+- Patch preview for the account-pace regression, including automatic recovery of existing account history. No new feature or incompatible data change.
+
 ## 1.13.1-preview.2 - 2026-10-27
 
 - Read recent quota history and record verified account measurements before the heavier token-history refresh completes. Keep the tempo card available with restored consumption data, and age out stale measurements while that refresh is pending.
