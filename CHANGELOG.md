@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.1-preview.4 - 2026-10-31
+
+### Fixed
+
+- Keep Codex quota projections and recent pace visible after renewing credentials for the same verified account.
+- Continue rejecting quota from a switched account or missing or malformed credentials.
+
+### Versioning
+
+- Follow-up patch preview for the account-pace regression. No new feature or incompatible data change.
+
 ## 1.13.1-preview.3 - 2026-10-28
 
 ### Fixed
