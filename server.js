@@ -9654,14 +9654,20 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
           : "identity_only"
     });
     if (profileIdentity?.identityQuality === "account_id") {
-      // The lease belongs to this exact profile. Bind an email-only CLI
-      // response only while that profile's auth file is unchanged and its
-      // returned identity/plan agree. Never match other profiles by email.
-      const unchanged = authSignature === await gptAccountAuthFileSignature([authFile]);
+      // Token refresh may rewrite this profile's auth file. Accept the rewrite
+      // only when it still proves the same exact account; a workspace switch
+      // or unreadable identity must not supply quota to the previous account.
+      let sameProfile = authSignature === await gptAccountAuthFileSignature([authFile]);
+      if (!sameProfile) {
+        try {
+          const currentIdentity = codexAccountObservationsFromAuth(JSON.parse(await fsp.readFile(authFile, "utf8")))[0];
+          sameProfile = currentIdentity?.identityQuality === "account_id" && currentIdentity.id === profileIdentity.id;
+        } catch { /* Changed credentials must still establish the exact profile identity. */ }
+      }
       const identityMatches = observation && (observation.identityQuality === "account_id"
         ? observation.id === profileIdentity.id
         : observation.label === profileIdentity.label && (!observation.planType || !profileIdentity.planType || observation.planType === profileIdentity.planType));
-      if (!unchanged || !identityMatches) return null;
+      if (!sameProfile || !identityMatches) return null;
       observation.id = profileIdentity.id;
       observation.identityQuality = "account_id";
     } else if (observation?.identityQuality === "email") {

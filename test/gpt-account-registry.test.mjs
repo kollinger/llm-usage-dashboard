@@ -32,6 +32,7 @@ try {
   await assertCodexAccountProfileDiscovery(tmp);
   await assertPerAccountQuotaProbes(tmp);
   await assertCodexIdentityGuard(tmp);
+  await assertCodexCredentialRefresh(tmp);
   await assertOpenCodeGptUsage(tmp);
   await assertFrontendContract();
 } finally {
@@ -96,7 +97,7 @@ async function assertCodexIdentityGuard(tmpDir) {
   const codexHome = path.join(tmpDir, "identity-guard");
   await mkdir(codexHome, { recursive: true });
   const auth = account_id => ({ tokens: { account_id, id_token: fakeJwt({ email: "same@example.test", "https://api.openai.com/auth": { chatgpt_account_id: account_id, chatgpt_plan_type: "plus" } }) } });
-  for (const variant of ["mismatch", "changed"]) {
+  for (const variant of ["mismatch", "changed", "missing", "invalid"]) {
     await writeFile(path.join(codexHome, "auth.json"), JSON.stringify(auth("synthetic-original")));
     const result = await _test.readCodexGptAccountObservation({ codexHomes: [codexHome], clientFactory: async () => ({
       async request(method) {
@@ -104,6 +105,8 @@ async function assertCodexIdentityGuard(tmpDir) {
         if (method === "account/usage/read") return { summary: { lifetimeTokens: 999 } };
         if (method === "account/rateLimits/read") {
           if (variant === "changed") await writeFile(path.join(codexHome, "auth.json"), JSON.stringify(auth("synthetic-switched-workspace")));
+          if (variant === "missing") await rm(path.join(codexHome, "auth.json"));
+          if (variant === "invalid") await writeFile(path.join(codexHome, "auth.json"), "invalid-json");
           return { accountId: variant === "mismatch" ? "synthetic-wrong-default" : undefined,
             rateLimits: { primary: { usedPercent: 20, windowDurationMins: 300, resetsAt: "2099-01-01T00:00:00.000Z" } } };
         }
@@ -115,6 +118,40 @@ async function assertCodexIdentityGuard(tmpDir) {
     assert.equal(result.observations.length, 1, variant);
     assert.equal(result.observations[0].limits, null, "a wrong or switching profile must not supply another account's limits");
     assert.equal(result.observations[0].usage, null, "the rejected live identity cannot supply another account's historical usage");
+  }
+}
+
+async function assertCodexCredentialRefresh(tmpDir) {
+  const codexHome = path.join(tmpDir, "credential-refresh");
+  await mkdir(codexHome, { recursive: true });
+  const authFile = path.join(codexHome, "auth.json");
+  const auth = (accountId, token) => ({ tokens: { account_id: accountId, access_token: token,
+    id_token: fakeJwt({ email: "same@example.test", "https://api.openai.com/auth": {
+      chatgpt_account_id: accountId, chatgpt_plan_type: "pro"
+    } }) } });
+  for (const explicitAccountId of [true, false]) {
+    await writeFile(authFile, JSON.stringify(auth("synthetic-refresh-account", "old-token")));
+    const result = await _test.readCodexGptAccountObservation({ codexHomes: [codexHome], refreshToken: true,
+      clientFactory: async () => ({ async request(method, params) {
+        if (method === "account/read") {
+          assert.equal(params.refreshToken, true);
+          await writeFile(authFile, JSON.stringify(auth("synthetic-refresh-account", "renewed-token-with-a-different-size")));
+          return { account: { type: "chatgpt", email: "same@example.test", planType: "pro" } };
+        }
+        if (method === "account/usage/read") return { summary: { lifetimeTokens: 999 } };
+        if (method === "account/rateLimits/read") return {
+          accountId: explicitAccountId ? "synthetic-refresh-account" : undefined,
+          rateLimits: { planType: "pro", primary: { usedPercent: 56, windowDurationMins: 10080,
+            resetsAt: "2099-01-01T00:00:00.000Z" } }
+        };
+        assert.fail(method);
+      } }) });
+    assert.equal(result.quotaAvailable, 1, "renewing credentials for the same verified account must retain live quota");
+    assert.equal(result.quotaUnavailable, 0);
+    const registry = mergeGptAccountRegistry(null, result.observations);
+    assert.equal(registry.accounts.length, 1);
+    assert.equal(registry.accounts[0].sources[0].quotaStatus, "ready");
+    assert.equal(registry.accounts[0].sources[0].limits.rows[0].usedPercent, 56);
   }
 }
 
