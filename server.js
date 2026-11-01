@@ -6085,6 +6085,8 @@ async function fetchClaudeUsageWithAuth({ orgId, source, hostname = "claude.ai",
         hostname,
         path: safePath,
         method: "GET",
+        // Reused authenticated connections can reject a still-valid Claude session.
+        agent: false,
         headers: {
           ...headers,
           "User-Agent": "LLM Usage Dashboard local quota probe",

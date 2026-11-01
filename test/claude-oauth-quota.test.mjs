@@ -262,6 +262,7 @@ async function assertClaudeOauthEndpointUsesTokenScopedUsagePath() {
 
     assert.equal(observedOptions.hostname, "api.anthropic.com");
     assert.equal(observedOptions.path, "/api/oauth/usage");
+    assert.equal(observedOptions.agent, false, "quota polls must not reuse an authenticated HTTPS connection");
     assert.equal(observedOptions.headers.Authorization, "Bearer test-access-token");
     assert.equal(observedOptions.headers["anthropic-beta"], "oauth-2025-04-20");
     assert.equal(probe.status, "available");

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.13.1-preview.6 - 2026-11-01
+
+### Fixed
+
+- Refresh Claude weekly and Fable quotas over a fresh HTTPS connection to prevent false authentication failures after repeated polling.
+
+### Versioning
+
+- Follow-up patch preview for the Claude quota-refresh regression. No new feature or incompatible data change.
+
 ## 1.13.1-preview.5 - 2026-11-01
 
 ### Fixed
