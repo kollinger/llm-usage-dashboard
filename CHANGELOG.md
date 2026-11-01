@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.1-preview.7 - 2026-11-01
+
+### Fixed
+
+- Prevent native crashes while comparing, signing and encrypting large usage histories by processing snapshot JSON in bounded chunks.
+- Preserve the existing encrypted history format, sync signatures and recorded usage data.
+
+### Versioning
+
+- Follow-up patch preview for the large-history memory crash. No new feature or incompatible data change.
+
 ## 1.13.1-preview.6 - 2026-11-01
 
 ### Fixed
