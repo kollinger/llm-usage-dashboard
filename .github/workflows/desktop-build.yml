@@ -42,6 +42,13 @@ jobs:
 
       - run: npm run check
 
+      - if: matrix.target == 'mac'
+        name: Verify large Unicode history within the memory budget
+        timeout-minutes: 10
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
+        run: npm run test:sync-memory
+
       - run: npm run ${{ matrix.script }} -- --publish never
 
       - uses: actions/upload-artifact@v7
