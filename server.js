@@ -1545,6 +1545,7 @@ app.delete("/api/sync/local/connection", authMiddleware, async (req, res) => {
 
 async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefresh = false } = {}) {
   if (force) prepareForcedGptAccountRefresh();
+  const currentClaudeQuota = await readCurrentClaudeQuota().catch(() => null);
   if (!force && !usageCache.value) {
     const restored = await usageViewCache.read("local", await usageViewCache.context());
     if (restored && !usageCache.value) {
@@ -1718,7 +1719,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
   const withPace = usageCache.quotaPaceSamples
     ? { ...usage, quotaPace: assessQuotaPace(usageCache.quotaPaceSamples, Date.now()) } : usage;
   const withAccounts = gptAccountsCache.value ? { ...withPace, gptAccounts: gptAccountsCache.value } : withPace;
-  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayRestoredClaudeQuota(withAccounts, claudeProbe, Date.now(), claudeStatusline), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
+  return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayCurrentClaudeQuota(overlayRestoredClaudeQuota(withAccounts, claudeProbe, Date.now(), claudeStatusline), currentClaudeQuota), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
 async function currentCodexCreditScope() {
@@ -5818,6 +5819,34 @@ async function readClaudeUsageProbe() {
     });
 
   return claudeApiUsageCache.pending;
+}
+
+// Quota polling must stay independent of transcript parsing and aggregation.
+async function readCurrentClaudeQuota() {
+  const [probe, statusline] = await Promise.all([
+    readClaudeUsageProbe(), readClaudeStatusline().catch(() => null)
+  ]);
+  const { resolvedLimits, resolvedLimitsUpdatedAt, limitSource } = resolveClaudeUsageLimits({
+    statusline, apiUsage: probe?.usage, apiUsageSource: probe?.source, apiUsageUpdatedAt: probe?.usage?.updatedAt
+  });
+  if (!resolvedLimits) return null;
+  const provider = { id: "claudeCode", status: "live", limits: resolvedLimits,
+    limitsUpdatedAt: resolvedLimitsUpdatedAt, limitSource,
+    manualResets: normalizeManualResets(probe?.manualResets || probe?.usage?.manualResets),
+    quotaAccountId: !statusline?.limits ? quotaAccountId(probe?.accountId) : null,
+    source: { apiUsage: summarizeClaudeApiUsageProbe(probe) },
+    setup: { staleLimits: limitSource === "claude_statusline" ? Boolean(statusline?.staleLimits) : Boolean(probe?.fallback) } };
+  const events = await recordProviderQuotaSnapshots([provider]);
+  await updateQuotaPace(events, gptAccountsCache.value || usageCache.value?.gptAccounts);
+  return provider;
+}
+
+function overlayCurrentClaudeQuota(usage, current) {
+  if (!current?.limits || !usage.claudeCode || !Number.isFinite(Date.parse(current.limitsUpdatedAt || "")) ||
+      Date.parse(current.limitsUpdatedAt) < Date.parse(usage.claudeCode.limitsUpdatedAt || "")) return usage;
+  return { ...usage, claudeCode: { ...usage.claudeCode, ...current,
+    source: { ...usage.claudeCode.source, ...current.source },
+    setup: { ...usage.claudeCode.setup, ...current.setup } } };
 }
 
 async function readClaudeUsageSnapshot(file = CLAUDE_USAGE_SNAPSHOT_FILE, nowMs = Date.now()) {
@@ -11227,7 +11256,14 @@ async function recordProviderQuotaSnapshots(providers) {
   return events;
 }
 
-async function updateQuotaPace(events, gptAccounts) {
+let quotaPaceUpdatePending = Promise.resolve();
+function updateQuotaPace(events, gptAccounts) {
+  const update = quotaPaceUpdatePending.catch(() => {}).then(() => persistQuotaPace(events, gptAccounts));
+  quotaPaceUpdatePending = update;
+  return update;
+}
+
+async function persistQuotaPace(events, gptAccounts) {
   const nowMs = Date.now();
   let previous;
   try {
@@ -11237,9 +11273,9 @@ async function updateQuotaPace(events, gptAccounts) {
     if (error.code !== "ENOENT") throw error;
     previous = await readQuotaPaceTail(QUOTA_EVENTS_FILE, nowMs);
   }
-  const historyScope = (gptAccounts?.accounts || []).filter((account) => account.active && account.identityQuality === "account_id")
-    .map((account) => account.id).sort().join(",");
-  const historical = usageCache.quotaPaceHistoryScope === historyScope ? []
+  const historyScope = gptAccounts ? (gptAccounts.accounts || []).filter((account) => account.active && account.identityQuality === "account_id")
+    .map((account) => account.id).sort().join(",") : usageCache.quotaPaceHistoryScope;
+  const historical = !gptAccounts || usageCache.quotaPaceHistoryScope === historyScope ? []
     : await readCodexAccountQuotaPaceTail(CODEX_RESET_SNAPSHOTS_FILE, gptAccounts, nowMs);
   const samples = mergeQuotaPaceSamples([...previous, ...historical], [...events, ...gptAccountQuotaPaceEvents(gptAccounts, nowMs)], nowMs);
   if (JSON.stringify(samples) !== JSON.stringify(previous)) {
@@ -11383,6 +11419,9 @@ function quotaWindowEventFromLimitRow(provider, row, capturedAt, source) {
   if (!row || typeof row !== "object") return null;
   const usedPercent = numberOrNull(row.usedPercent ?? row.used_percentage ?? row.usage_percentage ?? row.percent_used);
   if (usedPercent === null) return null;
+  const measuredAt = Object.hasOwn(row, "updatedAt") ? normalizeOptionalDate(row.updatedAt)
+    : Object.hasOwn(row, "observedAt") ? normalizeOptionalDate(row.observedAt) : capturedAt;
+  if (!measuredAt) return null;
   const rawWindowKey = row.key || row.windowKey || row.name || row.label || row.limitName || row.limitLabel || "limit";
   const windowMinutes = positiveInteger(row.windowMinutes ?? row.window_minutes);
   return finalizeQuotaEvent({
@@ -11390,7 +11429,7 @@ function quotaWindowEventFromLimitRow(provider, row, capturedAt, source) {
     provider,
     windowKey: quotaWindowKeyForWindow(rawWindowKey, windowMinutes),
     label: String(row.label || row.limitLabel || row.name || row.limitName || rawWindowKey),
-    capturedAt: row.observedAt || capturedAt,
+    capturedAt: measuredAt,
     source: source || null,
     usedPercent: clampPercent(usedPercent),
     remainingPercent: clampPercent(row.remainingPercent ?? row.remaining_percentage ?? 100 - usedPercent),
@@ -12001,6 +12040,10 @@ module.exports = {
     saveClaudeUsageSnapshot,
     retainLastKnownClaudeUsageProbe,
     overlayRestoredClaudeQuota,
+    readCurrentClaudeQuota,
+    overlayCurrentClaudeQuota,
+    updateQuotaPace,
+    buildProviderQuotaEvents,
     summarizeClaudeApiUsageProbe,
     resolveClaudeUsageLimits,
     buildNotificationAlerts,

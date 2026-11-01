@@ -78,7 +78,8 @@ const currentRegistry = { accounts: [{ id: "gpt-0123456789abcdef", sources: [{ i
 const readerContext = vm.createContext({ usageCache: { value: consumption }, gptAccountsCache: { value: currentRegistry },
   USAGE_CACHE_MS: 1000, readThroughCache: async () => consumption,
   claudeApiUsageCache: {}, readClaudeUsageSnapshot: async () => null, readClaudeStatusline: async () => null,
-  codexLiveRateLimitsCache: {}, overlayRestoredClaudeQuota: value => value,
+  codexLiveRateLimitsCache: {}, readCurrentClaudeQuota: async () => null, overlayCurrentClaudeQuota: value => value,
+  overlayRestoredClaudeQuota: value => value,
   overlayCurrentCodexQuota: value => value, applyCodexCreditExpiry: async value => value });
 vm.runInContext(serverSource.slice(readerStart, readerEnd), readerContext);
 const restored = await readerContext.readUsageDashboard({ staleWhileRefresh: true });

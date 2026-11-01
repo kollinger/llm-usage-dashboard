@@ -25,6 +25,9 @@ assertClaudeFableScopedLimitsSupportMultipleBuckets();
 assertClaudeLastKnownUsageSurvivesTemporaryRefreshFailure();
 await assertClaudeUsageSnapshotSurvivesRestart();
 await assertClaudeHistoryDoesNotImplyLogin();
+await assertClaudeQuotaRefreshesWhileHistoryIsCached();
+await assertIndependentClaudePaceSamples();
+assertClaudePacePreservesObservationTime();
 assertClaudeQuotaOverlaysRestoredConsumption();
 assertPartialClaudeRefreshPreservesWindowAge();
 
@@ -520,4 +523,100 @@ function assertClaudeQuotaOverlaysRestoredConsumption() {
   assert.equal(cold.claudeCode.status, "live");
   assert.equal(cold.claudeCode.quotaAccountId, null);
   assert.equal(buildDesktopWidgetSnapshot(cold, now).accounts[0].windows[0].remainingPercent, 0, "cold restored history immediately overlays local quota without auth");
+}
+
+async function assertClaudeQuotaRefreshesWhileHistoryIsCached() {
+  const now = Date.now(), reset = new Date(now + 6 * 86400000).toISOString();
+  const old = new Date(now - 50 * 60000).toISOString(), fresh = new Date(now).toISOString();
+  const usage = { generatedAt: old, cache: { stale: true, refreshing: true }, claudeCode: {
+    id: "claudeCode", status: "live", totals: { last24h: { totalTokens: 1234 } },
+    limitsUpdatedAt: old, limits: { weekly: { usedPercent: 23 }, fable: { usedPercent: 46 } }
+  } };
+  const resolved = _test.resolveClaudeUsageLimits({ apiUsage: { seven_day: { utilization: 28, resets_at: reset },
+    limits: [{ label: "Fable", percent: 55, resets_at: reset, window_minutes: 10080 }] },
+    apiUsageSource: "claude_app_cookie", apiUsageUpdatedAt: fresh });
+  const current = { id: "claudeCode", status: "live", limits: resolved.resolvedLimits,
+    limitsUpdatedAt: fresh, limitSource: resolved.limitSource, setup: { staleLimits: false } };
+  let quotaReads = 0;
+  const context = vm.createContext({ usageCache: { value: usage }, gptAccountsCache: {}, USAGE_CACHE_MS: 1,
+    readThroughCache: async () => usage, claudeApiUsageCache: {}, readClaudeUsageSnapshot: async () => null,
+    readClaudeStatusline: async () => null, codexLiveRateLimitsCache: {},
+    readCurrentClaudeQuota: async () => { quotaReads += 1; return current; },
+    overlayCurrentClaudeQuota: _test.overlayCurrentClaudeQuota,
+    overlayRestoredClaudeQuota: _test.overlayRestoredClaudeQuota,
+    overlayCurrentCodexQuota: value => value, applyCodexCreditExpiry: async value => value });
+  const source = await readFile(new URL("../server.js", import.meta.url), "utf8");
+  vm.runInContext(source.slice(source.indexOf("async function readUsageDashboard("), source.indexOf("\nasync function currentCodexCreditScope")), context);
+  const result = await context.readUsageDashboard({ staleWhileRefresh: true });
+  assert.equal(quotaReads, 1, "a cached history response must still refresh current Claude quota");
+  assert.equal(result.claudeCode.limits.weekly.usedPercent, 28);
+  assert.equal(result.claudeCode.limits.fable.usedPercent, 55);
+  assert.equal(result.claudeCode.limitsUpdatedAt, fresh);
+  assert.equal(result.claudeCode.totals, usage.claudeCode.totals);
+  assert.equal(result.generatedAt, old, "quota freshness must not freshen token history");
+  assert.equal(usage.claudeCode.limits.weekly.usedPercent, 23, "do not mutate the consumption cache");
+}
+
+function assertClaudePacePreservesObservationTime() {
+  const now = Date.now(), old = new Date(now - 50 * 60000).toISOString(), fresh = new Date(now).toISOString();
+  const reset = new Date(now + 6 * 86400000).toISOString();
+  const resolved = _test.resolveClaudeUsageLimits({ statusline: { updatedAt: old, limits: {
+    weekly: { usedPercent: 23, windowMinutes: 10080, resetsAt: reset },
+    fable: { key: "fable", label: "Fable", usedPercent: 46, windowMinutes: 10080, resetsAt: reset }
+  } }, apiUsage: { seven_day: { utilization: 28, resets_at: reset } }, apiUsageUpdatedAt: fresh });
+  const events = _test.buildProviderQuotaEvents({ id: "claudeCode", status: "live",
+    limits: resolved.resolvedLimits, limitsUpdatedAt: fresh });
+  assert.equal(events.find(row => row.windowKey === "weekly").capturedAt, fresh);
+  assert.equal(events.find(row => row.windowKey === "fable").capturedAt, old,
+    "a total-quota refresh cannot manufacture a fresh Fable measurement");
+  resolved.resolvedLimits.rows.find(row => row.key === "fable").updatedAt = null;
+  assert(!_test.buildProviderQuotaEvents({ id: "claudeCode", limits: resolved.resolvedLimits,
+    limitsUpdatedAt: fresh }).some(row => row.windowKey === "fable"), "missing measurement time stays unavailable");
+  const history = { claudeCode: { limits: {}, limitsUpdatedAt: fresh } };
+  assert.equal(_test.overlayCurrentClaudeQuota(history, { limits: {}, limitsUpdatedAt: old }), history);
+  assert.equal(_test.overlayCurrentClaudeQuota(history, { limits: {}, limitsUpdatedAt: null }), history);
+}
+
+async function assertIndependentClaudePaceSamples() {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "claude-live-pace-"));
+  try {
+    const source = await readFile(new URL("../server.js", import.meta.url), "utf8");
+    const pace = require("../lib/quota-pace");
+    const now = Date.now(), reset = new Date(now + 6 * 86400000).toISOString();
+    const old = new Date(now - 120 * 60000).toISOString();
+    const baseline = ["weekly", "fable"].map((windowKey, index) => ({ provider: "claudeCode", windowKey,
+      capturedAt: old, resetsAt: reset, usedPercent: index ? 40 : 20 }));
+    const file = path.join(directory, "pace.json"); await writeFile(file, JSON.stringify(baseline));
+    const current = new Date(now).toISOString();
+    const probe = _test.normalizeClaudeApiUsageProbe({ status: "available", source: "claude_app_cookie",
+      updatedAt: current, usage: { seven_day: { utilization: 28, resets_at: reset },
+        limits: [{ label: "Fable", percent: 55, resets_at: reset, window_minutes: 10080 }] } });
+    const context = vm.createContext({ path, Date, process: { pid: process.pid }, DATA_DIR: directory, QUOTA_PACE_SAMPLES_FILE: file,
+      QUOTA_EVENTS_FILE: path.join(directory, "events.jsonl"), usageCache: {}, gptAccountsCache: {},
+      readClaudeUsageProbe: async () => probe, readClaudeStatusline: async () => null,
+      resolveClaudeUsageLimits: _test.resolveClaudeUsageLimits,
+      normalizeManualResets: require("../lib/manual-resets").normalizeManualResets,
+      quotaAccountId: require("../lib/claude-accounts").quotaAccountId,
+      summarizeClaudeApiUsageProbe: _test.summarizeClaudeApiUsageProbe,
+      recordProviderQuotaSnapshots: async providers => providers.flatMap(_test.buildProviderQuotaEvents),
+      ...pace });
+    context.fsp = require("node:fs/promises");
+    vm.runInContext(source.slice(source.indexOf("let quotaPaceUpdatePending ="), source.indexOf("\nfunction buildProviderQuotaEvents(")), context);
+    vm.runInContext(source.slice(source.indexOf("async function readCurrentClaudeQuota("), source.indexOf("\nasync function readClaudeUsageSnapshot(")), context);
+    const live = await context.readCurrentClaudeQuota();
+    assert.equal(live.limits.weekly.usedPercent, 28);
+    assert.equal(live.limits.fable.usedPercent, 55);
+    let samples = JSON.parse(await readFile(file, "utf8"));
+    const assessment = pace.assessQuotaPace(samples, now).claudeCode;
+    assert.equal(assessment.weekly[120].deltaPercent, 8);
+    assert.equal(assessment.fable[120].deltaPercent, 15);
+    const event = (windowKey, usedPercent, offset) => ({ type: "quota_window", provider: "claudeCode", windowKey,
+      usedPercent, windowMinutes: 10080, capturedAt: new Date(now + offset).toISOString(), resetsAt: reset });
+    await Promise.all([context.updateQuotaPace([event("weekly", 29, 1000)]),
+      context.updateQuotaPace([event("fable", 56, 2000)])]);
+    samples = JSON.parse(await readFile(file, "utf8"));
+    assert(samples.some(row => row.windowKey === "weekly" && row.usedPercent === 29));
+    assert(samples.some(row => row.windowKey === "fable" && row.usedPercent === 56));
+    console.log("Claude live pace: cached-history refresh, both windows, real observation times and concurrent persistence passed.");
+  } finally { await rm(directory, { recursive: true, force: true }); }
 }

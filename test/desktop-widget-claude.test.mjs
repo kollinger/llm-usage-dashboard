@@ -133,6 +133,7 @@ const scan = {
   sourcePathEntries: () => [], deviceSync: { config: {}, snapshots: new Map() }, DAILY_HISTORY_DAYS: 180,
   usageAggregation: { aggregateLocal: async () => ({ local: {} }) }, buildLocalAggregate: () => ({}), stripProviderUsageEvents: (value) => value,
   localSyncClient: { captureUsageEvents: async () => ({ skipped: "sync_disabled_or_unpaired" }) },
+  readCurrentClaudeQuota: async () => null, overlayCurrentClaudeQuota: (value) => value,
   overlayRestoredClaudeQuota: (value) => value, overlayCurrentCodexQuota: (value) => value, codexLiveRateLimitsCache: {}, applyCodexCreditExpiry: async (value) => value
 };
 for (const name of ["readCodexUsage", "readOpenCodeGptUsage", "readCopilotUsage", "readGeminiUsage", "readGlmUsage", "readOllamaUsage", "readOpenAiUsage", "readAnthropicUsage"])
