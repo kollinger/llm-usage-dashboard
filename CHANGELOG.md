@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.1-preview.5 - 2026-11-01
+
+### Fixed
+
+- Refresh Claude weekly and Fable quotas independently of the token-history scan, so recent pace keeps receiving current measurements while history is cached or refreshing.
+- Preserve each quota window's actual observation time and serialize pace-history writes to retain concurrent measurements.
+
+### Versioning
+
+- Follow-up patch preview for stale Claude quota pace. No new feature or incompatible data change.
+
 ## 1.13.1-preview.4 - 2026-10-31
 
 ### Fixed
