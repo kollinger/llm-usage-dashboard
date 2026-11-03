@@ -6,13 +6,16 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCrowdingItems, probeMacMenuBarCrowding } from "./mac-menu-bar-crowding.mjs";
 
-// Launch the real entry point, never a replacement main or a manually created
-// Tray. The loopback inspector only observes the controllers created by main.
+// Launch the real entry point, never a replacement main or production Tray.
+// Crowding mode adds explicit competitors; main still creates its own Tray.
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("..", import.meta.url));
 const sourceMode = process.argv.includes("--source");
+const crowdingProbe = process.argv.includes("--crowding-probe");
 if (process.argv.includes("--ci") && process.env.GITHUB_ACTIONS !== "true") process.exit(0);
+if (crowdingProbe && process.platform !== "darwin") process.exit(0);
 if (process.platform === "linux" && !process.env.DISPLAY) {
   const child = spawn("xvfb-run", ["-a", "-s", "-screen 0 1600x1000x24", process.execPath,
     fileURLToPath(import.meta.url), ...process.argv.slice(2)], { stdio: "inherit" });
@@ -35,7 +38,9 @@ try {
   }));
   const mainSource = await fs.readFile(path.join(root, "electron/main.js"), "utf8");
   const startupLine = mainSource.split("\n").findIndex(line => line.includes("mobileAccess = createDesktopMobileAccess("));
+  const trayLine = mainSource.split("\n").findIndex(line => line.includes("macMenuBar = createMacMenuBar("));
   assert(startupLine > 0);
+  assert(trayLine > 0 && trayLine < startupLine);
 
   let executable, prefix = [];
   if (sourceMode) { executable = require("electron"); prefix = [root]; }
@@ -130,11 +135,23 @@ try {
       const isolated = await command("Debugger.evaluateOnCallFrame", { callFrameId: initial.callFrames[0].callFrameId,
         expression: `require('electron').app.setPath('appData', ${JSON.stringify(path.dirname(profile))}); require('electron').app.setPath('userData', ${JSON.stringify(profile)}); true`, returnByValue: true });
       assert(!isolated.exceptionDetails, JSON.stringify(isolated.exceptionDetails));
-      const breakpoint = await command("Debugger.setBreakpointByUrl", { lineNumber: startupLine, urlRegex: "[/\\\\]electron[/\\\\]main\\.js$" });
+      let breakpoint = await command("Debugger.setBreakpointByUrl", { lineNumber: crowdingProbe ? trayLine : startupLine, urlRegex: "[/\\\\]electron[/\\\\]main\\.js$" });
       const startupPause = nextPause();
       await command("Debugger.resume");
-      const [started] = await startupPause;
+      let [started] = await startupPause;
       assert(started.hitBreakpoints.includes(breakpoint.breakpointId), "real main reaches menu-bar initialization");
+      if (crowdingProbe) {
+        const fixtures = await command("Debugger.evaluateOnCallFrame", { callFrameId: started.callFrames[0].callFrameId,
+          expression: createCrowdingItems, returnByValue: true });
+        assert(!fixtures.exceptionDetails, JSON.stringify(fixtures.exceptionDetails));
+        assert.equal(fixtures.result.value, 24);
+        await command("Debugger.removeBreakpoint", { breakpointId: breakpoint.breakpointId });
+        breakpoint = await command("Debugger.setBreakpointByUrl", { lineNumber: startupLine, urlRegex: "[/\\\\]electron[/\\\\]main\\.js$" });
+        const initialized = nextPause();
+        await command("Debugger.resume");
+        [started] = await initialized;
+        assert(started.hitBreakpoints.includes(breakpoint.breakpointId), "real main creates its own production Tray among fixtures");
+      }
       const captured = await command("Debugger.evaluateOnCallFrame", { callFrameId: started.callFrames[0].callFrameId,
         expression: "globalThis.__desktopStartup = { app, require, getMain: () => mainWindow, getTray: () => macMenuBar.getTray(), getWidget: () => desktopWidget, getPort: () => dashboardPort }; true",
         returnByValue: true });
@@ -153,7 +170,9 @@ try {
       await until(() => evaluate(`Boolean(${state}.getMain()?.isVisible() && !${state}.getMain().webContents.isLoadingMainFrame())`), "actual main window loads");
       assert.equal(await evaluate(`${state}.getMain().webContents.getURL()`), `http://localhost:${await evaluate(`${state}.getPort()`)}/`);
       assert.equal(await evaluate(`${state}.getMain().webContents.executeJavaScript("Boolean(document.getElementById('desktopWidgetBtn'))")`), true, "real dashboard rendered");
-      if (process.platform === "darwin") {
+      if (process.platform === "darwin" && crowdingProbe) {
+        await probeMacMenuBarCrowding({ evaluate, state, quotaReady, until, pause, root, temporary });
+      } else if (process.platform === "darwin") {
         await until(() => evaluate(`Boolean(${state}.getTray()?.getBounds().height > 0)`), "actual main places native menu-bar icon");
         const bounds = await evaluate(`${state}.getTray().getBounds()`);
         console.log(`Packaged startup ${cycle}: native Tray bounds ${JSON.stringify(bounds)}`);
@@ -226,6 +245,7 @@ try {
     }
   }
 
-  for (let cycle = 1; cycle <= 2; cycle++) await launch(cycle);
+  if (crowdingProbe) await launch("crowding probe");
+  else for (let cycle = 1; cycle <= 2; cycle++) await launch(cycle);
 }
 finally { await fs.rm(temporary, { recursive: true, force: true }); }

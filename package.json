@@ -38,7 +38,7 @@
     "test:plasma:native": "npm run plasma:build && node test/run-plasma-native.mjs",
     "test:updates": "node test/published-updates.test.mjs",
     "test:updates:native": "node test/run-published-updates-native.mjs",
-    "postdist:mac": "node test/verify-mac-menu-bar-package.mjs && node test/run-desktop-startup.mjs --ci",
+    "postdist:mac": "node test/verify-mac-menu-bar-package.mjs && node test/run-desktop-startup.mjs --ci --crowding-probe && node test/run-desktop-startup.mjs --ci",
     "postdist:linux": "node test/run-desktop-startup.mjs --ci",
     "postdist:win": "node test/run-desktop-startup.mjs --ci",
     "test:sync-smoke": "node test/sync-api.test.mjs"
