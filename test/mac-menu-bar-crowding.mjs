@@ -20,6 +20,10 @@ export async function probeMacMenuBarCrowding({ evaluate, state, quotaReady, unt
   const click = bounds => execFileSync("/usr/bin/swift", [path.join(root, "test/mac-menu-bar-click.swift"),
     String(bounds.x + bounds.width / 2), String(bounds.y + bounds.height / 2)], { timeout: 60_000, stdio: "inherit" });
   const trayBounds = () => evaluate(`${state}.getTray().getBounds()`);
+  const displays = await evaluate(`${state}.require('electron').screen.getAllDisplays().map(display => display.bounds)`);
+  const onDisplay = bounds => bounds.width > 0 && bounds.height > 0 && displays.some(display =>
+    bounds.x >= display.x && bounds.y >= display.y && bounds.x + bounds.width <= display.x + display.width &&
+    bounds.y + bounds.height <= display.y + display.height);
   const capture = async (label, windowName) => {
     await evaluate(`${state}.getWidget().${windowName}().webContents.executeJavaScript("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")`);
     await pause(300);
@@ -27,8 +31,26 @@ export async function probeMacMenuBarCrowding({ evaluate, state, quotaReady, unt
       panel: ${state}.getWidget().${windowName}().getBounds() })`);
     const height = Math.min(display.height, Math.ceil(panel.y + panel.height - display.y));
     const screenshot = path.join(temporary, `menu-bar-${label}.png`);
-    execFileSync("/usr/sbin/screencapture", ["-x", "-R", `${display.x},${display.y},${display.width},${height}`, screenshot], { timeout: 15_000 });
-    console.log(`DESKTOP_CROWDING_SCREENSHOT_${label.toUpperCase()}:${(await fs.readFile(screenshot)).toString("base64")}`);
+    let painted = false;
+    try { await until(async () => {
+      execFileSync("/usr/sbin/screencapture", ["-x", "-R", `${display.x},${display.y},${display.width},${height}`, screenshot], { timeout: 15_000 });
+      const colors = await evaluate(`(() => {
+        const image = ${state}.require('electron').nativeImage.createFromPath(${JSON.stringify(screenshot)});
+        const scale = image.getSize().width / ${display.width};
+        const pixels = image.crop({ x: Math.round(${panel.x - display.x + 12} * scale), y: Math.round(${panel.y - display.y + 52} * scale),
+          width: Math.round(300 * scale), height: Math.round(180 * scale) }).toBitmap();
+        const colors = new Set();
+        for (let i = 0; i < pixels.length; i += 4) colors.add(pixels[i] + ',' + pixels[i + 1] + ',' + pixels[i + 2]);
+        return colors.size;
+      })()`);
+      if (colors > 16) return true;
+      await pause(100);
+      return false;
+    }, "native crowding screenshot contains painted quota content", 15_000); painted = true; }
+    finally {
+      const pixels = await fs.readFile(screenshot).catch(() => null);
+      if (pixels) console.log(`DESKTOP_CROWDING_SCREENSHOT_${label.toUpperCase()}${painted ? "" : "_UNPAINTED"}:${pixels.toString("base64")}`);
+    }
   };
   const original = `${state}.getTray() === globalThis.__desktopCrowdingProductionTray`;
   await evaluate(`globalThis.__desktopCrowdingProductionTray = ${state}.getTray(); true`);
@@ -39,10 +61,7 @@ export async function probeMacMenuBarCrowding({ evaluate, state, quotaReady, unt
     assert.equal(await evaluate(`${state}.getTray().isDestroyed()`), false);
     await pause(500);
     before = await trayBounds();
-    const display = await evaluate(`${state}.require('electron').screen.getPrimaryDisplay().bounds`);
-    const targetOnDisplay = before.width > 0 && before.height > 0 && before.x >= display.x &&
-      before.y >= display.y && before.x + before.width <= display.x + display.width &&
-      before.y + before.height <= display.y + display.height;
+    const targetOnDisplay = onDisplay(before);
     if (targetOnDisplay) {
       click(before);
       await pause(700);
@@ -59,18 +78,29 @@ export async function probeMacMenuBarCrowding({ evaluate, state, quotaReady, unt
     await quotaReady("getWindow");
     await until(() => evaluate(`Boolean(${state}.getWidget().getWindow()?.isVisible())`), "compact quota window becomes visible");
     compactAccessible = true;
-    if (process.env.GITHUB_ACTIONS === "true") await capture("crowded", "getWindow");
     console.log(`DESKTOP_CROWDING_OBSERVATION:${JSON.stringify({ before, targetOnDisplay, openedWhileCrowded,
-      compactAccessible, fixtureItems: 24, interpretation: openedWhileCrowded ? "icon unavailability not reproduced" : "inspect native screenshot and bounds; not a user-machine diagnosis" })}`);
-    await evaluate(`${state}.getWidget().getWindow().close(); true`);
+      compactAccessible, displays, fixtureItems: 24, interpretation: openedWhileCrowded ? "icon unavailability not reproduced" : "inspect native screenshot and bounds; not a user-machine diagnosis" })}`);
+    if (process.env.GITHUB_ACTIONS === "true") await capture("crowded", "getWindow");
   } finally {
     await evaluate(`globalThis.__desktopCrowdingItems.forEach(item => { if (!item.isDestroyed()) item.destroy(); }); true`);
     assert.equal(await evaluate("globalThis.__desktopCrowdingItems.every(item => item.isDestroyed())"), true);
   }
   assert.equal(await evaluate(original), true, "the production Tray is never replaced during the probe");
   assert.equal(await evaluate(`${state}.getTray().isDestroyed()`), false);
-  await until(async () => { const bounds = await trayBounds(); return bounds.width > 0 && bounds.height > 0; }, "production Tray has bounds after fixture cleanup");
-  await pause(500);
+  let previousBounds = "", stableSince = 0;
+  try { await until(async () => {
+    const bounds = await trayBounds(), key = JSON.stringify(bounds);
+    if (!onDisplay(bounds)) { previousBounds = ""; stableSince = 0; return false; }
+    if (key !== previousBounds) { previousBounds = key; stableSince = Date.now(); return false; }
+    return Date.now() - stableSince >= 300;
+  }, "production Tray settles on screen after fixture cleanup"); }
+  catch (error) {
+    console.log(`DESKTOP_CROWDING_POST_CLEANUP:${JSON.stringify({ bounds: await trayBounds(), displays,
+      productionTrayUnchanged: await evaluate(original), fixturesDestroyed: true })}`);
+    if (process.env.GITHUB_ACTIONS === "true") await capture("after_cleanup", "getWindow").catch(captureError => console.error(captureError.message));
+    throw error;
+  }
+  await evaluate(`${state}.getWidget().getWindow().close(); true`);
   const after = await trayBounds();
   click(after);
   await until(() => evaluate(`Boolean(${state}.getWidget().getPopupWindow()?.isVisible())`), "same production Tray opens popup after removing synthetic pressure");
