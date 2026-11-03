@@ -57,7 +57,7 @@ export async function probeMacMenuBarCrowding({ evaluate, state, quotaReady, unt
     // a replacement window or substitutes quota data/server responses.
     await evaluate(`${state}.getMain().webContents.executeJavaScript("window.llmUsageDashboard.desktopWidget.open()")`);
     await quotaReady("getWindow");
-    assert.equal(await evaluate(`${state}.getWidget().getWindow().isVisible()`), true);
+    await until(() => evaluate(`Boolean(${state}.getWidget().getWindow()?.isVisible())`), "compact quota window becomes visible");
     compactAccessible = true;
     if (process.env.GITHUB_ACTIONS === "true") await capture("crowded", "getWindow");
     console.log(`DESKTOP_CROWDING_OBSERVATION:${JSON.stringify({ before, targetOnDisplay, openedWhileCrowded,

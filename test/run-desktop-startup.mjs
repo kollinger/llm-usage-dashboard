@@ -233,6 +233,7 @@ try {
       console.log(`Desktop startup ${cycle}: ${process.platform}, ${sourceMode ? "source" : "fresh package"}, real main/window, platform Tray and clean quit passed.`);
     } catch (error) {
       console.error(output);
+      console.error(error);
       throw error;
     } finally {
       clearTimeout(watchdog);
@@ -248,4 +249,4 @@ try {
   if (crowdingProbe) await launch("crowding probe");
   else for (let cycle = 1; cycle <= 2; cycle++) await launch(cycle);
 }
-finally { await fs.rm(temporary, { recursive: true, force: true }); }
+finally { await fs.rm(temporary, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); }
