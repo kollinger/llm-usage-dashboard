@@ -80,6 +80,7 @@ const readerContext = vm.createContext({ usageCache: { value: consumption }, gpt
   claudeApiUsageCache: {}, readClaudeUsageSnapshot: async () => null, readClaudeStatusline: async () => null,
   codexLiveRateLimitsCache: {}, readCurrentClaudeQuota: async () => null, overlayCurrentClaudeQuota: value => value,
   overlayRestoredClaudeQuota: value => value,
+  readCurrentCodexAccounts: async () => null, overlayCurrentCodexAccounts: value => value,
   overlayCurrentCodexQuota: value => value, applyCodexCreditExpiry: async value => value });
 vm.runInContext(serverSource.slice(readerStart, readerEnd), readerContext);
 const restored = await readerContext.readUsageDashboard({ staleWhileRefresh: true });

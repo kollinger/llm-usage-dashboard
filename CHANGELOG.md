@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.1-preview.8 - 2026-11-13
+
+### Fixed
+
+- Keep Codex account limits, the weekly projection and recent pace current while usage history is refreshing.
+- Close Codex quota helpers after use and share one resident helper during concurrent startup.
+
+### Versioning
+
+- Follow-up patch preview for stale Codex quotas and accumulated helper processes. No new feature or incompatible data change.
+
 ## 1.13.1-preview.7 - 2026-11-01
 
 ### Fixed
