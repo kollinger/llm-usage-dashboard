@@ -542,6 +542,7 @@ async function assertClaudeQuotaRefreshesWhileHistoryIsCached() {
   const context = vm.createContext({ usageCache: { value: usage }, gptAccountsCache: {}, USAGE_CACHE_MS: 1,
     readThroughCache: async () => usage, claudeApiUsageCache: {}, readClaudeUsageSnapshot: async () => null,
     readClaudeStatusline: async () => null, codexLiveRateLimitsCache: {},
+    readCurrentCodexAccounts: async () => null, overlayCurrentCodexAccounts: (value) => value,
     readCurrentClaudeQuota: async () => { quotaReads += 1; return current; },
     overlayCurrentClaudeQuota: _test.overlayCurrentClaudeQuota,
     overlayRestoredClaudeQuota: _test.overlayRestoredClaudeQuota,

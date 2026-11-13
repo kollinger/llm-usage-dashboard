@@ -54,6 +54,7 @@ const {
   codexAccountObservationsFromAuth,
   createGptAccountObservation,
   mergeGptAccountRegistry,
+  normalizedGptAccountId,
   openCodeOauthEntriesFromAuth,
   parseJwtClaims,
   publicGptAccountRegistry,
@@ -508,6 +509,8 @@ const sourceDiagnosticsCache = createTimedCache();
 const gptAccountsCache = createTimedCache();
 const officialSubscriptionPricingCache = createTimedCache();
 let codexAppServer = null;
+let codexAppServerPending = null;
+const codexProfileQuotas = new Map();
 let codexAppServerLastUseAt = 0;
 let pendingTestNotification = false;
 let pendingOpenNotificationSettings = false;
@@ -1575,7 +1578,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
         scan: { status: "error", checkedAt: new Date().toISOString(), sources: previous.scan?.sources || {} }
       });
     });
-    await updateQuotaPace([], gptAccounts).catch(() => {});
+    await updateQuotaPace([], overlayCurrentCodexAccounts(gptAccounts)).catch(() => {});
     const [
       subscriptions,
       accountBilling,
@@ -1640,7 +1643,7 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
       accountBilling
     );
     const quotaEvents = await recordProviderQuotaSnapshots([codex, copilot, claudeCode, gemini, glm, kimi, openai, anthropic]).catch(() => []);
-    const quotaPace = await updateQuotaPace(quotaEvents, gptAccounts).catch(() => ({}));
+    const quotaPace = await updateQuotaPace(quotaEvents, overlayCurrentCodexAccounts(gptAccounts)).catch(() => ({}));
     const providers = [codex, openCode, copilot, claudeCode, gemini, glm, kimi, ollama];
     const chatCatalog = await chatMetadataReader.read({ codexHomes: uniquePaths([
       ...CODEX_HOMES, ...sourcePathEntries(localSources.codex, ["sessions", "archived_sessions"])
@@ -1716,9 +1719,11 @@ async function readUsageDashboard({ force = false, maxAgeMs = 0, staleWhileRefre
   // Consumption restored from disk intentionally contains no account quotas.
   // A completed account re-scan must still reach dashboard/widget consumers
   // immediately while the heavier consumption refresh is in progress.
+  const accounts = await readCurrentCodexAccounts().catch(() => null) || gptAccountsCache.value || usage.gptAccounts;
   const withPace = usageCache.quotaPaceSamples
     ? { ...usage, quotaPace: assessQuotaPace(usageCache.quotaPaceSamples, Date.now()) } : usage;
-  const withAccounts = gptAccountsCache.value ? { ...withPace, gptAccounts: gptAccountsCache.value } : withPace;
+  const liveAccounts = overlayCurrentCodexAccounts(accounts);
+  const withAccounts = liveAccounts && liveAccounts !== withPace.gptAccounts ? { ...withPace, gptAccounts: liveAccounts } : withPace;
   return applyCodexCreditExpiry(overlayCurrentCodexQuota(overlayCurrentClaudeQuota(overlayRestoredClaudeQuota(withAccounts, claudeProbe, Date.now(), claudeStatusline), currentClaudeQuota), codexLiveRateLimitsCache.value, codexLiveRateLimitsCache.updatedAtMs));
 }
 
@@ -9472,6 +9477,8 @@ function safeStatMtime(file) {
 function prepareForcedGptAccountRefresh() {
   invalidateTimedCache(gptAccountsCache);
   invalidateTimedCache(codexLiveRateLimitsCache);
+  codexProfileQuotas.clear();
+  codexAppServerPending = null;
   if (codexAppServer) {
     const client = codexAppServer;
     codexAppServer = null;
@@ -9641,6 +9648,43 @@ async function readCodexGptAccountObservation(options = {}) {
   };
 }
 
+// The minute collector has already verified each profile against its credentials.
+// Use its quota before the full account and token-history scan completes.
+function overlayCurrentCodexAccounts(registry, now = Date.now()) {
+  if (!codexProfileQuotas.size || !registry?.accounts?.length) return registry;
+  let changed = false;
+  const accounts = (registry.accounts || []).map((account) => {
+    if (!account.active || account.identityQuality !== "account_id") return account;
+    const sources = account.sources.map((source) => {
+      if (source.id !== "codex" || !source.active) return source;
+      let latest;
+      for (const observation of codexProfileQuotas.values()) {
+        const age = now - Date.parse(observation.limitsUpdatedAt);
+        if (observation.id !== account.id || !source.profileRefs.includes(observation.sourceRef) ||
+            !Number.isFinite(age) || age < -60_000 || age > 15 * 60_000 ||
+            observation.limitsUpdatedAt < (source.limitsUpdatedAt || "") ||
+            observation.limitsUpdatedAt < (source.quotaCheckedAt || "") ||
+            (source.quotaStatus === "ready" && observation.limitsUpdatedAt === source.limitsUpdatedAt)) continue;
+        if (!latest || observation.limitsUpdatedAt > latest.limitsUpdatedAt) latest = observation;
+      }
+      if (!latest) return source;
+      changed = true;
+      // Keep measurements for windows omitted by this poll with their original
+      // timestamps. A fresh weekly sample cannot make an old 5h limit current.
+      const limits = mergeGptQuotaLimits([source, latest], now);
+      return { ...source, limits, limitsUpdatedAt: latest.limitsUpdatedAt,
+        quotaStatus: "ready", quotaReason: null, quotaCheckedAt: latest.quotaCheckedAt };
+    });
+    return { ...account, sources };
+  });
+  return changed ? publicGptAccountRegistry({ ...registry, accounts }) : registry;
+}
+
+async function readCurrentCodexAccounts() {
+  if (!codexProfileQuotas.size) return null;
+  return gptAccountsCache.value || publicGptAccountRegistry(await readGptAccountRegistry(DATA_DIR));
+}
+
 async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
   const authFile = path.join(codexHome, "auth.json");
   const authSignature = options.authSignature || await gptAccountAuthFileSignature([authFile]);
@@ -9649,6 +9693,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
     try { profileIdentity = codexAccountObservationsFromAuth(JSON.parse(await fsp.readFile(authFile, "utf8")))[0]; }
     catch { /* A live account ID can still establish identity without a local auth file. */ }
   }
+  if (options.limitsOnly && !profileIdentity && !sameResolvedPath(codexHome, CODEX_HOME)) return null;
   const lease = await acquireCodexAccountClient(codexHome, options.clientFactory, Boolean(profileIdentity));
   try {
     const response = await lease.client.request("account/read", {
@@ -9658,18 +9703,18 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
     if (!account || !["chatgpt", "chatgptAuthTokens"].includes(String(account.type || ""))) return null;
     const [usageResult, rateLimitsResult] = await Promise.allSettled([
       options.limitsOnly ? Promise.resolve(null) : lease.client.request("account/usage/read", undefined),
-      lease.client.request("account/rateLimits/read", undefined)
+      lease.client.request("account/rateLimits/read", undefined).then(normalizeCodexLiveRateLimits)
     ]);
-    const liveLimits = rateLimitsResult.status === "fulfilled"
-      ? normalizeCodexLiveRateLimits(rateLimitsResult.value)
-      : null;
+    const liveLimits = rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value : null;
     const limits = codexRateLimitsFromLive(liveLimits?.codex, "Codex");
     const quotaCheckedAt = new Date().toISOString();
+    const accountIds = [response?.accountId, account.accountId, liveLimits?.accountId].filter(Boolean);
+    if (new Set(accountIds.map(normalizedGptAccountId)).size > 1) return null;
     const observation = createGptAccountObservation({
       sourceId: "codex",
       sourceRef: codexHome,
       email: account.email,
-      accountId: response?.accountId || account.accountId || (rateLimitsResult.status === "fulfilled" ? rateLimitsResult.value?.accountId : null),
+      accountId: accountIds[0],
       planType: liveLimits?.codex?.planType || account.planType,
       seenAt: new Date().toISOString(),
       usage: usageResult.status === "fulfilled" ? usageResult.value : null,
@@ -9714,7 +9759,7 @@ async function readCodexProfileGptAccountObservation(codexHome, options = {}) {
         liveLimits.historySnapshot.accountLabel = observation.label;
       }
       if (liveLimits.notificationSnapshot) liveLimits.notificationSnapshot.accountLabel = observation.label;
-      await recordCodexResetSnapshot(liveLimits.historySnapshot, liveLimits.notificationSnapshot);
+      await recordCodexResetSnapshot(liveLimits.historySnapshot, liveLimits.notificationSnapshot).catch(() => {});
     }
     return observation;
   } finally {
@@ -10116,15 +10161,17 @@ function normalizeCodexLiveRateLimits(response) {
   const codex = entries.find(([, snapshot]) => !isCodexSparkSnapshot(snapshot))?.[1] || null;
   const spark = entries.find(([, snapshot]) => isCodexSparkSnapshot(snapshot))?.[1] || null;
 
+  const updatedAt = new Date().toISOString();
   return {
     codex,
     spark,
-    historySnapshot: normalizeResetSnapshot(response),
-    notificationSnapshot: codexNotificationSample(response),
+    historySnapshot: normalizeResetSnapshot(response, updatedAt),
+    notificationSnapshot: codexNotificationSample(response, updatedAt),
+    accountId: response?.accountId || null,
     source: {
       status: codex || spark ? "live" : "empty",
       source: "codex app-server",
-      updatedAt: new Date().toISOString(),
+      updatedAt,
       limitCount: entries.length
     }
   };
@@ -10293,7 +10340,17 @@ function preferCodexWindow(current, candidate) {
 async function getCodexAppServer() {
   codexAppServerLastUseAt = Date.now();
   if (codexAppServer) return codexAppServer;
+  if (!codexAppServerPending) {
+    const pending = openResidentCodexAppServer().finally(() => {
+      if (codexAppServerPending === pending) codexAppServerPending = null;
+    });
+    codexAppServerPending = pending;
+  }
+  return codexAppServerPending;
+}
 
+async function openResidentCodexAppServer() {
+  const generation = codexLiveRateLimitsCache.generation;
   const client = await createCodexAppServer({
     codexHome: CODEX_HOME,
     onRequest: () => {
@@ -10303,6 +10360,10 @@ async function getCodexAppServer() {
       if (codexAppServer === closedClient) codexAppServer = null;
     }
   });
+  if (generation !== codexLiveRateLimitsCache.generation) {
+    client.close();
+    throw new Error("Codex app-server invalidated during startup");
+  }
   codexAppServer = client;
 
   // Shut the resident app-server down after a long idle stretch; the next
@@ -10336,6 +10397,8 @@ async function createCodexAppServer(options = {}) {
   const pending = new Map();
   let buffer = "";
   let closing = false;
+  let exited = false;
+  let shutdownTimer;
 
   const send = (message) => {
     proc.stdin.write(`${JSON.stringify(message)}\n`);
@@ -10343,6 +10406,7 @@ async function createCodexAppServer(options = {}) {
 
   const client = {
     request(method, params) {
+      if (closing || exited) return Promise.reject(new Error("Codex app-server is closed"));
       if (typeof options.onRequest === "function") options.onRequest(client);
       return new Promise((resolve, reject) => {
         const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -10355,11 +10419,20 @@ async function createCodexAppServer(options = {}) {
       });
     },
     close() {
-      if (closing) return;
+      if (closing || exited) return;
       closing = true;
-      proc.kill("SIGTERM");
+      rejectPending(new Error("Codex app-server is closing"));
+      // The stdio server exits on EOF. Some CLI versions ignore SIGTERM.
+      proc.stdin.end();
+      shutdownTimer = setTimeout(() => proc.kill("SIGKILL"), 2_000);
+      shutdownTimer.unref?.();
     }
   };
+
+  proc.stdin.on("error", (error) => {
+    rejectPending(error);
+    client.close();
+  });
 
   proc.stdout.on("data", (chunk) => {
     buffer += chunk.toString("utf8");
@@ -10412,6 +10485,8 @@ async function createCodexAppServer(options = {}) {
   });
 
   proc.on("exit", (code, signal) => {
+    exited = true;
+    clearTimeout(shutdownTimer);
     if (!closing) {
       rejectPending(new Error(`Codex app-server exited (${code ?? "unknown"}${signal ? `, ${signal}` : ""})`));
     }
@@ -11877,27 +11952,46 @@ function startCodexResetCollector() {
   const tick = async () => {
     if (stopped || running) return;
     running = true;
+    const generation = codexLiveRateLimitsCache.generation;
     try {
       const client = await getCodexAppServer();
       const normalized = await readScopedCodexLiveRateLimits(client);
       if (!normalized.notificationSnapshot?.windows.length) throw new Error("Codex quota unavailable");
-      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot);
+      if (stopped || generation !== codexLiveRateLimitsCache.generation) return;
       codexLiveRateLimitsCache.value = normalized;
       codexLiveRateLimitsCache.updatedAtMs = Date.now();
       codexLiveRateLimitsCache.expiresAt = Date.now() + CODEX_LIVE_RATE_LIMITS_CACHE_MS;
+      await recordCodexResetSnapshot(normalized.historySnapshot, normalized.notificationSnapshot).catch(() => {});
     } catch {
-      await recordCodexResetSnapshot({ kind: "gap", accountKey: primaryCodexResetAccountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+      if (!stopped && generation === codexLiveRateLimitsCache.generation) {
+        await recordCodexResetSnapshot({ kind: "gap", accountKey: primaryCodexResetAccountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
+      }
     }
     try {
       const homes = uniquePaths([...CODEX_HOMES, ...defaultCodexAccountHomes(CODEX_ACCOUNT_PROFILES_DIR), ...defaultCodexAccountHomes(path.join(DATA_DIR, "codex-profiles"))]);
       for (const home of homes) {
-        if (stopped) break;
-        try { await readCodexProfileGptAccountObservation(home, { limitsOnly: true }); }
+        if (stopped || generation !== codexLiveRateLimitsCache.generation) break;
+        let observation;
+        try { observation = await readCodexProfileGptAccountObservation(home, { limitsOnly: true }); }
         catch {
           const accountKey = codexResetProfileAccounts.get(home);
           if (accountKey) await recordCodexResetSnapshot({ kind: "gap", accountKey, at: new Date().toISOString(), status: "unavailable" }).catch(() => {});
         }
+        if (stopped || generation !== codexLiveRateLimitsCache.generation) break;
+        if (observation?.identityQuality === "account_id" && observation.quotaStatus === "ready" && observation.limits) {
+          codexProfileQuotas.set(home, observation);
+        } else {
+          codexProfileQuotas.delete(home);
+        }
       }
+      if (stopped || generation !== codexLiveRateLimitsCache.generation) return;
+      for (const home of codexProfileQuotas.keys()) if (!homes.includes(home)) codexProfileQuotas.delete(home);
+      if (codexProfileQuotas.size) {
+        const registry = await readCurrentCodexAccounts();
+        await updateQuotaPace([], overlayCurrentCodexAccounts(registry));
+      }
+    } catch {
+      // History or account metadata storage can fail independently of polling.
     } finally { running = false; }
   };
   const first = setTimeout(tick, 1000);
@@ -11973,6 +12067,14 @@ function startDashboard(options = {}) {
   syncCollector.unref?.();
   dashboardServer.once("close", () => { clearInterval(syncCollector); usageAggregation.close().catch(() => {}); gptLogin.close(); claudeLogin.close().catch(() => {}); kimiRuntime.close().then(() => kimiLogin.close()).catch(() => {}); deviceSync.stop().catch(() => {}); });
   dashboardServer.once("close", stopCodexResetCollector);
+  dashboardServer.once("close", () => {
+    prepareForcedGptAccountRefresh();
+    clearTimeout(gptAccountAuthWatchInitialTimer);
+    clearInterval(gptAccountAuthWatchTimer);
+    gptAccountAuthWatchInitialTimer = null;
+    gptAccountAuthWatchTimer = null;
+    gptAccountAuthWatchSignature = null;
+  });
   return { dashboardServer, ollamaProxyServer };
 }
 

@@ -97,17 +97,18 @@ async function assertCodexIdentityGuard(tmpDir) {
   const codexHome = path.join(tmpDir, "identity-guard");
   await mkdir(codexHome, { recursive: true });
   const auth = account_id => ({ tokens: { account_id, id_token: fakeJwt({ email: "same@example.test", "https://api.openai.com/auth": { chatgpt_account_id: account_id, chatgpt_plan_type: "plus" } }) } });
-  for (const variant of ["mismatch", "changed", "missing", "invalid"]) {
+  for (const variant of ["mismatch", "conflicting-live-ids", "changed", "missing", "invalid"]) {
     await writeFile(path.join(codexHome, "auth.json"), JSON.stringify(auth("synthetic-original")));
     const result = await _test.readCodexGptAccountObservation({ codexHomes: [codexHome], clientFactory: async () => ({
       async request(method) {
-        if (method === "account/read") return { account: { type: "chatgpt", email: "same@example.test", planType: "plus" } };
+        if (method === "account/read") return { account: { type: "chatgpt", email: "same@example.test", planType: "plus",
+          ...(variant === "conflicting-live-ids" ? { accountId: "synthetic-original" } : {}) } };
         if (method === "account/usage/read") return { summary: { lifetimeTokens: 999 } };
         if (method === "account/rateLimits/read") {
           if (variant === "changed") await writeFile(path.join(codexHome, "auth.json"), JSON.stringify(auth("synthetic-switched-workspace")));
           if (variant === "missing") await rm(path.join(codexHome, "auth.json"));
           if (variant === "invalid") await writeFile(path.join(codexHome, "auth.json"), "invalid-json");
-          return { accountId: variant === "mismatch" ? "synthetic-wrong-default" : undefined,
+          return { accountId: ["mismatch", "conflicting-live-ids"].includes(variant) ? "synthetic-wrong-default" : undefined,
             rateLimits: { primary: { usedPercent: 20, windowDurationMins: 300, resetsAt: "2099-01-01T00:00:00.000Z" } } };
         }
         assert.fail(method);
